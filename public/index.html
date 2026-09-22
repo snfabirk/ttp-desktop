@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>League of Legends</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Spiegel:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .site-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .content {
+      display: grid;
+      grid-template-columns: 420px 420px;
+      grid-template-areas:
+        "summoner champ"
+        "apikey   list"
+        "gobtn    gobtn";
+      gap: 24px;
+      box-sizing: border-box;
+      margin: 30px 0 40px;
+    }
+    #summonerDateBox { grid-area: summoner; }
+    #riotKeyBox { grid-area: apikey; }
+    .champ-picker { grid-area: champ; }
+    .selection-list { grid-area: list; }
+    @media (max-width: 900px) {
+      .content {
+        grid-template-columns: 420px;
+        grid-template-areas:
+          "summoner"
+          "champ"
+          "apikey"
+          "list"
+          "gobtn";
+      }
+    }
+    .big-nav-btn {
+      grid-area: gobtn;
+      display: block;
+      box-sizing: border-box;
+      width: 100%;
+      text-align: center;
+      color: #c8aa6e;
+      background: rgba(10, 20, 40, 0.6);
+      border: 2px solid #785a28;
+      border-radius: 8px;
+      padding: 20px;
+      font-family: 'Cinzel', Georgia, serif;
+      font-weight: 700;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+      text-decoration: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .big-nav-btn:hover {
+      border-color: #c8aa6e;
+      background: rgba(200, 170, 110, 0.12);
+    }
+    .champ-picker, .api-key-box {
+      box-sizing: border-box;
+      background: rgba(10, 20, 40, 0.6);
+      border: 1px solid #785a28;
+      border-radius: 6px;
+      padding: 24px;
+    }
+    .api-key-box label {
+      display: block;
+      color: #c8aa6e;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    .api-key-box .key-status {
+      font-weight: normal;
+      text-transform: none;
+      letter-spacing: normal;
+      font-size: 0.85rem;
+      color: #a09b8c;
+    }
+    .api-key-box input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 14px;
+      background: #1e2328;
+      color: #f0e6d2;
+      border: 1px solid #785a28;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-family: Georgia, serif;
+      margin-bottom: 16px;
+      color-scheme: dark;
+    }
+    .api-key-box input:focus {
+      outline: none;
+      border-color: #c8aa6e;
+    }
+    .api-key-box .sub-label {
+      font-size: 0.8rem;
+      margin: 4px 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .info-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      border: 1px solid #785a28;
+      color: #a09b8c;
+      font-size: 0.7rem;
+      line-height: 1;
+      cursor: help;
+    }
+    .info-icon:hover, .info-icon:focus {
+      border-color: #c8aa6e;
+      color: #c8aa6e;
+      outline: none;
+    }
+    .rank-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .rank-row select, .rank-row input {
+      box-sizing: border-box;
+      padding: 9px 10px;
+      background: #1e2328;
+      color: #f0e6d2;
+      border: 1px solid #785a28;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-family: Georgia, serif;
+      color-scheme: dark;
+    }
+    .rank-row select:focus, .rank-row input:focus {
+      outline: none;
+      border-color: #c8aa6e;
+    }
+    #rankTierSelect { flex: 2; min-width: 0; }
+    #rankDivisionSelect { flex: 1; min-width: 0; }
+    #rankLpInput { flex: 1; min-width: 0; }
+    .api-key-box button {
+      background: none;
+      border: 1px solid #c8aa6e;
+      color: #c8aa6e;
+      border-radius: 4px;
+      padding: 9px 20px;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+    .api-key-box button:hover {
+      background: #c8aa6e;
+      color: #1e2328;
+    }
+    .api-key-box button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    .champ-picker label {
+      display: block;
+      color: #c8aa6e;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    #champSelect, #champSearchInput {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 14px;
+      background: #1e2328;
+      color: #f0e6d2;
+      border: 1px solid #785a28;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-family: Georgia, serif;
+    }
+    #champSelect {
+      cursor: pointer;
+    }
+    #champSelect:focus, #champSearchInput:focus {
+      outline: none;
+      border-color: #c8aa6e;
+    }
+    .suggestion-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 4px;
+      background: #1e2328;
+      border: 1px solid #785a28;
+      border-radius: 4px;
+      max-height: 240px;
+      overflow-y: auto;
+      z-index: 20;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    }
+    .suggestion-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      color: #f0e6d2;
+      font-family: Georgia, serif;
+      font-size: 0.9rem;
+    }
+    .suggestion-item img {
+      width: 24px;
+      height: 24px;
+      border-radius: 3px;
+      border: 1px solid #785a28;
+    }
+    .suggestion-item:hover,
+    .suggestion-item.highlighted {
+      background: rgba(200, 170, 110, 0.18);
+    }
+    .suggestion-empty {
+      padding: 8px 12px;
+      color: #6f6a5e;
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+    #champPreview {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 20px;
+      min-height: 64px;
+    }
+    #champPreview img {
+      width: 64px;
+      height: 64px;
+      border: 2px solid #c8aa6e;
+      border-radius: 4px;
+      display: none;
+    }
+    #champPreview span {
+      color: #f0e6d2;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 1.4rem;
+      letter-spacing: 1px;
+    }
+    .champ-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(10, 20, 40, 0.6);
+      border: 1px solid #785a28;
+      border-radius: 6px;
+      padding: 12px 44px 12px 16px;
+      margin-bottom: 10px;
+      min-height: 48px;
+    }
+    .champ-card.placeholder {
+      background: rgba(10, 20, 40, 0.25);
+      border: 1px dashed #4a4530;
+    }
+    .champ-card img {
+      width: 48px;
+      height: 48px;
+      border: 2px solid #c8aa6e;
+      border-radius: 4px;
+    }
+    .champ-card-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      min-width: 0;
+    }
+    .champ-card span {
+      color: #f0e6d2;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+    }
+    .role-select {
+      width: fit-content;
+      box-sizing: border-box;
+      padding: 3px 8px;
+      background: #1e2328;
+      color: #a09b8c;
+      border: 1px solid #785a28;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-family: Georgia, serif;
+      cursor: pointer;
+    }
+    .champ-card .remove-btn {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: #c8aa6e;
+      font-size: 1.1rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 2px 6px;
+      font-family: Georgia, serif;
+    }
+    .champ-card .remove-btn:hover {
+      color: #f0e6d2;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <h1>League of Legends</h1>
+    <p class="subtitle">Three-Trick-Pony</p>
+  </header>
+
+  <div class="content">
+  <div class="api-key-box" id="summonerDateBox">
+    <label>Summoner &amp; Date Range</label>
+    <input type="text" id="summonerInput" placeholder="Luckshot#796" value="Luckshot#796">
+
+    <label for="rankTierSelect" class="sub-label">
+      <span id="rankDateLabelText">Rank on Start Date</span>
+      <span class="info-icon" tabindex="0"
+        title="Only needed for the LP-change tracking on the Overview page. Enter the rank/LP you had ON THE DATE BELOW (not necessarily your rank right now) so the LP delta shown there is accurate right away instead of an estimate.">ⓘ</span>
+    </label>
+    <div class="rank-row">
+      <select id="rankTierSelect">
+        <option value="">Unranked / skip</option>
+        <option value="IRON">Iron</option>
+        <option value="BRONZE">Bronze</option>
+        <option value="SILVER">Silver</option>
+        <option value="GOLD">Gold</option>
+        <option value="PLATINUM">Platinum</option>
+        <option value="EMERALD">Emerald</option>
+        <option value="DIAMOND">Diamond</option>
+        <option value="MASTER">Master</option>
+        <option value="GRANDMASTER">Grandmaster</option>
+        <option value="CHALLENGER">Challenger</option>
+      </select>
+      <select id="rankDivisionSelect">
+        <option value="IV">IV</option>
+        <option value="III">III</option>
+        <option value="II">II</option>
+        <option value="I">I</option>
+      </select>
+      <input type="number" id="rankLpInput" placeholder="LP" min="0" max="2000">
+    </div>
+
+    <input type="date" id="sinceInput" style="margin-top:12px;">
+    <p style="font-size:0.7rem; color:#6f6a5e; margin:10px 0 0;">
+      Note: Riot's public API reliably returns only about the last 6 months of ranked matches, even with an earlier date.
+    </p>
+  </div>
+
+  <div class="api-key-box" id="riotKeyBox">
+    <label for="apiKeyInput">Riot API Key <span id="apiKeyStatus" class="key-status"></span></label>
+    <input type="password" id="apiKeyInput" placeholder="RGAPI-...">
+    <button type="button" id="saveApiKeyBtn">Save Key</button>
+  </div>
+
+  <div class="champ-picker">
+    <label for="champSelect">Select Champion Pool</label>
+    <div style="position:relative; margin-bottom:12px;">
+      <input type="text" id="champSearchInput" placeholder="e.g. C for Caitlyn, Camille, …" autocomplete="off">
+      <div id="champSuggestions" class="suggestion-list" hidden></div>
+    </div>
+    <select id="champSelect">
+      <option value="">-- Select Champion --</option>
+      <option value="Aatrox">Aatrox</option>
+      <option value="Ahri">Ahri</option>
+      <option value="Akali">Akali</option>
+      <option value="Akshan">Akshan</option>
+      <option value="Alistar">Alistar</option>
+      <option value="Ambessa">Ambessa</option>
+      <option value="Amumu">Amumu</option>
+      <option value="Anivia">Anivia</option>
+      <option value="Annie">Annie</option>
+      <option value="Aphelios">Aphelios</option>
+      <option value="Ashe">Ashe</option>
+      <option value="AurelionSol">Aurelion Sol</option>
+      <option value="Aurora">Aurora</option>
+      <option value="Azir">Azir</option>
+      <option value="Bard">Bard</option>
+      <option value="Belveth">Bel'Veth</option>
+      <option value="Blitzcrank">Blitzcrank</option>
+      <option value="Brand">Brand</option>
+      <option value="Braum">Braum</option>
+      <option value="Briar">Briar</option>
+      <option value="Caitlyn">Caitlyn</option>
+      <option value="Camille">Camille</option>
+      <option value="Cassiopeia">Cassiopeia</option>
+      <option value="Chogath">Cho'Gath</option>
+      <option value="Corki">Corki</option>
+      <option value="Darius">Darius</option>
+      <option value="Diana">Diana</option>
+      <option value="DrMundo">Dr. Mundo</option>
+      <option value="Draven">Draven</option>
+      <option value="Ekko">Ekko</option>
+      <option value="Elise">Elise</option>
+      <option value="Evelynn">Evelynn</option>
+      <option value="Ezreal">Ezreal</option>
+      <option value="Fiddlesticks">Fiddlesticks</option>
+      <option value="Fiora">Fiora</option>
+      <option value="Fizz">Fizz</option>
+      <option value="Galio">Galio</option>
+      <option value="Gangplank">Gangplank</option>
+      <option value="Garen">Garen</option>
+      <option value="Gnar">Gnar</option>
+      <option value="Gragas">Gragas</option>
+      <option value="Graves">Graves</option>
+      <option value="Gwen">Gwen</option>
+      <option value="Hecarim">Hecarim</option>
+      <option value="Heimerdinger">Heimerdinger</option>
+      <option value="Hwei">Hwei</option>
+      <option value="Illaoi">Illaoi</option>
+      <option value="Irelia">Irelia</option>
+      <option value="Ivern">Ivern</option>
+      <option value="Janna">Janna</option>
+      <option value="JarvanIV">Jarvan IV</option>
+      <option value="Jax">Jax</option>
+      <option value="Jayce">Jayce</option>
+      <option value="Jhin">Jhin</option>
+      <option value="Jinx">Jinx</option>
+      <option value="KSante">K'Sante</option>
+      <option value="Kaisa">Kai'Sa</option>
+      <option value="Kalista">Kalista</option>
+      <option value="Karma">Karma</option>
+      <option value="Karthus">Karthus</option>
+      <option value="Kassadin">Kassadin</option>
+      <option value="Katarina">Katarina</option>
+      <option value="Kayle">Kayle</option>
+      <option value="Kayn">Kayn</option>
+      <option value="Kennen">Kennen</option>
+      <option value="Khazix">Kha'Zix</option>
+      <option value="Kindred">Kindred</option>
+      <option value="Kled">Kled</option>
+      <option value="KogMaw">Kog'Maw</option>
+      <option value="Leblanc">LeBlanc</option>
+      <option value="LeeSin">Lee Sin</option>
+      <option value="Leona">Leona</option>
+      <option value="Lillia">Lillia</option>
+      <option value="Lissandra">Lissandra</option>
+      <option value="Locke">Locke</option>
+      <option value="Lucian">Lucian</option>
+      <option value="Lulu">Lulu</option>
+      <option value="Lux">Lux</option>
+      <option value="Malphite">Malphite</option>
+      <option value="Malzahar">Malzahar</option>
+      <option value="Maokai">Maokai</option>
+      <option value="MasterYi">Master Yi</option>
+      <option value="Mel">Mel</option>
+      <option value="Milio">Milio</option>
+      <option value="MissFortune">Miss Fortune</option>
+      <option value="Mordekaiser">Mordekaiser</option>
+      <option value="Morgana">Morgana</option>
+      <option value="Naafiri">Naafiri</option>
+      <option value="Nami">Nami</option>
+      <option value="Nasus">Nasus</option>
+      <option value="Nautilus">Nautilus</option>
+      <option value="Neeko">Neeko</option>
+      <option value="Nidalee">Nidalee</option>
+      <option value="Nilah">Nilah</option>
+      <option value="Nocturne">Nocturne</option>
+      <option value="Nunu">Nunu & Willump</option>
+      <option value="Olaf">Olaf</option>
+      <option value="Orianna">Orianna</option>
+      <option value="Ornn">Ornn</option>
+      <option value="Pantheon">Pantheon</option>
+      <option value="Poppy">Poppy</option>
+      <option value="Pyke">Pyke</option>
+      <option value="Qiyana">Qiyana</option>
+      <option value="Quinn">Quinn</option>
+      <option value="Rakan">Rakan</option>
+      <option value="Rammus">Rammus</option>
+      <option value="RekSai">Rek'Sai</option>
+      <option value="Rell">Rell</option>
+      <option value="Renata">Renata Glasc</option>
+      <option value="Renekton">Renekton</option>
+      <option value="Rengar">Rengar</option>
+      <option value="Riven">Riven</option>
+      <option value="Rumble">Rumble</option>
+      <option value="Ryze">Ryze</option>
+      <option value="Samira">Samira</option>
+      <option value="Sejuani">Sejuani</option>
+      <option value="Senna">Senna</option>
+      <option value="Seraphine">Seraphine</option>
+      <option value="Sett">Sett</option>
+      <option value="Shaco">Shaco</option>
+      <option value="Shen">Shen</option>
+      <option value="Shyvana">Shyvana</option>
+      <option value="Singed">Singed</option>
+      <option value="Sion">Sion</option>
+      <option value="Sivir">Sivir</option>
+      <option value="Skarner">Skarner</option>
+      <option value="Smolder">Smolder</option>
+      <option value="Sona">Sona</option>
+      <option value="Soraka">Soraka</option>
+      <option value="Swain">Swain</option>
+      <option value="Sylas">Sylas</option>
+      <option value="Syndra">Syndra</option>
+      <option value="TahmKench">Tahm Kench</option>
+      <option value="Taliyah">Taliyah</option>
+      <option value="Talon">Talon</option>
+      <option value="Taric">Taric</option>
+      <option value="Teemo">Teemo</option>
+      <option value="Thresh">Thresh</option>
+      <option value="Tristana">Tristana</option>
+      <option value="Trundle">Trundle</option>
+      <option value="Tryndamere">Tryndamere</option>
+      <option value="TwistedFate">Twisted Fate</option>
+      <option value="Twitch">Twitch</option>
+      <option value="Udyr">Udyr</option>
+      <option value="Urgot">Urgot</option>
+      <option value="Varus">Varus</option>
+      <option value="Vayne">Vayne</option>
+      <option value="Veigar">Veigar</option>
+      <option value="Velkoz">Vel'Koz</option>
+      <option value="Vex">Vex</option>
+      <option value="Vi">Vi</option>
+      <option value="Viego">Viego</option>
+      <option value="Viktor">Viktor</option>
+      <option value="Vladimir">Vladimir</option>
+      <option value="Volibear">Volibear</option>
+      <option value="Warwick">Warwick</option>
+      <option value="MonkeyKing">Wukong</option>
+      <option value="Xayah">Xayah</option>
+      <option value="Xerath">Xerath</option>
+      <option value="XinZhao">Xin Zhao</option>
+      <option value="Yasuo">Yasuo</option>
+      <option value="Yone">Yone</option>
+      <option value="Yorick">Yorick</option>
+      <option value="Yunara">Yunara</option>
+      <option value="Yuumi">Yuumi</option>
+      <option value="Zaahen">Zaahen</option>
+      <option value="Zac">Zac</option>
+      <option value="Zed">Zed</option>
+      <option value="Zeri">Zeri</option>
+      <option value="Ziggs">Ziggs</option>
+      <option value="Zilean">Zilean</option>
+      <option value="Zoe">Zoe</option>
+      <option value="Zyra">Zyra</option>
+    </select>
+
+    <div id="champPreview">
+      <img id="champIcon" alt="">
+      <span id="champName"></span>
+    </div>
+    <p id="selectionError" class="error-msg"></p>
+  </div>
+
+  <div class="selection-list">
+    <div id="selectionCards"></div>
+  </div>
+
+  <a href="overview.html" id="toOverviewBtn" class="big-nav-btn">Go to Overview →</a>
+  </div>
+
+  <script>
+    const DDRAGON_VERSION = '16.17.1';
+    const MAX_CHAMPS = 3;
+    const STORAGE_KEY = 'ttp_selected_champs';
+    const STORAGE_KEY_SINCE = 'ttp_since_date';
+    const STORAGE_KEY_SUMMONER = 'ttp_summoner_name';
+    const STORAGE_KEY_RANK_TIER = 'ttp_rank_tier';
+    const STORAGE_KEY_RANK_DIVISION = 'ttp_rank_division';
+    const STORAGE_KEY_RANK_LP = 'ttp_rank_lp';
+    const APEX_TIERS = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
+    const summonerInput = document.getElementById('summonerInput');
+    const sinceInput = document.getElementById('sinceInput');
+    const rankTierSelect = document.getElementById('rankTierSelect');
+    const rankDivisionSelect = document.getElementById('rankDivisionSelect');
+    const rankLpInput = document.getElementById('rankLpInput');
+    const rankDateLabelText = document.getElementById('rankDateLabelText');
+    const select = document.getElementById('champSelect');
+    const icon = document.getElementById('champIcon');
+    const nameLabel = document.getElementById('champName');
+    const selectionCards = document.getElementById('selectionCards');
+    const selectionError = document.getElementById('selectionError');
+    const toOverviewBtn = document.getElementById('toOverviewBtn');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const apiKeyStatus = document.getElementById('apiKeyStatus');
+    const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+    const champSearchInput = document.getElementById('champSearchInput');
+    const champSuggestions = document.getElementById('champSuggestions');
+    let selectedChamps = [];
+    let allChampions = [];
+    let championKeyById = {};
+
+    async function refreshApiKeyStatus() {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        apiKeyStatus.textContent = data.hasApiKey
+          ? `(set, ends in ${data.apiKeyPreview})`
+          : '(no key set yet)';
+      } catch (e) {
+        apiKeyStatus.textContent = '';
+      }
+    }
+
+    saveApiKeyBtn.addEventListener('click', async () => {
+      const apiKey = apiKeyInput.value.trim();
+      if (!apiKey) {
+        showError('Please enter an API key first.');
+        return;
+      }
+      saveApiKeyBtn.disabled = true;
+      try {
+        const res = await fetch('/api/settings/api-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Unknown error');
+
+        apiKeyInput.value = '';
+        hideError();
+        await refreshApiKeyStatus();
+      } catch (e) {
+        showError(`Error saving key: ${e.message}`);
+      } finally {
+        saveApiKeyBtn.disabled = false;
+      }
+    });
+
+    async function loadChampionKeys() {
+      try {
+        const res = await fetch('data/champions.json');
+        const list = await res.json();
+        allChampions = list;
+        championKeyById = Object.fromEntries(list.map(c => [c.id, c.key]));
+      } catch (e) {
+        allChampions = [];
+        championKeyById = {};
+      }
+    }
+
+    function saveSelection() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedChamps));
+      } catch (e) {
+        // localStorage nicht verfügbar (z. B. privater Modus) - Auswahl bleibt nur für diese Sitzung erhalten
+      }
+    }
+
+    function loadSelection() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          selectedChamps = JSON.parse(stored);
+        }
+      } catch (e) {
+        selectedChamps = [];
+      }
+    }
+
+    function hideError() {
+      selectionError.textContent = '';
+      selectionError.classList.remove('visible');
+    }
+
+    function showError(message) {
+      selectionError.textContent = message;
+      selectionError.classList.add('visible');
+    }
+
+    function championIconUrl(id) {
+      return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${id}.png`;
+    }
+
+    function defaultSinceDate() {
+      const d = new Date();
+      d.setMonth(d.getMonth() - 1);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function saveSinceDate() {
+      try {
+        localStorage.setItem(STORAGE_KEY_SINCE, sinceInput.value);
+      } catch (e) {
+        // localStorage nicht verfügbar - Datum bleibt nur für diese Sitzung erhalten
+      }
+    }
+
+    function loadSinceDate() {
+      try {
+        return localStorage.getItem(STORAGE_KEY_SINCE) || defaultSinceDate();
+      } catch (e) {
+        return defaultSinceDate();
+      }
+    }
+
+    function saveSummonerName() {
+      try {
+        localStorage.setItem(STORAGE_KEY_SUMMONER, summonerInput.value);
+      } catch (e) {
+        // localStorage nicht verfügbar - Name bleibt nur für diese Sitzung erhalten
+      }
+    }
+
+    function loadSummonerName() {
+      try {
+        return localStorage.getItem(STORAGE_KEY_SUMMONER) || summonerInput.value;
+      } catch (e) {
+        return summonerInput.value;
+      }
+    }
+
+    // Division ist bei Master+ bedeutungslos (keine Unterteilung) - dort
+    // ausblenden, damit nicht suggeriert wird, sie waere relevant.
+    function updateRankDivisionVisibility() {
+      const hide = !rankTierSelect.value || APEX_TIERS.has(rankTierSelect.value);
+      rankDivisionSelect.style.display = hide ? 'none' : '';
+    }
+
+    function formatDateEU(isoDate) {
+      const parts = (isoDate || '').split('-');
+      if (parts.length !== 3) return isoDate;
+      const [year, month, day] = parts;
+      return `${day}.${month}.${year}`;
+    }
+
+    // Macht im Label unmissverstaendlich klar, dass hier NICHT der aktuelle
+    // Rang gemeint ist, sondern der Rang zum unten gewaehlten Datum - der
+    // kann ja laengst ein anderer sein als der jetzige.
+    function updateRankDateLabel() {
+      rankDateLabelText.textContent = sinceInput.value
+        ? `Rank on ${formatDateEU(sinceInput.value)}`
+        : 'Rank on Start Date';
+    }
+
+    function saveManualRank() {
+      try {
+        localStorage.setItem(STORAGE_KEY_RANK_TIER, rankTierSelect.value);
+        localStorage.setItem(STORAGE_KEY_RANK_DIVISION, rankDivisionSelect.value);
+        localStorage.setItem(STORAGE_KEY_RANK_LP, rankLpInput.value);
+      } catch (e) {
+        // localStorage nicht verfügbar - Wert bleibt nur für diese Sitzung erhalten
+      }
+    }
+
+    function loadManualRank() {
+      try {
+        return {
+          tier: localStorage.getItem(STORAGE_KEY_RANK_TIER) || '',
+          rank: localStorage.getItem(STORAGE_KEY_RANK_DIVISION) || 'IV',
+          leaguePoints: localStorage.getItem(STORAGE_KEY_RANK_LP) || ''
+        };
+      } catch (e) {
+        return { tier: '', rank: 'IV', leaguePoints: '' };
+      }
+    }
+
+    rankTierSelect.addEventListener('change', () => {
+      updateRankDivisionVisibility();
+      saveManualRank();
+    });
+    rankDivisionSelect.addEventListener('change', saveManualRank);
+    rankLpInput.addEventListener('change', saveManualRank);
+    rankLpInput.addEventListener('input', saveManualRank);
+
+    sinceInput.addEventListener('change', () => {
+      saveSinceDate();
+      updateRankDateLabel();
+    });
+    summonerInput.addEventListener('change', saveSummonerName);
+    summonerInput.addEventListener('input', saveSummonerName);
+
+    const ROLE_OPTIONS = [
+      { value: '', label: 'Any Role' },
+      { value: 'TOP', label: 'Top' },
+      { value: 'JUNGLE', label: 'Jungle' },
+      { value: 'MIDDLE', label: 'Mid' },
+      { value: 'BOTTOM', label: 'Bottom' },
+      { value: 'UTILITY', label: 'Support' }
+    ];
+
+    function renderSelection() {
+      selectionCards.innerHTML = '';
+      selectedChamps.forEach(champ => {
+        const card = document.createElement('div');
+        card.className = 'champ-card';
+
+        const img = document.createElement('img');
+        img.src = championIconUrl(champ.id);
+        img.alt = champ.name;
+
+        const info = document.createElement('div');
+        info.className = 'champ-card-info';
+
+        const name = document.createElement('span');
+        name.textContent = champ.name;
+
+        const roleSelect = document.createElement('select');
+        roleSelect.className = 'role-select';
+        ROLE_OPTIONS.forEach(opt => {
+          const option = document.createElement('option');
+          option.value = opt.value;
+          option.textContent = opt.label;
+          if ((champ.role || '') === opt.value) option.selected = true;
+          roleSelect.appendChild(option);
+        });
+        roleSelect.addEventListener('change', () => {
+          champ.role = roleSelect.value;
+          saveSelection();
+        });
+
+        info.appendChild(name);
+        info.appendChild(roleSelect);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.textContent = '✕';
+        removeBtn.setAttribute('aria-label', `Remove ${champ.name}`);
+        removeBtn.addEventListener('click', () => {
+          const index = selectedChamps.findIndex(c => c.id === champ.id);
+          if (index !== -1) {
+            selectedChamps.splice(index, 1);
+            hideError();
+            saveSelection();
+            renderSelection();
+          }
+        });
+
+        card.appendChild(img);
+        card.appendChild(info);
+        card.appendChild(removeBtn);
+        selectionCards.appendChild(card);
+      });
+
+      for (let i = selectedChamps.length; i < MAX_CHAMPS; i++) {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'champ-card placeholder';
+        selectionCards.appendChild(placeholder);
+      }
+    }
+
+    function pickChampion(id, name) {
+      if (!id) {
+        icon.style.display = 'none';
+        nameLabel.textContent = '';
+        hideError();
+        return;
+      }
+      icon.src = championIconUrl(id);
+      icon.alt = name;
+      icon.style.display = 'block';
+      nameLabel.textContent = name;
+      select.value = id;
+
+      if (selectedChamps.some(c => c.id === id)) {
+        hideError();
+        return;
+      }
+
+      if (selectedChamps.length >= MAX_CHAMPS) {
+        showError(`You can select a maximum of ${MAX_CHAMPS} champions.`);
+        select.value = '';
+        icon.style.display = 'none';
+        nameLabel.textContent = '';
+        return;
+      }
+
+      selectedChamps.push({ id, name, key: championKeyById[id] || null, role: '' });
+      hideError();
+      saveSelection();
+      renderSelection();
+    }
+
+    select.addEventListener('change', () => {
+      const id = select.value;
+      const name = select.options[select.selectedIndex].text;
+      pickChampion(id, name);
+    });
+
+    function hideChampSuggestions() {
+      champSuggestions.hidden = true;
+      champSuggestions.innerHTML = '';
+    }
+
+    function showChampSuggestions(term) {
+      const matches = allChampions
+        .filter(c => c.name.toLowerCase().startsWith(term))
+        .slice(0, 8);
+
+      champSuggestions.innerHTML = '';
+
+      if (matches.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'suggestion-empty';
+        empty.textContent = 'No champion found.';
+        champSuggestions.appendChild(empty);
+      } else {
+        matches.forEach(c => {
+          const item = document.createElement('div');
+          item.className = 'suggestion-item';
+
+          const img = document.createElement('img');
+          img.src = championIconUrl(c.id);
+          img.alt = c.name;
+
+          const name = document.createElement('span');
+          name.textContent = c.name;
+
+          item.appendChild(img);
+          item.appendChild(name);
+          item.addEventListener('click', () => {
+            champSearchInput.value = c.name;
+            hideChampSuggestions();
+            pickChampion(c.id, c.name);
+          });
+          champSuggestions.appendChild(item);
+        });
+      }
+
+      champSuggestions.hidden = false;
+    }
+
+    champSearchInput.addEventListener('input', () => {
+      const term = champSearchInput.value.trim().toLowerCase();
+      if (!term) {
+        hideChampSuggestions();
+        return;
+      }
+      showChampSuggestions(term);
+    });
+
+    champSearchInput.addEventListener('focus', () => {
+      const term = champSearchInput.value.trim().toLowerCase();
+      if (term) showChampSuggestions(term);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!champSearchInput.contains(e.target) && !champSuggestions.contains(e.target)) {
+        hideChampSuggestions();
+      }
+    });
+
+    champSearchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') hideChampSuggestions();
+    });
+
+    toOverviewBtn.addEventListener('click', (e) => {
+      if (selectedChamps.length === 0) {
+        e.preventDefault();
+        showError('Please select at least one champion before going to the overview.');
+      }
+    });
+
+    sinceInput.value = loadSinceDate();
+    summonerInput.value = loadSummonerName();
+    // sicherstellen, dass der aktuell angezeigte Wert auch wirklich gespeichert
+    // ist - sonst bleibt ein unveraenderter Platzhalter-Wert (z.B. der
+    // vorausgefuellte Default) nie im localStorage und Seite 2 sieht "leer".
+    saveSinceDate();
+    saveSummonerName();
+
+    const savedRank = loadManualRank();
+    rankTierSelect.value = savedRank.tier;
+    rankDivisionSelect.value = savedRank.rank;
+    rankLpInput.value = savedRank.leaguePoints;
+    updateRankDivisionVisibility();
+    updateRankDateLabel();
+
+    refreshApiKeyStatus();
+    loadChampionKeys().then(() => {
+      loadSelection();
+      renderSelection();
+    });
+  </script>
+</body>
+</html>

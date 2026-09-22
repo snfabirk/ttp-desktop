@@ -1,0 +1,92 @@
+:root {
+  --bg: #0a1428;
+  --panel-bg: rgba(10, 20, 40, 0.6);
+  --border: #785a28;
+  --border-hover: #c8aa6e;
+  --gold: #c8aa6e;
+  --text: #f0e6d2;
+  --text-dim: #a09b8c;
+  --text-faint: #6f6a5e;
+  --red: #e84057;
+  --green: #4caf7d;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  font-family: Georgia, serif;
+}
+
+/* Graue statt weisser Scrollbars, passend zum dunklen Theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #555a60 var(--bg);
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+*::-webkit-scrollbar-thumb {
+  background: #555a60;
+  border-radius: 5px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #71767c;
+}
+
+.site-header {
+  padding: 30px 30px 0;
+}
+
+.site-header h1 {
+  color: var(--gold);
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 900;
+  font-size: 3rem;
+  letter-spacing: 2px;
+  margin: 0;
+}
+
+.site-header .subtitle {
+  color: var(--text-dim);
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin: 6px 0 0;
+}
+
+.site-nav {
+  margin-top: 14px;
+}
+
+.site-nav a {
+  color: var(--text-dim);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.site-nav a:hover {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+
+.error-msg {
+  display: none;
+  color: var(--red);
+  font-family: Georgia, serif;
+  font-size: 0.9rem;
+  margin-top: 14px;
+}
+
+.error-msg.visible {
+  display: block;
+}
