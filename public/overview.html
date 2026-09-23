@@ -1715,8 +1715,19 @@
       const ys = points.map(p => p.comparableLP);
       const minX = Math.min(...xs);
       const maxX = Math.max(...xs);
-      const minY = Math.min(...ys);
-      const maxY = Math.max(...ys);
+      let minY = Math.min(...ys);
+      let maxY = Math.max(...ys);
+      // Direkt nach Challenge-Start (nur der aktuelle Rang als einziger
+      // Punkt) waere die Y-Spanne sonst quasi 0 - dann gaebe es auch keine
+      // Divisionsgrenzen/Labels zu sehen. Mit mindestens ~2 Divisionen (250
+      // LP) Puffer um den/die vorhandenen Punkt(e) herum sieht man von
+      // Anfang an, in welcher Division man aktuell steht.
+      const MIN_Y_SPAN = 250;
+      if (maxY - minY < MIN_Y_SPAN) {
+        const mid = (maxY + minY) / 2;
+        minY = mid - MIN_Y_SPAN / 2;
+        maxY = mid + MIN_Y_SPAN / 2;
+      }
       const spanX = maxX - minX || 1;
       const spanY = maxY - minY || 1;
 
