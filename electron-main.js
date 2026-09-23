@@ -75,6 +75,31 @@ ipcMain.on('update-later', () => { if (updateWin) updateWin.close(); });
 ipcMain.on('open-update-window', () => showUpdateWindow());
 ipcMain.handle('get-update-state', () => updateState);
 
+// Manueller "Check for Updates"-Button im Einstellungsfenster - merkt sich,
+// welches Fenster den Check angefordert hat, um genau dorthin (und nur
+// dorthin) eine Antwort zu schicken, sobald das Ergebnis feststeht (die
+// autoUpdater-Events feuern global, nicht pro Anfrage).
+let manualCheckWin = null;
+
+function replyManualCheck(status, extra) {
+  if (manualCheckWin && !manualCheckWin.isDestroyed()) {
+    manualCheckWin.webContents.send('manual-update-check-status', status, extra);
+  }
+  manualCheckWin = null;
+}
+
+ipcMain.on('check-for-updates-now', (event) => {
+  manualCheckWin = BrowserWindow.fromWebContents(event.sender);
+  if (!app.isPackaged) {
+    replyManualCheck('dev-mode');
+    return;
+  }
+  if (manualCheckWin && !manualCheckWin.isDestroyed()) {
+    manualCheckWin.webContents.send('manual-update-check-status', 'checking');
+  }
+  checkForUpdates();
+});
+
 function showSettingsWindow() {
   if (settingsWin) { settingsWin.focus(); return settingsWin; }
   settingsWin = new BrowserWindow({
@@ -140,6 +165,11 @@ ipcMain.on('restore-window-focus', (event) => {
 autoUpdater.on('update-available', () => {
   updateState = 'available';
   notifyMainWindowUpdateStatus('available');
+  replyManualCheck('available');
+});
+
+autoUpdater.on('update-not-available', () => {
+  replyManualCheck('not-available');
 });
 
 autoUpdater.on('download-progress', (progress) => {
@@ -159,6 +189,7 @@ autoUpdater.on('error', (err) => {
   // weiterlaufen, nur im Log sichtbar sein, kein Fenster fuer den Nutzer.
   console.error('Auto-update check failed:', err.message);
   if (updateWin) { updateWin.close(); }
+  replyManualCheck('error', err.message);
 });
 
 function checkForUpdates() {

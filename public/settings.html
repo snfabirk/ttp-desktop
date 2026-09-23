@@ -108,7 +108,7 @@
       outline: none;
       border-color: var(--border-hover);
     }
-    #saveApiKeyBtn {
+    #saveApiKeyBtn, #checkUpdatesBtn {
       background: none;
       border: 1px solid var(--gold);
       color: var(--gold);
@@ -120,13 +120,16 @@
       cursor: pointer;
       white-space: nowrap;
     }
-    #saveApiKeyBtn:hover {
+    #saveApiKeyBtn:hover, #checkUpdatesBtn:hover {
       background: var(--gold);
       color: var(--input-bg);
     }
-    #saveApiKeyBtn:disabled {
+    #saveApiKeyBtn:disabled, #checkUpdatesBtn:disabled {
       opacity: 0.5;
       cursor: default;
+    }
+    #checkUpdatesBtn {
+      width: 100%;
     }
     .key-error {
       margin: 8px 0 0;
@@ -137,6 +140,13 @@
     .key-error.visible {
       display: block;
     }
+    #updateCheckStatus {
+      margin: 8px 0 0;
+      font-size: 0.75rem;
+      color: var(--text-faint);
+    }
+    #updateCheckStatus.positive { color: var(--green); }
+    #updateCheckStatus.negative { color: var(--red); }
     .apply-row {
       margin-top: 32px;
       display: flex;
@@ -181,6 +191,12 @@
       <button type="button" id="saveApiKeyBtn">Save</button>
     </div>
     <p id="apiKeyError" class="key-error"></p>
+  </div>
+
+  <div class="setting-group">
+    <label>Updates</label>
+    <button type="button" id="checkUpdatesBtn">Check for Updates</button>
+    <p id="updateCheckStatus"></p>
   </div>
 
   <div class="setting-group">
@@ -235,6 +251,8 @@
     const apiKeyStatus = document.getElementById('apiKeyStatus');
     const apiKeyError = document.getElementById('apiKeyError');
     const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+    const checkUpdatesBtn = document.getElementById('checkUpdatesBtn');
+    const updateCheckStatus = document.getElementById('updateCheckStatus');
 
     async function refreshApiKeyStatus() {
       try {
@@ -275,6 +293,35 @@
         saveApiKeyBtn.disabled = false;
       }
     });
+
+    function setUpdateCheckStatus(text, kind) {
+      updateCheckStatus.textContent = text;
+      updateCheckStatus.className = kind ? kind : '';
+    }
+
+    checkUpdatesBtn.addEventListener('click', () => {
+      if (!window.ttpSettings) return;
+      checkUpdatesBtn.disabled = true;
+      setUpdateCheckStatus('Checking…', '');
+      window.ttpSettings.checkForUpdatesNow();
+    });
+
+    if (window.ttpSettings && window.ttpSettings.onManualUpdateCheckStatus) {
+      window.ttpSettings.onManualUpdateCheckStatus((status, extra) => {
+        checkUpdatesBtn.disabled = false;
+        if (status === 'checking') {
+          setUpdateCheckStatus('Checking…', '');
+        } else if (status === 'available') {
+          setUpdateCheckStatus('Update found - downloading in the background…', 'positive');
+        } else if (status === 'not-available') {
+          setUpdateCheckStatus('You are up to date.', 'positive');
+        } else if (status === 'dev-mode') {
+          setUpdateCheckStatus('Not available in dev mode.', '');
+        } else if (status === 'error') {
+          setUpdateCheckStatus(`Check failed: ${extra || 'unknown error'}`, 'negative');
+        }
+      });
+    }
 
     let screenWidth = 1920;
     let screenHeight = 1080;
