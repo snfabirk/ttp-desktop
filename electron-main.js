@@ -58,7 +58,11 @@ function createTray() {
 
 ipcMain.on('app-quit', () => { app.isQuitting = true; app.quit(); });
 
-ipcMain.handle('get-start-with-windows', () => app.getLoginItemSettings().openAtLogin);
+// Muss mit denselben args geprueft werden, mit denen weiter unten
+// registriert wird (--hidden) - sonst vergleicht Electron gegen die
+// Standard-Args ([]) und findet den tatsaechlich registrierten Eintrag
+// nie, selbst wenn "Start with Windows" laengst aktiv ist.
+ipcMain.handle('get-start-with-windows', () => app.getLoginItemSettings({ args: ['--hidden'] }).openAtLogin);
 
 ipcMain.on('set-start-with-windows', (event, enabled) => {
   // --hidden sorgt dafuer, dass die App bei einem per Autostart ausgeloesten
