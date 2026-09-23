@@ -15,8 +15,31 @@ let settingsWin = null;
 let mainWin = null;
 let serverPort = null;
 
+// Aktueller Update-Stand, unabhaengig davon ob das Update-Fenster gerade
+// offen ist - wird gebraucht, damit (a) das kleine Update-Symbol im
+// Hauptfenster den richtigen Zustand zeigt, auch nach einer Seiten-
+// navigation (index.html <-> overview.html, frisch geladenes DOM/Skript),
+// und (b) ein neu geoeffnetes Update-Fenster sofort den richtigen Stand
+// zeigt statt bei 0% neu zu starten.
+let updateState = 'none'; // 'none' | 'available' | 'downloading' | 'downloaded'
+let updateProgressPercent = 0;
+
+function notifyMainWindowUpdateStatus(state) {
+  if (mainWin && !mainWin.isDestroyed()) {
+    mainWin.webContents.send('main-update-status', state);
+  }
+}
+
+function pushCurrentStateToUpdateWindow(win) {
+  if (updateState === 'available' || updateState === 'downloading') {
+    win.webContents.send('update-status', 'downloading', { percent: updateProgressPercent });
+  } else if (updateState === 'downloaded') {
+    win.webContents.send('update-status', 'ready');
+  }
+}
+
 function showUpdateWindow() {
-  if (updateWin) return updateWin;
+  if (updateWin) { updateWin.focus(); return updateWin; }
   updateWin = new BrowserWindow({
     width: 380,
     height: 230,
@@ -35,6 +58,7 @@ function showUpdateWindow() {
     }
   });
   updateWin.once('ready-to-show', () => updateWin.show());
+  updateWin.webContents.once('did-finish-load', () => pushCurrentStateToUpdateWindow(updateWin));
   // Ueber den lokalen Server (nicht loadFile) geladen, damit die Seite
   // dieselbe Origin wie das Hauptfenster hat und sich so das gewaehlte
   // Farbtheme (localStorage + theme.js) automatisch mit teilt/synchronisiert.
@@ -45,6 +69,11 @@ function showUpdateWindow() {
 
 ipcMain.on('update-restart-now', () => autoUpdater.quitAndInstall());
 ipcMain.on('update-later', () => { if (updateWin) updateWin.close(); });
+// Das kleine Update-Symbol im Hauptfenster oeffnet das eigentliche
+// Update-Fenster erst bei Klick - siehe autoUpdater-Events weiter unten,
+// die das Fenster nicht mehr automatisch aufreissen.
+ipcMain.on('open-update-window', () => showUpdateWindow());
+ipcMain.handle('get-update-state', () => updateState);
 
 function showSettingsWindow() {
   if (settingsWin) { settingsWin.focus(); return settingsWin; }
@@ -103,20 +132,26 @@ ipcMain.on('restore-window-focus', (event) => {
   }
 });
 
+// Kein automatisches Aufreissen des Update-Fensters mehr (war bei einem im
+// Hintergrund laufenden periodischen Check zu aufdringlich) - stattdessen
+// nur ein kleines Symbol im Hauptfenster (siehe public/update-indicator.js),
+// das der Nutzer anklicken kann, wann es ihm passt. Heruntergeladen wird
+// trotzdem sofort im Hintergrund (autoDownload = true oben).
 autoUpdater.on('update-available', () => {
-  const win = showUpdateWindow();
-  win.webContents.once('did-finish-load', () => {
-    win.webContents.send('update-status', 'downloading', { percent: 0 });
-  });
+  updateState = 'available';
+  notifyMainWindowUpdateStatus('available');
 });
 
 autoUpdater.on('download-progress', (progress) => {
+  updateState = 'downloading';
+  updateProgressPercent = progress.percent;
   if (updateWin) updateWin.webContents.send('update-status', 'downloading', { percent: progress.percent });
 });
 
 autoUpdater.on('update-downloaded', () => {
-  const win = showUpdateWindow();
-  win.webContents.send('update-status', 'ready');
+  updateState = 'downloaded';
+  notifyMainWindowUpdateStatus('downloaded');
+  if (updateWin) updateWin.webContents.send('update-status', 'ready');
 });
 
 autoUpdater.on('error', (err) => {
@@ -131,6 +166,18 @@ function checkForUpdates() {
   autoUpdater.checkForUpdates().catch(err => {
     console.error('Auto-update check failed:', err.message);
   });
+}
+
+// Zusaetzlich zum Check beim Start: alle paar Stunden erneut pruefen, damit
+// ein Update auch bemerkt wird, wenn die App tagelang durchlaeuft (PC nur im
+// Standby statt neu gestartet). Kein sekuendliches/minuetliches Pollen -
+// und sobald einmal ein Update bekannt ist, wird nicht weiter nachgefragt
+// (bis zum naechsten echten App-Neustart), da sich der Stand bis zum
+// Neustart/Installieren ohnehin nicht mehr aendert.
+const PERIODIC_UPDATE_CHECK_MS = 4 * 60 * 60 * 1000; // alle 4 Stunden
+function periodicCheckForUpdates() {
+  if (updateState !== 'none') return;
+  checkForUpdates();
 }
 
 function createWindow(port) {
@@ -205,6 +252,7 @@ app.whenReady().then(() => {
     // vorhandenes Update-Fenster nie das allererste sichtbare Fenster des
     // Prozesses ist.
     win.webContents.once('did-finish-load', () => checkForUpdates());
+    setInterval(periodicCheckForUpdates, PERIODIC_UPDATE_CHECK_MS);
   });
 
   app.on('activate', () => {
