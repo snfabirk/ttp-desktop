@@ -442,16 +442,14 @@
     }
     .account-overview-wrap {
       box-sizing: border-box;
-      padding: 6px 30px 28px;
+      padding: 0 0 24px;
     }
     .account-overview-card {
       background: var(--panel-bg);
       border: 1px solid var(--border);
       border-radius: 6px;
       padding: 18px 24px;
-      margin: 0 auto;
       box-sizing: border-box;
-      max-width: 700px;
       text-align: center;
     }
     .account-overview-header {
@@ -833,45 +831,85 @@
     <nav class="site-nav"><a href="index.html">← Champion Selection</a></nav>
   </header>
 
-  <div class="account-overview-wrap">
-    <div class="account-overview-card" id="accountOverviewCard">
-      <div class="account-overview-header">
-        <div class="account-overview-icon-wrap">
-          <img id="accountOverviewIcon" class="account-overview-icon" src="" alt="">
-        </div>
-        <div class="account-overview-titles">
-          <span class="account-overview-name" id="accountOverviewName">No summoner loaded yet</span>
-          <span class="info-icon" id="accountOverviewNoteIcon" tabindex="0" hidden>ⓘ</span>
-        </div>
-      </div>
-      <div class="account-overview-stats">
-        <div class="stat-block">
-          <span class="value" id="accountWL">–</span>
-          <span class="label">Solo/Duo W / L</span>
-        </div>
-        <div class="stat-block">
-          <span class="value" id="accountRank">–</span>
-          <span class="label">Current Rank</span>
-        </div>
-        <div class="stat-block">
-          <span class="value" id="accountLpDelta">–</span>
-          <span class="label" id="accountLpDeltaLabel">LP since date</span>
-        </div>
-        <div class="stat-block">
-          <span class="value" id="accountStreak">–</span>
-          <span class="label" id="accountStreakLabel">Current Streak</span>
-        </div>
-        <div class="stat-block" id="overviewChallengeTimerBlock" style="display:none;">
-          <span class="value" id="overviewChallengeTimer">-</span>
-          <span class="label">Challenge Timer</span>
-        </div>
-      </div>
-      <div class="account-overview-graph" id="accountLpGraph"></div>
-    </div>
-  </div>
-
   <div class="split-layout">
   <div class="split-left">
+  <div class="content">
+    <div class="account-overview-wrap">
+      <div class="account-overview-card" id="accountOverviewCard">
+        <div class="account-overview-header">
+          <div class="account-overview-icon-wrap">
+            <img id="accountOverviewIcon" class="account-overview-icon" src="" alt="">
+          </div>
+          <div class="account-overview-titles">
+            <span class="account-overview-name" id="accountOverviewName">No summoner loaded yet</span>
+            <span class="info-icon" id="accountOverviewNoteIcon" tabindex="0" hidden>ⓘ</span>
+          </div>
+        </div>
+        <div class="account-overview-stats">
+          <div class="stat-block">
+            <span class="value" id="accountWL">–</span>
+            <span class="label">Solo/Duo W / L</span>
+          </div>
+          <div class="stat-block">
+            <span class="value" id="accountRank">–</span>
+            <span class="label">Current Rank</span>
+          </div>
+          <div class="stat-block">
+            <span class="value" id="accountLpDelta">–</span>
+            <span class="label" id="accountLpDeltaLabel">LP since date</span>
+          </div>
+          <div class="stat-block">
+            <span class="value" id="accountStreak">–</span>
+            <span class="label" id="accountStreakLabel">Current Streak</span>
+          </div>
+          <div class="stat-block" id="overviewChallengeTimerBlock" style="display:none;">
+            <span class="value" id="overviewChallengeTimer">-</span>
+            <span class="label">Challenge Timer</span>
+          </div>
+        </div>
+        <div class="account-overview-graph" id="accountLpGraph"></div>
+      </div>
+    </div>
+
+    <h2 class="panel-heading">Opponent Analysis</h2>
+    <p class="panel-sub">
+      Choose an opposing champion to see how often and how successfully you've
+      played against them with your 3 champions so far.
+    </p>
+
+    <div class="filter-bar">
+      <div class="filter-field" style="flex:1; min-width:200px; position:relative;">
+        <label for="enemySearch">Search Champion</label>
+        <input type="text" id="enemySearch" placeholder="e.g. C for Caitlyn, Camille, …" autocomplete="off">
+        <div id="enemySuggestions" class="suggestion-list" hidden></div>
+      </div>
+      <div class="filter-field" style="flex:1; min-width:200px;">
+        <label for="enemySelect">Select Opponent</label>
+        <select id="enemySelect">
+          <option value="">-- Select Champion --</option>
+        </select>
+      </div>
+    </div>
+
+    <p class="status-msg" id="enemyStatusMsg"></p>
+
+    <div id="enemyResultSection" style="display:none;">
+      <div class="enemy-header">
+        <img id="enemyImg" src="" alt="">
+        <span id="enemyName"></span>
+        <select id="enemyStatMode">
+          <option value="game">Game WR</option>
+          <option value="lane">Lane WR</option>
+        </select>
+      </div>
+      <div class="enemy-result-list" id="enemyResultList"></div>
+    </div>
+  </div>
+  </div>
+
+  <div class="split-divider"></div>
+
+  <div class="split-right">
   <div class="content">
     <div class="otp-row-wrap">
       <div class="otp-row" id="otpRow"></div>
@@ -931,46 +969,6 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
-  </div>
-
-  <div class="split-divider"></div>
-
-  <div class="split-right">
-  <div class="content">
-    <h2 class="panel-heading">Opponent Analysis</h2>
-    <p class="panel-sub">
-      Choose an opposing champion to see how often and how successfully you've
-      played against them with your 3 champions so far.
-    </p>
-
-    <div class="filter-bar">
-      <div class="filter-field" style="flex:1; min-width:200px; position:relative;">
-        <label for="enemySearch">Search Champion</label>
-        <input type="text" id="enemySearch" placeholder="e.g. C for Caitlyn, Camille, …" autocomplete="off">
-        <div id="enemySuggestions" class="suggestion-list" hidden></div>
-      </div>
-      <div class="filter-field" style="flex:1; min-width:200px;">
-        <label for="enemySelect">Select Opponent</label>
-        <select id="enemySelect">
-          <option value="">-- Select Champion --</option>
-        </select>
-      </div>
-    </div>
-
-    <p class="status-msg" id="enemyStatusMsg"></p>
-
-    <div id="enemyResultSection" style="display:none;">
-      <div class="enemy-header">
-        <img id="enemyImg" src="" alt="">
-        <span id="enemyName"></span>
-        <select id="enemyStatMode">
-          <option value="game">Game WR</option>
-          <option value="lane">Lane WR</option>
-        </select>
-      </div>
-      <div class="enemy-result-list" id="enemyResultList"></div>
     </div>
   </div>
   </div>
