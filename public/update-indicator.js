@@ -19,7 +19,6 @@
     function applyState(state) {
       const visible = state === 'available' || state === 'downloaded';
       btn.classList.toggle('visible', visible);
-      btn.classList.toggle('ready', state === 'downloaded');
     }
 
     if (!window.ttpMain) return;

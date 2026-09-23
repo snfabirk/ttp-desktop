@@ -9,5 +9,10 @@ contextBridge.exposeInMainWorld('ttpSettings', {
     ipcRenderer.on('manual-update-check-status', (event, status, extra) => callback(status, extra));
   },
   getStartWithWindows: () => ipcRenderer.invoke('get-start-with-windows'),
-  setStartWithWindows: (enabled) => ipcRenderer.send('set-start-with-windows', enabled)
+  setStartWithWindows: (enabled) => ipcRenderer.send('set-start-with-windows', enabled),
+  getUpdateState: () => ipcRenderer.invoke('get-update-state'),
+  onUpdateStatus: (callback) => {
+    ipcRenderer.on('main-update-status', (event, state) => callback(state));
+  },
+  openUpdateWindow: () => ipcRenderer.send('open-update-window')
 });

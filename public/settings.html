@@ -151,6 +151,15 @@
       opacity: 0.5;
       cursor: default;
     }
+    /* Wenn ein Update bekannt ist, wird aus "Check for Updates" ein
+       "Update Now" - gleicher Rahmen/Look, nur die Schrift wird gruen,
+       damit sofort auffaellt dass eine Aktion wartet. */
+    #checkUpdatesBtn.update-now {
+      color: var(--green);
+    }
+    #checkUpdatesBtn.update-now:hover {
+      color: var(--input-bg);
+    }
     #checkUpdatesBtn {
       width: 100%;
     }
@@ -347,8 +356,22 @@
       updateCheckStatus.className = kind ? kind : '';
     }
 
+    // Sobald irgendwo (Start-Check, periodischer 4h-Check, manueller Klick)
+    // ein Update bekannt wird, wird aus "Check for Updates" ein "Update Now" -
+    // ein erneutes Pruefen waere dann ja sinnlos, stattdessen oeffnet ein
+    // Klick direkt das Update-Fenster.
+    function applyKnownUpdateState(state) {
+      const hasUpdate = state === 'available' || state === 'downloading' || state === 'downloaded';
+      checkUpdatesBtn.classList.toggle('update-now', hasUpdate);
+      checkUpdatesBtn.textContent = hasUpdate ? 'Update Now' : 'Check for Updates';
+    }
+
     checkUpdatesBtn.addEventListener('click', () => {
       if (!window.ttpSettings) return;
+      if (checkUpdatesBtn.classList.contains('update-now')) {
+        window.ttpSettings.openUpdateWindow();
+        return;
+      }
       checkUpdatesBtn.disabled = true;
       setUpdateCheckStatus('Checking…', '');
       window.ttpSettings.checkForUpdatesNow();
@@ -361,6 +384,7 @@
           setUpdateCheckStatus('Checking…', '');
         } else if (status === 'available') {
           setUpdateCheckStatus('Update found - downloading in the background…', 'positive');
+          applyKnownUpdateState('available');
         } else if (status === 'not-available') {
           setUpdateCheckStatus('You are up to date.', 'positive');
         } else if (status === 'dev-mode') {
@@ -369,6 +393,10 @@
           setUpdateCheckStatus(`Check failed: ${extra || 'unknown error'}`, 'negative');
         }
       });
+    }
+
+    if (window.ttpSettings && window.ttpSettings.onUpdateStatus) {
+      window.ttpSettings.onUpdateStatus(applyKnownUpdateState);
     }
 
     let screenWidth = 1920;
@@ -453,6 +481,10 @@
 
       if (window.ttpSettings) {
         startWithWindowsCheckbox.checked = await window.ttpSettings.getStartWithWindows();
+
+        if (window.ttpSettings.getUpdateState) {
+          applyKnownUpdateState(await window.ttpSettings.getUpdateState());
+        }
 
         const info = await window.ttpSettings.getWindowInfo();
         screenWidth = info.screenWidth;

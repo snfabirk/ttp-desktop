@@ -80,6 +80,12 @@ function notifyMainWindowUpdateStatus(state) {
   if (mainWin && !mainWin.isDestroyed()) {
     mainWin.webContents.send('main-update-status', state);
   }
+  // Auch das Einstellungsfenster braucht den Stand, damit der "Check for
+  // Updates"-Button dort live zu "Update Now" wechseln kann, sobald ein
+  // Update gefunden wird - unabhaengig davon, wer den Check ausgeloest hat.
+  if (settingsWin && !settingsWin.isDestroyed()) {
+    settingsWin.webContents.send('main-update-status', state);
+  }
 }
 
 function pushCurrentStateToUpdateWindow(win) {
