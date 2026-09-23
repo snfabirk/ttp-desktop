@@ -680,6 +680,15 @@
       setChecklistItem(checklistSummoner, summonerOk);
       setChecklistItem(checklistChamps, champsOk);
       setChecklistItem(checklistRoles, rolesOk);
+
+      // Die Checkliste waere wirkungslos, wenn man auch ohne alle 3 Punkte
+      // starten koennte - deshalb bleibt Start Challenge gesperrt, bis
+      // Summoner, Champions UND Rollen vollstaendig gesetzt sind. Nur
+      // relevant, solange noch keine Challenge laeuft (danach ist der
+      // Button ohnehin ausgeblendet).
+      if (!isChallengeLocked()) {
+        startChallengeBtn.disabled = !(summonerOk && champsOk && rolesOk);
+      }
     }
 
     function championIconUrl(id) {
@@ -841,6 +850,11 @@
       // ueberhaupt einen zu waehlen.
       if (selectedChamps.length === 0) {
         challengeStartError.textContent = 'Select at least 1 champion before starting the challenge.';
+        challengeStartError.classList.add('visible');
+        return;
+      }
+      if (selectedChamps.some(c => !c.role)) {
+        challengeStartError.textContent = 'Assign a role to every selected champion before starting the challenge.';
         challengeStartError.classList.add('visible');
         return;
       }
