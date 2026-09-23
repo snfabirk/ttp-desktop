@@ -173,8 +173,18 @@
     .apply-row {
       margin-top: 32px;
       display: flex;
+      align-items: center;
       justify-content: flex-end;
       gap: 10px;
+    }
+    .apply-confirmed {
+      color: var(--green);
+      font-size: 0.8rem;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .apply-confirmed.visible {
+      opacity: 1;
     }
     .apply-row button {
       border-radius: 4px;
@@ -262,6 +272,7 @@
   </div>
 
   <div class="apply-row">
+    <span id="applyConfirmedText" class="apply-confirmed">Applied ✓</span>
     <button type="button" id="applyBtn">Apply</button>
     <button type="button" id="closeBtn">Close</button>
   </div>
@@ -278,6 +289,7 @@
     const themeSelect = document.getElementById('themeSelect');
     const applyBtn = document.getElementById('applyBtn');
     const closeBtn = document.getElementById('closeBtn');
+    const applyConfirmedText = document.getElementById('applyConfirmedText');
     const apiKeyInput = document.getElementById('apiKeyInput');
     const apiKeyStatus = document.getElementById('apiKeyStatus');
     const apiKeyError = document.getElementById('apiKeyError');
@@ -404,6 +416,8 @@
     // Apply uebernimmt Groesse + Theme sofort, laesst das Fenster aber offen
     // (damit man z.B. mehrere Themes nacheinander durchprobieren kann) -
     // Close ist ein eigener, zweiter Button nur zum Schliessen.
+    let applyConfirmedTimeoutId = null;
+
     applyBtn.addEventListener('click', () => {
       const widthPercent = clamp(Number(widthInput.value) || MIN_PERCENT, MIN_PERCENT, MAX_PERCENT);
       const heightPercent = clamp(Number(heightInput.value) || MIN_PERCENT, MIN_PERCENT, MAX_PERCENT);
@@ -413,6 +427,14 @@
       if (window.ttpSettings) window.ttpSettings.setWindowSize(widthPx, heightPx);
 
       try { localStorage.setItem(THEME_KEY, themeSelect.value); } catch (e) {}
+
+      // Kurze "Applied"-Bestaetigung neben dem Button, damit klar ist, dass
+      // der Klick tatsaechlich etwas bewirkt hat - blendet nach 2s wieder aus.
+      applyConfirmedText.classList.add('visible');
+      if (applyConfirmedTimeoutId) clearTimeout(applyConfirmedTimeoutId);
+      applyConfirmedTimeoutId = setTimeout(() => {
+        applyConfirmedText.classList.remove('visible');
+      }, 2000);
     });
 
     closeBtn.addEventListener('click', () => {
