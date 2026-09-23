@@ -185,15 +185,6 @@
   <h1>Settings</h1>
 
   <div class="setting-group">
-    <label for="apiKeyInput">Riot API Key <span id="apiKeyStatus" class="key-status"></span></label>
-    <div class="key-row">
-      <input type="password" id="apiKeyInput" placeholder="RGAPI-...">
-      <button type="button" id="saveApiKeyBtn">Save</button>
-    </div>
-    <p id="apiKeyError" class="key-error"></p>
-  </div>
-
-  <div class="setting-group">
     <label>Updates</label>
     <button type="button" id="checkUpdatesBtn">Check for Updates</button>
     <p id="updateCheckStatus"></p>
@@ -228,6 +219,15 @@
       <option value="noxus">Noxus (Crimson &amp; Black)</option>
     </select>
     <p class="theme-hint">Preview shows here - click Apply to use it everywhere.</p>
+  </div>
+
+  <div class="setting-group">
+    <label for="apiKeyInput">Riot API Key <span id="apiKeyStatus" class="key-status"></span></label>
+    <div class="key-row">
+      <input type="password" id="apiKeyInput" placeholder="RGAPI-...">
+      <button type="button" id="saveApiKeyBtn">Save</button>
+    </div>
+    <p id="apiKeyError" class="key-error"></p>
   </div>
 
   <div class="apply-row">
