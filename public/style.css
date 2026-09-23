@@ -1,6 +1,8 @@
 :root {
   --bg: #0a1428;
-  --panel-bg: rgba(10, 20, 40, 0.6);
+  --bg-rgb: 10, 20, 40;
+  --panel-bg: rgba(var(--bg-rgb), 0.6);
+  --input-bg: #1e2328;
   --border: #785a28;
   --border-hover: #c8aa6e;
   --gold: #c8aa6e;
@@ -9,6 +11,93 @@
   --text-faint: #6f6a5e;
   --red: #e84057;
   --green: #4caf7d;
+  --scrollbar: #555a60;
+  --scrollbar-hover: #71767c;
+}
+
+/* Graphite - neutrales, klassisches Dark Mode ohne Gold-Branding */
+html[data-theme="graphite"] {
+  --bg: #18181b;
+  --bg-rgb: 24, 24, 27;
+  --input-bg: #26262b;
+  --border: #3f3f46;
+  --border-hover: #a1a1aa;
+  --gold: #b4b8c0;
+  --text: #e4e4e7;
+  --text-dim: #a1a1aa;
+  --text-faint: #6b6b70;
+  --red: #e84057;
+  --green: #4caf7d;
+  --scrollbar: #52525b;
+  --scrollbar-hover: #71717a;
+}
+
+/* Light - warmes Pergament statt reinem Weiss */
+html[data-theme="light"] {
+  --bg: #f4f0e6;
+  --bg-rgb: 244, 240, 230;
+  --input-bg: #ffffff;
+  --border: #c9b892;
+  --border-hover: #8b6914;
+  --gold: #8b6914;
+  --text: #2a2620;
+  --text-dim: #5c5648;
+  --text-faint: #8a8370;
+  --red: #c0392b;
+  --green: #2e7d47;
+  --scrollbar: #c9b892;
+  --scrollbar-hover: #8b6914;
+}
+
+/* Hextech - Riots eigene Cyan/Teal-Metallpalette */
+html[data-theme="hextech"] {
+  --bg: #071a1f;
+  --bg-rgb: 7, 26, 31;
+  --input-bg: #0f2b33;
+  --border: #0e4f57;
+  --border-hover: #0ac8b9;
+  --gold: #0ac8b9;
+  --text: #d4f5f2;
+  --text-dim: #7fb8b3;
+  --text-faint: #4a7975;
+  --red: #ff5c6c;
+  --green: #4ce0a0;
+  --scrollbar: #0e4f57;
+  --scrollbar-hover: #0ac8b9;
+}
+
+/* Arcane - Piltover/Zaun-Violett */
+html[data-theme="arcane"] {
+  --bg: #150d26;
+  --bg-rgb: 21, 13, 38;
+  --input-bg: #23163d;
+  --border: #4a2f7a;
+  --border-hover: #b088ff;
+  --gold: #b088ff;
+  --text: #ead9ff;
+  --text-dim: #a98fd1;
+  --text-faint: #6f5a94;
+  --red: #ff5c8a;
+  --green: #5ce0b0;
+  --scrollbar: #4a2f7a;
+  --scrollbar-hover: #b088ff;
+}
+
+/* Noxus - Kriegsstaat-Rot auf Schwarz */
+html[data-theme="noxus"] {
+  --bg: #170a0a;
+  --bg-rgb: 23, 10, 10;
+  --input-bg: #271010;
+  --border: #6e1f1f;
+  --border-hover: #d1373f;
+  --gold: #d1373f;
+  --text: #f0dede;
+  --text-dim: #b89191;
+  --text-faint: #7a5c5c;
+  --red: #ff5a5a;
+  --green: #4caf7d;
+  --scrollbar: #6e1f1f;
+  --scrollbar-hover: #d1373f;
 }
 
 html, body {
@@ -21,7 +110,7 @@ html, body {
 /* Graue statt weisser Scrollbars, passend zum dunklen Theme */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #555a60 var(--bg);
+  scrollbar-color: var(--scrollbar) var(--bg);
 }
 *::-webkit-scrollbar {
   width: 10px;
@@ -31,11 +120,11 @@ html, body {
   background: var(--bg);
 }
 *::-webkit-scrollbar-thumb {
-  background: #555a60;
+  background: var(--scrollbar);
   border-radius: 5px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: #71767c;
+  background: var(--scrollbar-hover);
 }
 
 .site-header {
@@ -89,4 +178,28 @@ html, body {
 
 .error-msg.visible {
   display: block;
+}
+
+/* Zahnrad-Button oben rechts fuer die Einstellungen - auf allen Seiten gleich */
+.settings-gear-btn {
+  position: fixed;
+  top: 18px;
+  right: 24px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-dim);
+  font-size: 1.1rem;
+  cursor: pointer;
+  z-index: 50;
+  transition: color 0.15s, border-color 0.15s;
+}
+.settings-gear-btn:hover {
+  color: var(--gold);
+  border-color: var(--border-hover);
 }

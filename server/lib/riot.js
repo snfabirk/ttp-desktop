@@ -80,6 +80,18 @@ async function riotFetch(url, apiKey, { priority = false, attempt = 0 } = {}) {
     return riotFetch(url, apiKey, { priority, attempt: attempt + 1 });
   }
 
+  // 401/403 heisst fast immer: Key fehlt, ist falsch getippt, oder ein Riot
+  // Personal Key ist nach 24h abgelaufen - eine klare, umsetzbare Meldung
+  // statt der rohen Riot-Fehlerantwort.
+  if (res.status === 401 || res.status === 403) {
+    const err = new Error(
+      'Your Riot API key is invalid or has expired (Personal Keys expire after 24h). ' +
+      'Enter a fresh one in the "Riot API Key" box.'
+    );
+    err.status = res.status;
+    throw err;
+  }
+
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     const err = new Error(`Riot API error ${res.status} at ${url}: ${body}`);

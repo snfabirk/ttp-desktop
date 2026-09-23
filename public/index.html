@@ -7,6 +7,26 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Spiegel:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+  <script>
+    // Bei App-Start (Electron laedt immer diese Seite zuerst) direkt zur
+    // Overview springen, wenn schon eine Challenge laeuft - statt erst die
+    // (dann ohnehin komplett gelockte) Champion-Auswahl zu zeigen. Der
+    // sessionStorage-Flag sorgt dafuer, dass das NUR beim allerersten Laden
+    // dieses Fenster-Sessions passiert: klickt man spaeter bewusst ueber den
+    // Nav-Link von der Overview-Seite zurueck hierher (z.B. um den API Key
+    // zu erneuern oder die Challenge zurueckzusetzen), wird nicht erneut
+    // weitergeleitet. sessionStorage ist leer bei jedem echten App-Neustart,
+    // aber erhalten bei Navigation innerhalb derselben laufenden Session.
+    try {
+      if (!sessionStorage.getItem('ttp_startup_redirect_done')) {
+        sessionStorage.setItem('ttp_startup_redirect_done', '1');
+        if (localStorage.getItem('ttp_challenge_start')) {
+          location.replace('overview.html');
+        }
+      }
+    } catch (e) {}
+  </script>
   <style>
     body {
       display: flex;
@@ -51,9 +71,9 @@
       box-sizing: border-box;
       width: 100%;
       text-align: center;
-      color: #c8aa6e;
-      background: rgba(10, 20, 40, 0.6);
-      border: 2px solid #785a28;
+      color: var(--gold);
+      background: rgba(var(--bg-rgb), 0.6);
+      border: 2px solid var(--border);
       border-radius: 8px;
       padding: 20px;
       font-family: 'Cinzel', Georgia, serif;
@@ -64,19 +84,19 @@
       transition: border-color 0.15s, background 0.15s;
     }
     .big-nav-btn:hover {
-      border-color: #c8aa6e;
+      border-color: var(--gold);
       background: rgba(200, 170, 110, 0.12);
     }
     .champ-picker, .api-key-box {
       box-sizing: border-box;
-      background: rgba(10, 20, 40, 0.6);
-      border: 1px solid #785a28;
+      background: rgba(var(--bg-rgb), 0.6);
+      border: 1px solid var(--border);
       border-radius: 6px;
       padding: 24px;
     }
     .api-key-box label {
       display: block;
-      color: #c8aa6e;
+      color: var(--gold);
       font-family: 'Cinzel', Georgia, serif;
       font-size: 1.1rem;
       letter-spacing: 1px;
@@ -87,15 +107,15 @@
       text-transform: none;
       letter-spacing: normal;
       font-size: 0.85rem;
-      color: #a09b8c;
+      color: var(--text-dim);
     }
     .api-key-box input {
       width: 100%;
       box-sizing: border-box;
       padding: 10px 14px;
-      background: #1e2328;
-      color: #f0e6d2;
-      border: 1px solid #785a28;
+      background: var(--input-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
       border-radius: 4px;
       font-size: 1rem;
       font-family: Georgia, serif;
@@ -104,60 +124,43 @@
     }
     .api-key-box input:focus {
       outline: none;
-      border-color: #c8aa6e;
+      border-color: var(--gold);
     }
-    .api-key-box .sub-label {
-      font-size: 0.8rem;
-      margin: 4px 0 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+    .challenge-timer {
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 1.4rem;
+      color: var(--gold);
+      letter-spacing: 0.5px;
+      margin: 4px 0 14px;
     }
-    .info-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 15px;
-      height: 15px;
-      border-radius: 50%;
-      border: 1px solid #785a28;
-      color: #a09b8c;
-      font-size: 0.7rem;
-      line-height: 1;
-      cursor: help;
-    }
-    .info-icon:hover, .info-icon:focus {
-      border-color: #c8aa6e;
-      color: #c8aa6e;
-      outline: none;
-    }
-    .rank-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    .rank-row select, .rank-row input {
-      box-sizing: border-box;
-      padding: 9px 10px;
-      background: #1e2328;
-      color: #f0e6d2;
-      border: 1px solid #785a28;
-      border-radius: 4px;
+    .challenge-started-at {
+      margin: 0 0 4px;
       font-size: 0.9rem;
+      color: var(--text-dim);
+    }
+    .challenge-rank-row {
+      margin: 0 0 16px;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    .api-key-box button.reset-challenge-link {
+      background: none;
+      border: none;
+      color: var(--text-faint);
       font-family: Georgia, serif;
-      color-scheme: dark;
+      font-size: 0.75rem;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 0;
     }
-    .rank-row select:focus, .rank-row input:focus {
-      outline: none;
-      border-color: #c8aa6e;
+    .api-key-box button.reset-challenge-link:hover {
+      color: var(--red);
+      background: none;
     }
-    #rankTierSelect { flex: 2; min-width: 0; }
-    #rankDivisionSelect { flex: 1; min-width: 0; }
-    #rankLpInput { flex: 1; min-width: 0; }
     .api-key-box button {
       background: none;
-      border: 1px solid #c8aa6e;
-      color: #c8aa6e;
+      border: 1px solid var(--gold);
+      color: var(--gold);
       border-radius: 4px;
       padding: 9px 20px;
       font-family: 'Cinzel', Georgia, serif;
@@ -166,8 +169,8 @@
       cursor: pointer;
     }
     .api-key-box button:hover {
-      background: #c8aa6e;
-      color: #1e2328;
+      background: var(--gold);
+      color: var(--input-bg);
     }
     .api-key-box button:disabled {
       opacity: 0.5;
@@ -175,7 +178,7 @@
     }
     .champ-picker label {
       display: block;
-      color: #c8aa6e;
+      color: var(--gold);
       font-family: 'Cinzel', Georgia, serif;
       font-size: 1.1rem;
       letter-spacing: 1px;
@@ -185,9 +188,9 @@
       width: 100%;
       box-sizing: border-box;
       padding: 10px 14px;
-      background: #1e2328;
-      color: #f0e6d2;
-      border: 1px solid #785a28;
+      background: var(--input-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
       border-radius: 4px;
       font-size: 1rem;
       font-family: Georgia, serif;
@@ -197,7 +200,7 @@
     }
     #champSelect:focus, #champSearchInput:focus {
       outline: none;
-      border-color: #c8aa6e;
+      border-color: var(--gold);
     }
     .suggestion-list {
       position: absolute;
@@ -205,8 +208,8 @@
       left: 0;
       right: 0;
       margin-top: 4px;
-      background: #1e2328;
-      border: 1px solid #785a28;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
       border-radius: 4px;
       max-height: 240px;
       overflow-y: auto;
@@ -219,7 +222,7 @@
       gap: 10px;
       padding: 8px 12px;
       cursor: pointer;
-      color: #f0e6d2;
+      color: var(--text);
       font-family: Georgia, serif;
       font-size: 0.9rem;
     }
@@ -227,7 +230,7 @@
       width: 24px;
       height: 24px;
       border-radius: 3px;
-      border: 1px solid #785a28;
+      border: 1px solid var(--border);
     }
     .suggestion-item:hover,
     .suggestion-item.highlighted {
@@ -235,7 +238,7 @@
     }
     .suggestion-empty {
       padding: 8px 12px;
-      color: #6f6a5e;
+      color: var(--text-faint);
       font-size: 0.85rem;
       font-style: italic;
     }
@@ -249,12 +252,12 @@
     #champPreview img {
       width: 64px;
       height: 64px;
-      border: 2px solid #c8aa6e;
+      border: 2px solid var(--gold);
       border-radius: 4px;
       display: none;
     }
     #champPreview span {
-      color: #f0e6d2;
+      color: var(--text);
       font-family: 'Cinzel', Georgia, serif;
       font-size: 1.4rem;
       letter-spacing: 1px;
@@ -264,21 +267,21 @@
       display: flex;
       align-items: center;
       gap: 16px;
-      background: rgba(10, 20, 40, 0.6);
-      border: 1px solid #785a28;
+      background: rgba(var(--bg-rgb), 0.6);
+      border: 1px solid var(--border);
       border-radius: 6px;
       padding: 12px 44px 12px 16px;
       margin-bottom: 10px;
       min-height: 48px;
     }
     .champ-card.placeholder {
-      background: rgba(10, 20, 40, 0.25);
-      border: 1px dashed #4a4530;
+      background: rgba(var(--bg-rgb), 0.25);
+      border: 1px dashed var(--border);
     }
     .champ-card img {
       width: 48px;
       height: 48px;
-      border: 2px solid #c8aa6e;
+      border: 2px solid var(--gold);
       border-radius: 4px;
     }
     .champ-card-info {
@@ -289,7 +292,7 @@
       min-width: 0;
     }
     .champ-card span {
-      color: #f0e6d2;
+      color: var(--text);
       font-family: 'Cinzel', Georgia, serif;
       font-size: 1.1rem;
       letter-spacing: 1px;
@@ -298,9 +301,9 @@
       width: fit-content;
       box-sizing: border-box;
       padding: 3px 8px;
-      background: #1e2328;
-      color: #a09b8c;
-      border: 1px solid #785a28;
+      background: var(--input-bg);
+      color: var(--text-dim);
+      border: 1px solid var(--border);
       border-radius: 4px;
       font-size: 0.75rem;
       font-family: Georgia, serif;
@@ -312,7 +315,7 @@
       right: 10px;
       background: none;
       border: none;
-      color: #c8aa6e;
+      color: var(--gold);
       font-size: 1.1rem;
       line-height: 1;
       cursor: pointer;
@@ -320,11 +323,12 @@
       font-family: Georgia, serif;
     }
     .champ-card .remove-btn:hover {
-      color: #f0e6d2;
+      color: var(--text);
     }
   </style>
 </head>
 <body>
+  <button type="button" class="settings-gear-btn" id="settingsGearBtn" title="Settings" aria-label="Settings">⚙</button>
   <header class="site-header">
     <h1>League of Legends</h1>
     <p class="subtitle">Three-Trick-Pony</p>
@@ -332,41 +336,21 @@
 
   <div class="content">
   <div class="api-key-box" id="summonerDateBox">
-    <label>Summoner &amp; Date Range</label>
+    <label>Summoner &amp; Challenge</label>
     <input type="text" id="summonerInput" placeholder="Luckshot#796" value="Luckshot#796">
 
-    <label for="rankTierSelect" class="sub-label">
-      <span id="rankDateLabelText">Rank on Start Date</span>
-      <span class="info-icon" tabindex="0"
-        title="Only needed for the LP-change tracking on the Overview page. Enter the rank/LP you had ON THE DATE BELOW (not necessarily your rank right now) so the LP delta shown there is accurate right away instead of an estimate.">ⓘ</span>
-    </label>
-    <div class="rank-row">
-      <select id="rankTierSelect">
-        <option value="">Unranked / skip</option>
-        <option value="IRON">Iron</option>
-        <option value="BRONZE">Bronze</option>
-        <option value="SILVER">Silver</option>
-        <option value="GOLD">Gold</option>
-        <option value="PLATINUM">Platinum</option>
-        <option value="EMERALD">Emerald</option>
-        <option value="DIAMOND">Diamond</option>
-        <option value="MASTER">Master</option>
-        <option value="GRANDMASTER">Grandmaster</option>
-        <option value="CHALLENGER">Challenger</option>
-      </select>
-      <select id="rankDivisionSelect">
-        <option value="IV">IV</option>
-        <option value="III">III</option>
-        <option value="II">II</option>
-        <option value="I">I</option>
-      </select>
-      <input type="number" id="rankLpInput" placeholder="LP" min="0" max="2000">
+    <div class="challenge-rank-row" id="challengeRankRow">Loading current rank…</div>
+
+    <div id="challengeNotStarted">
+      <button type="button" id="startChallengeBtn">Start Challenge</button>
+      <p id="challengeStartError" class="error-msg"></p>
     </div>
 
-    <input type="date" id="sinceInput" style="margin-top:12px;">
-    <p style="font-size:0.7rem; color:#6f6a5e; margin:10px 0 0;">
-      Note: Riot's public API reliably returns only about the last 6 months of ranked matches, even with an earlier date.
-    </p>
+    <div id="challengeStarted" style="display:none;">
+      <p class="challenge-started-at" id="challengeStartedAt"></p>
+      <div class="challenge-timer" id="challengeTimer">-</div>
+      <button type="button" id="resetChallengeBtn" class="reset-challenge-link">Reset Challenge</button>
+    </div>
   </div>
 
   <div class="api-key-box" id="riotKeyBox">
@@ -377,6 +361,9 @@
 
   <div class="champ-picker">
     <label for="champSelect">Select Champion Pool</label>
+    <p id="champPickerLockedNote" style="font-size:0.75rem; color:var(--text-faint); margin:0 0 12px; display:none;">
+      Champions are locked for this challenge. Reset the challenge on the left to change your pool.
+    </p>
     <div style="position:relative; margin-bottom:12px;">
       <input type="text" id="champSearchInput" placeholder="e.g. C for Caitlyn, Camille, …" autocomplete="off">
       <div id="champSuggestions" class="suggestion-list" hidden></div>
@@ -576,18 +563,18 @@
     const DDRAGON_VERSION = '16.17.1';
     const MAX_CHAMPS = 3;
     const STORAGE_KEY = 'ttp_selected_champs';
-    const STORAGE_KEY_SINCE = 'ttp_since_date';
     const STORAGE_KEY_SUMMONER = 'ttp_summoner_name';
-    const STORAGE_KEY_RANK_TIER = 'ttp_rank_tier';
-    const STORAGE_KEY_RANK_DIVISION = 'ttp_rank_division';
-    const STORAGE_KEY_RANK_LP = 'ttp_rank_lp';
-    const APEX_TIERS = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
+    const STORAGE_KEY_CHALLENGE_START = 'ttp_challenge_start';
     const summonerInput = document.getElementById('summonerInput');
-    const sinceInput = document.getElementById('sinceInput');
-    const rankTierSelect = document.getElementById('rankTierSelect');
-    const rankDivisionSelect = document.getElementById('rankDivisionSelect');
-    const rankLpInput = document.getElementById('rankLpInput');
-    const rankDateLabelText = document.getElementById('rankDateLabelText');
+    const challengeNotStarted = document.getElementById('challengeNotStarted');
+    const challengeStarted = document.getElementById('challengeStarted');
+    const startChallengeBtn = document.getElementById('startChallengeBtn');
+    const resetChallengeBtn = document.getElementById('resetChallengeBtn');
+    const challengeStartError = document.getElementById('challengeStartError');
+    const challengeStartedAt = document.getElementById('challengeStartedAt');
+    const challengeTimer = document.getElementById('challengeTimer');
+    const challengeRankRow = document.getElementById('challengeRankRow');
+    const settingsGearBtn = document.getElementById('settingsGearBtn');
     const select = document.getElementById('champSelect');
     const icon = document.getElementById('champIcon');
     const nameLabel = document.getElementById('champName');
@@ -599,6 +586,7 @@
     const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
     const champSearchInput = document.getElementById('champSearchInput');
     const champSuggestions = document.getElementById('champSuggestions');
+    const champPickerLockedNote = document.getElementById('champPickerLockedNote');
     let selectedChamps = [];
     let allChampions = [];
     let championKeyById = {};
@@ -686,26 +674,15 @@
       return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${id}.png`;
     }
 
-    function defaultSinceDate() {
-      const d = new Date();
-      d.setMonth(d.getMonth() - 1);
-      return d.toISOString().slice(0, 10);
-    }
-
-    function saveSinceDate() {
-      try {
-        localStorage.setItem(STORAGE_KEY_SINCE, sinceInput.value);
-      } catch (e) {
-        // localStorage nicht verfügbar - Datum bleibt nur für diese Sitzung erhalten
+    async function parseApiResponse(res) {
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error(
+          `Server did not return a valid response (status ${res.status}). ` +
+          `Is the server still running? Please check the server terminal window.`
+        );
       }
-    }
-
-    function loadSinceDate() {
-      try {
-        return localStorage.getItem(STORAGE_KEY_SINCE) || defaultSinceDate();
-      } catch (e) {
-        return defaultSinceDate();
-      }
+      return res.json();
     }
 
     function saveSummonerName() {
@@ -724,63 +701,177 @@
       }
     }
 
-    // Division ist bei Master+ bedeutungslos (keine Unterteilung) - dort
-    // ausblenden, damit nicht suggeriert wird, sie waere relevant.
-    function updateRankDivisionVisibility() {
-      const hide = !rankTierSelect.value || APEX_TIERS.has(rankTierSelect.value);
-      rankDivisionSelect.style.display = hide ? 'none' : '';
-    }
-
-    function formatDateEU(isoDate) {
-      const parts = (isoDate || '').split('-');
-      if (parts.length !== 3) return isoDate;
-      const [year, month, day] = parts;
-      return `${day}.${month}.${year}`;
-    }
-
-    // Macht im Label unmissverstaendlich klar, dass hier NICHT der aktuelle
-    // Rang gemeint ist, sondern der Rang zum unten gewaehlten Datum - der
-    // kann ja laengst ein anderer sein als der jetzige.
-    function updateRankDateLabel() {
-      rankDateLabelText.textContent = sinceInput.value
-        ? `Rank on ${formatDateEU(sinceInput.value)}`
-        : 'Rank on Start Date';
-    }
-
-    function saveManualRank() {
+    function saveChallengeStart(iso) {
       try {
-        localStorage.setItem(STORAGE_KEY_RANK_TIER, rankTierSelect.value);
-        localStorage.setItem(STORAGE_KEY_RANK_DIVISION, rankDivisionSelect.value);
-        localStorage.setItem(STORAGE_KEY_RANK_LP, rankLpInput.value);
+        if (iso) localStorage.setItem(STORAGE_KEY_CHALLENGE_START, iso);
+        else localStorage.removeItem(STORAGE_KEY_CHALLENGE_START);
       } catch (e) {
-        // localStorage nicht verfügbar - Wert bleibt nur für diese Sitzung erhalten
+        // localStorage nicht verfügbar - Challenge-Start bleibt nur für diese Sitzung erhalten
       }
     }
 
-    function loadManualRank() {
+    function loadChallengeStart() {
       try {
-        return {
-          tier: localStorage.getItem(STORAGE_KEY_RANK_TIER) || '',
-          rank: localStorage.getItem(STORAGE_KEY_RANK_DIVISION) || 'IV',
-          leaguePoints: localStorage.getItem(STORAGE_KEY_RANK_LP) || ''
-        };
+        return localStorage.getItem(STORAGE_KEY_CHALLENGE_START) || '';
       } catch (e) {
-        return { tier: '', rank: 'IV', leaguePoints: '' };
+        return '';
       }
     }
 
-    rankTierSelect.addEventListener('change', () => {
-      updateRankDivisionVisibility();
-      saveManualRank();
-    });
-    rankDivisionSelect.addEventListener('change', saveManualRank);
-    rankLpInput.addEventListener('change', saveManualRank);
-    rankLpInput.addEventListener('input', saveManualRank);
+    function formatDateTimeEU(iso) {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      const pad = n => String(n).padStart(2, '0');
+      return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
 
-    sinceInput.addEventListener('change', () => {
-      saveSinceDate();
-      updateRankDateLabel();
+    let challengeTimerId = null;
+
+    function startChallengeTimer(startIso) {
+      const startMs = new Date(startIso).getTime();
+      function tick() {
+        const totalSeconds = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+        const days = Math.floor(totalSeconds / 86400);
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        challengeTimer.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+      }
+      tick();
+      if (challengeTimerId) clearInterval(challengeTimerId);
+      challengeTimerId = setInterval(tick, 1000);
+    }
+
+    function stopChallengeTimer() {
+      if (challengeTimerId) {
+        clearInterval(challengeTimerId);
+        challengeTimerId = null;
+      }
+    }
+
+    function formatRankText(current) {
+      if (!current) return 'Unranked or no Solo/Duo entry found.';
+      const apex = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
+      const tierLabel = current.tier.charAt(0) + current.tier.slice(1).toLowerCase();
+      const divisionText = apex.has(current.tier) ? '' : ` ${current.rank}`;
+      return `Current rank: ${tierLabel}${divisionText} - ${current.leaguePoints} LP`;
+    }
+
+    async function refreshCurrentRank(puuid) {
+      challengeRankRow.textContent = 'Loading current rank…';
+      try {
+        const res = await fetch(`/api/current-rank?${new URLSearchParams({ puuid })}`);
+        const data = await parseApiResponse(res);
+        if (!res.ok) throw new Error(data.error || 'Unknown error');
+        challengeRankRow.textContent = formatRankText(data.current);
+      } catch (e) {
+        challengeRankRow.textContent = `Rank unavailable: ${e.message}`;
+      }
+    }
+
+    // Loest Namen#Tag zu einer puuid auf - wird sowohl beim Challenge-Start
+    // als auch beim Aktualisieren des aktuellen Rangs gebraucht.
+    async function resolvePuuid() {
+      const raw = summonerInput.value.trim();
+      const parts = raw.split('#');
+      if (parts.length !== 2 || !parts[0] || !parts[1]) {
+        throw new Error('Please enter your summoner name as Name#Tag first (e.g. Luckshot#796).');
+      }
+      const [gameName, tagLine] = parts;
+      const res = await fetch(`/api/account?${new URLSearchParams({ gameName, tagLine })}`);
+      const data = await parseApiResponse(res);
+      if (!res.ok) throw new Error(data.error || 'Unknown error');
+      return data.puuid;
+    }
+
+    // Der Champion-Pool wird beim Challenge-Start festgelegt und bleibt es
+    // dann fuer die Dauer der Challenge - sonst waere das LP/Rang-Tracking
+    // pro Champion nicht mehr vergleichbar. Erst ein Reset gibt ihn frei.
+    function isChallengeLocked() {
+      return !!loadChallengeStart();
+    }
+
+    function updateChampionLockState() {
+      const locked = isChallengeLocked();
+      champSearchInput.disabled = locked;
+      select.disabled = locked;
+      summonerInput.disabled = locked;
+      champPickerLockedNote.style.display = locked ? '' : 'none';
+      renderSelection();
+    }
+
+    function renderChallengeState() {
+      const startIso = loadChallengeStart();
+      if (startIso) {
+        challengeNotStarted.style.display = 'none';
+        challengeStarted.style.display = '';
+        challengeStartedAt.textContent = `Started ${formatDateTimeEU(startIso)}`;
+        startChallengeTimer(startIso);
+      } else {
+        challengeNotStarted.style.display = '';
+        challengeStarted.style.display = 'none';
+        stopChallengeTimer();
+      }
+      updateChampionLockState();
+      // Aktueller Rang wird immer angezeigt, unabhaengig davon ob schon eine
+      // Challenge laeuft - dafuer braucht es keinen gestarteten Timer.
+      resolvePuuid()
+        .then(puuid => refreshCurrentRank(puuid))
+        .catch(e => { challengeRankRow.textContent = `Rank unavailable: ${e.message}`; });
+    }
+
+    startChallengeBtn.addEventListener('click', async () => {
+      challengeStartError.textContent = '';
+      challengeStartError.classList.remove('visible');
+
+      // Champion-Pool ist nach dem Start gesperrt (siehe isChallengeLocked) -
+      // ohne mindestens 1 Champion vorher gaebe es keine Moeglichkeit mehr,
+      // ueberhaupt einen zu waehlen.
+      if (selectedChamps.length === 0) {
+        challengeStartError.textContent = 'Select at least 1 champion before starting the challenge.';
+        challengeStartError.classList.add('visible');
+        return;
+      }
+
+      startChallengeBtn.disabled = true;
+      startChallengeBtn.textContent = 'Starting…';
+      try {
+        const puuid = await resolvePuuid();
+        const res = await fetch('/api/challenge/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ puuid })
+        });
+        const data = await parseApiResponse(res);
+        if (!res.ok) throw new Error(data.error || 'Unknown error');
+        saveChallengeStart(new Date(data.timestamp).toISOString());
+        renderChallengeState();
+      } catch (e) {
+        challengeStartError.textContent = e.message;
+        challengeStartError.classList.add('visible');
+      } finally {
+        startChallengeBtn.disabled = false;
+        startChallengeBtn.textContent = 'Start Challenge';
+      }
     });
+
+    resetChallengeBtn.addEventListener('click', () => {
+      const ok = confirm('Reset the challenge? This clears the start time and timer (your champion pool and match data stay).');
+      // Electron/Chromium-Eigenheit: nach einem nativen confirm()-Dialog
+      // verliert das Fenster manchmal den echten OS-Tastaturfokus - Dropdowns
+      // wirken dann noch bedienbar, Text-Eingabefelder aber nicht mehr, bis
+      // das Fenster ihn zurueckbekommt. window.focus() im Renderer reicht
+      // dafuer nicht zuverlaessig, daher ueber den Hauptprozess (main-preload.js).
+      if (window.ttpMain) window.ttpMain.restoreFocus();
+      if (!ok) return;
+      saveChallengeStart(null);
+      renderChallengeState();
+    });
+
+    settingsGearBtn.addEventListener('click', () => {
+      if (window.ttpMain) window.ttpMain.openSettings();
+    });
+
     summonerInput.addEventListener('change', saveSummonerName);
     summonerInput.addEventListener('input', saveSummonerName);
 
@@ -811,6 +902,7 @@
 
         const roleSelect = document.createElement('select');
         roleSelect.className = 'role-select';
+        roleSelect.disabled = isChallengeLocked();
         ROLE_OPTIONS.forEach(opt => {
           const option = document.createElement('option');
           option.value = opt.value;
@@ -826,23 +918,28 @@
         info.appendChild(name);
         info.appendChild(roleSelect);
 
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove-btn';
-        removeBtn.textContent = '✕';
-        removeBtn.setAttribute('aria-label', `Remove ${champ.name}`);
-        removeBtn.addEventListener('click', () => {
-          const index = selectedChamps.findIndex(c => c.id === champ.id);
-          if (index !== -1) {
-            selectedChamps.splice(index, 1);
-            hideError();
-            saveSelection();
-            renderSelection();
-          }
-        });
-
         card.appendChild(img);
         card.appendChild(info);
-        card.appendChild(removeBtn);
+
+        // Nach Challenge-Start ist der Champion-Pool fix - kein Entfernen
+        // mehr moeglich (siehe isChallengeLocked()).
+        if (!isChallengeLocked()) {
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-btn';
+          removeBtn.textContent = '✕';
+          removeBtn.setAttribute('aria-label', `Remove ${champ.name}`);
+          removeBtn.addEventListener('click', () => {
+            const index = selectedChamps.findIndex(c => c.id === champ.id);
+            if (index !== -1) {
+              selectedChamps.splice(index, 1);
+              hideError();
+              saveSelection();
+              renderSelection();
+            }
+          });
+          card.appendChild(removeBtn);
+        }
+
         selectionCards.appendChild(card);
       });
 
@@ -868,6 +965,14 @@
 
       if (selectedChamps.some(c => c.id === id)) {
         hideError();
+        return;
+      }
+
+      if (isChallengeLocked()) {
+        showError('Champions are locked for this challenge. Reset the challenge to change your pool.');
+        select.value = '';
+        icon.style.display = 'none';
+        nameLabel.textContent = '';
         return;
       }
 
@@ -965,20 +1070,13 @@
       }
     });
 
-    sinceInput.value = loadSinceDate();
     summonerInput.value = loadSummonerName();
     // sicherstellen, dass der aktuell angezeigte Wert auch wirklich gespeichert
     // ist - sonst bleibt ein unveraenderter Platzhalter-Wert (z.B. der
     // vorausgefuellte Default) nie im localStorage und Seite 2 sieht "leer".
-    saveSinceDate();
     saveSummonerName();
 
-    const savedRank = loadManualRank();
-    rankTierSelect.value = savedRank.tier;
-    rankDivisionSelect.value = savedRank.rank;
-    rankLpInput.value = savedRank.leaguePoints;
-    updateRankDivisionVisibility();
-    updateRankDateLabel();
+    renderChallengeState();
 
     refreshApiKeyStatus();
     loadChampionKeys().then(() => {

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 26px 28px;
+      box-sizing: border-box;
+      color: var(--text);
+    }
+    h1 {
+      font-family: 'Cinzel', Georgia, serif;
+      color: var(--gold);
+      font-size: 1.3rem;
+      letter-spacing: 1px;
+      margin: 0 0 22px;
+    }
+    .setting-group {
+      margin-bottom: 26px;
+    }
+    .setting-group label {
+      display: block;
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+    .size-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .size-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--gold);
+    }
+    .size-row input[type="number"] {
+      width: 60px;
+      box-sizing: border-box;
+      background: var(--input-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 7px 8px;
+      font-family: Georgia, serif;
+      font-size: 0.9rem;
+      color-scheme: dark;
+    }
+    .size-row .percent-sign {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+    }
+    .size-row input[type="number"]:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--border-hover);
+    }
+    select {
+      width: 100%;
+      box-sizing: border-box;
+      background: var(--input-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 9px 10px;
+      font-family: Georgia, serif;
+      font-size: 0.95rem;
+      color-scheme: dark;
+    }
+    .theme-hint {
+      margin: 8px 0 0;
+      font-size: 0.75rem;
+      color: var(--text-faint);
+    }
+    .apply-row {
+      margin-top: 32px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .apply-row button {
+      border-radius: 4px;
+      padding: 9px 26px;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+    #applyBtn {
+      background: none;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+    }
+    #applyBtn:hover {
+      background: var(--gold);
+      color: var(--input-bg);
+    }
+    #closeBtn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+    #closeBtn:hover {
+      border-color: var(--border-hover);
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <h1>Settings</h1>
+
+  <div class="setting-group">
+    <label for="widthInput">Window Width</label>
+    <div class="size-row">
+      <input type="range" id="widthSlider">
+      <input type="number" id="widthInput">
+      <span class="percent-sign">%</span>
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <label for="heightInput">Window Height</label>
+    <div class="size-row">
+      <input type="range" id="heightSlider">
+      <input type="number" id="heightInput">
+      <span class="percent-sign">%</span>
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <label for="themeSelect">Color Theme</label>
+    <select id="themeSelect">
+      <option value="classic">Classic (Blue &amp; Gold)</option>
+      <option value="graphite">Graphite (Dark Gray)</option>
+      <option value="light">Light</option>
+      <option value="hextech">Hextech (Teal)</option>
+      <option value="arcane">Arcane (Purple)</option>
+      <option value="noxus">Noxus (Crimson &amp; Black)</option>
+    </select>
+    <p class="theme-hint">Preview shows here - click Apply to use it everywhere.</p>
+  </div>
+
+  <div class="apply-row">
+    <button type="button" id="applyBtn">Apply</button>
+    <button type="button" id="closeBtn">Close</button>
+  </div>
+
+  <script>
+    const THEME_KEY = 'ttp_theme';
+    const MIN_PERCENT = 30;
+    const MAX_PERCENT = 90;
+
+    const widthSlider = document.getElementById('widthSlider');
+    const widthInput = document.getElementById('widthInput');
+    const heightSlider = document.getElementById('heightSlider');
+    const heightInput = document.getElementById('heightInput');
+    const themeSelect = document.getElementById('themeSelect');
+    const applyBtn = document.getElementById('applyBtn');
+    const closeBtn = document.getElementById('closeBtn');
+
+    let screenWidth = 1920;
+    let screenHeight = 1080;
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    // Groesse wird ausschliesslich als Prozent der Bildschirmarbeitsflaeche
+    // gezeigt/eingegeben (nicht Pixel) - max 90%, denn wer es groesser will
+    // soll stattdessen Vollbild nutzen; min 30%, damit nicht "verschwindend
+    // klein" eingestellt werden kann.
+    [widthSlider, widthInput, heightSlider, heightInput].forEach(el => {
+      el.min = MIN_PERCENT;
+      el.max = MAX_PERCENT;
+      el.step = 1;
+    });
+
+    widthSlider.addEventListener('input', () => { widthInput.value = widthSlider.value; });
+    widthInput.addEventListener('input', () => {
+      const v = clamp(Number(widthInput.value) || MIN_PERCENT, MIN_PERCENT, MAX_PERCENT);
+      widthSlider.value = v;
+    });
+
+    heightSlider.addEventListener('input', () => { heightInput.value = heightSlider.value; });
+    heightInput.addEventListener('input', () => {
+      const v = clamp(Number(heightInput.value) || MIN_PERCENT, MIN_PERCENT, MAX_PERCENT);
+      heightSlider.value = v;
+    });
+
+    // Themewechsel wird direkt in diesem Fenster als Vorschau gezeigt, aber
+    // erst bei Klick auf "Apply" in localStorage geschrieben und damit an
+    // das Hauptfenster synchronisiert - fuehlt sich bewusst wie eine
+    // Einstellung an, die man "anwendet", statt sich still im Hintergrund
+    // zu aendern.
+    themeSelect.addEventListener('change', () => {
+      if (themeSelect.value === 'classic') {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.setAttribute('data-theme', themeSelect.value);
+      }
+    });
+
+    // Apply uebernimmt Groesse + Theme sofort, laesst das Fenster aber offen
+    // (damit man z.B. mehrere Themes nacheinander durchprobieren kann) -
+    // Close ist ein eigener, zweiter Button nur zum Schliessen.
+    applyBtn.addEventListener('click', () => {
+      const widthPercent = clamp(Number(widthInput.value) || MIN_PERCENT, MIN_PERCENT, MAX_PERCENT);
+      const heightPercent = clamp(Number(heightInput.value) || MIN_PERCENT, MIN_PERCENT, MAX_PERCENT);
+      const widthPx = Math.round(screenWidth * widthPercent / 100);
+      const heightPx = Math.round(screenHeight * heightPercent / 100);
+
+      if (window.ttpSettings) window.ttpSettings.setWindowSize(widthPx, heightPx);
+
+      try { localStorage.setItem(THEME_KEY, themeSelect.value); } catch (e) {}
+    });
+
+    closeBtn.addEventListener('click', () => {
+      if (window.ttpSettings) window.ttpSettings.closeWindow();
+      else window.close();
+    });
+
+    (async function init() {
+      try {
+        themeSelect.value = localStorage.getItem(THEME_KEY) || 'classic';
+      } catch (e) {
+        themeSelect.value = 'classic';
+      }
+
+      if (window.ttpSettings) {
+        const info = await window.ttpSettings.getWindowInfo();
+        screenWidth = info.screenWidth;
+        screenHeight = info.screenHeight;
+
+        const widthPercent = clamp(Math.round((info.width / screenWidth) * 100), MIN_PERCENT, MAX_PERCENT);
+        const heightPercent = clamp(Math.round((info.height / screenHeight) * 100), MIN_PERCENT, MAX_PERCENT);
+
+        widthSlider.value = widthPercent;
+        widthInput.value = widthPercent;
+        heightSlider.value = heightPercent;
+        heightInput.value = heightPercent;
+      }
+    })();
+  </script>
+</body>
+</html>

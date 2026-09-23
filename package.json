@@ -1,6 +1,6 @@
 {
   "name": "three-trick-pony-desktop",
-  "version": "1.1.0",
+  "version": "2.7.1",
   "private": true,
   "description": "Desktop-App fuer die Three-Trick-Pony OTP-Uebersicht (Electron-Wrapper um den lokalen Server)",
   "author": "Fabian",
@@ -30,6 +30,10 @@
       "electron-main.js",
       "package.json",
       "build/icon.ico",
+      "build/icon.png",
+      "build/update-preload.js",
+      "build/main-preload.js",
+      "build/settings-preload.js",
       "public/**/*",
       "server/**/*",
       "server/.env.example",

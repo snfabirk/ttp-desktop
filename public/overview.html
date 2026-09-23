@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
   <style>
     body {
       display: flex;
@@ -107,7 +108,7 @@
       margin-left: auto;
       box-sizing: border-box;
       padding: 6px 10px;
-      background: #1e2328;
+      background: var(--input-bg);
       color: var(--text);
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -187,7 +188,7 @@
       box-sizing: border-box;
       width: 100%;
       padding: 9px 12px;
-      background: #1e2328;
+      background: var(--input-bg);
       color: var(--text);
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -208,7 +209,7 @@
       left: 0;
       right: 0;
       margin-top: 4px;
-      background: #1e2328;
+      background: var(--input-bg);
       border: 1px solid var(--border);
       border-radius: 4px;
       max-height: 240px;
@@ -255,7 +256,7 @@
     }
     .filter-bar button:hover {
       background: var(--gold);
-      color: #1e2328;
+      color: var(--input-bg);
     }
     .primary-btn {
       border: none;
@@ -265,7 +266,7 @@
       font-size: 1.1rem !important;
       letter-spacing: 1px;
       background: var(--gold) !important;
-      color: #1e2328 !important;
+      color: var(--input-bg) !important;
       cursor: pointer;
     }
     .primary-btn:hover {
@@ -603,7 +604,7 @@
     #matchupSort {
       box-sizing: border-box;
       padding: 4px 8px;
-      background: #1e2328;
+      background: var(--input-bg);
       color: var(--text);
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -640,7 +641,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      background: rgba(10, 20, 40, 0.4);
+      background: rgba(var(--bg-rgb), 0.4);
       border: 1px solid var(--border);
       border-radius: 4px;
       padding: 8px 14px;
@@ -740,7 +741,7 @@
       font-size: 0.7rem;
       font-family: 'Cinzel', Georgia, serif;
       font-weight: 700;
-      color: #0a1428;
+      color: var(--bg);
     }
     .form-pill.w { background: var(--green); }
     .form-pill.l { background: var(--red); }
@@ -775,7 +776,7 @@
       grid-template-columns: 14px 22px 1fr auto auto;
       align-items: center;
       gap: 8px;
-      color: #ffffff;
+      color: var(--text);
       border-left: 3px solid var(--border);
       border-radius: 3px;
       padding: 5px 10px;
@@ -783,10 +784,10 @@
       line-height: 1.3;
     }
     .recent-game-row:nth-child(odd) {
-      background: rgba(10, 20, 40, 0.35);
+      background: rgba(var(--bg-rgb), 0.35);
     }
     .recent-game-row:nth-child(even) {
-      background: rgba(10, 20, 40, 0.15);
+      background: rgba(var(--bg-rgb), 0.15);
     }
     .recent-game-row.win { border-left-color: var(--green); }
     .recent-game-row.loss { border-left-color: var(--red); }
@@ -809,15 +810,15 @@
       white-space: nowrap;
     }
     .recent-game-row .vs .name {
-      color: #ffffff;
+      color: var(--text);
       font-weight: bold;
     }
     .recent-game-row .kda {
-      color: #ffffff;
+      color: var(--text);
       white-space: nowrap;
     }
     .recent-game-row .when {
-      color: #e0e0e0;
+      color: var(--text-dim);
       font-size: 0.78rem;
       white-space: nowrap;
       text-align: right;
@@ -825,6 +826,7 @@
   </style>
 </head>
 <body>
+  <button type="button" class="settings-gear-btn" id="settingsGearBtn" title="Settings" aria-label="Settings">⚙</button>
   <header class="site-header">
     <h1>League of Legends</h1>
     <p class="subtitle">Three-Trick-Pony</p>
@@ -858,6 +860,10 @@
         <div class="stat-block">
           <span class="value" id="accountStreak">–</span>
           <span class="label" id="accountStreakLabel">Current Streak</span>
+        </div>
+        <div class="stat-block" id="overviewChallengeTimerBlock" style="display:none;">
+          <span class="value" id="overviewChallengeTimer">-</span>
+          <span class="label">Challenge Timer</span>
         </div>
       </div>
       <div class="account-overview-graph" id="accountLpGraph"></div>
@@ -974,11 +980,8 @@
     const DDRAGON_VERSION = '16.17.1';
     const MAX_CHAMPS = 3;
     const STORAGE_KEY = 'ttp_selected_champs';
-    const STORAGE_KEY_SINCE = 'ttp_since_date';
+    const STORAGE_KEY_CHALLENGE_START = 'ttp_challenge_start';
     const STORAGE_KEY_SUMMONER = 'ttp_summoner_name';
-    const STORAGE_KEY_RANK_TIER = 'ttp_rank_tier';
-    const STORAGE_KEY_RANK_DIVISION = 'ttp_rank_division';
-    const STORAGE_KEY_RANK_LP = 'ttp_rank_lp';
 
     const loadBtn = document.getElementById('loadBtn');
     const statusMsg = document.getElementById('statusMsg');
@@ -1018,6 +1021,12 @@
     const accountStreakLabelEl = document.getElementById('accountStreakLabel');
     const accountLpGraphEl = document.getElementById('accountLpGraph');
     const accountOverviewNoteIcon = document.getElementById('accountOverviewNoteIcon');
+    const settingsGearBtn = document.getElementById('settingsGearBtn');
+    settingsGearBtn.addEventListener('click', () => {
+      if (window.ttpMain) window.ttpMain.openSettings();
+    });
+    const overviewChallengeTimerBlock = document.getElementById('overviewChallengeTimerBlock');
+    const overviewChallengeTimer = document.getElementById('overviewChallengeTimer');
 
     let allChampions = [];
     let championKeyById = {};
@@ -1045,6 +1054,32 @@
       loadBtn.textContent = hasLoadedOnce ? 'Update' : 'Load';
     }
 
+    // Nach jedem Laden (egal ob automatisch beim Oeffnen, per Zeitplan oder
+    // manuell per Klick) 30 Sekunden Abklingzeit, bevor wieder geladen werden
+    // kann - verhindert Spam-Klicks bzw. dass der geplante Auto-Refresh und
+    // ein manueller Klick sich ueberschneiden.
+    const LOAD_COOLDOWN_MS = 30000;
+    let loadCooldownIntervalId = null;
+
+    function startLoadCooldown() {
+      const endAt = Date.now() + LOAD_COOLDOWN_MS;
+      loadBtn.disabled = true;
+      if (loadCooldownIntervalId) clearInterval(loadCooldownIntervalId);
+      function tick() {
+        const remaining = Math.ceil((endAt - Date.now()) / 1000);
+        if (remaining <= 0) {
+          clearInterval(loadCooldownIntervalId);
+          loadCooldownIntervalId = null;
+          loadBtn.disabled = false;
+          updateLoadButtonLabel();
+          return;
+        }
+        loadBtn.textContent = `Wait ${remaining}s`;
+      }
+      tick();
+      loadCooldownIntervalId = setInterval(tick, 1000);
+    }
+
     function renderAccountIdentity({ gameName, tagLine, profileIconId }) {
       accountOverviewName.textContent = `${gameName}#${tagLine}`;
       if (profileIconId !== null && profileIconId !== undefined) {
@@ -1056,19 +1091,14 @@
       }
     }
 
-    function defaultSinceDate() {
-      const d = new Date();
-      d.setMonth(d.getMonth() - 1);
-      return d.toISOString().slice(0, 10);
-    }
-
-    // Summoner-Name und Datum werden auf der Champion-Auswahl-Seite gesetzt
-    // und hier nur noch gelesen (gemeinsames localStorage).
-    function loadSinceDate() {
+    // Challenge-Start (voller ISO-Zeitstempel) wird auf der Champion-
+    // Auswahl-Seite gesetzt und hier nur noch gelesen (gemeinsames
+    // localStorage). Leerer String bedeutet: noch keine Challenge gestartet.
+    function loadChallengeStart() {
       try {
-        return localStorage.getItem(STORAGE_KEY_SINCE) || defaultSinceDate();
+        return localStorage.getItem(STORAGE_KEY_CHALLENGE_START) || '';
       } catch (e) {
-        return defaultSinceDate();
+        return '';
       }
     }
 
@@ -1080,37 +1110,56 @@
       }
     }
 
-    // Manuell auf der Champion-Auswahl-Seite eingetragener Rang/LP-Stand -
-    // dient als Startpunkt fuer die LP-Delta-Berechnung, solange wir selbst
-    // noch keine echte Snapshot-Historie ab dem "Since"-Datum haben.
-    function loadManualRank() {
-      try {
-        const tier = localStorage.getItem(STORAGE_KEY_RANK_TIER) || '';
-        if (!tier) return null;
-        const leaguePoints = localStorage.getItem(STORAGE_KEY_RANK_LP);
-        if (leaguePoints === null || leaguePoints === '') return null;
-        return {
-          tier,
-          rank: localStorage.getItem(STORAGE_KEY_RANK_DIVISION) || 'IV',
-          leaguePoints: Number(leaguePoints)
-        };
-      } catch (e) {
-        return null;
-      }
+    function formatDateTimeEU(iso) {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      const pad = n => String(n).padStart(2, '0');
+      return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
 
-    function formatDateEU(isoDate) {
-      const parts = (isoDate || '').split('-');
-      if (parts.length !== 3) return isoDate;
-      const [year, month, day] = parts;
-      return `${day}.${month}.${year}`;
+    // Derselbe Live-Timer wie auf der Champion-Auswahl-Seite (Tage/Std/Min/Sek
+    // seit Challenge-Start) - hier weitergefuehrt, weil man sich auf dieser
+    // Seite in der Regel deutlich laenger aufhaelt.
+    let overviewChallengeTimerId = null;
+
+    function startOverviewChallengeTimer(startIso) {
+      const startMs = new Date(startIso).getTime();
+      function tick() {
+        const totalSeconds = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+        const days = Math.floor(totalSeconds / 86400);
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        overviewChallengeTimer.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+      }
+      tick();
+      if (overviewChallengeTimerId) clearInterval(overviewChallengeTimerId);
+      overviewChallengeTimerId = setInterval(tick, 1000);
+    }
+
+    function stopOverviewChallengeTimer() {
+      if (overviewChallengeTimerId) {
+        clearInterval(overviewChallengeTimerId);
+        overviewChallengeTimerId = null;
+      }
     }
 
     function renderCurrentContext() {
       const summonerText = currentSummoner ? currentSummoner : '(no summoner set)';
+      const sinceText = currentSince
+        ? `Challenge started ${formatDateTimeEU(currentSince)}`
+        : 'No challenge started yet';
       currentContext.innerHTML =
-        `Summoner: ${summonerText} · Since: ${formatDateEU(currentSince)} — ` +
+        `Summoner: ${summonerText} · ${sinceText} — ` +
         `<a href="index.html">change on the Champion Selection page</a>`;
+
+      if (currentSince) {
+        overviewChallengeTimerBlock.style.display = '';
+        startOverviewChallengeTimer(currentSince);
+      } else {
+        overviewChallengeTimerBlock.style.display = 'none';
+        stopOverviewChallengeTimer();
+      }
     }
 
     // Liest eine fetch()-Antwort sicher als JSON. Kommt stattdessen z.B. eine
@@ -1402,7 +1451,7 @@
 
       detailSection.style.display = 'block';
       detailSection.style.backgroundImage =
-        `linear-gradient(rgba(10, 20, 40, 0.92), rgba(10, 20, 40, 0.96)), url(${championSplashUrl(champ.id)})`;
+        `linear-gradient(rgba(var(--bg-rgb), 0.92), rgba(var(--bg-rgb), 0.96)), url(${championSplashUrl(champ.id)})`;
       detailImg.src = championSplashUrl(champ.id);
       detailImg.alt = champ.name;
       detailName.textContent = champ.name;
@@ -1482,8 +1531,8 @@
       const rank = data.rank;
 
       accountLpDeltaLabelEl.textContent = data.since
-        ? `LP since ${formatDateEU(data.since)}`
-        : 'LP since date';
+        ? `LP since ${formatDateTimeEU(data.since)}`
+        : 'LP change (start a challenge to track)';
 
       if (overall) {
         accountWLEl.innerHTML = `<span class="w">${overall.wins}W</span> / <span class="l">${overall.losses}L</span>`;
@@ -1683,17 +1732,17 @@
         const b = coords[i + 1];
         const dashed = a.p.synthetic || b.p.synthetic;
         segmentsSvg += `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" ` +
-          `stroke="${dashed ? '#6f6a5e' : '#c8aa6e'}" stroke-width="2"${dashed ? ' stroke-dasharray="5 4"' : ''} />`;
+          `stroke="${dashed ? 'var(--text-faint)' : 'var(--gold)'}" stroke-width="2"${dashed ? ' stroke-dasharray="5 4"' : ''} />`;
       }
 
       const dots = coords.map(c => {
         const date = new Date(c.p.timestamp).toLocaleDateString('en-GB');
         if (c.p.synthetic) {
-          return `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="2" fill="#6f6a5e"><title>${date} - simulated, not real data</title></circle>`;
+          return `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="2" fill="var(--text-faint)"><title>${date} - simulated, not real data</title></circle>`;
         }
         const label = formatRank({ tier: c.p.tier, rank: c.p.rank, leaguePoints: c.p.leaguePoints });
         const tag = c.p.manual ? ' (manually entered)' : '';
-        const color = c.p.manual ? '#a09b8c' : '#c8aa6e';
+        const color = c.p.manual ? 'var(--text-dim)' : 'var(--gold)';
         return `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="3" fill="${color}"><title>${date} - ${label}${tag}</title></circle>`;
       }).join('');
 
@@ -1758,7 +1807,27 @@
         return;
       }
 
-      statusMsg.textContent = `Starting search since ${formatDateEU(since)} …`;
+      // Ohne Challenge-Start gibt es keine Untergrenze - dann wird die
+      // komplette verfuegbare Historie gescannt (kann mehrere Minuten dauern,
+      // v.a. wegen Riots Rate-Limit fuer Personal Keys, nicht wegen der Anzahl
+      // ausgewaehlter Champions). Vorher warnen statt die App scheinbar
+      // haengen zu lassen.
+      if (!since) {
+        const proceed = confirm(
+          'No challenge started yet, so this will scan your FULL available match history ' +
+          '(up to ~6 months) instead of just since a challenge start. ' +
+          'Depending on how many games you\'ve played, this can take 10 minutes or more ' +
+          '(number of champions selected does not change this - every game gets scanned once either way). Continue?'
+        );
+        if (!proceed) {
+          statusMsg.textContent = 'Cancelled. Start a challenge on the Champion Selection page for a much faster, scoped load.';
+          return;
+        }
+      }
+
+      statusMsg.textContent = since
+        ? `Starting search since ${formatDateTimeEU(since)} …`
+        : 'Starting search (no challenge started yet - start one on the Champion Selection page to track LP change) …';
       showProgressBar(true);
 
       try {
@@ -1768,8 +1837,7 @@
           body: JSON.stringify({
             puuid: currentPuuid,
             champions: champsWithKeys.map(x => ({ key: x.key, role: x.champ.role || '' })),
-            since,
-            manualRank: loadManualRank()
+            since
           })
         });
         const startData = await parseApiResponse(startRes);
@@ -2003,8 +2071,11 @@
       }
     });
 
-    loadBtn.addEventListener('click', async () => {
-      currentSince = loadSinceDate();
+    // Gemeinsame Lade-Logik fuer: manuellen Klick, automatisches Laden beim
+    // Oeffnen der Seite (wenn schon eine Challenge laeuft) und den geplanten
+    // Viertelstunden-Auto-Refresh.
+    async function performLoad() {
+      currentSince = loadChallengeStart();
       currentSummoner = loadSummonerName();
       renderCurrentContext();
 
@@ -2017,6 +2088,7 @@
       const [gameName, tagLine] = parts;
 
       loadBtn.disabled = true;
+      loadBtn.textContent = 'Loading…';
       statusMsg.textContent = `Searching for summoner ${raw} …`;
       try {
         const params = new URLSearchParams({ gameName, tagLine });
@@ -2035,12 +2107,49 @@
       } catch (e) {
         statusMsg.textContent = `Error loading summoner: ${e.message}`;
       } finally {
-        loadBtn.disabled = false;
+        startLoadCooldown();
       }
-    });
+    }
+
+    loadBtn.addEventListener('click', () => { performLoad(); });
+
+    // Voraussetzungen fuer ein automatisches (nicht per Klick ausgeloestes)
+    // Laden: eine Challenge muss laufen (sonst kaeme sonst ungefragt der
+    // "volle Historie scannen"-Bestaetigungsdialog aus loadAllSummaries()),
+    // ein gueltiger Summoner-Name muss gesetzt sein, und mindestens 1
+    // Champion muss ausgewaehlt sein.
+    function isAutoLoadEligible() {
+      currentSince = loadChallengeStart();
+      currentSummoner = loadSummonerName();
+      return !!currentSince && currentSummoner.includes('#') && selectedChamps.length > 0;
+    }
+
+    const QUARTER_HOUR_MS = 15 * 60 * 1000;
+    let autoRefreshTimeoutId = null;
+
+    // Plant den naechsten Auto-Refresh exakt auf die naechste volle
+    // Viertelstunde (:00/:15/:30/:45 nach Systemzeit), nicht einfach alle 15
+    // Minuten ab Seitenaufruf - damit aktualisiert es immer zu denselben,
+    // vorhersehbaren Uhrzeiten.
+    function scheduleNextAutoRefresh() {
+      if (autoRefreshTimeoutId) clearTimeout(autoRefreshTimeoutId);
+      const now = new Date();
+      const msIntoHour = (now.getMinutes() * 60 + now.getSeconds()) * 1000 + now.getMilliseconds();
+      const msIntoQuarter = msIntoHour % QUARTER_HOUR_MS;
+      const delay = QUARTER_HOUR_MS - msIntoQuarter;
+      autoRefreshTimeoutId = setTimeout(async () => {
+        // Ausgelassen statt nachgeholt, wenn gerade schon geladen wird oder
+        // noch die 30s-Abklingzeit laeuft - der naechste Viertelstunden-Slot
+        // kommt ja ohnehin in max. 15 Minuten.
+        if (isAutoLoadEligible() && !loadBtn.disabled) {
+          await performLoad();
+        }
+        scheduleNextAutoRefresh();
+      }, delay);
+    }
 
     (async function init() {
-      currentSince = loadSinceDate();
+      currentSince = loadChallengeStart();
       currentSummoner = loadSummonerName();
       renderCurrentContext();
       await loadChampionKeys();
@@ -2050,6 +2159,15 @@
       if (selectedChamps.length > 0) {
         selectActiveChamp(selectedChamps[0].id);
       }
+
+      // Laeuft schon eine Challenge, wird der erste "Load"-Klick uebersprungen
+      // und sofort automatisch aktualisiert - Summoner, Champions und
+      // Challenge-Start sind ja bereits gesetzt.
+      if (isAutoLoadEligible()) {
+        performLoad();
+      }
+
+      scheduleNextAutoRefresh();
     })();
   </script>
 </body>

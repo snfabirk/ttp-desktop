@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Update</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Georgia, serif;
+    -webkit-app-region: drag;
+    user-select: none;
+  }
+  .wrap {
+    box-sizing: border-box;
+    height: 100%;
+    padding: 22px 26px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+  }
+  img.icon {
+    width: 44px;
+    height: 44px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: normal;
+    letter-spacing: 0.3px;
+    color: var(--gold);
+  }
+  p.status {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    min-height: 1.2em;
+  }
+  .bar-track {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--gold);
+    transition: width 0.2s ease;
+  }
+  .actions {
+    display: none;
+    gap: 10px;
+    -webkit-app-region: no-drag;
+  }
+  .actions.visible {
+    display: flex;
+  }
+  button {
+    font-family: Georgia, serif;
+    font-size: 0.85rem;
+    padding: 7px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+  }
+  button.primary {
+    background: var(--gold);
+    border: 1px solid var(--gold);
+    color: var(--input-bg);
+  }
+  button.primary:hover {
+    filter: brightness(1.15);
+  }
+  button.secondary {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  button.secondary:hover {
+    border-color: var(--border-hover);
+    color: var(--text);
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <img class="icon" src="/build/icon.png" alt="">
+    <h1>Three-Trick-Pony Update</h1>
+    <p class="status" id="status">Update wird heruntergeladen...</p>
+    <div class="bar-track" id="barTrack">
+      <div class="bar-fill" id="barFill"></div>
+    </div>
+    <div class="actions" id="actions">
+      <button class="primary" id="restartBtn">Jetzt neu starten</button>
+      <button class="secondary" id="laterBtn">Spaeter</button>
+    </div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const barTrack = document.getElementById('barTrack');
+    const barFill = document.getElementById('barFill');
+    const actionsEl = document.getElementById('actions');
+    const restartBtn = document.getElementById('restartBtn');
+    const laterBtn = document.getElementById('laterBtn');
+
+    // Die Buttons werden erst eine kurze Zeit nach dem Anzeigen klickbar.
+    // Verhindert, dass ein Windows-Fensteraktivierungs-Klick (z.B. wenn das
+    // Fenster per Alt-Tab/Klick auf die Taskleiste in den Vordergrund kommt)
+    // faelschlich als Button-Klick durchgereicht wird, bevor der Nutzer das
+    // Fenster ueberhaupt bewusst gesehen hat.
+    let readyAt = null;
+    const CLICK_GUARD_MS = 600;
+
+    restartBtn.addEventListener('click', () => {
+      if (readyAt && Date.now() - readyAt < CLICK_GUARD_MS) return;
+      window.ttpUpdater.restartNow();
+    });
+    laterBtn.addEventListener('click', () => {
+      if (readyAt && Date.now() - readyAt < CLICK_GUARD_MS) return;
+      window.ttpUpdater.later();
+    });
+
+    window.ttpUpdater.onStatus((state, payload) => {
+      if (state === 'downloading') {
+        statusEl.textContent = 'Update wird heruntergeladen...';
+        barFill.style.width = `${Math.round(payload?.percent || 0)}%`;
+      } else if (state === 'ready') {
+        statusEl.textContent = 'Update bereit - jetzt neu starten und installieren?';
+        barTrack.style.display = 'none';
+        actionsEl.classList.add('visible');
+        readyAt = Date.now();
+      }
+    });
+  </script>
+</body>
+</html>

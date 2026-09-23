@@ -25,12 +25,16 @@ const champions = JSON.parse(fs.readFileSync(championsPath, 'utf-8'));
 const championByKey = new Map(champions.map(c => [c.key, c]));
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
+// Nur fuer statische Assets aus build/ (z.B. das App-Icon), die auch von
+// Seiten benoetigt werden, die ueber diesen Server ausgeliefert werden
+// (siehe public/update-window.html) - keine Server-Logik, nur Dateien.
+app.use('/build', express.static(path.join(__dirname, '..', 'build')));
 app.use(express.json());
 
 function requireApiKey(req, res, next) {
   if (!config.apiKey) {
     return res.status(500).json({
-      error: 'No Riot API key set. Enter it on the Champion Selection page.'
+      error: 'No Riot API key set. Enter one in the "Riot API Key" box.'
     });
   }
   next();
@@ -77,6 +81,48 @@ app.get('/api/account', requireApiKey, async (req, res) => {
     }
 
     res.json({ ...account, profileIconId });
+  } catch (e) {
+    res.status(e.status || 500).json({ error: e.message });
+  }
+});
+
+// Aktueller Rang/LP, schreibfrei - fuer die Champion-Auswahl-Seite, die den
+// Stand direkt beim Oeffnen anzeigen will, ohne den Challenge-Start-Snapshot
+// zu veraendern.
+app.get('/api/current-rank', requireApiKey, async (req, res) => {
+  const { puuid } = req.query;
+  if (!puuid) {
+    return res.status(400).json({ error: 'puuid is required.' });
+  }
+  try {
+    const entries = await getLeagueEntriesByPuuid(puuid, config.apiKey, PLATFORM);
+    const solo = entries.find(e => e.queueType === 'RANKED_SOLO_5x5');
+    if (!solo) {
+      return res.json({ current: null, note: 'Unranked or no Solo/Duo entry found.' });
+    }
+    res.json({ current: { tier: solo.tier, rank: solo.rank, leaguePoints: solo.leaguePoints } });
+  } catch (e) {
+    res.status(e.status || 500).json({ error: e.message });
+  }
+});
+
+// Startet die Challenge: haelt den aktuellen Rang/LP als exakten (auf die
+// Sekunde genauen) Startpunkt-Snapshot fest, den buildRankOverview() spaeter
+// als Anker fuer die LP-Delta-Berechnung findet.
+app.post('/api/challenge/start', requireApiKey, async (req, res) => {
+  const { puuid } = req.body || {};
+  if (!puuid) {
+    return res.status(400).json({ error: 'puuid is required.' });
+  }
+  try {
+    const entries = await getLeagueEntriesByPuuid(puuid, config.apiKey, PLATFORM);
+    const solo = entries.find(e => e.queueType === 'RANKED_SOLO_5x5');
+    const timestamp = Date.now();
+    const current = solo ? { tier: solo.tier, rank: solo.rank, leaguePoints: solo.leaguePoints } : null;
+    if (current) {
+      seedManualSnapshot(puuid, timestamp, current);
+    }
+    res.json({ timestamp, current });
   } catch (e) {
     res.status(e.status || 500).json({ error: e.message });
   }
@@ -137,13 +183,16 @@ function findMeAndOpponent(match, puuid) {
 
 app.get('/api/summary', requireApiKey, async (req, res) => {
   const { puuid, championKey, since, role } = req.query;
-  if (!puuid || !championKey || !since) {
-    return res.status(400).json({ error: 'puuid, championKey and since are required.' });
+  if (!puuid || !championKey) {
+    return res.status(400).json({ error: 'puuid and championKey are required.' });
   }
 
-  const startTime = Math.floor(new Date(since).getTime() / 1000);
-  if (Number.isNaN(startTime)) {
-    return res.status(400).json({ error: 'Invalid date for "since".' });
+  let startTime = 0; // kein Challenge-Start = keine Untergrenze, so weit zurueck wie Riot eben zulaesst
+  if (since) {
+    startTime = Math.floor(new Date(since).getTime() / 1000);
+    if (Number.isNaN(startTime)) {
+      return res.status(400).json({ error: 'Invalid date for "since".' });
+    }
   }
 
   try {
@@ -185,7 +234,7 @@ app.get('/api/summary', requireApiKey, async (req, res) => {
 // wichtig weil man auch mal autofillt und dann etwas anderes spielt als
 // erwartet. LP-Delta seit "since" ist nur so genau wie unsere eigene
 // Snapshot-Historie (Riot liefert keine historischen LP-Werte).
-async function buildRankOverview(puuid, sinceMs, manualRank) {
+async function buildRankOverview(puuid, sinceMs) {
   try {
     const entries = await getLeagueEntriesByPuuid(puuid, config.apiKey, PLATFORM);
     const solo = entries.find(e => e.queueType === 'RANKED_SOLO_5x5');
@@ -193,6 +242,9 @@ async function buildRankOverview(puuid, sinceMs, manualRank) {
       return { current: null, deltaLP: null, note: 'Unranked or no Solo/Duo entry found.' };
     }
 
+    // Der Startpunkt wird bereits beim Klick auf "Start Challenge" exakt
+    // (auf die Sekunde) als manueller Snapshot hinterlegt (siehe
+    // /api/challenge/start) - hier muss nur noch danach gesucht werden.
     let history = recordSnapshot(puuid, {
       tier: solo.tier,
       rank: solo.rank,
@@ -201,19 +253,16 @@ async function buildRankOverview(puuid, sinceMs, manualRank) {
       losses: solo.losses
     });
 
-    let startSnapshot = findSnapshotAtOrBefore(history, sinceMs);
+    const current = { tier: solo.tier, rank: solo.rank, leaguePoints: solo.leaguePoints };
 
-    // Kein echter Snapshot vor dem "Since"-Datum? Falls der Nutzer auf der
-    // Champion-Auswahl-Seite seinen Rang/LP-Stand manuell eingetragen hat,
-    // nehmen wir den als Startpunkt statt zu raten.
-    if (!startSnapshot && manualRank && manualRank.tier &&
-        manualRank.leaguePoints !== null && manualRank.leaguePoints !== undefined &&
-        manualRank.leaguePoints !== '') {
-      history = seedManualSnapshot(puuid, sinceMs, manualRank);
-      startSnapshot = findSnapshotAtOrBefore(history, sinceMs);
+    // Noch keine Challenge gestartet - es gibt keinen Startpunkt, von dem aus
+    // ein LP-Delta ueberhaupt Sinn ergeben wuerde. Aktuellen Rang trotzdem
+    // zeigen, nur ohne Delta.
+    if (!sinceMs) {
+      return { current, deltaLP: null, note: 'Start a challenge to track LP change.', noHistoryYet: false };
     }
 
-    const current = { tier: solo.tier, rank: solo.rank, leaguePoints: solo.leaguePoints };
+    const startSnapshot = findSnapshotAtOrBefore(history, sinceMs);
     const currentLP = toComparableLP(solo.tier, solo.rank, solo.leaguePoints);
 
     let deltaLP = null;
@@ -221,16 +270,13 @@ async function buildRankOverview(puuid, sinceMs, manualRank) {
     let noHistoryYet = false;
     if (startSnapshot) {
       deltaLP = currentLP - toComparableLP(startSnapshot.tier, startSnapshot.rank, startSnapshot.leaguePoints);
-      if (startSnapshot.manual) {
-        note = 'Based on the rank/LP you entered manually on the Champion Selection page.';
-      }
     } else if (history.length > 1) {
       const earliest = history[0];
       deltaLP = currentLP - toComparableLP(earliest.tier, earliest.rank, earliest.leaguePoints);
       note = `No LP history before ${new Date(earliest.timestamp).toLocaleDateString('en-GB')} yet - showing change since then instead.`;
     } else {
       noHistoryYet = true;
-      note = 'LP tracking just started - enter your current rank/LP on the Champion Selection page for an accurate value, or check back after your next game.';
+      note = 'LP tracking just started - check back after your next game.';
     }
 
     return { current, deltaLP, note, noHistoryYet };
@@ -244,7 +290,7 @@ async function buildRankOverview(puuid, sinceMs, manualRank) {
 // Hintergrund-Job, damit das Frontend per Polling einen echten
 // Live-Fortschritt anzeigen kann, statt auf einen einzigen, potenziell
 // minutenlangen Request zu warten.
-async function runSummaryBatch(jobId, { puuid, champions, since, startTime, manualRank }) {
+async function runSummaryBatch(jobId, { puuid, champions, since, startTime }) {
   try {
     const matchIds = await getAllMatchIds(
       puuid,
@@ -302,7 +348,7 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, manu
       byChampion[c.key] = finalizeBucket(buckets[c.key]);
     });
 
-    const rank = await buildRankOverview(puuid, startTime * 1000, manualRank);
+    const rank = await buildRankOverview(puuid, since ? startTime * 1000 : null);
 
     // Solange wir noch keinen zweiten Snapshot haben, gibt es keinen echten
     // Delta-Wert. Riot liefert pro Match kein LP-Delta (haengt von MMR,
@@ -345,9 +391,9 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, manu
 }
 
 app.post('/api/summary-batch/start', requireApiKey, (req, res) => {
-  const { puuid, champions, since, manualRank } = req.body || {};
-  if (!puuid || !champions || !since) {
-    return res.status(400).json({ error: 'puuid, champions and since are required.' });
+  const { puuid, champions, since } = req.body || {};
+  if (!puuid || !champions) {
+    return res.status(400).json({ error: 'puuid and champions are required.' });
   }
 
   if (!Array.isArray(champions) || champions.length === 0) {
@@ -362,13 +408,16 @@ app.post('/api/summary-batch/start', requireApiKey, (req, res) => {
   });
   const dedupedChampions = [...byKey.values()];
 
-  const startTime = Math.floor(new Date(since).getTime() / 1000);
-  if (Number.isNaN(startTime)) {
-    return res.status(400).json({ error: 'Invalid date for "since".' });
+  let startTime = 0; // kein Challenge-Start = keine Untergrenze
+  if (since) {
+    startTime = Math.floor(new Date(since).getTime() / 1000);
+    if (Number.isNaN(startTime)) {
+      return res.status(400).json({ error: 'Invalid date for "since".' });
+    }
   }
 
   const jobId = createJob();
-  runSummaryBatch(jobId, { puuid, champions: dedupedChampions, since, startTime, manualRank });
+  runSummaryBatch(jobId, { puuid, champions: dedupedChampions, since, startTime });
   res.json({ jobId });
 });
 
@@ -402,7 +451,7 @@ const ready = new Promise(resolve => { resolveReady = resolve; });
 const server = app.listen(PORT, () => {
   console.log(`Three-Trick-Pony Server running at http://localhost:${PORT}`);
   if (!config.apiKey) {
-    console.warn('WARNING: No RIOT_API_KEY set. Enter it on the Champion Selection page.');
+    console.warn('WARNING: No RIOT_API_KEY set. Enter one in the "Riot API Key" box.');
   }
   resolveReady();
 });
