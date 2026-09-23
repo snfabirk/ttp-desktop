@@ -4,3 +4,4 @@ dist/
 server/.env
 server/cache/
 server/data/
+server/riot-api-key.txt

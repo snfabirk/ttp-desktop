@@ -3,7 +3,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const fs = require('fs');
 const express = require('express');
 const { getAccountByRiotId, getAllMatchIds, getMatch, getLeagueEntriesByPuuid, getSummonerByPuuid } = require('./lib/riot');
-const { setEnvValue } = require('./lib/envStore');
+const { loadPersistedApiKey, savePersistedApiKey } = require('./lib/envStore');
 const { createBucket, addMatchToBucket, finalizeBucket, isRemake, computeStreaks } = require('./lib/stats');
 const { createJob, updateProgress, completeJob, failJob, getJob } = require('./lib/jobs');
 const { recordSnapshot, readHistory, findSnapshotAtOrBefore, toComparableLP, seedManualSnapshot } = require('./lib/rankHistory');
@@ -15,9 +15,12 @@ const REGION = process.env.RIOT_REGION || 'europe';
 const RANKED_SOLO_QUEUE_ID = 420;
 
 // Der API Key ist ueber /api/settings/api-key zur Laufzeit aenderbar
-// (Riot Personal Keys laufen nach 24h ab), deshalb kein const.
+// (Riot Personal Keys laufen nach 24h ab), deshalb kein const. Ein zuvor
+// im updatefesten userData-Ordner gespeicherter Key hat Vorrang vor
+// RIOT_API_KEY aus server/.env (die z.B. bei einem Auto-Update verloren
+// geht, der persistierte Key aber nicht).
 const config = {
-  apiKey: process.env.RIOT_API_KEY || ''
+  apiKey: loadPersistedApiKey() || process.env.RIOT_API_KEY || ''
 };
 
 const championsPath = path.join(__dirname, '..', 'public', 'data', 'champions.json');
@@ -56,10 +59,10 @@ app.post('/api/settings/api-key', (req, res) => {
   }
   config.apiKey = apiKey.trim();
   try {
-    setEnvValue('RIOT_API_KEY', config.apiKey);
+    savePersistedApiKey(config.apiKey);
   } catch (e) {
     // Key wirkt trotzdem sofort im laufenden Server, auch wenn das
-    // Schreiben in .env fehlschlaegt - dann nur nach Neustart wieder weg.
+    // Schreiben fehlschlaegt - dann nur nach Neustart/Update wieder weg.
   }
   res.json({ ok: true, apiKeyPreview: `****${config.apiKey.slice(-4)}` });
 });

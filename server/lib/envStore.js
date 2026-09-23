@@ -1,37 +1,31 @@
 const fs = require('fs');
 const path = require('path');
 
-const ENV_PATH = path.join(__dirname, '..', '.env');
-const EXAMPLE_PATH = path.join(__dirname, '..', '.env.example');
+// Electron setzt TTP_USER_DATA_DIR auf app.getPath('userData'), bevor der
+// Server gestartet wird - das liegt ausserhalb des Installationsordners und
+// wird bei Auto-Updates NICHT ueberschrieben (anders als alles unter
+// server/, das bei jedem Update komplett neu installiert wird - dort ging
+// der Key bisher bei jedem Update verloren). Ohne Electron (z.B. lokale
+// Entwicklung per "node server/server.js" direkt) faellt es zurueck auf den
+// server-Ordner selbst.
+const PERSIST_DIR = process.env.TTP_USER_DATA_DIR || path.join(__dirname, '..');
+const API_KEY_PATH = path.join(PERSIST_DIR, 'riot-api-key.txt');
 
-function readEnvLines() {
-  if (fs.existsSync(ENV_PATH)) {
-    return fs.readFileSync(ENV_PATH, 'utf-8').split('\n');
-  }
-  if (fs.existsSync(EXAMPLE_PATH)) {
-    return fs.readFileSync(EXAMPLE_PATH, 'utf-8').split('\n');
-  }
-  return [];
-}
-
-function setEnvValue(key, value) {
-  const lines = readEnvLines();
-  let found = false;
-
-  const newLines = lines.map(line => {
-    const trimmed = line.trim();
-    if (trimmed.startsWith(`${key}=`)) {
-      found = true;
-      return `${key}=${value}`;
+function loadPersistedApiKey() {
+  try {
+    if (fs.existsSync(API_KEY_PATH)) {
+      return fs.readFileSync(API_KEY_PATH, 'utf-8').trim();
     }
-    return line;
-  });
-
-  if (!found) {
-    newLines.push(`${key}=${value}`);
+  } catch (e) {
+    // Kein persistierter Key vorhanden/lesbar - faellt auf RIOT_API_KEY aus
+    // server/.env zurueck (siehe server.js).
   }
-
-  fs.writeFileSync(ENV_PATH, newLines.join('\n'));
+  return '';
 }
 
-module.exports = { setEnvValue };
+function savePersistedApiKey(value) {
+  fs.mkdirSync(PERSIST_DIR, { recursive: true });
+  fs.writeFileSync(API_KEY_PATH, value);
+}
+
+module.exports = { loadPersistedApiKey, savePersistedApiKey };

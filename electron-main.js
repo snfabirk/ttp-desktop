@@ -190,6 +190,11 @@ function createWindow(port) {
 }
 
 app.whenReady().then(() => {
+  // Sagt dem Server, wo er den Riot API Key update-fest speichern soll
+  // (ausserhalb des Installationsordners, der bei jedem Auto-Update
+  // komplett neu geschrieben wird - siehe server/lib/envStore.js).
+  process.env.TTP_USER_DATA_DIR = app.getPath('userData');
+
   // Startet den Express-Server im selben Prozess (kein sichtbares Fenster,
   // keine .bat mehr noetig) und oeffnet das App-Fenster erst, wenn er bereit ist.
   const { ready, PORT } = require('./server/server.js');
