@@ -826,6 +826,7 @@
 </head>
 <body>
   <button type="button" class="settings-gear-btn" id="settingsGearBtn" title="Settings" aria-label="Settings">⚙</button>
+  <button type="button" class="quit-btn" id="quitBtn" title="Quit completely" aria-label="Quit completely">⏻</button>
   <header class="site-header">
     <h1>League of Legends</h1>
     <p class="subtitle">Three-Trick-Pony</p>
@@ -1024,6 +1025,15 @@
     settingsGearBtn.addEventListener('click', () => {
       if (window.ttpMain) window.ttpMain.openSettings();
     });
+
+    const quitBtn = document.getElementById('quitBtn');
+    quitBtn.addEventListener('click', () => {
+      const ok = confirm('Quit Three-Trick-Pony completely? It will no longer run in the background (no more update checks or LP tracking until you start it again).');
+      if (window.ttpMain) window.ttpMain.restoreFocus();
+      if (!ok) return;
+      if (window.ttpMain) window.ttpMain.quitApp();
+    });
+
     const overviewChallengeTimerBlock = document.getElementById('overviewChallengeTimerBlock');
     const overviewChallengeTimer = document.getElementById('overviewChallengeTimer');
 
@@ -2134,29 +2144,11 @@
       return !!currentSince && currentSummoner.includes('#') && selectedChamps.length > 0;
     }
 
-    const QUARTER_HOUR_MS = 15 * 60 * 1000;
-    let autoRefreshTimeoutId = null;
-
-    // Plant den naechsten Auto-Refresh exakt auf die naechste volle
-    // Viertelstunde (:00/:15/:30/:45 nach Systemzeit), nicht einfach alle 15
-    // Minuten ab Seitenaufruf - damit aktualisiert es immer zu denselben,
-    // vorhersehbaren Uhrzeiten.
-    function scheduleNextAutoRefresh() {
-      if (autoRefreshTimeoutId) clearTimeout(autoRefreshTimeoutId);
-      const now = new Date();
-      const msIntoHour = (now.getMinutes() * 60 + now.getSeconds()) * 1000 + now.getMilliseconds();
-      const msIntoQuarter = msIntoHour % QUARTER_HOUR_MS;
-      const delay = QUARTER_HOUR_MS - msIntoQuarter;
-      autoRefreshTimeoutId = setTimeout(async () => {
-        // Ausgelassen statt nachgeholt, wenn gerade schon geladen wird oder
-        // noch die 30s-Abklingzeit laeuft - der naechste Viertelstunden-Slot
-        // kommt ja ohnehin in max. 15 Minuten.
-        if (isAutoLoadEligible() && !loadBtn.disabled) {
-          await performLoad();
-        }
-        scheduleNextAutoRefresh();
-      }, delay);
-    }
+    // Der wiederkehrende Viertelstunden-Auto-Refresh laeuft jetzt zentral im
+    // Hauptprozess (electron-main.js: backgroundStatsRefresh), unabhaengig
+    // davon ob diese Seite gerade offen/sichtbar ist - siehe [[update-indicator]]
+    // Memory bzw. den Hintergrund-Scheduler-Kommentar dort. Hier bleibt nur
+    // noch das einmalige Auto-Laden beim Oeffnen dieser Seite (siehe init()).
 
     (async function init() {
       currentSince = loadChallengeStart();
@@ -2176,8 +2168,6 @@
       if (isAutoLoadEligible()) {
         performLoad();
       }
-
-      scheduleNextAutoRefresh();
     })();
   </script>
 </body>

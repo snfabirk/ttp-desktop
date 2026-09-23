@@ -7,5 +7,7 @@ contextBridge.exposeInMainWorld('ttpSettings', {
   checkForUpdatesNow: () => ipcRenderer.send('check-for-updates-now'),
   onManualUpdateCheckStatus: (callback) => {
     ipcRenderer.on('manual-update-check-status', (event, status, extra) => callback(status, extra));
-  }
+  },
+  getStartWithWindows: () => ipcRenderer.invoke('get-start-with-windows'),
+  setStartWithWindows: (enabled) => ipcRenderer.send('set-start-with-windows', enabled)
 });

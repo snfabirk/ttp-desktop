@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, screen } = require('electron');
+const { app, BrowserWindow, Menu, Tray, ipcMain, screen } = require('electron');
 const path = require('path');
 const windowStateKeeper = require('electron-window-state');
 const { autoUpdater } = require('electron-updater');
@@ -10,10 +10,62 @@ const ICON_PATH = path.join(__dirname, 'build', 'icon.ico');
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = false;
 
+// Nur eine laufende Instanz gleichzeitig - wichtig jetzt, wo die App per
+// Autostart UND manuell gestartet werden kann: ohne Sperre wuerde ein
+// zweiter Prozess versuchen, denselben Server-Port zu belegen (EADDRINUSE).
+// Ein zweiter Start-Versuch zeigt stattdessen einfach das Fenster der schon
+// laufenden Instanz.
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+  return;
+}
+
 let updateWin = null;
 let settingsWin = null;
 let mainWin = null;
+let tray = null;
 let serverPort = null;
+
+// Wird nur beim echten Beenden (Tray-Menu "Quit" oder der Beenden-Button in
+// der App) auf true gesetzt - unterscheidet "Fenster-X gedrueckt" (soll nur
+// verstecken) von einem tatsaechlich gewollten kompletten Beenden.
+app.isQuitting = false;
+
+function showMainWindow() {
+  if (!mainWin || mainWin.isDestroyed()) {
+    if (serverPort) createWindow(serverPort);
+    return;
+  }
+  if (mainWin.isMinimized()) mainWin.restore();
+  mainWin.show();
+  mainWin.focus();
+}
+
+app.on('second-instance', () => showMainWindow());
+
+function createTray() {
+  tray = new Tray(ICON_PATH);
+  tray.setToolTip('Three-Trick-Pony');
+  const contextMenu = Menu.buildFromTemplate([
+    { label: 'Open', click: () => showMainWindow() },
+    { type: 'separator' },
+    { label: 'Quit', click: () => { app.isQuitting = true; app.quit(); } }
+  ]);
+  tray.setContextMenu(contextMenu);
+  tray.on('click', () => showMainWindow());
+}
+
+ipcMain.on('app-quit', () => { app.isQuitting = true; app.quit(); });
+
+ipcMain.handle('get-start-with-windows', () => app.getLoginItemSettings().openAtLogin);
+
+ipcMain.on('set-start-with-windows', (event, enabled) => {
+  // --hidden sorgt dafuer, dass die App bei einem per Autostart ausgeloesten
+  // Start nicht sofort das Fenster aufreisst, sondern nur im Tray erscheint
+  // (siehe createWindow weiter unten).
+  app.setLoginItemSettings({ openAtLogin: Boolean(enabled), args: ['--hidden'] });
+});
 
 // Aktueller Update-Stand, unabhaengig davon ob das Update-Fenster gerade
 // offen ist - wird gebraucht, damit (a) das kleine Update-Symbol im
@@ -104,7 +156,7 @@ function showSettingsWindow() {
   if (settingsWin) { settingsWin.focus(); return settingsWin; }
   settingsWin = new BrowserWindow({
     width: 460,
-    height: 652,
+    height: 700,
     resizable: false,
     minimizable: false,
     maximizable: false,
@@ -211,6 +263,100 @@ function periodicCheckForUpdates() {
   checkForUpdates();
 }
 
+// Hintergrund-Aktualisierung von Stats/LP alle 15 Minuten - laeuft im
+// Hauptprozess, damit es KEINEN Unterschied macht ob das Fenster gerade
+// offen, versteckt (Tray) oder auf einer anderen Seite (index.html statt
+// overview.html) ist. localStorage liegt zwar im Renderer, ist aber
+// Origin- nicht Seiten-gebunden, deshalb funktioniert das Auslesen ueber
+// executeJavaScript unabhaengig davon, welche der beiden Seiten gerade
+// geladen ist. Die eigentliche Datenabfrage laeuft direkt gegen den lokalen
+// Server (Node-fetch), ganz ohne dass irgendeine Seite sichtbar sein muss -
+// das aktualisiert einfach den Server-seitigen Match-Cache/Rank-Verlauf,
+// den die UI beim naechsten Anzeigen dann vorfindet.
+let backgroundRefreshInProgress = false;
+
+async function readChallengeStateFromRenderer() {
+  if (!mainWin || mainWin.isDestroyed()) return null;
+  try {
+    const raw = await mainWin.webContents.executeJavaScript(`
+      JSON.stringify({
+        since: localStorage.getItem('ttp_challenge_start') || '',
+        summoner: localStorage.getItem('ttp_summoner_name') || '',
+        champsRaw: localStorage.getItem('ttp_selected_champs') || '[]'
+      })
+    `);
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
+async function backgroundStatsRefresh() {
+  if (backgroundRefreshInProgress || !serverPort) return;
+
+  const state = await readChallengeStateFromRenderer();
+  if (!state || !state.since) return; // keine laufende Challenge - nichts zu tun
+
+  const summonerParts = state.summoner.trim().split('#');
+  if (summonerParts.length !== 2 || !summonerParts[0] || !summonerParts[1]) return;
+
+  let champs;
+  try { champs = JSON.parse(state.champsRaw); } catch (e) { champs = []; }
+  const champsWithKeys = Array.isArray(champs)
+    ? champs.map(c => ({ key: c.key, role: c.role || '' })).filter(c => c.key)
+    : [];
+  if (champsWithKeys.length === 0) return;
+
+  backgroundRefreshInProgress = true;
+  try {
+    const base = `http://localhost:${serverPort}`;
+    const accountParams = new URLSearchParams({ gameName: summonerParts[0], tagLine: summonerParts[1] });
+    const accountRes = await fetch(`${base}/api/account?${accountParams}`);
+    const accountData = await accountRes.json();
+    if (!accountRes.ok) return;
+
+    const startRes = await fetch(`${base}/api/summary-batch/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ puuid: accountData.puuid, champions: champsWithKeys, since: state.since })
+    });
+    const startData = await startRes.json();
+    if (!startRes.ok) return;
+
+    // Auf denselben Job warten wie beim manuellen Laden (overview.html
+    // pollJobUntilDone), nur ohne UI - mit Sicherheitsnetz gegen eine
+    // theoretische Endlosschleife, falls der Job nie fertig wird.
+    for (let attempt = 0; attempt < 200; attempt++) {
+      const statusRes = await fetch(`${base}/api/summary-batch/status/${startData.jobId}`);
+      const status = await statusRes.json();
+      if (!statusRes.ok || status.status === 'error' || status.status === 'done') break;
+      await new Promise(r => setTimeout(r, 600));
+    }
+  } catch (e) {
+    console.error('Background stats refresh failed:', e.message);
+  } finally {
+    backgroundRefreshInProgress = false;
+  }
+}
+
+const QUARTER_HOUR_MS = 15 * 60 * 1000;
+let statsRefreshTimeoutId = null;
+
+// Exakt auf die naechste volle Viertelstunde (:00/:15/:30/:45) ausgerichtet,
+// genau wie zuvor in overview.html - jetzt aber zentral im Hauptprozess,
+// unabhaengig von jeder einzelnen Seite.
+function scheduleNextBackgroundStatsRefresh() {
+  if (statsRefreshTimeoutId) clearTimeout(statsRefreshTimeoutId);
+  const now = new Date();
+  const msIntoHour = (now.getMinutes() * 60 + now.getSeconds()) * 1000 + now.getMilliseconds();
+  const msIntoQuarter = msIntoHour % QUARTER_HOUR_MS;
+  const delay = QUARTER_HOUR_MS - msIntoQuarter;
+  statsRefreshTimeoutId = setTimeout(async () => {
+    await backgroundStatsRefresh();
+    scheduleNextBackgroundStatsRefresh();
+  }, delay);
+}
+
 function createWindow(port) {
   // Beim allerersten Start (keine gespeicherte Groesse/Position) ist die
   // Standardgroesse 70% Breite x 80% Hoehe der Bildschirmarbeitsflaeche statt
@@ -236,11 +382,16 @@ function createWindow(port) {
 
   const windowTitle = `Three-Trick-Pony ${app.getVersion()}`;
 
+  // Beim Windows-Autostart (--hidden, siehe set-start-with-windows) soll die
+  // App nur im Tray erscheinen, nicht sofort das Fenster aufreissen.
+  const startHidden = process.argv.includes('--hidden');
+
   const win = new BrowserWindow({
     x: winState.x,
     y: winState.y,
     width: winState.width,
     height: winState.height,
+    show: !startHidden,
     title: windowTitle,
     autoHideMenuBar: true,
     icon: ICON_PATH,
@@ -256,6 +407,17 @@ function createWindow(port) {
   win.on('page-title-updated', (event) => {
     event.preventDefault();
     win.setTitle(windowTitle);
+  });
+
+  // Fenster-X schliesst nicht wirklich - die App laeuft im Tray weiter, bis
+  // ueber den Beenden-Button in der App oder das Tray-Menu "Quit" wirklich
+  // beendet wird (app.isQuitting). So bleibt der Hintergrund-Scheduler
+  // (Stats/LP alle 15min, Update-Check alle 4h) durchgehend aktiv.
+  win.on('close', (event) => {
+    if (!app.isQuitting) {
+      event.preventDefault();
+      win.hide();
+    }
   });
 
   winState.manage(win);
@@ -279,15 +441,18 @@ app.whenReady().then(() => {
   serverPort = PORT;
   ready.then(() => {
     const win = createWindow(PORT);
+    createTray();
     // Update-Check erst NACH dem Hauptfenster starten, damit ein evtl.
     // vorhandenes Update-Fenster nie das allererste sichtbare Fenster des
     // Prozesses ist.
     win.webContents.once('did-finish-load', () => checkForUpdates());
     setInterval(periodicCheckForUpdates, PERIODIC_UPDATE_CHECK_MS);
+    scheduleNextBackgroundStatsRefresh();
   });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow(PORT);
+    else showMainWindow();
   });
 });
 

@@ -80,6 +80,29 @@
       font-size: 0.75rem;
       color: var(--text-faint);
     }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .checkbox-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--gold);
+      cursor: pointer;
+      margin: 0;
+      flex-shrink: 0;
+    }
+    .setting-group label.checkbox-label {
+      display: inline;
+      margin: 0;
+      color: var(--text);
+      font-family: Georgia, serif;
+      font-size: 0.9rem;
+      letter-spacing: normal;
+      text-transform: none;
+      cursor: pointer;
+    }
     .key-status {
       font-weight: normal;
       text-transform: none;
@@ -191,6 +214,14 @@
   </div>
 
   <div class="setting-group">
+    <label>Startup</label>
+    <div class="checkbox-row">
+      <input type="checkbox" id="startWithWindowsCheckbox">
+      <label for="startWithWindowsCheckbox" class="checkbox-label">Start with Windows (runs in the background)</label>
+    </div>
+  </div>
+
+  <div class="setting-group">
     <label for="widthInput">Window Width</label>
     <div class="size-row">
       <input type="range" id="widthSlider">
@@ -253,6 +284,11 @@
     const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
     const checkUpdatesBtn = document.getElementById('checkUpdatesBtn');
     const updateCheckStatus = document.getElementById('updateCheckStatus');
+    const startWithWindowsCheckbox = document.getElementById('startWithWindowsCheckbox');
+
+    startWithWindowsCheckbox.addEventListener('change', () => {
+      if (window.ttpSettings) window.ttpSettings.setStartWithWindows(startWithWindowsCheckbox.checked);
+    });
 
     async function refreshApiKeyStatus() {
       try {
@@ -394,6 +430,8 @@
       refreshApiKeyStatus();
 
       if (window.ttpSettings) {
+        startWithWindowsCheckbox.checked = await window.ttpSettings.getStartWithWindows();
+
         const info = await window.ttpSettings.getWindowInfo();
         screenWidth = info.screenWidth;
         screenHeight = info.screenHeight;

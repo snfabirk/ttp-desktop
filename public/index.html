@@ -360,6 +360,7 @@
 </head>
 <body>
   <button type="button" class="settings-gear-btn" id="settingsGearBtn" title="Settings" aria-label="Settings">⚙</button>
+  <button type="button" class="quit-btn" id="quitBtn" title="Quit completely" aria-label="Quit completely">⏻</button>
   <header class="site-header">
     <h1>League of Legends</h1>
     <p class="subtitle">Three-Trick-Pony</p>
@@ -897,6 +898,14 @@
 
     settingsGearBtn.addEventListener('click', () => {
       if (window.ttpMain) window.ttpMain.openSettings();
+    });
+
+    const quitBtn = document.getElementById('quitBtn');
+    quitBtn.addEventListener('click', () => {
+      const ok = confirm('Quit Three-Trick-Pony completely? It will no longer run in the background (no more update checks or LP tracking until you start it again).');
+      if (window.ttpMain) window.ttpMain.restoreFocus();
+      if (!ok) return;
+      if (window.ttpMain) window.ttpMain.quitApp();
     });
 
     summonerInput.addEventListener('change', saveSummonerName);

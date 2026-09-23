@@ -204,12 +204,38 @@ html, body {
   border-color: var(--border-hover);
 }
 
-/* Kleines Update-Symbol links vom Zahnrad - standardmaessig unsichtbar,
-   erscheint erst per JS (.visible), sobald ein Update gefunden wurde. */
-.update-indicator-btn {
+/* Beenden-Button links vom Zahnrad - beendet die App wirklich komplett
+   (anders als das Fenster-X, das nur in den Tray versteckt). */
+.quit-btn {
   position: fixed;
   top: 18px;
   right: 64px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-dim);
+  font-size: 1rem;
+  cursor: pointer;
+  z-index: 50;
+  transition: color 0.15s, border-color 0.15s;
+}
+.quit-btn:hover {
+  color: var(--red);
+  border-color: var(--red);
+}
+
+/* Kleines Update-Symbol links vom Beenden-Button - standardmaessig
+   unsichtbar, erscheint erst per JS (.visible), sobald ein Update
+   gefunden wurde. */
+.update-indicator-btn {
+  position: fixed;
+  top: 18px;
+  right: 104px;
   width: 34px;
   height: 34px;
   display: none;
