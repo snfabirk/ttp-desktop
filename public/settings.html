@@ -80,6 +80,63 @@
       font-size: 0.75rem;
       color: var(--text-faint);
     }
+    .key-status {
+      font-weight: normal;
+      text-transform: none;
+      letter-spacing: normal;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+    .key-row {
+      display: flex;
+      gap: 10px;
+    }
+    .key-row input[type="password"] {
+      flex: 1;
+      min-width: 0;
+      box-sizing: border-box;
+      background: var(--input-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 9px 12px;
+      font-family: Georgia, serif;
+      font-size: 0.9rem;
+      color-scheme: dark;
+    }
+    .key-row input[type="password"]:focus {
+      outline: none;
+      border-color: var(--border-hover);
+    }
+    #saveApiKeyBtn {
+      background: none;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      border-radius: 4px;
+      padding: 9px 18px;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #saveApiKeyBtn:hover {
+      background: var(--gold);
+      color: var(--input-bg);
+    }
+    #saveApiKeyBtn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    .key-error {
+      margin: 8px 0 0;
+      font-size: 0.75rem;
+      color: var(--red);
+      display: none;
+    }
+    .key-error.visible {
+      display: block;
+    }
     .apply-row {
       margin-top: 32px;
       display: flex;
@@ -116,6 +173,15 @@
 </head>
 <body>
   <h1>Settings</h1>
+
+  <div class="setting-group">
+    <label for="apiKeyInput">Riot API Key <span id="apiKeyStatus" class="key-status"></span></label>
+    <div class="key-row">
+      <input type="password" id="apiKeyInput" placeholder="RGAPI-...">
+      <button type="button" id="saveApiKeyBtn">Save</button>
+    </div>
+    <p id="apiKeyError" class="key-error"></p>
+  </div>
 
   <div class="setting-group">
     <label for="widthInput">Window Width</label>
@@ -165,6 +231,50 @@
     const themeSelect = document.getElementById('themeSelect');
     const applyBtn = document.getElementById('applyBtn');
     const closeBtn = document.getElementById('closeBtn');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const apiKeyStatus = document.getElementById('apiKeyStatus');
+    const apiKeyError = document.getElementById('apiKeyError');
+    const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+
+    async function refreshApiKeyStatus() {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        apiKeyStatus.textContent = data.hasApiKey
+          ? `(set, ends in ${data.apiKeyPreview})`
+          : '(no key set yet)';
+      } catch (e) {
+        apiKeyStatus.textContent = '';
+      }
+    }
+
+    saveApiKeyBtn.addEventListener('click', async () => {
+      const apiKey = apiKeyInput.value.trim();
+      apiKeyError.textContent = '';
+      apiKeyError.classList.remove('visible');
+      if (!apiKey) {
+        apiKeyError.textContent = 'Please enter an API key first.';
+        apiKeyError.classList.add('visible');
+        return;
+      }
+      saveApiKeyBtn.disabled = true;
+      try {
+        const res = await fetch('/api/settings/api-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Unknown error');
+        apiKeyInput.value = '';
+        await refreshApiKeyStatus();
+      } catch (e) {
+        apiKeyError.textContent = `Error saving key: ${e.message}`;
+        apiKeyError.classList.add('visible');
+      } finally {
+        saveApiKeyBtn.disabled = false;
+      }
+    });
 
     let screenWidth = 1920;
     let screenHeight = 1080;
@@ -233,6 +343,8 @@
       } catch (e) {
         themeSelect.value = 'classic';
       }
+
+      refreshApiKeyStatus();
 
       if (window.ttpSettings) {
         const info = await window.ttpSettings.getWindowInfo();

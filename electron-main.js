@@ -50,7 +50,7 @@ function showSettingsWindow() {
   if (settingsWin) { settingsWin.focus(); return settingsWin; }
   settingsWin = new BrowserWindow({
     width: 460,
-    height: 480,
+    height: 580,
     resizable: false,
     minimizable: false,
     maximizable: false,

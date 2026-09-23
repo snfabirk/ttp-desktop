@@ -43,15 +43,15 @@
       display: grid;
       grid-template-columns: 420px 420px;
       grid-template-areas:
-        "summoner champ"
-        "apikey   list"
-        "gobtn    gobtn";
+        "summoner  champ"
+        "checklist list"
+        "gobtn     gobtn";
       gap: 24px;
       box-sizing: border-box;
       margin: 30px 0 40px;
     }
     #summonerDateBox { grid-area: summoner; }
-    #riotKeyBox { grid-area: apikey; }
+    #checklistBox { grid-area: checklist; }
     .champ-picker { grid-area: champ; }
     .selection-list { grid-area: list; }
     @media (max-width: 900px) {
@@ -60,7 +60,7 @@
         grid-template-areas:
           "summoner"
           "champ"
-          "apikey"
+          "checklist"
           "list"
           "gobtn";
       }
@@ -87,14 +87,14 @@
       border-color: var(--gold);
       background: rgba(200, 170, 110, 0.12);
     }
-    .champ-picker, .api-key-box {
+    .champ-picker, .setup-box {
       box-sizing: border-box;
       background: rgba(var(--bg-rgb), 0.6);
       border: 1px solid var(--border);
       border-radius: 6px;
       padding: 24px;
     }
-    .api-key-box label {
+    .setup-box label {
       display: block;
       color: var(--gold);
       font-family: 'Cinzel', Georgia, serif;
@@ -102,14 +102,7 @@
       letter-spacing: 1px;
       margin-bottom: 12px;
     }
-    .api-key-box .key-status {
-      font-weight: normal;
-      text-transform: none;
-      letter-spacing: normal;
-      font-size: 0.85rem;
-      color: var(--text-dim);
-    }
-    .api-key-box input {
+    .setup-box input {
       width: 100%;
       box-sizing: border-box;
       padding: 10px 14px;
@@ -122,9 +115,46 @@
       margin-bottom: 16px;
       color-scheme: dark;
     }
-    .api-key-box input:focus {
+    .setup-box input:focus {
       outline: none;
       border-color: var(--gold);
+    }
+    .checklist {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.95rem;
+      transition: color 0.15s;
+    }
+    .checklist-item.done {
+      color: var(--text);
+    }
+    .checklist-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      color: var(--text-faint);
+      font-size: 0.8rem;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .checklist-item.done .checklist-mark {
+      border-color: var(--green);
+      color: var(--green);
     }
     .challenge-timer {
       font-family: 'Cinzel', Georgia, serif;
@@ -143,7 +173,7 @@
       font-size: 0.95rem;
       color: var(--text);
     }
-    .api-key-box button.reset-challenge-link {
+    .setup-box button.reset-challenge-link {
       background: none;
       border: none;
       color: var(--text-faint);
@@ -153,11 +183,11 @@
       cursor: pointer;
       padding: 0;
     }
-    .api-key-box button.reset-challenge-link:hover {
+    .setup-box button.reset-challenge-link:hover {
       color: var(--red);
       background: none;
     }
-    .api-key-box button {
+    .setup-box button {
       background: none;
       border: 1px solid var(--gold);
       color: var(--gold);
@@ -168,11 +198,11 @@
       letter-spacing: 1px;
       cursor: pointer;
     }
-    .api-key-box button:hover {
+    .setup-box button:hover {
       background: var(--gold);
       color: var(--input-bg);
     }
-    .api-key-box button:disabled {
+    .setup-box button:disabled {
       opacity: 0.5;
       cursor: default;
     }
@@ -335,7 +365,7 @@
   </header>
 
   <div class="content">
-  <div class="api-key-box" id="summonerDateBox">
+  <div class="setup-box" id="summonerDateBox">
     <label>Summoner &amp; Challenge</label>
     <input type="text" id="summonerInput" placeholder="Luckshot#796" value="Luckshot#796">
 
@@ -353,10 +383,13 @@
     </div>
   </div>
 
-  <div class="api-key-box" id="riotKeyBox">
-    <label for="apiKeyInput">Riot API Key <span id="apiKeyStatus" class="key-status"></span></label>
-    <input type="password" id="apiKeyInput" placeholder="RGAPI-...">
-    <button type="button" id="saveApiKeyBtn">Save Key</button>
+  <div class="setup-box" id="checklistBox">
+    <label>Challenge Checklist</label>
+    <ul class="checklist" id="checklistList">
+      <li class="checklist-item" id="checklistSummoner"><span class="checklist-mark">○</span> Summoner name set</li>
+      <li class="checklist-item" id="checklistChamps"><span class="checklist-mark">○</span> 1-3 champions selected</li>
+      <li class="checklist-item" id="checklistRoles"><span class="checklist-mark">○</span> Roles assigned</li>
+    </ul>
   </div>
 
   <div class="champ-picker">
@@ -581,53 +614,15 @@
     const selectionCards = document.getElementById('selectionCards');
     const selectionError = document.getElementById('selectionError');
     const toOverviewBtn = document.getElementById('toOverviewBtn');
-    const apiKeyInput = document.getElementById('apiKeyInput');
-    const apiKeyStatus = document.getElementById('apiKeyStatus');
-    const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
     const champSearchInput = document.getElementById('champSearchInput');
+    const checklistSummoner = document.getElementById('checklistSummoner');
+    const checklistChamps = document.getElementById('checklistChamps');
+    const checklistRoles = document.getElementById('checklistRoles');
     const champSuggestions = document.getElementById('champSuggestions');
     const champPickerLockedNote = document.getElementById('champPickerLockedNote');
     let selectedChamps = [];
     let allChampions = [];
     let championKeyById = {};
-
-    async function refreshApiKeyStatus() {
-      try {
-        const res = await fetch('/api/settings');
-        const data = await res.json();
-        apiKeyStatus.textContent = data.hasApiKey
-          ? `(set, ends in ${data.apiKeyPreview})`
-          : '(no key set yet)';
-      } catch (e) {
-        apiKeyStatus.textContent = '';
-      }
-    }
-
-    saveApiKeyBtn.addEventListener('click', async () => {
-      const apiKey = apiKeyInput.value.trim();
-      if (!apiKey) {
-        showError('Please enter an API key first.');
-        return;
-      }
-      saveApiKeyBtn.disabled = true;
-      try {
-        const res = await fetch('/api/settings/api-key', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ apiKey })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Unknown error');
-
-        apiKeyInput.value = '';
-        hideError();
-        await refreshApiKeyStatus();
-      } catch (e) {
-        showError(`Error saving key: ${e.message}`);
-      } finally {
-        saveApiKeyBtn.disabled = false;
-      }
-    });
 
     async function loadChampionKeys() {
       try {
@@ -668,6 +663,23 @@
     function showError(message) {
       selectionError.textContent = message;
       selectionError.classList.add('visible');
+    }
+
+    function setChecklistItem(el, done) {
+      el.classList.toggle('done', done);
+      el.querySelector('.checklist-mark').textContent = done ? '✓' : '○';
+    }
+
+    // Gleiche Name#Tag-Pruefung wie beim tatsaechlichen Laden (siehe
+    // overview.html performLoad()) - rein zur Anzeige, keine Validierung mit
+    // Server-Roundtrip.
+    function updateChecklist() {
+      const summonerOk = /^[^#]+#[^#]+$/.test(summonerInput.value.trim());
+      const champsOk = selectedChamps.length >= 1 && selectedChamps.length <= MAX_CHAMPS;
+      const rolesOk = selectedChamps.length > 0 && selectedChamps.every(c => !!c.role);
+      setChecklistItem(checklistSummoner, summonerOk);
+      setChecklistItem(checklistChamps, champsOk);
+      setChecklistItem(checklistRoles, rolesOk);
     }
 
     function championIconUrl(id) {
@@ -873,7 +885,10 @@
     });
 
     summonerInput.addEventListener('change', saveSummonerName);
-    summonerInput.addEventListener('input', saveSummonerName);
+    summonerInput.addEventListener('input', () => {
+      saveSummonerName();
+      updateChecklist();
+    });
 
     const ROLE_OPTIONS = [
       { value: '', label: 'Any Role' },
@@ -913,6 +928,7 @@
         roleSelect.addEventListener('change', () => {
           champ.role = roleSelect.value;
           saveSelection();
+          updateChecklist();
         });
 
         info.appendChild(name);
@@ -948,6 +964,8 @@
         placeholder.className = 'champ-card placeholder';
         selectionCards.appendChild(placeholder);
       }
+
+      updateChecklist();
     }
 
     function pickChampion(id, name) {
@@ -1078,7 +1096,6 @@
 
     renderChallengeState();
 
-    refreshApiKeyStatus();
     loadChampionKeys().then(() => {
       loadSelection();
       renderSelection();
