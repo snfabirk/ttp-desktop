@@ -1585,9 +1585,11 @@
     function renderLpGoal() {
       let tier = '';
       let division = '';
+      let lp = '';
       try {
         tier = localStorage.getItem('ttp_lp_goal_tier') || '';
         division = localStorage.getItem('ttp_lp_goal_division') || '';
+        lp = localStorage.getItem('ttp_lp_goal_lp') || '';
       } catch (e) {}
 
       if (!tier) {
@@ -1596,7 +1598,8 @@
       }
 
       const tierLabel = TIER_LABELS[tier] || tier;
-      accountLpGoalEl.textContent = APEX_TIERS.has(tier) ? tierLabel : `${tierLabel} ${division}`;
+      const rankPart = APEX_TIERS.has(tier) ? tierLabel : `${tierLabel} ${division}`;
+      accountLpGoalEl.textContent = lp !== '' ? `${rankPart} · ${lp} LP` : rankPart;
       accountLpGoalBlock.style.display = '';
     }
 

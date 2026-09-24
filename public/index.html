@@ -215,7 +215,7 @@
       letter-spacing: 1px;
       margin-bottom: 12px;
     }
-    #champSelect, #champSearchInput, .meta-select {
+    #champSearchInput, .meta-select {
       width: 100%;
       box-sizing: border-box;
       padding: 10px 14px;
@@ -226,14 +226,14 @@
       font-size: 1rem;
       font-family: Georgia, serif;
     }
-    #champSelect, .meta-select {
+    select.meta-select {
       cursor: pointer;
     }
-    #champSelect:focus, #champSearchInput:focus, .meta-select:focus {
+    #champSearchInput:focus, .meta-select:focus {
       outline: none;
       border-color: var(--gold);
     }
-    #champSelect:disabled, .meta-select:disabled {
+    .meta-select:disabled {
       opacity: 0.5;
       cursor: default;
     }
@@ -251,9 +251,19 @@
       display: flex;
       gap: 8px;
     }
-    .meta-row .split-selects select {
-      flex: 1;
+    .meta-row .split-selects select,
+    .meta-row .split-selects input {
       min-width: 0;
+      width: auto;
+    }
+    .meta-row .split-selects select:first-child {
+      flex: 2;
+    }
+    .meta-row .split-selects select:nth-child(2) {
+      flex: 1;
+    }
+    .meta-row .split-selects input {
+      flex: 1;
     }
     .suggestion-list {
       position: absolute;
@@ -295,25 +305,45 @@
       font-size: 0.85rem;
       font-style: italic;
     }
-    #champPreview {
+    .role-icon-picker {
       display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .role-icon-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 16px;
-      margin-top: 20px;
-      min-height: 64px;
+      gap: 4px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 4px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
     }
-    #champPreview img {
-      width: 64px;
-      height: 64px;
-      border: 2px solid var(--gold);
-      border-radius: 4px;
-      display: none;
+    .role-icon-btn:hover {
+      border-color: var(--border-hover);
     }
-    #champPreview span {
-      color: var(--text);
-      font-family: 'Cinzel', Georgia, serif;
-      font-size: 1.4rem;
-      letter-spacing: 1px;
+    .role-icon-btn.active {
+      border-color: var(--gold);
+      background: rgba(200, 170, 110, 0.12);
+    }
+    .role-icon-glyph {
+      font-size: 1.3rem;
+    }
+    .role-icon-label {
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.7rem;
+    }
+    .role-icon-btn.active .role-icon-label {
+      color: var(--gold);
+    }
+    .role-icon-btn:disabled {
+      opacity: 0.5;
+      cursor: default;
     }
     .champ-card {
       position: relative;
@@ -383,225 +413,6 @@
 
     <div class="challenge-rank-row" id="challengeRankRow">Loading current rank…</div>
 
-    <div id="challengeNotStarted">
-      <button type="button" id="startChallengeBtn">Start Challenge</button>
-      <p id="challengeStartError" class="error-msg"></p>
-    </div>
-
-    <div id="challengeStarted" style="display:none;">
-      <p class="challenge-started-at" id="challengeStartedAt"></p>
-      <div class="challenge-timer" id="challengeTimer">-</div>
-      <button type="button" id="resetChallengeBtn" class="reset-challenge-link">Reset Challenge</button>
-    </div>
-  </div>
-
-  <div class="setup-box" id="checklistBox">
-    <label>Challenge Checklist</label>
-    <ul class="checklist" id="checklistList">
-      <li class="checklist-item" id="checklistSummoner"><span class="checklist-mark">○</span> Summoner name set</li>
-      <li class="checklist-item" id="checklistChamps"><span class="checklist-mark">○</span> 1-3 champions selected</li>
-      <li class="checklist-item" id="checklistRoles"><span class="checklist-mark">○</span> Role assigned</li>
-    </ul>
-  </div>
-
-  <div class="champ-picker">
-    <label for="champSelect">Select Champion Pool</label>
-    <p id="champPickerLockedNote" style="font-size:0.75rem; color:var(--text-faint); margin:0 0 12px; display:none;">
-      Champions are locked for this challenge. Reset the challenge on the left to change your pool.
-    </p>
-    <div style="position:relative; margin-bottom:12px;">
-      <input type="text" id="champSearchInput" placeholder="e.g. C for Caitlyn, Camille, …" autocomplete="off">
-      <div id="champSuggestions" class="suggestion-list" hidden></div>
-    </div>
-    <select id="champSelect">
-      <option value="">-- Select Champion --</option>
-      <option value="Aatrox">Aatrox</option>
-      <option value="Ahri">Ahri</option>
-      <option value="Akali">Akali</option>
-      <option value="Akshan">Akshan</option>
-      <option value="Alistar">Alistar</option>
-      <option value="Ambessa">Ambessa</option>
-      <option value="Amumu">Amumu</option>
-      <option value="Anivia">Anivia</option>
-      <option value="Annie">Annie</option>
-      <option value="Aphelios">Aphelios</option>
-      <option value="Ashe">Ashe</option>
-      <option value="AurelionSol">Aurelion Sol</option>
-      <option value="Aurora">Aurora</option>
-      <option value="Azir">Azir</option>
-      <option value="Bard">Bard</option>
-      <option value="Belveth">Bel'Veth</option>
-      <option value="Blitzcrank">Blitzcrank</option>
-      <option value="Brand">Brand</option>
-      <option value="Braum">Braum</option>
-      <option value="Briar">Briar</option>
-      <option value="Caitlyn">Caitlyn</option>
-      <option value="Camille">Camille</option>
-      <option value="Cassiopeia">Cassiopeia</option>
-      <option value="Chogath">Cho'Gath</option>
-      <option value="Corki">Corki</option>
-      <option value="Darius">Darius</option>
-      <option value="Diana">Diana</option>
-      <option value="DrMundo">Dr. Mundo</option>
-      <option value="Draven">Draven</option>
-      <option value="Ekko">Ekko</option>
-      <option value="Elise">Elise</option>
-      <option value="Evelynn">Evelynn</option>
-      <option value="Ezreal">Ezreal</option>
-      <option value="Fiddlesticks">Fiddlesticks</option>
-      <option value="Fiora">Fiora</option>
-      <option value="Fizz">Fizz</option>
-      <option value="Galio">Galio</option>
-      <option value="Gangplank">Gangplank</option>
-      <option value="Garen">Garen</option>
-      <option value="Gnar">Gnar</option>
-      <option value="Gragas">Gragas</option>
-      <option value="Graves">Graves</option>
-      <option value="Gwen">Gwen</option>
-      <option value="Hecarim">Hecarim</option>
-      <option value="Heimerdinger">Heimerdinger</option>
-      <option value="Hwei">Hwei</option>
-      <option value="Illaoi">Illaoi</option>
-      <option value="Irelia">Irelia</option>
-      <option value="Ivern">Ivern</option>
-      <option value="Janna">Janna</option>
-      <option value="JarvanIV">Jarvan IV</option>
-      <option value="Jax">Jax</option>
-      <option value="Jayce">Jayce</option>
-      <option value="Jhin">Jhin</option>
-      <option value="Jinx">Jinx</option>
-      <option value="KSante">K'Sante</option>
-      <option value="Kaisa">Kai'Sa</option>
-      <option value="Kalista">Kalista</option>
-      <option value="Karma">Karma</option>
-      <option value="Karthus">Karthus</option>
-      <option value="Kassadin">Kassadin</option>
-      <option value="Katarina">Katarina</option>
-      <option value="Kayle">Kayle</option>
-      <option value="Kayn">Kayn</option>
-      <option value="Kennen">Kennen</option>
-      <option value="Khazix">Kha'Zix</option>
-      <option value="Kindred">Kindred</option>
-      <option value="Kled">Kled</option>
-      <option value="KogMaw">Kog'Maw</option>
-      <option value="Leblanc">LeBlanc</option>
-      <option value="LeeSin">Lee Sin</option>
-      <option value="Leona">Leona</option>
-      <option value="Lillia">Lillia</option>
-      <option value="Lissandra">Lissandra</option>
-      <option value="Locke">Locke</option>
-      <option value="Lucian">Lucian</option>
-      <option value="Lulu">Lulu</option>
-      <option value="Lux">Lux</option>
-      <option value="Malphite">Malphite</option>
-      <option value="Malzahar">Malzahar</option>
-      <option value="Maokai">Maokai</option>
-      <option value="MasterYi">Master Yi</option>
-      <option value="Mel">Mel</option>
-      <option value="Milio">Milio</option>
-      <option value="MissFortune">Miss Fortune</option>
-      <option value="Mordekaiser">Mordekaiser</option>
-      <option value="Morgana">Morgana</option>
-      <option value="Naafiri">Naafiri</option>
-      <option value="Nami">Nami</option>
-      <option value="Nasus">Nasus</option>
-      <option value="Nautilus">Nautilus</option>
-      <option value="Neeko">Neeko</option>
-      <option value="Nidalee">Nidalee</option>
-      <option value="Nilah">Nilah</option>
-      <option value="Nocturne">Nocturne</option>
-      <option value="Nunu">Nunu & Willump</option>
-      <option value="Olaf">Olaf</option>
-      <option value="Orianna">Orianna</option>
-      <option value="Ornn">Ornn</option>
-      <option value="Pantheon">Pantheon</option>
-      <option value="Poppy">Poppy</option>
-      <option value="Pyke">Pyke</option>
-      <option value="Qiyana">Qiyana</option>
-      <option value="Quinn">Quinn</option>
-      <option value="Rakan">Rakan</option>
-      <option value="Rammus">Rammus</option>
-      <option value="RekSai">Rek'Sai</option>
-      <option value="Rell">Rell</option>
-      <option value="Renata">Renata Glasc</option>
-      <option value="Renekton">Renekton</option>
-      <option value="Rengar">Rengar</option>
-      <option value="Riven">Riven</option>
-      <option value="Rumble">Rumble</option>
-      <option value="Ryze">Ryze</option>
-      <option value="Samira">Samira</option>
-      <option value="Sejuani">Sejuani</option>
-      <option value="Senna">Senna</option>
-      <option value="Seraphine">Seraphine</option>
-      <option value="Sett">Sett</option>
-      <option value="Shaco">Shaco</option>
-      <option value="Shen">Shen</option>
-      <option value="Shyvana">Shyvana</option>
-      <option value="Singed">Singed</option>
-      <option value="Sion">Sion</option>
-      <option value="Sivir">Sivir</option>
-      <option value="Skarner">Skarner</option>
-      <option value="Smolder">Smolder</option>
-      <option value="Sona">Sona</option>
-      <option value="Soraka">Soraka</option>
-      <option value="Swain">Swain</option>
-      <option value="Sylas">Sylas</option>
-      <option value="Syndra">Syndra</option>
-      <option value="TahmKench">Tahm Kench</option>
-      <option value="Taliyah">Taliyah</option>
-      <option value="Talon">Talon</option>
-      <option value="Taric">Taric</option>
-      <option value="Teemo">Teemo</option>
-      <option value="Thresh">Thresh</option>
-      <option value="Tristana">Tristana</option>
-      <option value="Trundle">Trundle</option>
-      <option value="Tryndamere">Tryndamere</option>
-      <option value="TwistedFate">Twisted Fate</option>
-      <option value="Twitch">Twitch</option>
-      <option value="Udyr">Udyr</option>
-      <option value="Urgot">Urgot</option>
-      <option value="Varus">Varus</option>
-      <option value="Vayne">Vayne</option>
-      <option value="Veigar">Veigar</option>
-      <option value="Velkoz">Vel'Koz</option>
-      <option value="Vex">Vex</option>
-      <option value="Vi">Vi</option>
-      <option value="Viego">Viego</option>
-      <option value="Viktor">Viktor</option>
-      <option value="Vladimir">Vladimir</option>
-      <option value="Volibear">Volibear</option>
-      <option value="Warwick">Warwick</option>
-      <option value="MonkeyKing">Wukong</option>
-      <option value="Xayah">Xayah</option>
-      <option value="Xerath">Xerath</option>
-      <option value="XinZhao">Xin Zhao</option>
-      <option value="Yasuo">Yasuo</option>
-      <option value="Yone">Yone</option>
-      <option value="Yorick">Yorick</option>
-      <option value="Yunara">Yunara</option>
-      <option value="Yuumi">Yuumi</option>
-      <option value="Zaahen">Zaahen</option>
-      <option value="Zac">Zac</option>
-      <option value="Zed">Zed</option>
-      <option value="Zeri">Zeri</option>
-      <option value="Ziggs">Ziggs</option>
-      <option value="Zilean">Zilean</option>
-      <option value="Zoe">Zoe</option>
-      <option value="Zyra">Zyra</option>
-    </select>
-
-    <div class="meta-row">
-      <label for="poolRoleSelect">Role for this Champion Pool</label>
-      <select id="poolRoleSelect" class="meta-select">
-        <option value="">Any Role</option>
-        <option value="TOP">Top</option>
-        <option value="JUNGLE">Jungle</option>
-        <option value="MIDDLE">Mid</option>
-        <option value="BOTTOM">Bottom</option>
-        <option value="UTILITY">Support</option>
-      </select>
-    </div>
-
     <div class="meta-row">
       <label for="challengeLevelSelect">Challenge Level</label>
       <select id="challengeLevelSelect" class="meta-select">
@@ -635,13 +446,65 @@
           <option value="II">II</option>
           <option value="I">I</option>
         </select>
+        <input type="number" id="lpGoalLpInput" class="meta-select" min="0" max="100" placeholder="LP">
       </div>
     </div>
 
-    <div id="champPreview">
-      <img id="champIcon" alt="">
-      <span id="champName"></span>
+    <div id="challengeNotStarted">
+      <button type="button" id="startChallengeBtn">Start Challenge</button>
+      <p id="challengeStartError" class="error-msg"></p>
     </div>
+
+    <div id="challengeStarted" style="display:none;">
+      <p class="challenge-started-at" id="challengeStartedAt"></p>
+      <div class="challenge-timer" id="challengeTimer">-</div>
+      <button type="button" id="resetChallengeBtn" class="reset-challenge-link">Reset Challenge</button>
+    </div>
+  </div>
+
+  <div class="setup-box" id="checklistBox">
+    <label>Challenge Checklist</label>
+    <ul class="checklist" id="checklistList">
+      <li class="checklist-item" id="checklistSummoner"><span class="checklist-mark">○</span> Summoner name set</li>
+      <li class="checklist-item" id="checklistChamps"><span class="checklist-mark">○</span> 1-3 champions selected</li>
+      <li class="checklist-item" id="checklistRoles"><span class="checklist-mark">○</span> Role assigned</li>
+    </ul>
+  </div>
+
+  <div class="champ-picker">
+    <label>Select Champion Pool</label>
+    <p id="champPickerLockedNote" style="font-size:0.75rem; color:var(--text-faint); margin:0 0 12px; display:none;">
+      Champions are locked for this challenge. Reset the challenge on the left to change your pool.
+    </p>
+
+    <div class="role-icon-picker" id="roleIconPicker">
+      <button type="button" class="role-icon-btn" data-role="TOP" title="Top">
+        <span class="role-icon-glyph">⚔️</span>
+        <span class="role-icon-label">Top</span>
+      </button>
+      <button type="button" class="role-icon-btn" data-role="JUNGLE" title="Jungle">
+        <span class="role-icon-glyph">🌲</span>
+        <span class="role-icon-label">Jungle</span>
+      </button>
+      <button type="button" class="role-icon-btn" data-role="MIDDLE" title="Mid">
+        <span class="role-icon-glyph">⚡</span>
+        <span class="role-icon-label">Mid</span>
+      </button>
+      <button type="button" class="role-icon-btn" data-role="BOTTOM" title="Bottom">
+        <span class="role-icon-glyph">🏹</span>
+        <span class="role-icon-label">Bottom</span>
+      </button>
+      <button type="button" class="role-icon-btn" data-role="UTILITY" title="Support">
+        <span class="role-icon-glyph">🛡️</span>
+        <span class="role-icon-label">Support</span>
+      </button>
+    </div>
+
+    <div style="position:relative; margin-bottom:12px;">
+      <input type="text" id="champSearchInput" placeholder="e.g. C for Caitlyn, Camille, …" autocomplete="off">
+      <div id="champSuggestions" class="suggestion-list" hidden></div>
+    </div>
+
     <p id="selectionError" class="error-msg"></p>
   </div>
 
@@ -661,6 +524,8 @@
     const STORAGE_KEY_CHALLENGE_LEVEL = 'ttp_challenge_level';
     const STORAGE_KEY_LP_GOAL_TIER = 'ttp_lp_goal_tier';
     const STORAGE_KEY_LP_GOAL_DIVISION = 'ttp_lp_goal_division';
+    const STORAGE_KEY_LP_GOAL_LP = 'ttp_lp_goal_lp';
+    const STORAGE_KEY_POOL_ROLE = 'ttp_pool_role';
     const APEX_TIERS = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
     const summonerInput = document.getElementById('summonerInput');
     const challengeNotStarted = document.getElementById('challengeNotStarted');
@@ -672,13 +537,12 @@
     const challengeTimer = document.getElementById('challengeTimer');
     const challengeRankRow = document.getElementById('challengeRankRow');
     const settingsGearBtn = document.getElementById('settingsGearBtn');
-    const select = document.getElementById('champSelect');
-    const poolRoleSelect = document.getElementById('poolRoleSelect');
+    const roleIconPicker = document.getElementById('roleIconPicker');
+    const roleIconButtons = Array.from(document.querySelectorAll('.role-icon-btn'));
     const challengeLevelSelect = document.getElementById('challengeLevelSelect');
     const lpGoalTierSelect = document.getElementById('lpGoalTierSelect');
     const lpGoalDivisionSelect = document.getElementById('lpGoalDivisionSelect');
-    const icon = document.getElementById('champIcon');
-    const nameLabel = document.getElementById('champName');
+    const lpGoalLpInput = document.getElementById('lpGoalLpInput');
     const selectionCards = document.getElementById('selectionCards');
     const selectionError = document.getElementById('selectionError');
     const toOverviewBtn = document.getElementById('toOverviewBtn');
@@ -691,6 +555,7 @@
     let selectedChamps = [];
     let allChampions = [];
     let championKeyById = {};
+    let currentPoolRole = '';
 
     async function loadChampionKeys() {
       try {
@@ -744,7 +609,7 @@
     function updateChecklist() {
       const summonerOk = /^[^#]+#[^#]+$/.test(summonerInput.value.trim());
       const champsOk = selectedChamps.length >= 1 && selectedChamps.length <= MAX_CHAMPS;
-      const rolesOk = selectedChamps.length > 0 && !!poolRoleSelect.value;
+      const rolesOk = selectedChamps.length > 0 && !!currentPoolRole;
       setChecklistItem(checklistSummoner, summonerOk);
       setChecklistItem(checklistChamps, champsOk);
       setChecklistItem(checklistRoles, rolesOk);
@@ -802,6 +667,7 @@
       try {
         localStorage.setItem(STORAGE_KEY_LP_GOAL_TIER, lpGoalTierSelect.value);
         localStorage.setItem(STORAGE_KEY_LP_GOAL_DIVISION, lpGoalDivisionSelect.value);
+        localStorage.setItem(STORAGE_KEY_LP_GOAL_LP, lpGoalLpInput.value);
       } catch (e) {}
     }
 
@@ -809,18 +675,45 @@
       try {
         return {
           tier: localStorage.getItem(STORAGE_KEY_LP_GOAL_TIER) || '',
-          division: localStorage.getItem(STORAGE_KEY_LP_GOAL_DIVISION) || 'IV'
+          division: localStorage.getItem(STORAGE_KEY_LP_GOAL_DIVISION) || 'IV',
+          lp: localStorage.getItem(STORAGE_KEY_LP_GOAL_LP) || ''
         };
       } catch (e) {
-        return { tier: '', division: 'IV' };
+        return { tier: '', division: 'IV', lp: '' };
       }
     }
 
     // Apex-Tiers (Master/GM/Challenger) haben keine Divisionen - dort macht
-    // die Divisions-Auswahl keinen Sinn und wird ausgeblendet.
+    // die Divisions-Auswahl keinen Sinn und wird ausgeblendet. Das LP-Feld
+    // bleibt dagegen immer sichtbar, LP zaehlt auch in Apex-Tiers.
     function updateLpGoalDivisionVisibility() {
       const isApex = APEX_TIERS.has(lpGoalTierSelect.value);
       lpGoalDivisionSelect.style.display = isApex || !lpGoalTierSelect.value ? 'none' : '';
+    }
+
+    // Eine Rolle fuer den ganzen Champion-Pool statt pro Champion einzeln -
+    // man waehlt ja 3 Champions FUER dieselbe Rolle (OTP-Challenge), nicht 3
+    // Champions mit je unterschiedlicher Rolle. Als 5 anklickbare Icons statt
+    // Dropdown, damit man die Rolle auf einen Blick/Klick erkennt/setzt.
+    function savePoolRole() {
+      try { localStorage.setItem(STORAGE_KEY_POOL_ROLE, currentPoolRole); } catch (e) {}
+    }
+
+    function loadPoolRole() {
+      try { return localStorage.getItem(STORAGE_KEY_POOL_ROLE) || ''; } catch (e) { return ''; }
+    }
+
+    function applyPoolRoleUI() {
+      roleIconButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.role === currentPoolRole));
+    }
+
+    function setPoolRole(role) {
+      currentPoolRole = role;
+      applyPoolRoleUI();
+      selectedChamps.forEach(c => { c.role = currentPoolRole; });
+      saveSelection();
+      savePoolRole();
+      updateChecklist();
     }
 
     function saveChallengeStart(iso) {
@@ -916,11 +809,11 @@
     function updateChampionLockState() {
       const locked = isChallengeLocked();
       champSearchInput.disabled = locked;
-      select.disabled = locked;
-      poolRoleSelect.disabled = locked;
+      roleIconButtons.forEach(btn => { btn.disabled = locked; });
       challengeLevelSelect.disabled = locked;
       lpGoalTierSelect.disabled = locked;
       lpGoalDivisionSelect.disabled = locked;
+      lpGoalLpInput.disabled = locked;
       summonerInput.disabled = locked;
       champPickerLockedNote.style.display = locked ? '' : 'none';
       renderSelection();
@@ -958,7 +851,7 @@
         challengeStartError.classList.add('visible');
         return;
       }
-      if (!poolRoleSelect.value) {
+      if (!currentPoolRole) {
         challengeStartError.textContent = 'Select a role for this champion pool before starting the challenge.';
         challengeStartError.classList.add('visible');
         return;
@@ -1071,16 +964,9 @@
 
     function pickChampion(id, name) {
       if (!id) {
-        icon.style.display = 'none';
-        nameLabel.textContent = '';
         hideError();
         return;
       }
-      icon.src = championIconUrl(id);
-      icon.alt = name;
-      icon.style.display = 'block';
-      nameLabel.textContent = name;
-      select.value = id;
 
       if (selectedChamps.some(c => c.id === id)) {
         hideError();
@@ -1089,39 +975,25 @@
 
       if (isChallengeLocked()) {
         showError('Champions are locked for this challenge. Reset the challenge to change your pool.');
-        select.value = '';
-        icon.style.display = 'none';
-        nameLabel.textContent = '';
         return;
       }
 
       if (selectedChamps.length >= MAX_CHAMPS) {
         showError(`You can select a maximum of ${MAX_CHAMPS} champions.`);
-        select.value = '';
-        icon.style.display = 'none';
-        nameLabel.textContent = '';
         return;
       }
 
-      selectedChamps.push({ id, name, key: championKeyById[id] || null, role: poolRoleSelect.value });
+      selectedChamps.push({ id, name, key: championKeyById[id] || null, role: currentPoolRole });
       hideError();
       saveSelection();
       renderSelection();
     }
 
-    select.addEventListener('change', () => {
-      const id = select.value;
-      const name = select.options[select.selectedIndex].text;
-      pickChampion(id, name);
-    });
-
-    // Eine Rolle fuer den ganzen Champion-Pool statt pro Champion einzeln -
-    // man waehlt ja 3 Champions FUER dieselbe Rolle (OTP-Challenge), nicht 3
-    // Champions mit je unterschiedlicher Rolle.
-    poolRoleSelect.addEventListener('change', () => {
-      selectedChamps.forEach(c => { c.role = poolRoleSelect.value; });
-      saveSelection();
-      updateChecklist();
+    roleIconButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        setPoolRole(btn.dataset.role);
+      });
     });
 
     challengeLevelSelect.addEventListener('change', saveChallengeLevel);
@@ -1131,6 +1003,13 @@
       saveLpGoal();
     });
     lpGoalDivisionSelect.addEventListener('change', saveLpGoal);
+    lpGoalLpInput.addEventListener('input', saveLpGoal);
+    lpGoalLpInput.addEventListener('change', () => {
+      let v = Number(lpGoalLpInput.value);
+      if (Number.isNaN(v) || lpGoalLpInput.value === '') { lpGoalLpInput.value = ''; }
+      else { lpGoalLpInput.value = Math.min(100, Math.max(0, Math.round(v))); }
+      saveLpGoal();
+    });
 
     function hideChampSuggestions() {
       champSuggestions.hidden = true;
@@ -1164,9 +1043,12 @@
           item.appendChild(img);
           item.appendChild(name);
           item.addEventListener('click', () => {
-            champSearchInput.value = c.name;
             hideChampSuggestions();
             pickChampion(c.id, c.name);
+            // Leert das Suchfeld direkt nach dem Picken, statt den zuletzt
+            // getippten Namen stehen zu lassen - so ist es sofort bereit fuer
+            // den naechsten Champion.
+            champSearchInput.value = '';
           });
           champSuggestions.appendChild(item);
         });
@@ -1216,15 +1098,16 @@
     const savedLpGoal = loadLpGoal();
     lpGoalTierSelect.value = savedLpGoal.tier;
     lpGoalDivisionSelect.value = savedLpGoal.division;
+    lpGoalLpInput.value = savedLpGoal.lp;
     updateLpGoalDivisionVisibility();
+
+    currentPoolRole = loadPoolRole();
+    applyPoolRoleUI();
 
     renderChallengeState();
 
     loadChampionKeys().then(() => {
       loadSelection();
-      // Zeigt die zuvor gespeicherte Rolle des Pools an (alle Champions
-      // teilen sich dieselbe Rolle, das erste Element reicht als Quelle).
-      poolRoleSelect.value = selectedChamps.length > 0 ? (selectedChamps[0].role || '') : '';
       renderSelection();
     });
   </script>
