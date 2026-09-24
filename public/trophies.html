@@ -110,6 +110,7 @@
     .trophy-grid { grid-template-columns: repeat(2, 1fr); }
   }
   .trophy-slot {
+    position: relative;
     background: var(--panel-bg);
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -125,6 +126,61 @@
   .trophy-slot:hover {
     border-color: var(--border-hover);
     opacity: 0.85;
+  }
+  .trophy-tooltip {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    width: 200px;
+    background: var(--input-bg);
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: Georgia, serif;
+    font-size: 0.68rem;
+    line-height: 1.45;
+    text-align: left;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 100;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  }
+  .trophy-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--gold);
+  }
+  .trophy-tooltip-role {
+    display: block;
+    color: var(--gold);
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .trophy-slot:hover .trophy-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+  }
+  .trophy-grid > .trophy-slot:nth-child(-n+7) .trophy-tooltip {
+    bottom: auto;
+    top: calc(100% + 10px);
+  }
+  .trophy-grid > .trophy-slot:nth-child(-n+7) .trophy-tooltip::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: var(--gold);
   }
   .trophy-slot.has-progress {
     opacity: 0.85;
@@ -268,27 +324,48 @@
     // weil rohe Kills/Damage fuer Support-Spielweisen nicht fair sind -
     // siehe [[achievements-trophies-design]] Memory).
     const UNIVERSAL_TROPHIES = [
-      { id: 'double-kill', icon: 'sword', name: 'Double Kill', desc: 'Double kills across the challenge',
-        support: { icon: 'heart', name: 'Guardian I', desc: 'Save an ally from death, across the challenge' } },
-      { id: 'triple-kill', icon: 'sword', name: 'Triple Kill', desc: 'Triple kills across the challenge',
-        support: { icon: 'heart', name: 'Guardian II', desc: '5+ saves in a game, several times over the challenge' } },
-      { id: 'quadra-kill', icon: 'sword', name: 'Quadra Kill', desc: 'Quadra kills across the challenge',
-        support: { icon: 'heart', name: 'Guardian III', desc: 'Total allies saved across the challenge' } },
-      { id: 'penta-kill', icon: 'crown', name: 'Pentakill', desc: 'Penta kills across the challenge',
-        support: { icon: 'heart', name: 'Guardian Angel', desc: '8+ saves in a game, a few times over the challenge' } },
-      { id: 'first-strike', icon: 'droplet', name: 'First Strike', desc: 'First bloods across the challenge' },
-      { id: 'flawless-victory', icon: 'shield', name: 'Flawless Victory', desc: 'Win a game without dying' },
-      { id: 'rampage', icon: 'flame', name: 'Rampage', desc: 'A huge kill count in one game',
-        support: { icon: 'link', name: 'Rampage', desc: 'A huge assist count in one game' } },
-      { id: 'slayer', icon: 'sword', name: 'Slayer', desc: 'Kills racked up across the challenge' },
-      { id: 'farm-king', icon: 'wheat', name: 'Farm King', desc: 'CS racked up across the challenge' },
-      { id: 'gold-rush', icon: 'coin', name: 'Gold Rush', desc: 'Gold racked up across the challenge' },
-      { id: 'win-streak', icon: 'flame', name: 'Win Streak', desc: 'Consecutive wins in a row' },
-      { id: 'marathon', icon: 'hourglass', name: 'Marathon', desc: 'Play through the whole challenge' },
-      { id: 'playmaker', icon: 'link', name: 'Playmaker', desc: 'Assists racked up across the challenge' },
-      { id: 'executioner', icon: 'bolt', name: 'Executioner', desc: 'Damage dealt racked up across the challenge' },
-      { id: 'consistency', icon: 'chartUp', name: 'Consistency', desc: 'A strong winrate, sustained' },
-      { id: 'goal-reached', icon: 'target', name: 'Goal Reached', desc: 'Reach your LP Goal' }
+      { id: 'double-kill', icon: 'sword', name: 'Double Kill', desc: 'Double kills, summed over the challenge',
+        detail: 'Every double kill in any game this challenge adds to the running total shown below - they don\'t need to happen in the same game.',
+        support: { icon: 'heart', name: 'Guardian I', desc: 'Games with at least 1 ally save',
+          detail: 'Counts a game if you saved a teammate from an otherwise fatal hit at least once (heal, shield, CC, etc.) - the total below is how many such games you need this challenge.' } },
+      { id: 'triple-kill', icon: 'sword', name: 'Triple Kill', desc: 'Triple kills, summed over the challenge',
+        detail: 'Every triple kill in any game this challenge adds to the running total shown below - they don\'t need to happen in the same game.',
+        support: { icon: 'heart', name: 'Guardian II', desc: 'Games with 5+ ally saves',
+          detail: 'Counts a game only if you saved teammates from death 5 or more times in that single game - the total below is how many such games you need this challenge.' } },
+      { id: 'quadra-kill', icon: 'sword', name: 'Quadra Kill', desc: 'Quadra kills, summed over the challenge',
+        detail: 'Every quadra kill in any game this challenge adds to the running total shown below - they don\'t need to happen in the same game.',
+        support: { icon: 'heart', name: 'Guardian III', desc: 'Total ally saves, summed over the challenge',
+          detail: 'Every individual ally-save (not per game, every single save) adds to the running total shown below, across all your games this challenge.' } },
+      { id: 'penta-kill', icon: 'crown', name: 'Pentakill', desc: 'Penta kills, summed over the challenge',
+        detail: 'Every penta kill in any game this challenge adds to the running total shown below - a rare feat, the target stays a small fixed number.',
+        support: { icon: 'heart', name: 'Guardian Angel', desc: 'Games with 8+ ally saves',
+          detail: 'Counts a game only if you saved teammates from death 8 or more times in that single game - the target stays a small fixed number, this is meant to be rare.' } },
+      { id: 'first-strike', icon: 'droplet', name: 'First Strike', desc: 'First bloods, summed over the challenge',
+        detail: 'Every first blood kill in any game this challenge adds to the running total shown below.' },
+      { id: 'flawless-victory', icon: 'shield', name: 'Flawless Victory', desc: 'Win a game with 0 deaths and enough kills',
+        detail: 'Needs a single game where you won, finished with 0 deaths, and reached at least the kill count shown below - all three at once, in the same game.' },
+      { id: 'rampage', icon: 'flame', name: 'Rampage', desc: 'Your best kill count in a single game',
+        detail: 'Looks at your single highest-kill game this challenge and compares it to the target below - deaths don\'t matter for this one.',
+        support: { icon: 'link', name: 'Rampage', desc: 'Your best assist count in a single game',
+          detail: 'Looks at your single highest-assist game this challenge and compares it to the target below.' } },
+      { id: 'slayer', icon: 'sword', name: 'Slayer', desc: 'Total kills, summed over the challenge',
+        detail: 'Adds up every kill from every game this challenge into one running total, compared against the target below.' },
+      { id: 'farm-king', icon: 'wheat', name: 'Farm King', desc: 'Total CS, summed over the challenge',
+        detail: 'Adds up minion + jungle monster CS from every game this challenge into one running total, compared against the target below.' },
+      { id: 'gold-rush', icon: 'coin', name: 'Gold Rush', desc: 'Total gold earned, summed over the challenge',
+        detail: 'Adds up gold earned from every game this challenge into one running total, compared against the target below.' },
+      { id: 'win-streak', icon: 'flame', name: 'Win Streak', desc: 'Your longest win streak this challenge',
+        detail: 'The longest unbroken run of consecutive wins anywhere in this challenge - it can happen at any point, doesn\'t need to be your current streak.' },
+      { id: 'marathon', icon: 'hourglass', name: 'Marathon', desc: 'Play enough games this challenge',
+        detail: 'Target is 70% of your "Expected Games" (based on your LP Goal distance and an assumed 60% winrate) - set below 100% on purpose, so a strong win streak that reaches your goal early doesn\'t lock you out of this one.' },
+      { id: 'playmaker', icon: 'link', name: 'Playmaker', desc: 'Total assists, summed over the challenge',
+        detail: 'Adds up every assist from every game this challenge into one running total, compared against the target below.' },
+      { id: 'executioner', icon: 'bolt', name: 'Executioner', desc: 'Total damage to champions, summed over the challenge',
+        detail: 'Adds up damage dealt to enemy champions from every game this challenge into one running total, compared against the target below.' },
+      { id: 'consistency', icon: 'chartUp', name: 'Consistency', desc: 'Keep your winrate above target (min. 15 games)',
+        detail: 'Your overall win/loss ratio this challenge must reach the target percentage below. Only starts counting once you\'ve played at least 15 games - before that, this stays locked no matter your winrate.' },
+      { id: 'goal-reached', icon: 'target', name: 'Goal Reached', desc: 'Reach the exact rank/LP you set as your goal',
+        detail: 'Unlocks the moment your current rank + LP matches or passes the LP Goal you set on the Champion Selection page - the whole point of the challenge.' }
     ];
 
     // ----- 5 rollenspezifische Trophies je Rolle - immer genau 5 werden
@@ -296,39 +373,64 @@
     // eine andere Rolle.
     const ROLE_TROPHIES = {
       TOP: [
-        { id: 'demolition-crew', icon: 'tower', name: 'Demolition Crew', desc: 'Towers destroyed solo, across the challenge' },
-        { id: 'wrecking-ball', icon: 'tower', name: 'Wrecking Ball', desc: 'Towers destroyed solo, in one game' },
-        { id: 'split-pusher', icon: 'tower', name: 'Split Pusher', desc: 'Tower damage racked up across the challenge' },
-        { id: 'iron-wall', icon: 'shield', name: 'Iron Wall', desc: 'Damage taken in one game' },
-        { id: 'colossus', icon: 'shield', name: 'Colossus', desc: 'Damage taken racked up across the challenge' }
+        { id: 'demolition-crew', icon: 'tower', name: 'Demolition Crew', desc: 'Total solo tower kills, summed over the challenge',
+          detail: '"Solo" means verified via the match timeline that no teammate assisted on that tower - not just that you got the kill credit. Adds up across every game this challenge.' },
+        { id: 'wrecking-ball', icon: 'tower', name: 'Wrecking Ball', desc: 'Your most solo tower kills in a single game',
+          detail: 'Same "no teammate assisted" solo check as Demolition Crew, but looking at your single best game instead of the running total.' },
+        { id: 'split-pusher', icon: 'tower', name: 'Split Pusher', desc: 'Total tower damage, summed over the challenge',
+          detail: 'Adds up damage dealt to enemy towers from every game this challenge into one running total.' },
+        { id: 'iron-wall', icon: 'shield', name: 'Iron Wall', desc: 'Your most damage taken in a single game',
+          detail: 'Looks at your single highest damage-taken game this challenge and compares it to the target below.' },
+        { id: 'colossus', icon: 'shield', name: 'Colossus', desc: 'Total damage taken, summed over the challenge',
+          detail: 'Adds up damage taken from every game this challenge into one running total.' }
       ],
       JUNGLE: [
-        { id: 'epic-hunter', icon: 'paw', name: 'Epic Hunter', desc: 'Epic monster takedowns across the challenge' },
-        { id: 'monster-slayer', icon: 'paw', name: 'Monster Slayer', desc: 'Epic monster takedowns in one game' },
-        { id: 'thief', icon: 'compass', name: 'Thief', desc: 'Epic monster steals across the challenge' },
-        { id: 'ganker', icon: 'link', name: 'Ganker', desc: 'Kill participation in one game' },
-        { id: 'jungle-boss', icon: 'link', name: 'Jungle Boss', desc: 'Kill participation, sustained across the challenge' }
+        { id: 'epic-hunter', icon: 'paw', name: 'Epic Hunter', desc: 'Total Dragon/Baron/Herald takedowns, summed over the challenge',
+          detail: 'A "takedown" counts a kill OR an assist on the objective. Adds up across every game this challenge.' },
+        { id: 'monster-slayer', icon: 'paw', name: 'Monster Slayer', desc: 'Your most epic monster takedowns in a single game',
+          detail: 'Looks at your single best game for Dragon/Baron/Herald takedowns this challenge.' },
+        { id: 'thief', icon: 'compass', name: 'Thief', desc: 'Total epic monster steals, summed over the challenge',
+          detail: 'Stealing a Dragon/Baron/Herald from the enemy team (usually with Smite) - a rare, high-skill moment, so the target stays a small fixed number regardless of Challenge Level.' },
+        { id: 'ganker', icon: 'link', name: 'Ganker', desc: 'Your highest kill participation in a single game',
+          detail: 'Kill participation = the % of your team\'s kills you got a kill or assist on. Looks at your single best game this challenge.' },
+        { id: 'jungle-boss', icon: 'link', name: 'Jungle Boss', desc: 'Average kill participation, sustained across the challenge',
+          detail: 'Your kill participation averaged across every game this challenge (not just your best game) must stay above the target below.' }
       ],
       MIDDLE: [
-        { id: 'duelist', icon: 'skull', name: 'Duelist', desc: 'Solo kills across the challenge' },
-        { id: 'assassin', icon: 'skull', name: 'Assassin', desc: 'Solo kills in one game' },
-        { id: 'global-threat', icon: 'compass', name: 'Global Threat', desc: 'Takedowns in every lane, early - across the challenge' },
-        { id: 'burst-king', icon: 'bolt', name: 'Burst King', desc: 'Damage per minute in one game' },
-        { id: 'mid-diff', icon: 'bolt', name: 'Mid Diff', desc: 'Damage per minute, sustained across the challenge' }
+        { id: 'duelist', icon: 'skull', name: 'Duelist', desc: 'Total solo kills, summed over the challenge',
+          detail: 'A "solo kill" is a 1v1 takedown with no ally nearby to help - Riot tracks this directly. Adds up across every game this challenge.' },
+        { id: 'assassin', icon: 'skull', name: 'Assassin', desc: 'Your most solo kills in a single game',
+          detail: 'Looks at your single best game for 1v1 solo kills this challenge.' },
+        { id: 'global-threat', icon: 'compass', name: 'Global Threat', desc: 'Games with an early takedown in every lane',
+          detail: 'Counts a game only if you got a kill or assist in your own lane, in Top, AND in Bot, all early in that same game - roaming the whole map like a second jungler. The target is how many such games you need this challenge.' },
+        { id: 'burst-king', icon: 'bolt', name: 'Burst King', desc: 'Your highest damage-per-minute in a single game',
+          detail: 'Looks at your single best game for damage-per-minute this challenge.' },
+        { id: 'mid-diff', icon: 'bolt', name: 'Mid Diff', desc: 'Average damage-per-minute, sustained across the challenge',
+          detail: 'Your damage-per-minute averaged across every game this challenge (not just your best game) must stay above the target below.' }
       ],
       BOTTOM: [
-        { id: 'hyper-carry', icon: 'bolt', name: 'Hyper Carry', desc: 'Share of team damage in one game' },
-        { id: 'death-dealer', icon: 'bolt', name: 'Death Dealer', desc: 'Share of team damage, sustained across the challenge' },
-        { id: 'legendary', icon: 'star', name: 'Legendary', desc: 'Legendary kill streaks across the challenge' },
-        { id: 'farm-machine', icon: 'wheat', name: 'Farm Machine', desc: 'CS in the first 10 minutes of a game' },
-        { id: 'marksman', icon: 'wheat', name: 'Marksman', desc: 'CS per minute, sustained across the challenge' }
+        { id: 'hyper-carry', icon: 'bolt', name: 'Hyper Carry', desc: 'Your highest share of team damage in a single game',
+          detail: 'What % of your whole team\'s total damage YOU personally dealt. Looks at your single best game this challenge.' },
+        { id: 'death-dealer', icon: 'bolt', name: 'Death Dealer', desc: 'Average share of team damage, sustained across the challenge',
+          detail: 'Your share of team damage averaged across every game this challenge (not just your best game) must stay above the target below.' },
+        { id: 'legendary', icon: 'star', name: 'Legendary', desc: 'Total Legendary kill streaks, summed over the challenge',
+          detail: 'A "Legendary" streak is 4+ kills in a row without dying (the killing spree announcer tier). Adds up across every game this challenge.' },
+        { id: 'farm-machine', icon: 'wheat', name: 'Farm Machine', desc: 'Your most CS by the 10-minute mark',
+          detail: 'Looks at your single best game for CS reached specifically by the 10-minute mark this challenge - a laning-phase efficiency check.' },
+        { id: 'marksman', icon: 'wheat', name: 'Marksman', desc: 'Average CS-per-minute, sustained across the challenge',
+          detail: 'Your CS-per-minute averaged across every game this challenge (not just your best game) must stay above the target below.' }
       ],
       UTILITY: [
-        { id: 'vision-master', icon: 'eye', name: 'Vision Master', desc: 'Vision score in one game' },
-        { id: 'all-seeing-eye', icon: 'eye', name: 'All-Seeing Eye', desc: 'Vision score, sustained across the challenge' },
-        { id: 'crowd-controller', icon: 'target', name: 'Crowd Controller', desc: 'Crowd control time on enemies, in one game' },
-        { id: 'puppet-master', icon: 'target', name: 'Puppet Master', desc: 'Crowd control time, sustained across the challenge' },
-        { id: 'lifeline', icon: 'heart', name: 'Lifeline', desc: 'Heal/shield allies, or tank damage, across the challenge' }
+        { id: 'vision-master', icon: 'eye', name: 'Vision Master', desc: 'Your highest Vision Score in a single game',
+          detail: 'Looks at your single best game for Vision Score this challenge.' },
+        { id: 'all-seeing-eye', icon: 'eye', name: 'All-Seeing Eye', desc: 'Average Vision Score, sustained across the challenge',
+          detail: 'Your Vision Score averaged across every game this challenge (not just your best game) must stay above the target below.' },
+        { id: 'crowd-controller', icon: 'target', name: 'Crowd Controller', desc: 'Your most CC time on enemies in a single game',
+          detail: 'Total seconds of crowd control (stuns, roots, slows, and similar effects) you applied to enemy champions. Looks at your single best game this challenge.' },
+        { id: 'puppet-master', icon: 'target', name: 'Puppet Master', desc: 'Average CC time on enemies, sustained across the challenge',
+          detail: 'Your CC time on enemies averaged across every game this challenge (not just your best game) must stay above the target below.' },
+        { id: 'lifeline', icon: 'heart', name: 'Lifeline', desc: 'Heal/shield allies OR tank damage - whichever fits your build',
+          detail: 'Two separate paths to the same trophy: total effective healing+shielding to allies, or total damage you personally soaked up. Whichever one you\'re closer to finishing counts - so enchanter and tank/engage supports both have a fair route.' }
       ]
     };
 
@@ -347,13 +449,14 @@
       const slot = document.createElement('div');
       slot.className = roleSpecific ? 'trophy-slot role-specific' : 'trophy-slot';
       slot.dataset.trophyId = t.id || '';
-      slot.title = roleSpecific ? `${ROLE_LABELS[role] || ''} trophy` : '';
+      const roleTag = roleSpecific ? `<span class="trophy-tooltip-role">${ROLE_LABELS[role] || ''} trophy</span>` : '';
       slot.innerHTML = `
         <span class="trophy-icon">${iconSvg(t.icon)}</span>
         <span class="trophy-name">${t.name}</span>
         <span class="trophy-desc">${t.desc}</span>
         <div class="trophy-progress-track"><div class="trophy-progress-fill" style="width:0%"></div></div>
         <div class="trophy-progress-label">&nbsp;</div>
+        <div class="trophy-tooltip">${roleTag}${t.detail || t.desc}</div>
       `;
       return slot;
     }
