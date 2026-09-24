@@ -577,6 +577,18 @@
     }
     .account-overview-stats .stat-block .value .w { color: var(--green); }
     .account-overview-stats .stat-block .value .l { color: var(--red); }
+    .rank-with-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      vertical-align: middle;
+    }
+    .rank-emblem {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
     .account-overview-stats .stat-block .label {
       display: block;
       color: var(--text-faint);
@@ -1577,13 +1589,36 @@
       return tierIndex * 400 + rankValue * 100 + (leaguePoints || 0);
     }
 
+    // Kuerzt lange Tier-Namen fuer eine kompaktere Anzeige neben dem
+    // Rang-Emblem (z.B. "Plat" statt "Platinum") - kurze Namen bleiben
+    // unveraendert, das spart nur bei den langen wirklich Platz.
+    const TIER_ABBR = {
+      IRON: 'Iron', BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold',
+      PLATINUM: 'Plat', EMERALD: 'Emer', DIAMOND: 'Dia',
+      MASTER: 'Master', GRANDMASTER: 'GM', CHALLENGER: 'Chall'
+    };
+
+    // "Mini-crests" statt der vollen Emblem-Grafiken - die vollen Embleme sind
+    // fuer grosse Darstellung gemacht (viele feine Details) und wirken bei
+    // ~20px nur wie ein verschwommener Fleck. Emerald existiert dort nur als
+    // .svg, alle anderen als .png.
+    function rankEmblemUrl(tier) {
+      const t = tier.toLowerCase();
+      const ext = t === 'emerald' ? 'svg' : 'png';
+      return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${t}.${ext}`;
+    }
+
+    function rankIconHtml(tier, restText) {
+      const abbr = TIER_ABBR[tier] || tier;
+      return `<span class="rank-with-icon"><img class="rank-emblem" src="${rankEmblemUrl(tier)}" alt="${abbr}" loading="lazy">${abbr}${restText}</span>`;
+    }
+
     function formatRank(current) {
       if (!current) return 'Unranked';
-      const tierLabel = TIER_LABELS[current.tier] || current.tier;
-      if (APEX_TIERS.has(current.tier)) {
-        return `${tierLabel} · ${current.leaguePoints} LP`;
-      }
-      return `${tierLabel} ${current.rank} · ${current.leaguePoints} LP`;
+      const rest = APEX_TIERS.has(current.tier)
+        ? ` · ${current.leaguePoints} LP`
+        : ` ${current.rank} · ${current.leaguePoints} LP`;
+      return rankIconHtml(current.tier, rest);
     }
 
     // LP-Ziel wird auf der Champion-Auswahl-Seite gesetzt (gleiches
@@ -1606,9 +1641,8 @@
         return;
       }
 
-      const tierLabel = TIER_LABELS[tier] || tier;
-      const rankPart = APEX_TIERS.has(tier) ? tierLabel : `${tierLabel} ${division}`;
-      accountLpGoalEl.textContent = lp !== '' ? `${rankPart} · ${lp} LP` : rankPart;
+      const rest = APEX_TIERS.has(tier) ? '' : ` ${division}`;
+      accountLpGoalEl.innerHTML = rankIconHtml(tier, lp !== '' ? `${rest} · ${lp} LP` : rest);
       accountLpGoalBlock.style.display = '';
     }
 
@@ -1626,7 +1660,7 @@
         accountWLEl.textContent = '–';
       }
 
-      accountRankEl.textContent = rank ? formatRank(rank.current) : '–';
+      accountRankEl.innerHTML = rank ? formatRank(rank.current) : '–';
 
       if (rank && rank.isEstimate && rank.deltaLPRange) {
         const { min, max } = rank.deltaLPRange;
