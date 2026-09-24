@@ -111,6 +111,7 @@
   }
   .trophy-slot {
     position: relative;
+    z-index: 1;
     background: var(--panel-bg);
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -126,6 +127,7 @@
   .trophy-slot:hover {
     border-color: var(--border-hover);
     opacity: 0.85;
+    z-index: 50;
   }
   .trophy-tooltip {
     position: absolute;
@@ -362,8 +364,8 @@
         detail: 'Adds up every assist from every game this challenge into one running total, compared against the target below.' },
       { id: 'executioner', icon: 'bolt', name: 'Executioner', desc: 'Total damage to champions, summed over the challenge',
         detail: 'Adds up damage dealt to enemy champions from every game this challenge into one running total, compared against the target below.' },
-      { id: 'consistency', icon: 'chartUp', name: 'Consistency', desc: 'Keep your winrate above target (min. 15 games)',
-        detail: 'Your overall win/loss ratio this challenge must reach the target percentage below. Only starts counting once you\'ve played at least 15 games - before that, this stays locked no matter your winrate.' },
+      { id: 'consistency', icon: 'chartUp', name: 'Consistency', desc: 'Keep a 51-55% winrate, based on Challenge Level (min. 15 games)',
+        detail: 'Your overall win/loss ratio this challenge must reach a target set by your Challenge Level: 51% on Easy up to 55% on Majestic (shown as the exact number below). Only starts counting once you\'ve played at least 15 games - before that, this stays locked no matter your winrate.' },
       { id: 'goal-reached', icon: 'target', name: 'Goal Reached', desc: 'Reach the exact rank/LP you set as your goal',
         detail: 'Unlocks the moment your current rank + LP matches or passes the LP Goal you set on the Champion Selection page - the whole point of the challenge.' }
     ];
