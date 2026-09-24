@@ -338,12 +338,23 @@
       try { return localStorage.getItem('ttp_pool_role') || ''; } catch (e) { return ''; }
     }
 
+    // Fortschrittsleiste + Label werden IMMER schon beim ersten Rendern mit
+    // eingebaut (nur leer/0%) statt erst spaeter per JS angehaengt zu werden -
+    // sonst aendert sich die Kartenhoehe sichtbar, sobald die echten Werte
+    // nachladen (Layout-Sprung), siehe applyAchievementProgress() unten,
+    // die nur noch die vorhandenen Elemente aktualisiert statt neue anzuhaengen.
     function renderTrophy(t, roleSpecific) {
       const slot = document.createElement('div');
       slot.className = roleSpecific ? 'trophy-slot role-specific' : 'trophy-slot';
       slot.dataset.trophyId = t.id || '';
       slot.title = roleSpecific ? `${ROLE_LABELS[role] || ''} trophy` : '';
-      slot.innerHTML = `<span class="trophy-icon">${iconSvg(t.icon)}</span><span class="trophy-name">${t.name}</span><span class="trophy-desc">${t.desc}</span>`;
+      slot.innerHTML = `
+        <span class="trophy-icon">${iconSvg(t.icon)}</span>
+        <span class="trophy-name">${t.name}</span>
+        <span class="trophy-desc">${t.desc}</span>
+        <div class="trophy-progress-track"><div class="trophy-progress-fill" style="width:0%"></div></div>
+        <div class="trophy-progress-label">&nbsp;</div>
+      `;
       return slot;
     }
 
@@ -410,18 +421,15 @@
         slot.classList.add('has-progress');
         if (t.unlocked) slot.classList.add('unlocked');
 
-        const track = document.createElement('div');
-        track.className = 'trophy-progress-track';
-        track.innerHTML = `<div class="trophy-progress-fill" style="width:${t.percent}%"></div>`;
+        const fill = slot.querySelector('.trophy-progress-fill');
+        if (fill) fill.style.width = `${t.percent}%`;
 
-        const label = document.createElement('div');
-        label.className = 'trophy-progress-label';
-        label.textContent = t.unlocked
-          ? 'Unlocked!'
-          : (t.note || `${formatTrophyValue(t.id, t.current)} / ${formatTrophyValue(t.id, t.target)}`);
-
-        slot.appendChild(track);
-        slot.appendChild(label);
+        const label = slot.querySelector('.trophy-progress-label');
+        if (label) {
+          label.textContent = t.unlocked
+            ? 'Unlocked!'
+            : (t.note || `${formatTrophyValue(t.id, t.current)} / ${formatTrophyValue(t.id, t.target)}`);
+        }
       }
     }
 
