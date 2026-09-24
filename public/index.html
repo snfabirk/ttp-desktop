@@ -215,7 +215,7 @@
       letter-spacing: 1px;
       margin-bottom: 12px;
     }
-    #champSelect, #champSearchInput, #poolRoleSelect {
+    #champSelect, #champSearchInput, .meta-select {
       width: 100%;
       box-sizing: border-box;
       padding: 10px 14px;
@@ -226,26 +226,34 @@
       font-size: 1rem;
       font-family: Georgia, serif;
     }
-    #champSelect, #poolRoleSelect {
+    #champSelect, .meta-select {
       cursor: pointer;
     }
-    #champSelect:focus, #champSearchInput:focus, #poolRoleSelect:focus {
+    #champSelect:focus, #champSearchInput:focus, .meta-select:focus {
       outline: none;
       border-color: var(--gold);
     }
-    #champSelect:disabled, #poolRoleSelect:disabled {
+    #champSelect:disabled, .meta-select:disabled {
       opacity: 0.5;
       cursor: default;
     }
-    .pool-role-row {
+    .meta-row {
       margin-bottom: 12px;
     }
-    .pool-role-row label {
+    .meta-row label {
       display: block;
       color: var(--text-dim);
       font-family: Georgia, serif;
       font-size: 0.85rem;
       margin-bottom: 6px;
+    }
+    .meta-row .split-selects {
+      display: flex;
+      gap: 8px;
+    }
+    .meta-row .split-selects select {
+      flex: 1;
+      min-width: 0;
     }
     .suggestion-list {
       position: absolute;
@@ -582,9 +590,9 @@
       <option value="Zyra">Zyra</option>
     </select>
 
-    <div class="pool-role-row">
+    <div class="meta-row">
       <label for="poolRoleSelect">Role for this Champion Pool</label>
-      <select id="poolRoleSelect">
+      <select id="poolRoleSelect" class="meta-select">
         <option value="">Any Role</option>
         <option value="TOP">Top</option>
         <option value="JUNGLE">Jungle</option>
@@ -592,6 +600,42 @@
         <option value="BOTTOM">Bottom</option>
         <option value="UTILITY">Support</option>
       </select>
+    </div>
+
+    <div class="meta-row">
+      <label for="challengeLevelSelect">Challenge Level</label>
+      <select id="challengeLevelSelect" class="meta-select">
+        <option value="easy">Easy</option>
+        <option value="normal" selected>Normal</option>
+        <option value="hard">Hard</option>
+        <option value="very_hard">Very Hard</option>
+        <option value="majestic">Majestic</option>
+      </select>
+    </div>
+
+    <div class="meta-row">
+      <label for="lpGoalTierSelect">LP Goal</label>
+      <div class="split-selects">
+        <select id="lpGoalTierSelect" class="meta-select">
+          <option value="">No goal set</option>
+          <option value="IRON">Iron</option>
+          <option value="BRONZE">Bronze</option>
+          <option value="SILVER">Silver</option>
+          <option value="GOLD">Gold</option>
+          <option value="PLATINUM">Platinum</option>
+          <option value="EMERALD">Emerald</option>
+          <option value="DIAMOND">Diamond</option>
+          <option value="MASTER">Master</option>
+          <option value="GRANDMASTER">Grandmaster</option>
+          <option value="CHALLENGER">Challenger</option>
+        </select>
+        <select id="lpGoalDivisionSelect" class="meta-select">
+          <option value="IV">IV</option>
+          <option value="III">III</option>
+          <option value="II">II</option>
+          <option value="I">I</option>
+        </select>
+      </div>
     </div>
 
     <div id="champPreview">
@@ -614,6 +658,10 @@
     const STORAGE_KEY = 'ttp_selected_champs';
     const STORAGE_KEY_SUMMONER = 'ttp_summoner_name';
     const STORAGE_KEY_CHALLENGE_START = 'ttp_challenge_start';
+    const STORAGE_KEY_CHALLENGE_LEVEL = 'ttp_challenge_level';
+    const STORAGE_KEY_LP_GOAL_TIER = 'ttp_lp_goal_tier';
+    const STORAGE_KEY_LP_GOAL_DIVISION = 'ttp_lp_goal_division';
+    const APEX_TIERS = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
     const summonerInput = document.getElementById('summonerInput');
     const challengeNotStarted = document.getElementById('challengeNotStarted');
     const challengeStarted = document.getElementById('challengeStarted');
@@ -626,6 +674,9 @@
     const settingsGearBtn = document.getElementById('settingsGearBtn');
     const select = document.getElementById('champSelect');
     const poolRoleSelect = document.getElementById('poolRoleSelect');
+    const challengeLevelSelect = document.getElementById('challengeLevelSelect');
+    const lpGoalTierSelect = document.getElementById('lpGoalTierSelect');
+    const lpGoalDivisionSelect = document.getElementById('lpGoalDivisionSelect');
     const icon = document.getElementById('champIcon');
     const nameLabel = document.getElementById('champName');
     const selectionCards = document.getElementById('selectionCards');
@@ -739,6 +790,39 @@
       }
     }
 
+    function saveChallengeLevel() {
+      try { localStorage.setItem(STORAGE_KEY_CHALLENGE_LEVEL, challengeLevelSelect.value); } catch (e) {}
+    }
+
+    function loadChallengeLevel() {
+      try { return localStorage.getItem(STORAGE_KEY_CHALLENGE_LEVEL) || 'normal'; } catch (e) { return 'normal'; }
+    }
+
+    function saveLpGoal() {
+      try {
+        localStorage.setItem(STORAGE_KEY_LP_GOAL_TIER, lpGoalTierSelect.value);
+        localStorage.setItem(STORAGE_KEY_LP_GOAL_DIVISION, lpGoalDivisionSelect.value);
+      } catch (e) {}
+    }
+
+    function loadLpGoal() {
+      try {
+        return {
+          tier: localStorage.getItem(STORAGE_KEY_LP_GOAL_TIER) || '',
+          division: localStorage.getItem(STORAGE_KEY_LP_GOAL_DIVISION) || 'IV'
+        };
+      } catch (e) {
+        return { tier: '', division: 'IV' };
+      }
+    }
+
+    // Apex-Tiers (Master/GM/Challenger) haben keine Divisionen - dort macht
+    // die Divisions-Auswahl keinen Sinn und wird ausgeblendet.
+    function updateLpGoalDivisionVisibility() {
+      const isApex = APEX_TIERS.has(lpGoalTierSelect.value);
+      lpGoalDivisionSelect.style.display = isApex || !lpGoalTierSelect.value ? 'none' : '';
+    }
+
     function saveChallengeStart(iso) {
       try {
         if (iso) localStorage.setItem(STORAGE_KEY_CHALLENGE_START, iso);
@@ -834,6 +918,9 @@
       champSearchInput.disabled = locked;
       select.disabled = locked;
       poolRoleSelect.disabled = locked;
+      challengeLevelSelect.disabled = locked;
+      lpGoalTierSelect.disabled = locked;
+      lpGoalDivisionSelect.disabled = locked;
       summonerInput.disabled = locked;
       champPickerLockedNote.style.display = locked ? '' : 'none';
       renderSelection();
@@ -1037,6 +1124,14 @@
       updateChecklist();
     });
 
+    challengeLevelSelect.addEventListener('change', saveChallengeLevel);
+
+    lpGoalTierSelect.addEventListener('change', () => {
+      updateLpGoalDivisionVisibility();
+      saveLpGoal();
+    });
+    lpGoalDivisionSelect.addEventListener('change', saveLpGoal);
+
     function hideChampSuggestions() {
       champSuggestions.hidden = true;
       champSuggestions.innerHTML = '';
@@ -1116,6 +1211,12 @@
     // ist - sonst bleibt ein unveraenderter Platzhalter-Wert (z.B. der
     // vorausgefuellte Default) nie im localStorage und Seite 2 sieht "leer".
     saveSummonerName();
+
+    challengeLevelSelect.value = loadChallengeLevel();
+    const savedLpGoal = loadLpGoal();
+    lpGoalTierSelect.value = savedLpGoal.tier;
+    lpGoalDivisionSelect.value = savedLpGoal.division;
+    updateLpGoalDivisionVisibility();
 
     renderChallengeState();
 

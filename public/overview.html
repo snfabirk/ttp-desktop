@@ -78,6 +78,38 @@
       letter-spacing: 1px;
       margin: 0 0 8px;
     }
+    .trophies-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px 20px;
+      margin-bottom: 24px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .trophies-card:hover {
+      border-color: var(--gold);
+    }
+    .trophies-icon {
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+    .trophies-label {
+      flex: 1;
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 1rem;
+      letter-spacing: 1px;
+    }
+    .trophies-progress {
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.9rem;
+    }
     .panel-sub {
       color: var(--text-dim);
       font-size: 0.9rem;
@@ -868,10 +900,20 @@
             <span class="value" id="overviewChallengeTimer">-</span>
             <span class="label">Challenge Timer</span>
           </div>
+          <div class="stat-block" id="accountLpGoalBlock" style="display:none;">
+            <span class="value" id="accountLpGoal">–</span>
+            <span class="label">LP Goal</span>
+          </div>
         </div>
         <div class="account-overview-graph" id="accountLpGraph"></div>
       </div>
     </div>
+
+    <a href="trophies.html" class="trophies-card" id="trophiesCard">
+      <span class="trophies-icon">🏆</span>
+      <span class="trophies-label">Trophies</span>
+      <span class="trophies-progress" id="trophiesProgress">0%</span>
+    </a>
 
     <h2 class="panel-heading">Opponent Analysis</h2>
     <p class="panel-sub">
@@ -1535,6 +1577,29 @@
       return `${tierLabel} ${current.rank} · ${current.leaguePoints} LP`;
     }
 
+    // LP-Ziel wird auf der Champion-Auswahl-Seite gesetzt (gleiches
+    // localStorage) und hier nur angezeigt.
+    const accountLpGoalBlock = document.getElementById('accountLpGoalBlock');
+    const accountLpGoalEl = document.getElementById('accountLpGoal');
+
+    function renderLpGoal() {
+      let tier = '';
+      let division = '';
+      try {
+        tier = localStorage.getItem('ttp_lp_goal_tier') || '';
+        division = localStorage.getItem('ttp_lp_goal_division') || '';
+      } catch (e) {}
+
+      if (!tier) {
+        accountLpGoalBlock.style.display = 'none';
+        return;
+      }
+
+      const tierLabel = TIER_LABELS[tier] || tier;
+      accountLpGoalEl.textContent = APEX_TIERS.has(tier) ? tierLabel : `${tierLabel} ${division}`;
+      accountLpGoalBlock.style.display = '';
+    }
+
     function renderAccountOverview(data) {
       const overall = data.overall;
       const rank = data.rank;
@@ -2154,6 +2219,7 @@
       currentSince = loadChallengeStart();
       currentSummoner = loadSummonerName();
       renderCurrentContext();
+      renderLpGoal();
       await loadChampionKeys();
       populateEnemySelect();
       loadSelectedChamps();

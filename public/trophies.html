@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trophies – Three-Trick-Pony</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Spiegel:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+  <script src="update-indicator.js"></script>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .content {
+      width: 100%;
+      max-width: 900px;
+      box-sizing: border-box;
+      padding: 0 30px;
+      margin: 30px 0 80px;
+    }
+    .panel-heading.centered {
+      text-align: center;
+    }
+    .trophies-progress-summary {
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 20px 24px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    .trophies-progress-summary .big-percent {
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 2.2rem;
+      color: var(--gold);
+    }
+    .trophies-progress-summary .count-label {
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.9rem;
+      margin-top: 6px;
+    }
+    .trophy-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 16px;
+    }
+    .trophy-slot {
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 18px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+      opacity: 0.5;
+    }
+    .trophy-slot .trophy-icon {
+      font-size: 1.8rem;
+    }
+    .trophy-slot .trophy-name {
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <button type="button" class="settings-gear-btn" id="settingsGearBtn" title="Settings" aria-label="Settings">⚙</button>
+  <button type="button" class="quit-btn" id="quitBtn" title="Quit completely" aria-label="Quit completely">⏻</button>
+  <header class="site-header">
+    <h1>League of Legends</h1>
+    <p class="subtitle">Three-Trick-Pony</p>
+    <nav class="site-nav"><a href="overview.html">← Back to Overview</a></nav>
+  </header>
+
+  <div class="content">
+    <h2 class="panel-heading centered">Trophies</h2>
+
+    <div class="trophies-progress-summary">
+      <div class="big-percent" id="trophiesOverallPercent">0%</div>
+      <div class="count-label" id="trophiesOverallCount">0 / 20 unlocked</div>
+    </div>
+
+    <div class="trophy-grid" id="trophyGrid"></div>
+  </div>
+
+  <script>
+    // Platzhalter-Grid, bis die eigentliche Achievement-Logik (Multikills,
+    // CS/Gold-Schwellen, Objectives usw.) angebunden ist - vorerst nur 20
+    // leere/gesperrte Slots.
+    const TROPHY_COUNT = 20;
+    const trophyGrid = document.getElementById('trophyGrid');
+    for (let i = 0; i < TROPHY_COUNT; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'trophy-slot';
+      slot.innerHTML = '<span class="trophy-icon">🔒</span><span class="trophy-name">Locked</span>';
+      trophyGrid.appendChild(slot);
+    }
+
+    const settingsGearBtn = document.getElementById('settingsGearBtn');
+    settingsGearBtn.addEventListener('click', () => {
+      if (window.ttpMain) window.ttpMain.openSettings();
+    });
+
+    const quitBtn = document.getElementById('quitBtn');
+    quitBtn.addEventListener('click', () => {
+      const ok = confirm('Quit Three-Trick-Pony completely? It will no longer run in the background (no more update checks or LP tracking until you start it again).');
+      if (window.ttpMain) window.ttpMain.restoreFocus();
+      if (!ok) return;
+      if (window.ttpMain) window.ttpMain.quitApp();
+    });
+  </script>
+</body>
+</html>
