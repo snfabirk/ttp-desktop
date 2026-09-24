@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Update</title>
@@ -95,13 +95,13 @@
   <div class="wrap">
     <img class="icon" src="/build/icon.png" alt="">
     <h1>Three-Trick-Pony Update</h1>
-    <p class="status" id="status">Update wird heruntergeladen...</p>
+    <p class="status" id="status">Downloading update...</p>
     <div class="bar-track" id="barTrack">
       <div class="bar-fill" id="barFill"></div>
     </div>
     <div class="actions" id="actions">
-      <button class="primary" id="restartBtn">Jetzt neu starten</button>
-      <button class="secondary" id="laterBtn">Spaeter</button>
+      <button class="primary" id="restartBtn">Restart Now</button>
+      <button class="secondary" id="laterBtn">Later</button>
     </div>
   </div>
 
@@ -132,10 +132,10 @@
 
     window.ttpUpdater.onStatus((state, payload) => {
       if (state === 'downloading') {
-        statusEl.textContent = 'Update wird heruntergeladen...';
+        statusEl.textContent = 'Downloading update...';
         barFill.style.width = `${Math.round(payload?.percent || 0)}%`;
       } else if (state === 'ready') {
-        statusEl.textContent = 'Update bereit - jetzt neu starten und installieren?';
+        statusEl.textContent = 'Update ready - restart now to install?';
         barTrack.style.display = 'none';
         actionsEl.classList.add('visible');
         readyAt = Date.now();
