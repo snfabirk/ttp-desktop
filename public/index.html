@@ -215,7 +215,7 @@
       letter-spacing: 1px;
       margin-bottom: 12px;
     }
-    #champSelect, #champSearchInput {
+    #champSelect, #champSearchInput, #poolRoleSelect {
       width: 100%;
       box-sizing: border-box;
       padding: 10px 14px;
@@ -226,12 +226,26 @@
       font-size: 1rem;
       font-family: Georgia, serif;
     }
-    #champSelect {
+    #champSelect, #poolRoleSelect {
       cursor: pointer;
     }
-    #champSelect:focus, #champSearchInput:focus {
+    #champSelect:focus, #champSearchInput:focus, #poolRoleSelect:focus {
       outline: none;
       border-color: var(--gold);
+    }
+    #champSelect:disabled, #poolRoleSelect:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    .pool-role-row {
+      margin-bottom: 12px;
+    }
+    .pool-role-row label {
+      display: block;
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
     }
     .suggestion-list {
       position: absolute;
@@ -328,18 +342,6 @@
       font-size: 1.1rem;
       letter-spacing: 1px;
     }
-    .role-select {
-      width: fit-content;
-      box-sizing: border-box;
-      padding: 3px 8px;
-      background: var(--input-bg);
-      color: var(--text-dim);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-family: Georgia, serif;
-      cursor: pointer;
-    }
     .champ-card .remove-btn {
       position: absolute;
       top: 8px;
@@ -390,7 +392,7 @@
     <ul class="checklist" id="checklistList">
       <li class="checklist-item" id="checklistSummoner"><span class="checklist-mark">○</span> Summoner name set</li>
       <li class="checklist-item" id="checklistChamps"><span class="checklist-mark">○</span> 1-3 champions selected</li>
-      <li class="checklist-item" id="checklistRoles"><span class="checklist-mark">○</span> Roles assigned</li>
+      <li class="checklist-item" id="checklistRoles"><span class="checklist-mark">○</span> Role assigned</li>
     </ul>
   </div>
 
@@ -580,6 +582,18 @@
       <option value="Zyra">Zyra</option>
     </select>
 
+    <div class="pool-role-row">
+      <label for="poolRoleSelect">Role for this Champion Pool</label>
+      <select id="poolRoleSelect">
+        <option value="">Any Role</option>
+        <option value="TOP">Top</option>
+        <option value="JUNGLE">Jungle</option>
+        <option value="MIDDLE">Mid</option>
+        <option value="BOTTOM">Bottom</option>
+        <option value="UTILITY">Support</option>
+      </select>
+    </div>
+
     <div id="champPreview">
       <img id="champIcon" alt="">
       <span id="champName"></span>
@@ -611,6 +625,7 @@
     const challengeRankRow = document.getElementById('challengeRankRow');
     const settingsGearBtn = document.getElementById('settingsGearBtn');
     const select = document.getElementById('champSelect');
+    const poolRoleSelect = document.getElementById('poolRoleSelect');
     const icon = document.getElementById('champIcon');
     const nameLabel = document.getElementById('champName');
     const selectionCards = document.getElementById('selectionCards');
@@ -678,7 +693,7 @@
     function updateChecklist() {
       const summonerOk = /^[^#]+#[^#]+$/.test(summonerInput.value.trim());
       const champsOk = selectedChamps.length >= 1 && selectedChamps.length <= MAX_CHAMPS;
-      const rolesOk = selectedChamps.length > 0 && selectedChamps.every(c => !!c.role);
+      const rolesOk = selectedChamps.length > 0 && !!poolRoleSelect.value;
       setChecklistItem(checklistSummoner, summonerOk);
       setChecklistItem(checklistChamps, champsOk);
       setChecklistItem(checklistRoles, rolesOk);
@@ -818,6 +833,7 @@
       const locked = isChallengeLocked();
       champSearchInput.disabled = locked;
       select.disabled = locked;
+      poolRoleSelect.disabled = locked;
       summonerInput.disabled = locked;
       champPickerLockedNote.style.display = locked ? '' : 'none';
       renderSelection();
@@ -855,8 +871,8 @@
         challengeStartError.classList.add('visible');
         return;
       }
-      if (selectedChamps.some(c => !c.role)) {
-        challengeStartError.textContent = 'Assign a role to every selected champion before starting the challenge.';
+      if (!poolRoleSelect.value) {
+        challengeStartError.textContent = 'Select a role for this champion pool before starting the challenge.';
         challengeStartError.classList.add('visible');
         return;
       }
@@ -914,15 +930,6 @@
       updateChecklist();
     });
 
-    const ROLE_OPTIONS = [
-      { value: '', label: 'Any Role' },
-      { value: 'TOP', label: 'Top' },
-      { value: 'JUNGLE', label: 'Jungle' },
-      { value: 'MIDDLE', label: 'Mid' },
-      { value: 'BOTTOM', label: 'Bottom' },
-      { value: 'UTILITY', label: 'Support' }
-    ];
-
     function renderSelection() {
       selectionCards.innerHTML = '';
       selectedChamps.forEach(champ => {
@@ -939,24 +946,7 @@
         const name = document.createElement('span');
         name.textContent = champ.name;
 
-        const roleSelect = document.createElement('select');
-        roleSelect.className = 'role-select';
-        roleSelect.disabled = isChallengeLocked();
-        ROLE_OPTIONS.forEach(opt => {
-          const option = document.createElement('option');
-          option.value = opt.value;
-          option.textContent = opt.label;
-          if ((champ.role || '') === opt.value) option.selected = true;
-          roleSelect.appendChild(option);
-        });
-        roleSelect.addEventListener('change', () => {
-          champ.role = roleSelect.value;
-          saveSelection();
-          updateChecklist();
-        });
-
         info.appendChild(name);
-        info.appendChild(roleSelect);
 
         card.appendChild(img);
         card.appendChild(info);
@@ -1026,7 +1016,7 @@
         return;
       }
 
-      selectedChamps.push({ id, name, key: championKeyById[id] || null, role: '' });
+      selectedChamps.push({ id, name, key: championKeyById[id] || null, role: poolRoleSelect.value });
       hideError();
       saveSelection();
       renderSelection();
@@ -1036,6 +1026,15 @@
       const id = select.value;
       const name = select.options[select.selectedIndex].text;
       pickChampion(id, name);
+    });
+
+    // Eine Rolle fuer den ganzen Champion-Pool statt pro Champion einzeln -
+    // man waehlt ja 3 Champions FUER dieselbe Rolle (OTP-Challenge), nicht 3
+    // Champions mit je unterschiedlicher Rolle.
+    poolRoleSelect.addEventListener('change', () => {
+      selectedChamps.forEach(c => { c.role = poolRoleSelect.value; });
+      saveSelection();
+      updateChecklist();
     });
 
     function hideChampSuggestions() {
@@ -1122,6 +1121,9 @@
 
     loadChampionKeys().then(() => {
       loadSelection();
+      // Zeigt die zuvor gespeicherte Rolle des Pools an (alle Champions
+      // teilen sich dieselbe Rolle, das erste Element reicht als Quelle).
+      poolRoleSelect.value = selectedChamps.length > 0 ? (selectedChamps[0].role || '') : '';
       renderSelection();
     });
   </script>
