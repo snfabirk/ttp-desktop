@@ -409,7 +409,7 @@
   <div class="content">
   <div class="setup-box" id="summonerDateBox">
     <label>Summoner &amp; Challenge</label>
-    <input type="text" id="summonerInput" placeholder="Luckshot#796" value="Luckshot#796">
+    <input type="text" id="summonerInput" placeholder="Luckshot#796">
 
     <div class="challenge-rank-row" id="challengeRankRow">Loading current rank…</div>
 
@@ -658,9 +658,9 @@
 
     function loadSummonerName() {
       try {
-        return localStorage.getItem(STORAGE_KEY_SUMMONER) || summonerInput.value;
+        return localStorage.getItem(STORAGE_KEY_SUMMONER) || '';
       } catch (e) {
-        return summonerInput.value;
+        return '';
       }
     }
 
@@ -817,6 +817,7 @@
 
     function updateChampionLockState() {
       const locked = isChallengeLocked();
+      if (locked) hideError();
       champSearchInput.disabled = locked;
       roleIconButtons.forEach(btn => { btn.disabled = locked; });
       challengeLevelSelect.disabled = locked;

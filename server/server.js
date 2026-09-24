@@ -2,11 +2,18 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const fs = require('fs');
 const express = require('express');
-const { getAccountByRiotId, getAllMatchIds, getMatch, getLeagueEntriesByPuuid, getSummonerByPuuid } = require('./lib/riot');
+const { getAccountByRiotId, getAllMatchIds, getMatch, getMatchTimeline, getLeagueEntriesByPuuid, getSummonerByPuuid } = require('./lib/riot');
 const { loadPersistedApiKey, savePersistedApiKey } = require('./lib/envStore');
 const { createBucket, addMatchToBucket, finalizeBucket, isRemake, computeStreaks } = require('./lib/stats');
 const { createJob, updateProgress, completeJob, failJob, getJob } = require('./lib/jobs');
 const { recordSnapshot, readHistory, findSnapshotAtOrBefore, toComparableLP, seedManualSnapshot } = require('./lib/rankHistory');
+const {
+  computeErwarteteSpiele,
+  createAchievementAccumulator,
+  addMatchToAchievementAccumulator,
+  addSoloTowerKillsFromTimeline,
+  computeAllTrophyProgress
+} = require('./lib/achievements');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -425,6 +432,122 @@ app.post('/api/summary-batch/start', requireApiKey, (req, res) => {
 });
 
 app.get('/api/summary-batch/status/:jobId', (req, res) => {
+  const job = getJob(req.params.jobId);
+  if (!job) {
+    return res.status(404).json({ error: 'Job not found (server may have restarted).' });
+  }
+  res.json({
+    status: job.status,
+    processed: job.processed,
+    total: job.total,
+    result: job.status === 'done' ? job.result : undefined,
+    error: job.status === 'error' ? job.error : undefined
+  });
+});
+
+// Wie runSummaryBatch(), aber sammelt statt Matchup-Statistiken die rohen
+// Achievement-Kennzahlen (Kills/CS/Gold/Multikills/Vision/... - siehe
+// server/lib/achievements.js) ueber ALLE Matches der Challenge (Champion-
+// Pool + Rolle + "since", exakt dieselbe Match-Auswahl wie beim normalen
+// Summary). Fuer Top zusaetzlich ein Timeline-API-Call pro Match, um "echt
+// solo" zerstoerte Tuerme zu erkennen (siehe [[achievements-trophies-design]]).
+async function runAchievementsBatch(jobId, { puuid, champions, since, startTime, role, challengeLevel, lpGoal }) {
+  try {
+    const matchIds = await getAllMatchIds(
+      puuid,
+      { queueId: RANKED_SOLO_QUEUE_ID, startTime },
+      config.apiKey,
+      REGION
+    );
+    updateProgress(jobId, 0, matchIds.length);
+
+    const championKeys = new Set(champions.map(c => String(c.key)));
+    const acc = createAchievementAccumulator();
+
+    let processed = 0;
+    for (const matchId of matchIds) {
+      const match = await getMatch(matchId, config.apiKey, REGION);
+      processed += 1;
+      updateProgress(jobId, processed, matchIds.length);
+
+      const { me } = findMeAndOpponent(match, puuid);
+      if (!me || isRemake(me)) continue;
+      if (!championKeys.has(String(me.championId))) continue;
+      if (role && me.teamPosition !== role) continue;
+
+      addMatchToAchievementAccumulator(acc, me, match);
+
+      if (role === 'TOP') {
+        try {
+          const timeline = await getMatchTimeline(matchId, config.apiKey, REGION);
+          addSoloTowerKillsFromTimeline(acc, timeline, me.participantId);
+        } catch (e) {
+          // Timeline-Fehler sollen den restlichen Achievement-Fortschritt
+          // nicht kippen - Solo-Turm-Trophies bleiben fuer dieses Match dann
+          // einfach unveraendert statt den ganzen Job scheitern zu lassen.
+        }
+      }
+    }
+
+    let currentRank = null;
+    try {
+      const entries = await getLeagueEntriesByPuuid(puuid, config.apiKey, PLATFORM);
+      const solo = entries.find(e => e.queueType === 'RANKED_SOLO_5x5');
+      if (solo) currentRank = { tier: solo.tier, rank: solo.rank, leaguePoints: solo.leaguePoints };
+    } catch (e) {
+      // Ohne aktuellen Rang faellt computeErwarteteSpiele() auf den 20er-
+      // Mindestwert zurueck - kein harter Fehler noetig.
+    }
+
+    const erwarteteSpiele = computeErwarteteSpiele(currentRank, lpGoal);
+    const tier = (challengeLevel || 'normal').toLowerCase();
+    const progress = computeAllTrophyProgress(acc, { tier, erwarteteSpiele, role, currentRank, lpGoal });
+
+    completeJob(jobId, {
+      erwarteteSpiele,
+      tier,
+      totalGamesScanned: acc.totalGames,
+      ...progress
+    });
+  } catch (e) {
+    failJob(jobId, e.message);
+  }
+}
+
+app.post('/api/achievements/start', requireApiKey, (req, res) => {
+  const { puuid, champions, since, role, challengeLevel, lpGoal } = req.body || {};
+  if (!puuid || !champions || !Array.isArray(champions) || champions.length === 0) {
+    return res.status(400).json({ error: 'puuid and champions are required.' });
+  }
+
+  const byKey = new Map();
+  champions.forEach(c => {
+    if (c && c.key) byKey.set(String(c.key), { key: String(c.key), role: c.role || '' });
+  });
+  const dedupedChampions = [...byKey.values()];
+
+  let startTime = 0;
+  if (since) {
+    startTime = Math.floor(new Date(since).getTime() / 1000);
+    if (Number.isNaN(startTime)) {
+      return res.status(400).json({ error: 'Invalid date for "since".' });
+    }
+  }
+
+  const jobId = createJob();
+  runAchievementsBatch(jobId, {
+    puuid,
+    champions: dedupedChampions,
+    since,
+    startTime,
+    role: role || '',
+    challengeLevel,
+    lpGoal
+  });
+  res.json({ jobId });
+});
+
+app.get('/api/achievements/status/:jobId', (req, res) => {
   const job = getJob(req.params.jobId);
   if (!job) {
     return res.status(404).json({ error: 'Job not found (server may have restarted).' });

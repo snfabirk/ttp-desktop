@@ -6,7 +6,19 @@ if (!fs.existsSync(CACHE_DIR)) {
   fs.mkdirSync(CACHE_DIR, { recursive: true });
 }
 
-const MIN_DELAY_MS = 60; // ~16 req/s, sicher unter dem 20/1s-Limit eines Personal Keys
+// Dieses Projekt laeuft ueber einen registrierten Riot-Produkt-Key (nicht
+// den rohen, unregistrierten Personal Key mit 20/1s + 100/2min), siehe
+// Riot Developer Portal "THREE-TRICK-PONY" -> 39 freigegebene Methoden.
+// Der engste Flaschenhals aller genutzten Endpunkte ist MATCH-V5 mit
+// 2000 Requests/10s (=200/s) - Account-V1 und League-V4 liegen deutlich
+// darueber. 20ms (=50/s) laesst dafuer 4x Sicherheitsmarge: deckt den
+// Timeline-API-Zusatzcall pro Match fuer Top-Spieler ab (verdoppelt die
+// Requests im selben Match-V5-Bucket) UND falls mal 2 Leute mit demselben
+// Key gleichzeitig einen grossen Load starten (in Summe dann ~100/s,
+// immer noch klar unter den 200/s). Erst bei deutlich mehr gleichzeitigen
+// Nutzern oder Bulk-Loads waere das wieder ein Thema - siehe
+// [[riot-api-rate-limits]] Memory fuer die vollstaendige Herleitung.
+const MIN_DELAY_MS = 20; // ~50 req/s, ~25% Auslastung des engsten Limits (Match-V5)
 let lastRequestAt = 0;
 
 // Prioritaets-Warteschlange statt einfacher FIFO-Kette: eine schnelle Anfrage
@@ -164,10 +176,27 @@ async function getMatch(matchId, apiKey, regionalHost) {
   return data;
 }
 
+// Fuer Achievements, die einzelne In-Game-Events brauchen (z.B. "wirklich
+// solo" zerstoerte Tuerme, wo BUILDING_KILL-Events mit einer leeren
+// assistingParticipantIds-Liste geprueft werden) - separater Cache-
+// Dateiname (Praefix "timeline_"), da die Match-ID sonst mit der von
+// getMatch() kollidieren wuerde.
+async function getMatchTimeline(matchId, apiKey, regionalHost) {
+  const cachePath = path.join(CACHE_DIR, `timeline_${matchId}.json`);
+  if (fs.existsSync(cachePath)) {
+    return JSON.parse(fs.readFileSync(cachePath, 'utf-8'));
+  }
+  const url = `https://${regionalHost}.api.riotgames.com/lol/match/v5/matches/${matchId}/timeline`;
+  const data = await riotFetch(url, apiKey);
+  fs.writeFileSync(cachePath, JSON.stringify(data));
+  return data;
+}
+
 module.exports = {
   getAccountByRiotId,
   getAllMatchIds,
   getMatch,
+  getMatchTimeline,
   getLeagueEntriesByPuuid,
   getSummonerByPuuid
 };

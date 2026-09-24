@@ -1,75 +1,208 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Trophies – Three-Trick-Pony</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Spiegel:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <script src="theme.js"></script>
-  <script src="update-indicator.js"></script>
-  <style>
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .content {
-      width: 100%;
-      max-width: 900px;
-      box-sizing: border-box;
-      padding: 0 30px;
-      margin: 30px 0 80px;
-    }
-    .panel-heading.centered {
-      text-align: center;
-    }
-    .trophies-progress-summary {
-      background: var(--panel-bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 20px 24px;
-      margin-bottom: 30px;
-      text-align: center;
-    }
-    .trophies-progress-summary .big-percent {
-      font-family: 'Cinzel', Georgia, serif;
-      font-size: 2.2rem;
-      color: var(--gold);
-    }
-    .trophies-progress-summary .count-label {
-      color: var(--text-dim);
-      font-family: Georgia, serif;
-      font-size: 0.9rem;
-      margin-top: 6px;
-    }
-    .trophy-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 16px;
-    }
-    .trophy-slot {
-      background: var(--panel-bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 18px 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      text-align: center;
-      opacity: 0.5;
-    }
-    .trophy-slot .trophy-icon {
-      font-size: 1.8rem;
-    }
-    .trophy-slot .trophy-name {
-      color: var(--text-dim);
-      font-family: Georgia, serif;
-      font-size: 0.8rem;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Trophies – Three-Trick-Pony</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Spiegel:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script src="update-indicator.js"></script>
+<style>
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .content {
+    width: 100%;
+    max-width: 980px;
+    box-sizing: border-box;
+    padding: 0 30px;
+    margin: 30px 0 80px;
+  }
+  .panel-heading.centered {
+    text-align: center;
+  }
+  .trophies-progress-summary {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin-bottom: 22px;
+    text-align: center;
+  }
+  .trophies-progress-summary .big-percent {
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 2.2rem;
+    color: var(--gold);
+  }
+  .trophies-progress-summary .count-label {
+    color: var(--text-dim);
+    font-family: Georgia, serif;
+    font-size: 0.9rem;
+    margin-top: 6px;
+  }
+  .role-note {
+    text-align: center;
+    color: var(--text-dim);
+    font-family: Georgia, serif;
+    font-size: 0.8rem;
+    margin-bottom: 18px;
+    opacity: 0.85;
+  }
+  .role-note strong {
+    color: var(--gold);
+    font-weight: normal;
+  }
+  .platinum-trophy {
+    background: linear-gradient(180deg, rgba(200,170,110,0.14), var(--panel-bg));
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    padding: 18px 24px;
+    margin-bottom: 26px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    opacity: 0.55;
+    transition: opacity 0.2s ease, box-shadow 0.2s ease;
+  }
+  .platinum-trophy.unlocked {
+    opacity: 1;
+    box-shadow: 0 0 18px rgba(200, 170, 110, 0.4);
+  }
+  .platinum-trophy .trophy-icon {
+    width: 40px;
+    height: 40px;
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+  .platinum-trophy .trophy-icon svg {
+    width: 100%;
+    height: 100%;
+  }
+  .platinum-trophy .platinum-text {
+    text-align: left;
+  }
+  .platinum-trophy .trophy-name {
+    color: var(--gold);
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 1.1rem;
+    display: block;
+    letter-spacing: 0.3px;
+  }
+  .platinum-trophy .trophy-desc {
+    color: var(--text-dim);
+    font-family: Georgia, serif;
+    font-size: 0.8rem;
+    margin-top: 2px;
+  }
+  .trophy-section {
+    margin-bottom: 22px;
+  }
+  .trophy-section-title {
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin-bottom: 14px;
+  }
+  .trophy-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 760px) {
+    .trophy-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 460px) {
+    .trophy-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .trophy-slot {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 8px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    opacity: 0.5;
+    transition: border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+  }
+  .trophy-slot:hover {
+    border-color: var(--border-hover);
+    opacity: 0.85;
+  }
+  .trophy-slot.has-progress {
+    opacity: 0.85;
+  }
+  .trophy-slot.unlocked {
+    opacity: 1;
+    border-color: var(--gold);
+    box-shadow: 0 0 10px rgba(200, 170, 110, 0.25);
+  }
+  .trophy-slot .trophy-icon {
+    width: 30px;
+    height: 30px;
+    color: var(--gold);
+  }
+  .trophy-slot .trophy-icon svg {
+    width: 100%;
+    height: 100%;
+  }
+  .trophy-slot .trophy-name {
+    color: var(--text);
+    font-family: Georgia, serif;
+    font-size: 0.75rem;
+    font-weight: bold;
+  }
+  .trophy-slot .trophy-desc {
+    color: var(--text-dim);
+    font-family: Georgia, serif;
+    font-size: 0.63rem;
+    line-height: 1.3;
+    opacity: 0.85;
+  }
+  .trophy-slot .trophy-progress-track {
+    width: 100%;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin-top: 2px;
+  }
+  .trophy-slot .trophy-progress-fill {
+    height: 100%;
+    background: var(--gold);
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+  .trophy-slot.unlocked .trophy-progress-fill {
+    background: var(--green, var(--gold));
+  }
+  .trophy-slot .trophy-progress-label {
+    color: var(--text-dim);
+    font-family: Georgia, serif;
+    font-size: 0.6rem;
+  }
+  .trophy-slot.unlocked .trophy-progress-label {
+    color: var(--gold);
+  }
+  .achievements-status {
+    text-align: center;
+    color: var(--text-dim);
+    font-family: Georgia, serif;
+    font-size: 0.8rem;
+    margin: -6px 0 18px;
+  }
+</style>
 </head>
 <body>
   <button type="button" class="settings-gear-btn" id="settingsGearBtn" title="Settings" aria-label="Settings">⚙</button>
@@ -85,24 +218,310 @@
 
     <div class="trophies-progress-summary">
       <div class="big-percent" id="trophiesOverallPercent">0%</div>
-      <div class="count-label" id="trophiesOverallCount">0 / 20 unlocked</div>
+      <div class="count-label" id="trophiesOverallCount">0 / 21 unlocked</div>
     </div>
 
-    <div class="trophy-grid" id="trophyGrid"></div>
+    <p class="role-note" id="roleNote"></p>
+    <p class="achievements-status" id="achievementsStatus"></p>
+
+    <div class="platinum-trophy">
+      <span class="trophy-icon" data-icon="trophyCup"></span>
+      <span class="platinum-text">
+        <span class="trophy-name">Platinum</span>
+        <span class="trophy-desc">Unlock all 21 other trophies</span>
+      </span>
+    </div>
+
+    <div class="trophy-section">
+      <div class="trophy-section-title">Universal</div>
+      <div class="trophy-grid" id="universalGrid"></div>
+    </div>
+
+    <div class="trophy-section">
+      <div class="trophy-section-title" id="roleSectionTitle">Role</div>
+      <div class="trophy-grid" id="roleGrid"></div>
+    </div>
   </div>
 
   <script>
-    // Platzhalter-Grid, bis die eigentliche Achievement-Logik (Multikills,
-    // CS/Gold-Schwellen, Objectives usw.) angebunden ist - vorerst nur 20
-    // leere/gesperrte Slots.
-    const TROPHY_COUNT = 20;
-    const trophyGrid = document.getElementById('trophyGrid');
-    for (let i = 0; i < TROPHY_COUNT; i++) {
+    // ----- Simple line-art icon set (stroke=currentColor, so it follows the
+    // active theme automatically). Reused across trophies by key instead of
+    // one bespoke SVG per trophy - keeps things visually consistent.
+    const ICONS = {
+      sword: '<path d="M4 20L15 9M13.5 7.5L17 4L20 7L16.5 10.5M9 15L6 18M6 18L4 18M6 18L6 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+      crown: '<path d="M4 18h16l-1.4-8-3.6 3.5L12 6l-3 7.5L5.4 10 4 18Z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>',
+      droplet: '<path d="M12 3C12 3 6 11 6 15a6 6 0 0 0 12 0c0-4-6-12-6-12Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+      shield: '<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+      flame: '<path d="M12 3c1 3-3 4-3 7a3 3 0 0 0 6 0c0-1-1-2-1-2 1 0 3 2 3 5a5 5 0 0 1-10 0c0-4 3-6 5-10Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+      coin: '<circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 8v8M9.5 10c0-1.2 1.2-2 2.5-2s2.5.8 2.5 2-1 1.5-2.5 2-2.5.8-2.5 2 1.2 2 2.5 2 2.5-.8 2.5-2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
+      wheat: '<path d="M12 21V7M12 7l-3-3M12 7l3-3M12 11l-3-3M12 11l3-3M12 15l-3-3M12 15l3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+      hourglass: '<path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+      link: '<path d="M9 15l6-6M9 9h-.5A3.5 3.5 0 0 0 5 12.5a3.5 3.5 0 0 0 3.5 3.5H9M15 9h.5A3.5 3.5 0 0 1 19 12.5 3.5 3.5 0 0 1 15.5 16H15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+      bolt: '<path d="M13 2 5 14h5l-1 8 8-12h-5l1-8Z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>',
+      chartUp: '<path d="M4 18h16M6 16l4-5 3 3 5-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 6h3v3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+      target: '<circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/>',
+      tower: '<path d="M6 21V9h2V6h2V4h4v2h2v3h2v12H6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 21v-5h6v5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+      paw: '<circle cx="12" cy="15" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="6.5" cy="9" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="17.5" cy="9" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9.5" cy="5.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="14.5" cy="5.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+      eye: '<path d="M2 12c2.5-5 7-7 10-7s7.5 2 10 7c-2.5 5-7 7-10 7s-7.5-2-10-7Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+      heart: '<path d="M12 20S4 14.5 4 9a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 5.5-8 11-8 11Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9.5 9h2v2h2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>',
+      star: '<path d="M12 3l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L12 16.9 6.4 20l1.4-6.2-4.8-4.3 6.4-.6L12 3Z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>',
+      trophyCup: '<path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3M10 17h4M12 13v4M8 21h8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+      compass: '<circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M14.5 9.5 13 13l-3.5 1.5L11 11l3.5-1.5Z" fill="currentColor" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>',
+      skull: '<path d="M12 4a7 7 0 0 0-7 7c0 2.6 1.4 4.3 2.5 5.4V19h3v-2h3v2h3v-2.6C17.6 15.3 19 13.6 19 11a7 7 0 0 0-7-7Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="9.5" cy="11" r="1.3" fill="currentColor"/><circle cx="14.5" cy="11" r="1.3" fill="currentColor"/>'
+    };
+
+    function iconSvg(key) {
+      const inner = ICONS[key] || ICONS.star;
+      return `<svg viewBox="0 0 24 24">${inner}</svg>`;
+    }
+
+    // ----- 16 universelle Trophies. Manche haben eine "support"-Variante,
+    // die die Basis-Version fuer Support ersetzt (andere Stat-Grundlage,
+    // weil rohe Kills/Damage fuer Support-Spielweisen nicht fair sind -
+    // siehe [[achievements-trophies-design]] Memory).
+    const UNIVERSAL_TROPHIES = [
+      { id: 'double-kill', icon: 'sword', name: 'Double Kill', desc: 'Double kills across the challenge',
+        support: { icon: 'heart', name: 'Guardian I', desc: 'Save an ally from death, across the challenge' } },
+      { id: 'triple-kill', icon: 'sword', name: 'Triple Kill', desc: 'Triple kills across the challenge',
+        support: { icon: 'heart', name: 'Guardian II', desc: '5+ saves in a game, several times over the challenge' } },
+      { id: 'quadra-kill', icon: 'sword', name: 'Quadra Kill', desc: 'Quadra kills across the challenge',
+        support: { icon: 'heart', name: 'Guardian III', desc: 'Total allies saved across the challenge' } },
+      { id: 'penta-kill', icon: 'crown', name: 'Pentakill', desc: 'Penta kills across the challenge',
+        support: { icon: 'heart', name: 'Guardian Angel', desc: '8+ saves in a game, a few times over the challenge' } },
+      { id: 'first-strike', icon: 'droplet', name: 'First Strike', desc: 'First bloods across the challenge' },
+      { id: 'flawless-victory', icon: 'shield', name: 'Flawless Victory', desc: 'Win a game without dying' },
+      { id: 'rampage', icon: 'flame', name: 'Rampage', desc: 'A huge kill count in one game',
+        support: { icon: 'link', name: 'Rampage', desc: 'A huge assist count in one game' } },
+      { id: 'slayer', icon: 'sword', name: 'Slayer', desc: 'Kills racked up across the challenge' },
+      { id: 'farm-king', icon: 'wheat', name: 'Farm King', desc: 'CS racked up across the challenge' },
+      { id: 'gold-rush', icon: 'coin', name: 'Gold Rush', desc: 'Gold racked up across the challenge' },
+      { id: 'win-streak', icon: 'flame', name: 'Win Streak', desc: 'Consecutive wins in a row' },
+      { id: 'marathon', icon: 'hourglass', name: 'Marathon', desc: 'Play through the whole challenge' },
+      { id: 'playmaker', icon: 'link', name: 'Playmaker', desc: 'Assists racked up across the challenge' },
+      { id: 'executioner', icon: 'bolt', name: 'Executioner', desc: 'Damage dealt racked up across the challenge' },
+      { id: 'consistency', icon: 'chartUp', name: 'Consistency', desc: 'A strong winrate, sustained' },
+      { id: 'goal-reached', icon: 'target', name: 'Goal Reached', desc: 'Reach your LP Goal' }
+    ];
+
+    // ----- 5 rollenspezifische Trophies je Rolle - immer genau 5 werden
+    // angezeigt (die der gewaehlten Rolle), nie eine unerreichbare fuer
+    // eine andere Rolle.
+    const ROLE_TROPHIES = {
+      TOP: [
+        { id: 'demolition-crew', icon: 'tower', name: 'Demolition Crew', desc: 'Towers destroyed solo, across the challenge' },
+        { id: 'wrecking-ball', icon: 'tower', name: 'Wrecking Ball', desc: 'Towers destroyed solo, in one game' },
+        { id: 'split-pusher', icon: 'tower', name: 'Split Pusher', desc: 'Tower damage racked up across the challenge' },
+        { id: 'iron-wall', icon: 'shield', name: 'Iron Wall', desc: 'Damage taken in one game' },
+        { id: 'colossus', icon: 'shield', name: 'Colossus', desc: 'Damage taken racked up across the challenge' }
+      ],
+      JUNGLE: [
+        { id: 'epic-hunter', icon: 'paw', name: 'Epic Hunter', desc: 'Epic monster takedowns across the challenge' },
+        { id: 'monster-slayer', icon: 'paw', name: 'Monster Slayer', desc: 'Epic monster takedowns in one game' },
+        { id: 'thief', icon: 'compass', name: 'Thief', desc: 'Epic monster steals across the challenge' },
+        { id: 'ganker', icon: 'link', name: 'Ganker', desc: 'Kill participation in one game' },
+        { id: 'jungle-boss', icon: 'link', name: 'Jungle Boss', desc: 'Kill participation, sustained across the challenge' }
+      ],
+      MIDDLE: [
+        { id: 'duelist', icon: 'skull', name: 'Duelist', desc: 'Solo kills across the challenge' },
+        { id: 'assassin', icon: 'skull', name: 'Assassin', desc: 'Solo kills in one game' },
+        { id: 'global-threat', icon: 'compass', name: 'Global Threat', desc: 'Takedowns in every lane, early - across the challenge' },
+        { id: 'burst-king', icon: 'bolt', name: 'Burst King', desc: 'Damage per minute in one game' },
+        { id: 'mid-diff', icon: 'bolt', name: 'Mid Diff', desc: 'Damage per minute, sustained across the challenge' }
+      ],
+      BOTTOM: [
+        { id: 'hyper-carry', icon: 'bolt', name: 'Hyper Carry', desc: 'Share of team damage in one game' },
+        { id: 'death-dealer', icon: 'bolt', name: 'Death Dealer', desc: 'Share of team damage, sustained across the challenge' },
+        { id: 'legendary', icon: 'star', name: 'Legendary', desc: 'Legendary kill streaks across the challenge' },
+        { id: 'farm-machine', icon: 'wheat', name: 'Farm Machine', desc: 'CS in the first 10 minutes of a game' },
+        { id: 'marksman', icon: 'wheat', name: 'Marksman', desc: 'CS per minute, sustained across the challenge' }
+      ],
+      UTILITY: [
+        { id: 'vision-master', icon: 'eye', name: 'Vision Master', desc: 'Vision score in one game' },
+        { id: 'all-seeing-eye', icon: 'eye', name: 'All-Seeing Eye', desc: 'Vision score, sustained across the challenge' },
+        { id: 'crowd-controller', icon: 'target', name: 'Crowd Controller', desc: 'Crowd control time on enemies, in one game' },
+        { id: 'puppet-master', icon: 'target', name: 'Puppet Master', desc: 'Crowd control time, sustained across the challenge' },
+        { id: 'lifeline', icon: 'heart', name: 'Lifeline', desc: 'Heal/shield allies, or tank damage, across the challenge' }
+      ]
+    };
+
+    const ROLE_LABELS = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'ADC', UTILITY: 'Support' };
+
+    function loadPoolRole() {
+      try { return localStorage.getItem('ttp_pool_role') || ''; } catch (e) { return ''; }
+    }
+
+    function renderTrophy(t) {
       const slot = document.createElement('div');
       slot.className = 'trophy-slot';
-      slot.innerHTML = '<span class="trophy-icon">🔒</span><span class="trophy-name">Locked</span>';
-      trophyGrid.appendChild(slot);
+      slot.dataset.trophyId = t.id || '';
+      slot.innerHTML = `<span class="trophy-icon">${iconSvg(t.icon)}</span><span class="trophy-name">${t.name}</span><span class="trophy-desc">${t.desc}</span>`;
+      return slot;
     }
+
+    const role = loadPoolRole();
+    const roleNote = document.getElementById('roleNote');
+    const roleSectionTitle = document.getElementById('roleSectionTitle');
+    const universalGrid = document.getElementById('universalGrid');
+    const roleGrid = document.getElementById('roleGrid');
+
+    document.querySelector('.platinum-trophy .trophy-icon').innerHTML = iconSvg('trophyCup');
+
+    for (const t of UNIVERSAL_TROPHIES) {
+      const isSupport = role === 'UTILITY';
+      const variant = (isSupport && t.support) ? { id: t.id, ...t.support } : t;
+      universalGrid.appendChild(renderTrophy(variant));
+    }
+
+    if (role && ROLE_TROPHIES[role]) {
+      roleSectionTitle.textContent = `${ROLE_LABELS[role]} Trophies`;
+      roleNote.innerHTML = `Showing role trophies for <strong>${ROLE_LABELS[role]}</strong> - pick a different role on the Champion Selection page to see a different set.`;
+      for (const t of ROLE_TROPHIES[role]) {
+        roleGrid.appendChild(renderTrophy(t));
+      }
+    } else {
+      roleSectionTitle.textContent = 'Role Trophies';
+      roleNote.textContent = 'Select a role on the Champion Selection page to unlock your 5 role-specific trophies.';
+      for (const t of ROLE_TROPHIES.TOP) {
+        const slot = renderTrophy(t);
+        slot.style.opacity = '0.3';
+        roleGrid.appendChild(slot);
+      }
+    }
+
+    // ----- Echter Fortschritt: fragt den Achievement-Job-Endpoint ab (siehe
+    // server/lib/achievements.js) und befuellt jede Trophy-Kachel mit einer
+    // Fortschrittsleiste + aktuellem/Ziel-Wert, statt sie nur dekorativ
+    // gedimmt zu zeigen.
+    async function parseApiResponse(res) {
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error(`Server did not return a valid response (status ${res.status}). Is the server still running?`);
+      }
+      return res.json();
+    }
+
+    const PERCENT_TROPHY_IDS = new Set(['ganker', 'jungle-boss', 'hyper-carry', 'death-dealer', 'consistency']);
+
+    function formatNum(n) {
+      const rounded = Math.round(n * 10) / 10;
+      const abs = Math.abs(rounded);
+      if (abs >= 1000000) {
+        return (rounded / 1000000).toFixed(abs >= 10000000 ? 0 : 1).replace(/\.0$/, '') + 'M';
+      }
+      if (abs >= 1000) {
+        return (rounded / 1000).toFixed(abs >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k';
+      }
+      return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+    }
+
+    function formatTrophyValue(id, n) {
+      return PERCENT_TROPHY_IDS.has(id) ? `${formatNum(n)}%` : formatNum(n);
+    }
+
+    function applyAchievementProgress(trophies) {
+      for (const t of trophies) {
+        const slot = document.querySelector(`.trophy-slot[data-trophy-id="${t.id}"]`);
+        if (!slot) continue;
+        slot.classList.add('has-progress');
+        if (t.unlocked) slot.classList.add('unlocked');
+
+        const track = document.createElement('div');
+        track.className = 'trophy-progress-track';
+        track.innerHTML = `<div class="trophy-progress-fill" style="width:${t.percent}%"></div>`;
+
+        const label = document.createElement('div');
+        label.className = 'trophy-progress-label';
+        label.textContent = t.unlocked
+          ? 'Unlocked!'
+          : (t.note || `${formatTrophyValue(t.id, t.current)} / ${formatTrophyValue(t.id, t.target)}`);
+
+        slot.appendChild(track);
+        slot.appendChild(label);
+      }
+    }
+
+    async function loadAchievementProgress() {
+      const statusEl = document.getElementById('achievementsStatus');
+      try {
+        if (!role) { statusEl.textContent = ''; return; }
+
+        const summonerName = (localStorage.getItem('ttp_summoner_name') || '').trim();
+        const since = localStorage.getItem('ttp_challenge_start') || '';
+        const challengeLevel = localStorage.getItem('ttp_challenge_level') || 'normal';
+        const lpGoalTier = localStorage.getItem('ttp_lp_goal_tier') || '';
+        const lpGoalDivision = localStorage.getItem('ttp_lp_goal_division') || '';
+        const lpGoalLp = localStorage.getItem('ttp_lp_goal_lp') || '0';
+
+        if (!since) {
+          statusEl.textContent = 'Start a challenge on the Champion Selection page to track trophy progress.';
+          return;
+        }
+
+        const parts = summonerName.split('#');
+        if (parts.length !== 2 || !parts[0] || !parts[1]) {
+          statusEl.textContent = 'No valid summoner set - please set one on the Champion Selection page.';
+          return;
+        }
+
+        let champions = [];
+        try { champions = JSON.parse(localStorage.getItem('ttp_selected_champs') || '[]'); } catch (e) {}
+        if (!champions.length) {
+          statusEl.textContent = 'No champion pool set yet.';
+          return;
+        }
+
+        statusEl.textContent = 'Loading trophy progress …';
+
+        const accountRes = await fetch(`/api/account?${new URLSearchParams({ gameName: parts[0], tagLine: parts[1] })}`);
+        const account = await parseApiResponse(accountRes);
+        if (!accountRes.ok) throw new Error(account.error || 'Could not find summoner.');
+
+        const startRes = await fetch('/api/achievements/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            puuid: account.puuid,
+            champions: champions.map(c => ({ key: c.key, role: c.role || '' })),
+            since,
+            role,
+            challengeLevel,
+            lpGoal: { tier: lpGoalTier, division: lpGoalDivision, lp: lpGoalLp }
+          })
+        });
+        const startData = await parseApiResponse(startRes);
+        if (!startRes.ok) throw new Error(startData.error || 'Unknown error');
+
+        let result = null;
+        while (true) {
+          const statusRes = await fetch(`/api/achievements/status/${startData.jobId}`);
+          const status = await parseApiResponse(statusRes);
+          if (!statusRes.ok) throw new Error(status.error || 'Unknown error');
+          if (status.status === 'error') throw new Error(status.error || 'Unknown error while processing.');
+
+          statusEl.textContent = status.total > 0
+            ? `Scanning matches … (${status.processed}/${status.total})`
+            : 'Searching matches …';
+
+          if (status.status === 'done') { result = status.result; break; }
+          await new Promise(r => setTimeout(r, 600));
+        }
+
+        applyAchievementProgress(result.trophies);
+
+        const overallPercent = result.totalCount > 0 ? Math.round((result.unlockedCount / result.totalCount) * 100) : 0;
+        document.getElementById('trophiesOverallPercent').textContent = `${overallPercent}%`;
+        document.getElementById('trophiesOverallCount').textContent = `${result.unlockedCount} / ${result.totalCount} unlocked`;
+        if (result.platinumUnlocked) {
+          document.querySelector('.platinum-trophy').classList.add('unlocked');
+        }
+
+        statusEl.textContent = `Based on ${result.totalGamesScanned} game(s) since ${new Date(since).toLocaleDateString('en-GB')} · Expected games for your goal: ${result.erwarteteSpiele}`;
+      } catch (e) {
+        statusEl.textContent = `Could not load trophy progress: ${e.message}`;
+      }
+    }
+
+    loadAchievementProgress();
 
     const settingsGearBtn = document.getElementById('settingsGearBtn');
     settingsGearBtn.addEventListener('click', () => {

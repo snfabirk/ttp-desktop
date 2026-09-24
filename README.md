@@ -1,30 +1,33 @@
 # Three-Trick-Pony
 
-A private Windows desktop app for tracking progress during self-imposed "one-trick-pony" challenges in League of Legends — where a player commits to playing only a small, fixed pool of up to 3 champions for a period of time.
+A private Windows desktop app for tracking progress during self-imposed "one-trick-pony" challenges in League of Legends — where a player commits to playing only a small, fixed pool of up to 3 champions (and a chosen role) for a period of time, aiming for a specific rank/LP goal.
 
 This is a personal project built for myself and a small group of friends. It is not publicly distributed or monetized.
 
 ## What it does
 
-- **Champion pool selection**: pick up to 3 champions (optionally with a preferred role) to form your challenge pool.
-- **Start Challenge**: records the exact start timestamp as the anchor for all stats below. Once started, the champion pool, role, and summoner name are locked to keep the challenge honest — only the Riot API key stays editable.
+- **Champion pool selection**: pick up to 3 champions and a single role for your pool (5 role icons: Top, Jungle, Mid, ADC, Support).
+- **Challenge Level & LP Goal**: choose a difficulty (Easy / Normal / Hard / Very Hard / Majestic) and set a target rank/division/LP — this drives both the "Expected Games" estimate and every achievement's difficulty scaling.
+- **Start Challenge**: records the exact start timestamp as the anchor for all stats below. Once started, the champion pool, role, challenge level, LP goal, and summoner name are locked to keep the challenge honest — only the Riot API key stays editable.
 - **Live challenge timer**: days/hours/minutes/seconds since the challenge started.
-- **Rank & LP tracking**: current ranked Solo/Duo tier, division and LP, plus the LP change since the challenge started.
+- **Rank & LP tracking**: current ranked Solo/Duo tier, division and LP, plus the LP change since the challenge started, shown on a graph.
 - **Per-champion stats**: win/loss record, winrate, KDA and CS/min for games played on the selected champions since the challenge started.
 - **Matchup breakdown**: win/loss record against specific enemy champions, to spot good and bad matchups at a glance.
 - **Recent match history & streaks**: last games played and current win/loss streak.
-- **Settings**: adjustable window size (as a percentage of screen size) and a choice of color themes (Classic, Graphite, Light, Hextech, Arcane, Noxus).
-- **Auto-updates**: the app checks for and installs new versions automatically via GitHub Releases.
+- **Trophies (achievements)**: 21 trophies per challenge (16 universal + 5 specific to your chosen role) plus a separate Platinum trophy for unlocking all of them, each scaled to your Challenge Level and Expected Games. Real-time progress bars per trophy, calculated from your actual match history.
+- **Settings**: adjustable window size (as a percentage of screen size), a choice of 6 color themes (Classic, Graphite, Light, Hextech, Arcane, Noxus), "Start with Windows", and manual/automatic update checks.
+- **Runs in the background**: minimizes to the system tray instead of quitting, keeps tracking LP and checking for updates even when no window is open.
+- **Auto-updates**: the app checks for and installs new versions automatically via GitHub Releases, with a small non-intrusive indicator instead of an interrupting popup.
 
 ## How it works
 
-The app is an [Electron](https://www.electronjs.org/) wrapper around a small local [Express](https://expressjs.com/) server. The server talks to the Riot Games API to resolve accounts, fetch ranked stats, and pull match history, then computes and caches the stats shown in the app.
+The app is an [Electron](https://www.electronjs.org/) wrapper around a small local [Express](https://expressjs.com/) server. The server talks to the Riot Games API to resolve accounts, fetch ranked stats, pull match history, and compute both the regular stats and the achievement/trophy progress shown in the app. Match results are cached on disk so repeated loads only fetch new games.
 
-**Riot APIs used:** `account-v1`, `summoner-v4`, `league-v4`, `match-v5`.
+**Riot APIs used:** `account-v1`, `summoner-v4`, `league-v4`, `match-v5` (including the Timeline endpoint, used for a couple of role-specific trophies that need per-event match data).
 
 ## Installation
 
-Download the latest installer from the [Releases](https://github.com/snfabirk/ttp-desktop/releases) page and run it. You'll need your own [Riot API key](https://developer.riotgames.com/) to use the app — enter it in the Riot API Key field on first launch.
+Download the latest installer from the [Releases](https://github.com/snfabirk/ttp-desktop/releases) page and run it. You'll need your own [Riot API key](https://developer.riotgames.com/) to use the app — enter it in the Riot API Key field in Settings on first launch.
 
 ---
 

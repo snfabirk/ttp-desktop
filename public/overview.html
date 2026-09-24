@@ -94,6 +94,13 @@
     .trophies-card:hover {
       border-color: var(--gold);
     }
+    .trophies-card.platinum {
+      border-color: var(--gold);
+      box-shadow: 0 0 12px rgba(200, 170, 110, 0.35);
+    }
+    .trophies-card.platinum .trophies-progress {
+      color: var(--gold);
+    }
     .trophies-icon {
       font-size: 1.4rem;
       flex-shrink: 0;
@@ -1062,6 +1069,8 @@
     const accountStreakEl = document.getElementById('accountStreak');
     const accountStreakLabelEl = document.getElementById('accountStreakLabel');
     const accountLpGraphEl = document.getElementById('accountLpGraph');
+    const trophiesProgressEl = document.getElementById('trophiesProgress');
+    const trophiesCardEl = document.getElementById('trophiesCard');
     const accountOverviewNoteIcon = document.getElementById('accountOverviewNoteIcon');
     const settingsGearBtn = document.getElementById('settingsGearBtn');
     settingsGearBtn.addEventListener('click', () => {
@@ -1875,6 +1884,50 @@
       }
     }
 
+    // Fuellt nur die kleine Prozentzahl auf der Trophies-Karte - die volle
+    // Fortschrittsanzeige pro Trophy lebt in trophies.html selbst (gleicher
+    // Endpoint, gleiche localStorage-Keys, siehe [[achievements-trophies-design]]).
+    async function loadTrophiesProgress(puuid, since, champions) {
+      const role = (() => { try { return localStorage.getItem('ttp_pool_role') || ''; } catch (e) { return ''; } })();
+      if (!since || !role || !champions.length) return;
+
+      const challengeLevel = localStorage.getItem('ttp_challenge_level') || 'normal';
+      const lpGoal = {
+        tier: localStorage.getItem('ttp_lp_goal_tier') || '',
+        division: localStorage.getItem('ttp_lp_goal_division') || '',
+        lp: localStorage.getItem('ttp_lp_goal_lp') || '0'
+      };
+
+      try {
+        const startRes = await fetch('/api/achievements/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ puuid, champions, since, role, challengeLevel, lpGoal })
+        });
+        const startData = await parseApiResponse(startRes);
+        if (!startRes.ok) throw new Error(startData.error || 'Unknown error');
+
+        let result = null;
+        while (true) {
+          const statusRes = await fetch(`/api/achievements/status/${startData.jobId}`);
+          const status = await parseApiResponse(statusRes);
+          if (!statusRes.ok) throw new Error(status.error || 'Unknown error');
+          if (status.status === 'error') throw new Error(status.error || 'Unknown error');
+          if (status.status === 'done') { result = status.result; break; }
+          await new Promise(r => setTimeout(r, 600));
+        }
+
+        const percent = result.totalCount > 0 ? Math.round((result.unlockedCount / result.totalCount) * 100) : 0;
+        trophiesProgressEl.textContent = `${percent}%`;
+        trophiesCardEl.title = `${result.unlockedCount} / ${result.totalCount} trophies unlocked`;
+        if (result.platinumUnlocked) trophiesCardEl.classList.add('platinum');
+      } catch (e) {
+        // Trophies-Prozentzahl ist ein Bonus-Feature auf dieser Seite - ein
+        // Fehler hier (z.B. kein API-Key) soll den restlichen Load nicht
+        // stoeren, die volle Fehlermeldung sieht man auf trophies.html selbst.
+      }
+    }
+
     async function loadAllSummaries() {
       summaryCache = {};
       const since = currentSince;
@@ -1943,6 +1996,7 @@
 
         renderAccountOverview(data);
         loadLpGraph(currentPuuid, since, data.rank);
+        loadTrophiesProgress(currentPuuid, since, champsWithKeys.map(x => ({ key: x.key, role: x.champ.role || '' })));
         hasLoadedOnce = true;
         updateLoadButtonLabel();
       } catch (e) {
