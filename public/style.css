@@ -204,6 +204,33 @@ html, body {
   border-color: var(--border-hover);
 }
 
+/* Zurueck-Button oben links - Icon statt Textlink, spiegelt den
+   Zahnrad-Button rechts (gleiche Groesse/Kreisform), fuer Seiten die
+   nicht die Startseite sind. */
+.back-btn {
+  position: fixed;
+  top: 18px;
+  left: 24px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  z-index: 50;
+  transition: color 0.15s, border-color 0.15s;
+}
+.back-btn:hover {
+  color: var(--gold);
+  border-color: var(--border-hover);
+}
+
 /* Beenden-Button links vom Zahnrad - beendet die App wirklich komplett
    (anders als das Fenster-X, das nur in den Tray versteckt). */
 .quit-btn {

@@ -98,19 +98,6 @@
     font-size: 0.8rem;
     margin-top: 2px;
   }
-  .trophy-section {
-    margin-bottom: 22px;
-  }
-  .trophy-section-title {
-    font-family: 'Cinzel', Georgia, serif;
-    font-size: 0.85rem;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 6px;
-    margin-bottom: 14px;
-  }
   .trophy-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -146,6 +133,12 @@
     opacity: 1;
     border-color: var(--gold);
     box-shadow: 0 0 10px rgba(200, 170, 110, 0.25);
+  }
+  .trophy-slot.role-specific {
+    border-style: dashed;
+  }
+  .trophy-slot.role-specific.unlocked {
+    border-style: solid;
   }
   .trophy-slot .trophy-icon {
     width: 30px;
@@ -205,12 +198,12 @@
 </style>
 </head>
 <body>
+  <a class="back-btn" href="overview.html" title="Back to Overview" aria-label="Back to Overview">←</a>
   <button type="button" class="settings-gear-btn" id="settingsGearBtn" title="Settings" aria-label="Settings">⚙</button>
   <button type="button" class="quit-btn" id="quitBtn" title="Quit completely" aria-label="Quit completely">⏻</button>
   <header class="site-header">
     <h1>League of Legends</h1>
     <p class="subtitle">Three-Trick-Pony</p>
-    <nav class="site-nav"><a href="overview.html">← Back to Overview</a></nav>
   </header>
 
   <div class="content">
@@ -232,15 +225,7 @@
       </span>
     </div>
 
-    <div class="trophy-section">
-      <div class="trophy-section-title">Universal</div>
-      <div class="trophy-grid" id="universalGrid"></div>
-    </div>
-
-    <div class="trophy-section">
-      <div class="trophy-section-title" id="roleSectionTitle">Role</div>
-      <div class="trophy-grid" id="roleGrid"></div>
-    </div>
+    <div class="trophy-grid" id="trophyGrid"></div>
   </div>
 
   <script>
@@ -350,41 +335,38 @@
       try { return localStorage.getItem('ttp_pool_role') || ''; } catch (e) { return ''; }
     }
 
-    function renderTrophy(t) {
+    function renderTrophy(t, roleSpecific) {
       const slot = document.createElement('div');
-      slot.className = 'trophy-slot';
+      slot.className = roleSpecific ? 'trophy-slot role-specific' : 'trophy-slot';
       slot.dataset.trophyId = t.id || '';
+      slot.title = roleSpecific ? `${ROLE_LABELS[role] || ''} trophy` : '';
       slot.innerHTML = `<span class="trophy-icon">${iconSvg(t.icon)}</span><span class="trophy-name">${t.name}</span><span class="trophy-desc">${t.desc}</span>`;
       return slot;
     }
 
     const role = loadPoolRole();
     const roleNote = document.getElementById('roleNote');
-    const roleSectionTitle = document.getElementById('roleSectionTitle');
-    const universalGrid = document.getElementById('universalGrid');
-    const roleGrid = document.getElementById('roleGrid');
+    const trophyGrid = document.getElementById('trophyGrid');
 
     document.querySelector('.platinum-trophy .trophy-icon').innerHTML = iconSvg('trophyCup');
 
     for (const t of UNIVERSAL_TROPHIES) {
       const isSupport = role === 'UTILITY';
       const variant = (isSupport && t.support) ? { id: t.id, ...t.support } : t;
-      universalGrid.appendChild(renderTrophy(variant));
+      trophyGrid.appendChild(renderTrophy(variant, false));
     }
 
     if (role && ROLE_TROPHIES[role]) {
-      roleSectionTitle.textContent = `${ROLE_LABELS[role]} Trophies`;
-      roleNote.innerHTML = `Showing role trophies for <strong>${ROLE_LABELS[role]}</strong> - pick a different role on the Champion Selection page to see a different set.`;
+      roleNote.innerHTML = `Showing role trophies for <strong>${ROLE_LABELS[role]}</strong> (dashed border) - pick a different role on the Champion Selection page to see a different set.`;
       for (const t of ROLE_TROPHIES[role]) {
-        roleGrid.appendChild(renderTrophy(t));
+        trophyGrid.appendChild(renderTrophy(t, true));
       }
     } else {
-      roleSectionTitle.textContent = 'Role Trophies';
       roleNote.textContent = 'Select a role on the Champion Selection page to unlock your 5 role-specific trophies.';
       for (const t of ROLE_TROPHIES.TOP) {
-        const slot = renderTrophy(t);
+        const slot = renderTrophy(t, true);
         slot.style.opacity = '0.3';
-        roleGrid.appendChild(slot);
+        trophyGrid.appendChild(slot);
       }
     }
 
