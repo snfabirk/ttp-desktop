@@ -244,7 +244,11 @@ function computeUniversalProgress(acc, { tier, erwarteteSpiele, role }) {
 
   const { bestWinStreak } = computeStreaksLocal(acc.games);
   list.push(progressEntry('win-streak', 'Win Streak', bestWinStreak, rate('winStreak', tier)));
-  list.push(progressEntry('marathon', 'Marathon', acc.totalGames, Math.round(erwarteteSpiele)));
+  // Erwartete Spiele bleibt die 60%-WR-Referenzzahl fuer alle anderen
+  // Trophies - Marathon selbst braucht aber nur 70% davon, sonst poppt sie
+  // bei einer ueberdurchschnittlichen Win-Streak (Ziel schon laengst erreicht,
+  // aber noch nicht genug Spiele fuer die volle Erwartete-Spiele-Zahl) nie auf.
+  list.push(progressEntry('marathon', 'Marathon', acc.totalGames, Math.round(erwarteteSpiele * 0.7)));
 
   list.push(progressEntry('playmaker', 'Playmaker', acc.sum.assists, Math.ceil(rate(isSupport ? 'assistsInsgesamtSupport' : 'assistsInsgesamt', tier) * erwarteteSpiele)));
   list.push(progressEntry('executioner', 'Executioner', acc.sum.damage, Math.ceil(rate(isSupport ? 'damageInsgesamtSupport' : 'damageInsgesamt', tier) * erwarteteSpiele)));
