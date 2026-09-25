@@ -2159,7 +2159,7 @@
     function renderRecentGames(data) {
       recentGamesListEl.innerHTML = '';
       if (!data.recentGames || data.recentGames.length === 0) {
-        recentGamesListEl.innerHTML = '<p class="status-msg">No games in the selected time range.</p>';
+        recentGamesListEl.innerHTML = '<p class="status-msg">No games since the challenge start.</p>';
         return;
       }
       data.recentGames.forEach(g => {
@@ -2215,7 +2215,7 @@
 
       matchupListEl.innerHTML = '';
       if (data.matchups.length === 0) {
-        matchupListEl.innerHTML = '<p class="status-msg">No matchup data in the selected time range.</p>';
+        matchupListEl.innerHTML = '<p class="status-msg">No matchup data since the challenge start.</p>';
         return;
       }
 
