@@ -197,13 +197,17 @@ app.get('/api/summary', requireApiKey, async (req, res) => {
   if (!puuid || !championKey) {
     return res.status(400).json({ error: 'puuid and championKey are required.' });
   }
-
-  let startTime = 0; // kein Challenge-Start = keine Untergrenze, so weit zurueck wie Riot eben zulaesst
-  if (since) {
-    startTime = Math.floor(new Date(since).getTime() / 1000);
-    if (Number.isNaN(startTime)) {
-      return res.status(400).json({ error: 'Invalid date for "since".' });
-    }
+  // "since" ist jetzt Pflicht (nicht mehr optional) - ohne Challenge-Start
+  // gibt es keine sinnvolle Untergrenze, und ein ungescopter Scan der
+  // kompletten Historie (bis zu ~700 Spiele bei vielspielenden Accounts)
+  // lief frueher als synchroner Request im Hintergrund weiter, auch wenn
+  // zwischenzeitlich eine neue Challenge gestartet wurde - siehe overview.html.
+  if (!since) {
+    return res.status(400).json({ error: 'A "since" timestamp is required - start a challenge first.' });
+  }
+  const startTime = Math.floor(new Date(since).getTime() / 1000);
+  if (Number.isNaN(startTime)) {
+    return res.status(400).json({ error: 'Invalid date for "since".' });
   }
 
   try {
@@ -419,12 +423,16 @@ app.post('/api/summary-batch/start', requireApiKey, (req, res) => {
   });
   const dedupedChampions = [...byKey.values()];
 
-  let startTime = 0; // kein Challenge-Start = keine Untergrenze
-  if (since) {
-    startTime = Math.floor(new Date(since).getTime() / 1000);
-    if (Number.isNaN(startTime)) {
-      return res.status(400).json({ error: 'Invalid date for "since".' });
-    }
+  // "since" ist Pflicht (siehe /api/summary weiter oben fuer die Begruendung)
+  // - ohne Challenge-Start liefe dieser Batch-Job unscoped und potenziell
+  // minutenlang im Hintergrund weiter, selbst wenn zwischenzeitlich auf Seite
+  // 1 eine neue Challenge gestartet wird.
+  if (!since) {
+    return res.status(400).json({ error: 'A "since" timestamp is required - start a challenge first.' });
+  }
+  const startTime = Math.floor(new Date(since).getTime() / 1000);
+  if (Number.isNaN(startTime)) {
+    return res.status(400).json({ error: 'Invalid date for "since".' });
   }
 
   const jobId = createJob();

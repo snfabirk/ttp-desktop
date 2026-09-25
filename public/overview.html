@@ -1549,6 +1549,13 @@
         return;
       }
       const since = currentSince;
+      // Ohne Challenge keine Untergrenze - siehe die gleiche Guard-Begruendung
+      // in loadAllSummaries() oben (verhindert unscoped Match-Scans, die im
+      // Hintergrund weiterlaufen koennten).
+      if (!since) {
+        statusMsg.textContent = 'Start a challenge on the Champion Selection page first - loading match data requires an active challenge.';
+        return;
+      }
 
       try {
         const params = new URLSearchParams({ puuid: currentPuuid, championKey: key, since, role: champ.role || '' });
@@ -1983,27 +1990,21 @@
         return;
       }
 
-      // Ohne Challenge-Start gibt es keine Untergrenze - dann wird die
-      // komplette verfuegbare Historie gescannt (kann mehrere Minuten dauern,
-      // v.a. wegen Riots Rate-Limit fuer Personal Keys, nicht wegen der Anzahl
-      // ausgewaehlter Champions). Vorher warnen statt die App scheinbar
-      // haengen zu lassen.
+      // Ohne Challenge-Start gibt es keine Untergrenze - fruehere Version
+      // erlaubte hier (nach einer Warnung) einen ungescopten Scan der
+      // kompletten verfuegbaren Historie (~6 Monate, bei vielspielenden
+      // Accounts 700+ Spiele). Bewusst entfernt: dieser Scan lief als
+      // Hintergrund-Job minutenlang weiter, auch wenn man in der Zwischenzeit
+      // auf Seite 1 eine Challenge startete - der alte, ungescopte Job kam
+      // dann verspaetet zurueck und ueberschrieb/kollidierte mit den frisch
+      // gescopten Daten der neu gestarteten Challenge. Ohne Challenge wird
+      // jetzt also gar kein Match-Scan mehr gestartet.
       if (!since) {
-        const proceed = confirm(
-          'No challenge started yet, so this will scan your FULL available match history ' +
-          '(up to ~6 months) instead of just since a challenge start. ' +
-          'Depending on how many games you\'ve played, this can take 10 minutes or more ' +
-          '(number of champions selected does not change this - every game gets scanned once either way). Continue?'
-        );
-        if (!proceed) {
-          statusMsg.textContent = 'Cancelled. Start a challenge on the Champion Selection page for a much faster, scoped load.';
-          return;
-        }
+        statusMsg.textContent = 'Start a challenge on the Champion Selection page first - loading match data requires an active challenge.';
+        return;
       }
 
-      statusMsg.textContent = since
-        ? `Starting search since ${formatDateTimeEU(since)} …`
-        : 'Starting search (no challenge started yet - start one on the Champion Selection page to track LP change) …';
+      statusMsg.textContent = `Starting search since ${formatDateTimeEU(since)} …`;
       showProgressBar(true);
 
       try {
