@@ -184,7 +184,7 @@ html, body {
 .settings-gear-btn {
   position: fixed;
   top: 18px;
-  right: 24px;
+  right: 64px;
   width: 34px;
   height: 34px;
   display: flex;
@@ -236,7 +236,7 @@ html, body {
 .quit-btn {
   position: fixed;
   top: 18px;
-  right: 64px;
+  right: 24px;
   width: 34px;
   height: 34px;
   display: flex;
@@ -256,36 +256,52 @@ html, body {
   border-color: var(--red);
 }
 
-/* Kleines Update-Symbol links vom Beenden-Button - standardmaessig
-   unsichtbar, erscheint erst per JS (.visible), sobald ein Update
-   gefunden wurde. Gruen statt Gold, damit es sich klar von den anderen
-   (goldenen) Icons abhebt und sofort als "Update verfuegbar" auffaellt -
-   ueber die pro Theme definierte --green-Variable, damit der Kontrast in
-   jedem der 6 Farbthemen stimmt. Hintergrund bleibt immer transparent
-   (panel-bg), auch sobald der Download fertig ist - kein volles Fuellen
-   mehr wie zuvor. */
+/* Runder "Updates ueberpruefen"-Button, erster (linkester) der drei Buttons
+   oben rechts (Updates, Einstellungen, Beenden - in dieser Reihenfolge) -
+   immer sichtbar, gleicher Look wie Zahnrad/Beenden-Button im Ruhezustand.
+   Wird erst gruen + pulsierend (.update-available), sobald ein Update
+   tatsaechlich gefunden wurde - ueber die pro Theme definierte --green-
+   Variable, damit der Kontrast in jedem der 6 Farbthemen stimmt. Waehrend
+   eines laufenden manuellen Checks (.checking) dreht sich das Symbol. */
 .update-indicator-btn {
   position: fixed;
   top: 18px;
   right: 104px;
   width: 34px;
   height: 34px;
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   background: var(--panel-bg);
-  border: 1px solid var(--green);
+  border: 1px solid var(--border);
   border-radius: 50%;
-  color: var(--green);
-  font-size: 1rem;
+  color: var(--text-dim);
+  font-size: 1.05rem;
   cursor: pointer;
   z-index: 50;
+  transition: color 0.15s, border-color 0.15s;
+}
+.update-indicator-btn:hover {
+  color: var(--gold);
+  border-color: var(--border-hover);
+}
+.update-indicator-btn.checking {
+  animation: update-indicator-spin 1s linear infinite;
+}
+.update-indicator-btn.update-available {
+  border-color: var(--green);
+  color: var(--green);
   animation: update-indicator-pulse 1.6s ease-in-out infinite;
 }
-.update-indicator-btn.visible {
-  display: flex;
+.update-indicator-btn.update-available:hover {
+  color: var(--green);
+  border-color: var(--green);
 }
 @keyframes update-indicator-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+@keyframes update-indicator-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

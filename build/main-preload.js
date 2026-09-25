@@ -8,5 +8,9 @@ contextBridge.exposeInMainWorld('ttpMain', {
   onUpdateStatus: (callback) => {
     ipcRenderer.on('main-update-status', (event, state) => callback(state));
   },
+  checkForUpdatesNow: () => ipcRenderer.send('check-for-updates-now'),
+  onManualUpdateCheckStatus: (callback) => {
+    ipcRenderer.on('manual-update-check-status', (event, status, extra) => callback(status, extra));
+  },
   quitApp: () => ipcRenderer.send('app-quit')
 });
