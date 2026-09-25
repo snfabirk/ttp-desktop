@@ -150,23 +150,6 @@ html, body {
   margin: 6px 0 0;
 }
 
-.site-nav {
-  margin-top: 14px;
-}
-
-.site-nav a {
-  color: var(--text-dim);
-  font-family: 'Cinzel', Georgia, serif;
-  font-size: 0.9rem;
-  letter-spacing: 1px;
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-}
-
-.site-nav a:hover {
-  color: var(--gold);
-  border-bottom-color: var(--gold);
-}
 
 .error-msg {
   display: none;
