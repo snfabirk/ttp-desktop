@@ -192,6 +192,19 @@
     border-color: var(--gold);
     box-shadow: 0 0 10px rgba(200, 170, 110, 0.25);
   }
+  .trophy-slot.provisional {
+    opacity: 0.8;
+    border-style: dotted;
+    border-width: 2px;
+    border-color: var(--gold);
+  }
+  .trophy-slot.provisional .trophy-progress-fill {
+    opacity: 0.55;
+  }
+  .trophy-slot.provisional .trophy-progress-label {
+    color: var(--gold);
+    opacity: 0.75;
+  }
   .trophy-slot.role-specific {
     border-style: dashed;
     border-width: 2px;
@@ -199,6 +212,10 @@
   }
   .trophy-slot.role-specific.unlocked {
     border-style: solid;
+    border-color: var(--gold);
+  }
+  .trophy-slot.role-specific.provisional {
+    border-style: dotted;
     border-color: var(--gold);
   }
   .trophy-slot .trophy-icon {
@@ -365,8 +382,8 @@
         detail: 'Adds up every assist from every game this challenge into one running total, compared against the target below.' },
       { id: 'executioner', icon: 'bolt', name: 'Executioner', desc: 'Total damage to champions',
         detail: 'Adds up damage dealt to enemy champions from every game this challenge into one running total, compared against the target below.' },
-      { id: 'consistency', icon: 'chartUp', name: 'Consistency', desc: 'Keep a 51-55% winrate, based on Challenge Level (min. 15 games)',
-        detail: 'Your overall win/loss ratio this challenge must reach a target set by your Challenge Level: 51% on Easy up to 55% on Majestic (shown as the exact number below). Only starts counting once you\'ve played at least 15 games - before that, this stays locked no matter your winrate.' },
+      { id: 'consistency', icon: 'chartUp', name: 'Consistency', desc: 'Keep a 51-55% winrate across the challenge, based on Challenge Level',
+        detail: 'Your overall win/loss ratio across the whole challenge must reach a target set by your Challenge Level (51% on Easy up to 55% on Majestic). Shows as "Provisional" if you\'re already above target - it only becomes permanent once you\'ve reached your LP Goal AND your winrate is still above target at that point. If it isn\'t yet, keep playing - it stays checkable after every game until it is.' },
       { id: 'goal-reached', icon: 'target', name: 'Goal Reached', desc: 'Reach the exact rank/LP you set as your goal',
         detail: 'Unlocks the moment your current rank + LP matches or passes the LP Goal you set on the Champion Selection page - the whole point of the challenge.' }
     ];
@@ -396,8 +413,8 @@
           detail: 'Stealing a Dragon/Baron/Herald from the enemy team (usually with Smite) - a rare, high-skill moment, so the target stays a small fixed number regardless of Challenge Level.' },
         { id: 'ganker', icon: 'link', name: 'Ganker', desc: 'Your highest kill participation in a single game',
           detail: 'Kill participation = the % of your team\'s kills you got a kill or assist on. Looks at your single best game this challenge.' },
-        { id: 'jungle-boss', icon: 'link', name: 'Jungle Boss', desc: 'Average kill participation, sustained across the challenge',
-          detail: 'Your kill participation averaged across every game this challenge (not just your best game) must stay above the target below.' }
+        { id: 'jungle-boss', icon: 'link', name: 'Jungle Boss', desc: 'Average kill participation across the challenge',
+          detail: 'Your kill participation averaged across every game this challenge (not just your best game) must stay above the target below. Shows as "Provisional" once you\'re above it - only becomes permanent once you\'ve reached your LP Goal (re-checked after every game until then).' }
       ],
       MIDDLE: [
         { id: 'duelist', icon: 'skull', name: 'Duelist', desc: 'Total 1v1 kills with zero help',
@@ -408,30 +425,30 @@
           detail: 'Counts a game only if you got a kill or assist in your own lane, in Top, AND in Bot, all early in that same game - roaming the whole map like a second jungler. The target is how many such games you need this challenge.' },
         { id: 'burst-king', icon: 'bolt', name: 'Burst King', desc: 'Your highest damage-per-minute in a single game',
           detail: 'Looks at your single best game for damage-per-minute this challenge.' },
-        { id: 'mid-diff', icon: 'bolt', name: 'Mid Diff', desc: 'Average damage-per-minute, sustained across the challenge',
-          detail: 'Your damage-per-minute averaged across every game this challenge (not just your best game) must stay above the target below.' }
+        { id: 'mid-diff', icon: 'bolt', name: 'Mid Diff', desc: 'Average damage-per-minute across the challenge',
+          detail: 'Your damage-per-minute averaged across every game this challenge (not just your best game) must stay above the target below. Shows as "Provisional" once you\'re above it - only becomes permanent once you\'ve reached your LP Goal (re-checked after every game until then).' }
       ],
       BOTTOM: [
         { id: 'hyper-carry', icon: 'bolt', name: 'Hyper Carry', desc: 'Your highest share of team damage in a single game',
           detail: 'What % of your whole team\'s total damage YOU personally dealt. Looks at your single best game this challenge.' },
-        { id: 'death-dealer', icon: 'bolt', name: 'Death Dealer', desc: 'Average share of team damage, sustained across the challenge',
-          detail: 'Your share of team damage averaged across every game this challenge (not just your best game) must stay above the target below.' },
+        { id: 'death-dealer', icon: 'bolt', name: 'Death Dealer', desc: 'Average share of team damage across the challenge',
+          detail: 'Your share of team damage averaged across every game this challenge (not just your best game) must stay above the target below. Shows as "Provisional" once you\'re above it - only becomes permanent once you\'ve reached your LP Goal (re-checked after every game until then).' },
         { id: 'legendary', icon: 'star', name: 'Legendary', desc: 'Total Legendary kill streaks',
           detail: 'A "Legendary" streak is 4+ kills in a row without dying (the killing spree announcer tier). Adds up across every game this challenge.' },
         { id: 'farm-machine', icon: 'wheat', name: 'Farm Machine', desc: 'Your most CS by the 10-minute mark',
           detail: 'Looks at your single best game for CS reached specifically by the 10-minute mark this challenge - a laning-phase efficiency check.' },
-        { id: 'marksman', icon: 'wheat', name: 'Marksman', desc: 'Average CS-per-minute, sustained across the challenge',
-          detail: 'Your CS-per-minute averaged across every game this challenge (not just your best game) must stay above the target below.' }
+        { id: 'marksman', icon: 'wheat', name: 'Marksman', desc: 'Average CS-per-minute across the challenge',
+          detail: 'Your CS-per-minute averaged across every game this challenge (not just your best game) must stay above the target below. Shows as "Provisional" once you\'re above it - only becomes permanent once you\'ve reached your LP Goal (re-checked after every game until then).' }
       ],
       UTILITY: [
         { id: 'vision-master', icon: 'eye', name: 'Vision Master', desc: 'Your highest Vision Score in a single game',
           detail: 'Looks at your single best game for Vision Score this challenge.' },
-        { id: 'all-seeing-eye', icon: 'eye', name: 'All-Seeing Eye', desc: 'Average Vision Score, sustained across the challenge',
-          detail: 'Your Vision Score averaged across every game this challenge (not just your best game) must stay above the target below.' },
+        { id: 'all-seeing-eye', icon: 'eye', name: 'All-Seeing Eye', desc: 'Average Vision Score across the challenge',
+          detail: 'Your Vision Score averaged across every game this challenge (not just your best game) must stay above the target below. Shows as "Provisional" once you\'re above it - only becomes permanent once you\'ve reached your LP Goal (re-checked after every game until then).' },
         { id: 'crowd-controller', icon: 'target', name: 'Crowd Controller', desc: 'Your most CC time on enemies in a single game',
           detail: 'Total seconds of crowd control (stuns, roots, slows, and similar effects) you applied to enemy champions. Looks at your single best game this challenge.' },
-        { id: 'puppet-master', icon: 'target', name: 'Puppet Master', desc: 'Average CC time on enemies, sustained across the challenge',
-          detail: 'Your CC time on enemies averaged across every game this challenge (not just your best game) must stay above the target below.' },
+        { id: 'puppet-master', icon: 'target', name: 'Puppet Master', desc: 'Average CC time on enemies across the challenge',
+          detail: 'Your CC time on enemies averaged across every game this challenge (not just your best game) must stay above the target below. Shows as "Provisional" once you\'re above it - only becomes permanent once you\'ve reached your LP Goal (re-checked after every game until then).' },
         { id: 'lifeline', icon: 'heart', name: 'Lifeline', desc: 'Heal/shield allies OR tank damage - whichever fits your build',
           detail: 'Two separate paths to the same trophy: total effective healing+shielding to allies, or total damage you personally soaked up. Whichever one you\'re closer to finishing counts - so enchanter and tank/engage supports both have a fair route.' }
       ]
@@ -504,8 +521,8 @@
       if (!slot) return;
       const descEl = slot.querySelector('.trophy-desc');
       const tooltipEl = slot.querySelector('.trophy-tooltip');
-      if (descEl) descEl.textContent = `Keep a ${winrate}% winrate (your Challenge Level) for 15+ games`;
-      if (tooltipEl) tooltipEl.textContent = `Your overall win/loss ratio this challenge must reach ${winrate}% - the target for your Challenge Level. Only starts counting once you've played at least 15 games this challenge.`;
+      if (descEl) descEl.textContent = `Keep a ${winrate}% winrate across the challenge (your Challenge Level)`;
+      if (tooltipEl) tooltipEl.textContent = `Your overall win/loss ratio across the whole challenge must reach ${winrate}% - the target for your Challenge Level. Shows as "Provisional" if you're already above target - only becomes permanent once you've reached your LP Goal AND your winrate is still above target at that point.`;
     }
     patchConsistencyDescription();
 
@@ -544,16 +561,21 @@
         const slot = document.querySelector(`.trophy-slot[data-trophy-id="${t.id}"]`);
         if (!slot) continue;
         slot.classList.add('has-progress');
-        if (t.unlocked) slot.classList.add('unlocked');
+        slot.classList.toggle('unlocked', Boolean(t.unlocked));
+        slot.classList.toggle('provisional', Boolean(t.provisional));
 
         const fill = slot.querySelector('.trophy-progress-fill');
         if (fill) fill.style.width = `${t.percent}%`;
 
         const label = slot.querySelector('.trophy-progress-label');
         if (label) {
-          label.textContent = t.unlocked
-            ? 'Unlocked!'
-            : (t.note || `${formatTrophyValue(t.id, t.current)} / ${formatTrophyValue(t.id, t.target)}`);
+          if (t.unlocked) {
+            label.textContent = 'Unlocked!';
+          } else if (t.provisional) {
+            label.textContent = 'Provisional - reach your LP Goal to confirm';
+          } else {
+            label.textContent = t.note || `${formatTrophyValue(t.id, t.current)} / ${formatTrophyValue(t.id, t.target)}`;
+          }
         }
       }
     }

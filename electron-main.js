@@ -294,7 +294,12 @@ async function readChallengeStateFromRenderer() {
       JSON.stringify({
         since: localStorage.getItem('ttp_challenge_start') || '',
         summoner: localStorage.getItem('ttp_summoner_name') || '',
-        champsRaw: localStorage.getItem('ttp_selected_champs') || '[]'
+        champsRaw: localStorage.getItem('ttp_selected_champs') || '[]',
+        role: localStorage.getItem('ttp_pool_role') || '',
+        challengeLevel: localStorage.getItem('ttp_challenge_level') || '',
+        lpGoalTier: localStorage.getItem('ttp_lp_goal_tier') || '',
+        lpGoalDivision: localStorage.getItem('ttp_lp_goal_division') || '',
+        lpGoalLp: localStorage.getItem('ttp_lp_goal_lp') || ''
       })
     `);
     return JSON.parse(raw);
@@ -343,6 +348,36 @@ async function backgroundStatsRefresh() {
       const status = await statusRes.json();
       if (!statusRes.ok || status.status === 'error' || status.status === 'done') break;
       await new Promise(r => setTimeout(r, 600));
+    }
+
+    // Achievements laufen mit demselben Rhythmus mit - noetig, damit die
+    // neue "vorlaeufig -> final bei Goal Reached" Logik (siehe
+    // achievements.js/achievementState.js) auch dann greift, wenn gerade
+    // niemand die Trophies-Seite offen hat. Ohne Rolle gibt es keine
+    // rollenspezifischen Trophies, aber die 16 universellen (inkl. der
+    // Ø-Trophy Consistency) laufen trotzdem mit.
+    if (state.role) {
+      const startAchievementsRes = await fetch(`${base}/api/achievements/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          puuid: accountData.puuid,
+          champions: champsWithKeys,
+          since: state.since,
+          role: state.role,
+          challengeLevel: state.challengeLevel,
+          lpGoal: { tier: state.lpGoalTier, division: state.lpGoalDivision, lp: state.lpGoalLp }
+        })
+      });
+      const startAchievementsData = await startAchievementsRes.json();
+      if (startAchievementsRes.ok) {
+        for (let attempt = 0; attempt < 200; attempt++) {
+          const statusRes = await fetch(`${base}/api/achievements/status/${startAchievementsData.jobId}`);
+          const status = await statusRes.json();
+          if (!statusRes.ok || status.status === 'error' || status.status === 'done') break;
+          await new Promise(r => setTimeout(r, 600));
+        }
+      }
     }
   } catch (e) {
     console.error('Background stats refresh failed:', e.message);

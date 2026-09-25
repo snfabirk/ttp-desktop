@@ -144,27 +144,61 @@ function progressEntry(id, name, current, target, extra) {
   return { id, name, current: round(current), target: round(safeTarget), percent, unlocked: current >= safeTarget && safeTarget > 0, ...extra };
 }
 
-// "Sustained across the challenge" (Ø-Wert) Trophies duerfen nicht schon
-// nach 1-2 zufaellig guten Spielen aufploppen - ein Durchschnitt aus nur
-// 2 Spielen ist kein echter Beleg fuer "sustained". Gleiche 15-Spiele-
-// Mindestgrenze wie bei Consistency, einheitlich fuer alle Ø-Trophies
-// (Jungle Boss, Mid Diff, Death Dealer, Marksman, All-Seeing Eye, Puppet
-// Master) - vorher hatten nur Consistency dieses Gate, der Rest konnte
-// (Bug) schon mit totalGames > 0 unlocken.
-const MIN_GAMES_FOR_AVERAGE = 15;
+// "Sustained across the challenge" (Ø-Wert) Trophies sind die einzige nicht
+// monotone Kategorie - im Gegensatz zu kumulativen Summen oder Peak-Werten
+// kann ein Durchschnitt durch neue Spiele wieder UNTER das Ziel rutschen.
+// Ein simples "X Spiele Minimum" (wie fruehere Version) loest das nicht
+// wirklich, es verschiebt nur wann genau. Stattdessen: immer der echte
+// laufende Durchschnitt ab Spiel 1, aber der Status bleibt "vorlaeufig" bis
+// das LP-Ziel erreicht ist - erst dann (bei irgendeinem Check danach, auch
+// automatisch alle 15 Minuten im Hintergrund) wird einmalig endgueltig
+// geprueft und bei Erfolg dauerhaft (persistiert) freigeschaltet, siehe
+// applyAverageTrophyFinalization() + server/lib/achievementState.js.
+const AVERAGE_TROPHY_IDS = new Set([
+  'consistency', 'jungle-boss', 'mid-diff', 'death-dealer', 'marksman', 'all-seeing-eye', 'puppet-master'
+]);
 
 // scale: 1 fuer rohe Zahlen (DPM, Vision Score, CC-Sekunden, CS/min), 100
 // fuer Anteils-/Prozent-Werte (Kill Participation, Team-Damage-%), die als
 // 0-1-Bruch in den acc.sum-Feldern stecken und als Prozentzahl angezeigt
 // werden sollen.
 function sustainedAverageEntry(id, name, sum, totalGames, target, scale = 1) {
-  const value = totalGames >= MIN_GAMES_FOR_AVERAGE ? (sum / totalGames) * scale : 0;
-  const entry = progressEntry(id, name, value, target);
-  if (totalGames < MIN_GAMES_FOR_AVERAGE) {
-    entry.note = `Needs ${MIN_GAMES_FOR_AVERAGE}+ games (${totalGames} so far)`;
-    entry.unlocked = false;
+  const value = totalGames > 0 ? (sum / totalGames) * scale : 0;
+  return progressEntry(id, name, value, target);
+}
+
+// Wendet den vorlaeufig/final-Zustand auf alle AVERAGE_TROPHY_IDS an. Rein
+// funktional (kein Dateizugriff hier) - liest/schreibt den persistierten
+// Zustand nicht selbst, nimmt ihn als finalizedState entgegen und gibt die
+// NEU finalisierten IDs zurueck, damit der Aufrufer (server.js) sie
+// speichern kann.
+function applyAverageTrophyFinalization(trophies, { goalReached, finalizedState }) {
+  const newlyFinalized = [];
+  for (const t of trophies) {
+    if (!AVERAGE_TROPHY_IDS.has(t.id)) continue;
+
+    if (finalizedState[t.id]) {
+      // Schon in einer frueheren Session final freigeschaltet - bleibt es,
+      // auch wenn der aktuelle Durchschnitt inzwischen wieder gefallen ist.
+      t.unlocked = true;
+      t.percent = 100;
+      continue;
+    }
+
+    const currentlyMeetsTarget = t.current >= t.target && t.target > 0;
+    if (goalReached && currentlyMeetsTarget) {
+      t.unlocked = true;
+      newlyFinalized.push(t.id);
+    } else {
+      t.unlocked = false;
+      if (currentlyMeetsTarget) {
+        // Ziel rechnerisch schon erreicht, aber die Challenge (LP-Ziel)
+        // selbst noch nicht - zaehlt erst, sobald das der Fall ist.
+        t.provisional = true;
+      }
+    }
   }
-  return entry;
+  return newlyFinalized;
 }
 
 // ----- Rate-Tabellen (Easy/Normal/Hard/VeryHard/Majestic), 1:1 aus der
@@ -371,17 +405,22 @@ function computeStreaksLocal(games) {
   return { bestWinStreak };
 }
 
-function computeAllTrophyProgress(acc, { tier, erwarteteSpiele, role, currentRank, lpGoal }) {
+function computeAllTrophyProgress(acc, { tier, erwarteteSpiele, role, currentRank, lpGoal, finalizedState = {} }) {
   const universal = computeUniversalProgress(acc, { tier, erwarteteSpiele, role });
-  universal.push(computeGoalReachedProgress(currentRank, lpGoal));
+  const goalEntry = computeGoalReachedProgress(currentRank, lpGoal);
+  universal.push(goalEntry);
   const roleSpecific = computeRoleProgress(acc, { tier, erwarteteSpiele, role });
   const all = [...universal, ...roleSpecific];
+
+  const newlyFinalizedIds = applyAverageTrophyFinalization(all, { goalReached: goalEntry.unlocked, finalizedState });
+
   const unlockedCount = all.filter(t => t.unlocked).length;
   return {
     trophies: all,
     unlockedCount,
     totalCount: all.length,
-    platinumUnlocked: unlockedCount === all.length && all.length > 0
+    platinumUnlocked: unlockedCount === all.length && all.length > 0,
+    newlyFinalizedIds
   };
 }
 

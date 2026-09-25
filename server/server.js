@@ -14,6 +14,7 @@ const {
   addSoloTowerKillsFromTimeline,
   computeAllTrophyProgress
 } = require('./lib/achievements');
+const { loadFinalizedState, saveFinalizedState } = require('./lib/achievementState');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -501,7 +502,14 @@ async function runAchievementsBatch(jobId, { puuid, champions, since, startTime,
 
     const erwarteteSpiele = computeErwarteteSpiele(currentRank, lpGoal);
     const tier = (challengeLevel || 'normal').toLowerCase();
-    const progress = computeAllTrophyProgress(acc, { tier, erwarteteSpiele, role, currentRank, lpGoal });
+    const finalizedState = loadFinalizedState(puuid, since);
+    const progress = computeAllTrophyProgress(acc, { tier, erwarteteSpiele, role, currentRank, lpGoal, finalizedState });
+
+    if (progress.newlyFinalizedIds.length > 0) {
+      const merged = { ...finalizedState };
+      for (const id of progress.newlyFinalizedIds) merged[id] = true;
+      saveFinalizedState(puuid, since, merged);
+    }
 
     completeJob(jobId, {
       erwarteteSpiele,
