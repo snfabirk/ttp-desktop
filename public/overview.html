@@ -78,16 +78,21 @@
       align-items: center;
       gap: 14px;
       background: var(--panel-bg);
+      backdrop-filter: blur(12px) saturate(1.1);
+      -webkit-backdrop-filter: blur(12px) saturate(1.1);
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 10px;
       padding: 14px 20px;
       margin-bottom: 24px;
       text-decoration: none;
       cursor: pointer;
-      transition: border-color 0.15s;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
     }
     .trophies-card:hover {
       border-color: var(--gold);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
     }
     .trophies-card.platinum {
       border-color: var(--gold);
@@ -303,9 +308,16 @@
       background: var(--gold) !important;
       color: var(--input-bg) !important;
       cursor: pointer;
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--gold) 30%, transparent);
+      transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
     }
     .primary-btn:hover {
       background: var(--border-hover) !important;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px color-mix(in srgb, var(--gold) 40%, transparent);
+    }
+    .primary-btn:active {
+      transform: translateY(0);
     }
     .filter-bar button:disabled {
       opacity: 0.5;
@@ -462,11 +474,14 @@
     }
     .record-card {
       background: var(--panel-bg);
+      backdrop-filter: blur(12px) saturate(1.1);
+      -webkit-backdrop-filter: blur(12px) saturate(1.1);
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 10px;
       padding: 20px 24px;
       margin-bottom: 24px;
       box-sizing: border-box;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
     }
     .record-card h2, .matchups h2, .recent-games h2 {
       color: var(--gold);
@@ -481,11 +496,14 @@
     }
     .account-overview-card {
       background: var(--panel-bg);
+      backdrop-filter: blur(12px) saturate(1.1);
+      -webkit-backdrop-filter: blur(12px) saturate(1.1);
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 10px;
       padding: 18px 24px;
       box-sizing: border-box;
       text-align: center;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
     }
     .account-overview-header {
       display: flex;
