@@ -15,6 +15,13 @@ const path = require('path');
 // Datei pro puuid, an den Challenge-Start-Zeitstempel gebunden - startet
 // jemand eine neue Challenge (anderer "since"-Wert), wird der alte Stand
 // verworfen statt faelschlich in die neue Challenge uebernommen zu werden.
+//
+// "finalized" ist eine Map { trophyId: RULES_VERSION } - der Wert ist nicht
+// einfach `true`, sondern die zum Zeitpunkt der Finalisierung gueltige
+// achievements.js RULES_VERSION. So kann server.js erkennen, ob sich die
+// Trophy-Regeln (Zielzahlen/Roster) seitdem geaendert haben, ohne den
+// Fortschritt selbst neu berechnen zu muessen (siehe rulesUpToDate in
+// server.js und /api/achievements/rules-status).
 
 const STATE_DIR = path.join(__dirname, '..', 'data', 'achievement-state');
 if (!fs.existsSync(STATE_DIR)) {

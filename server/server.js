@@ -8,6 +8,7 @@ const { createBucket, addMatchToBucket, finalizeBucket, isRemake, computeStreaks
 const { createJob, updateProgress, completeJob, failJob, getJob } = require('./lib/jobs');
 const { recordSnapshot, readHistory, findSnapshotAtOrBefore, toComparableLP, seedManualSnapshot } = require('./lib/rankHistory');
 const {
+  RULES_VERSION,
   computeErwarteteSpiele,
   createAchievementAccumulator,
   addMatchToAchievementAccumulator,
@@ -515,20 +516,50 @@ async function runAchievementsBatch(jobId, { puuid, champions, since, startTime,
 
     if (progress.newlyFinalizedIds.length > 0) {
       const merged = { ...finalizedState };
-      for (const id of progress.newlyFinalizedIds) merged[id] = true;
+      // Neu finalisierte Trophies werden JETZT, unter der aktuell
+      // geltenden RULES_VERSION bestaetigt - koennen also per Definition
+      // nie "veraltet" sein.
+      for (const id of progress.newlyFinalizedIds) merged[id] = RULES_VERSION;
       saveFinalizedState(puuid, since, merged);
     }
+
+    // Bereits frueher finalisierte Trophies (aus finalizedState, VOR diesem
+    // Lauf geladen) gelten als veraltet, wenn ihre gespeicherte Version nicht
+    // mehr der aktuell im Code hinterlegten RULES_VERSION entspricht - z.B.
+    // weil ein spaeteres Update die Zielzahlen/das Roster geaendert hat,
+    // waehrend eine Challenge bereits lief. Siehe auch
+    // /api/achievements/rules-status fuer den gleichen Check ohne vollen
+    // Match-Scan (genutzt beim "Reset Challenge"-Warnhinweis).
+    const rulesUpToDate = Object.values(finalizedState).every(v => v === RULES_VERSION);
 
     completeJob(jobId, {
       erwarteteSpiele,
       tier,
       totalGamesScanned: acc.totalGames,
+      rulesUpToDate,
       ...progress
     });
   } catch (e) {
     failJob(jobId, e.message);
   }
 }
+
+// Leichtgewichtiger Check, ob die bereits FINALISIERTEN Ø-Trophies einer
+// laufenden Challenge noch zur aktuell geltenden RULES_VERSION passen - nur
+// ein lokaler Datei-Read, kein Riot-API-Call/Match-Scan, deshalb ohne
+// requireApiKey nutzbar. Wird vom "Reset Challenge"-Button auf Seite 1
+// benutzt, um vor dem Reset gezielt zu warnen, wenn sich die Trophy-Regeln
+// seit Challenge-Start geaendert haben (siehe [[achievements-trophies-design]]).
+app.get('/api/achievements/rules-status', (req, res) => {
+  const { puuid, since } = req.query;
+  if (!puuid || !since) {
+    return res.status(400).json({ error: 'puuid and since are required.' });
+  }
+  const finalizedState = loadFinalizedState(puuid, since);
+  const finalizedIds = Object.keys(finalizedState);
+  const rulesUpToDate = finalizedIds.every(id => finalizedState[id] === RULES_VERSION);
+  res.json({ rulesUpToDate, hasFinalizedTrophies: finalizedIds.length > 0 });
+});
 
 app.post('/api/achievements/start', requireApiKey, (req, res) => {
   const { puuid, champions, since, role, challengeLevel, lpGoal } = req.body || {};

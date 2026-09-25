@@ -201,6 +201,15 @@ function applyAverageTrophyFinalization(trophies, { goalReached, finalizedState 
   return newlyFinalized;
 }
 
+// Wird von Hand hochgezaehlt, wann immer sich etwas an den Trophies SELBST
+// aendert (Zielzahlen in RATES, eine Trophy kommt dazu/faellt weg) - NICHT
+// bei rein kosmetischen Aenderungen (Beschreibungstext, Icons, Layout). Jede
+// finalisierte Ø-Trophy (siehe applyAverageTrophyFinalization) merkt sich,
+// unter welcher Version sie finalisiert wurde, damit die Trophies-Seite
+// anzeigen kann, ob der Stand noch zu den aktuell geltenden Regeln passt -
+// siehe achievementState.js/server.js "rulesUpToDate".
+const RULES_VERSION = 1;
+
 // ----- Rate-Tabellen (Easy/Normal/Hard/VeryHard/Majestic), 1:1 aus der
 // finalen Design-Runde (siehe achievements-trophies-design.md Memory) -----
 const RATES = {
@@ -425,6 +434,7 @@ function computeAllTrophyProgress(acc, { tier, erwarteteSpiele, role, currentRan
 }
 
 module.exports = {
+  RULES_VERSION,
   computeErwarteteSpiele,
   createAchievementAccumulator,
   addMatchToAchievementAccumulator,

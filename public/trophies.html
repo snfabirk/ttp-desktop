@@ -48,6 +48,22 @@
     font-size: 0.9rem;
     margin-top: 6px;
   }
+  .rules-status {
+    text-align: center;
+    font-family: Georgia, serif;
+    font-size: 0.75rem;
+    margin: -6px 0 16px;
+    display: none;
+  }
+  .rules-status.visible {
+    display: block;
+  }
+  .rules-status.current {
+    color: var(--text-faint);
+  }
+  .rules-status.outdated {
+    color: var(--red);
+  }
   .role-note {
     text-align: center;
     color: var(--text-dim);
@@ -300,6 +316,8 @@
       <div class="big-percent" id="trophiesOverallPercent">0%</div>
       <div class="count-label" id="trophiesOverallCount">0 / 21 unlocked</div>
     </div>
+
+    <p class="rules-status" id="rulesStatus"></p>
 
     <div class="platinum-trophy">
       <span class="trophy-icon" data-icon="trophyCup"></span>
@@ -701,6 +719,18 @@
         }
 
         applyAchievementProgress(result.trophies);
+
+        const rulesStatusEl = document.getElementById('rulesStatus');
+        rulesStatusEl.classList.add('visible');
+        if (result.rulesUpToDate === false) {
+          rulesStatusEl.classList.remove('current');
+          rulesStatusEl.classList.add('outdated');
+          rulesStatusEl.textContent = '⚠ The trophy rules changed since some of these were confirmed - reset your challenge on the Champion Selection page to recalculate them under the current rules.';
+        } else {
+          rulesStatusEl.classList.remove('outdated');
+          rulesStatusEl.classList.add('current');
+          rulesStatusEl.textContent = '✓ This list reflects the current trophy rules.';
+        }
 
         const overallPercent = result.totalCount > 0 ? Math.round((result.unlockedCount / result.totalCount) * 100) : 0;
         document.getElementById('trophiesOverallPercent').textContent = `${overallPercent}%`;

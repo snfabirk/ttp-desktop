@@ -936,8 +936,35 @@
       }
     });
 
-    resetChallengeBtn.addEventListener('click', () => {
-      const ok = confirm('Reset the challenge? This clears the start time and timer (your champion pool and match data stay).');
+    // Prueft, ob die bereits FINALISIERTEN Ø-Trophies dieser (gleich
+    // zurueckgesetzten) Challenge noch zu den aktuell geltenden Trophy-Regeln
+    // passen (siehe /api/achievements/rules-status + RULES_VERSION in
+    // achievements.js) - rein informativ, damit der Reset-Hinweis erklaert
+    // WARUM man zuruecksetzt, statt einfach nur zu warnen. Rein lokaler
+    // Datei-Read auf dem Server, aber die puuid-Aufloesung selbst braucht
+    // einen Riot-API-Call - schlaegt der fehl (z.B. kein API-Key gesetzt),
+    // wird der normale Reset-Hinweis ohne Zusatzwarnung gezeigt statt den
+    // ganzen Reset zu blockieren.
+    async function checkRulesOutdated(since) {
+      if (!since) return false;
+      try {
+        const puuid = await resolvePuuid();
+        const res = await fetch(`/api/achievements/rules-status?${new URLSearchParams({ puuid, since })}`);
+        if (!res.ok) return false;
+        const data = await res.json();
+        return data.rulesUpToDate === false;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    resetChallengeBtn.addEventListener('click', async () => {
+      const since = loadChallengeStart();
+      const rulesOutdated = await checkRulesOutdated(since);
+      const message = rulesOutdated
+        ? 'The trophy rules were updated while this challenge was running, so some of your confirmed trophies may no longer match the current targets.\n\nReset the challenge? This clears the start time and timer (your champion pool and match data stay) and recalculates your trophy progress under the current rules.'
+        : 'Reset the challenge? This clears the start time and timer (your champion pool and match data stay).';
+      const ok = confirm(message);
       // Electron/Chromium-Eigenheit: nach einem nativen confirm()-Dialog
       // verliert das Fenster manchmal den echten OS-Tastaturfokus - Dropdowns
       // wirken dann noch bedienbar, Text-Eingabefelder aber nicht mehr, bis
