@@ -16,6 +16,7 @@ const {
   computeAllTrophyProgress
 } = require('./lib/achievements');
 const { loadFinalizedState, saveFinalizedState, clearFinalizedState } = require('./lib/achievementState');
+const { startEntry: startHistoryEntry, updateEntry: updateHistoryEntry, listEntries: listHistoryEntries, deleteEntry: deleteHistoryEntry } = require('./lib/challengeHistory');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -573,6 +574,45 @@ app.post('/api/achievements/clear-state', (req, res) => {
   }
   clearFinalizedState(puuid);
   res.json({ ok: true });
+});
+
+// ----- Challenge History (siehe server/lib/challengeHistory.js fuer die
+// vollen Semantik-Kommentare) - reine lokale Datei-Operationen, kein
+// requireApiKey noetig fuer keinen dieser vier Endpunkte. -----
+
+app.post('/api/challenge-history/start', (req, res) => {
+  const { puuid, since, champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp } = req.body || {};
+  if (!puuid || !since) {
+    return res.status(400).json({ error: 'puuid and since are required.' });
+  }
+  const entry = startHistoryEntry(puuid, { since, champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp });
+  res.json({ entry });
+});
+
+app.post('/api/challenge-history/update', (req, res) => {
+  const { puuid, since, unlockedCount, totalCount, platinumUnlocked, ended } = req.body || {};
+  if (!puuid || !since) {
+    return res.status(400).json({ error: 'puuid and since are required.' });
+  }
+  const entry = updateHistoryEntry(puuid, since, { unlockedCount, totalCount, platinumUnlocked, ended: Boolean(ended) });
+  res.json({ entry });
+});
+
+app.get('/api/challenge-history/list', (req, res) => {
+  const { puuid } = req.query;
+  if (!puuid) {
+    return res.status(400).json({ error: 'puuid is required.' });
+  }
+  res.json({ entries: listHistoryEntries(puuid) });
+});
+
+app.post('/api/challenge-history/delete', (req, res) => {
+  const { puuid, id } = req.body || {};
+  if (!puuid || !id) {
+    return res.status(400).json({ error: 'puuid and id are required.' });
+  }
+  const deleted = deleteHistoryEntry(puuid, id);
+  res.json({ deleted });
 });
 
 app.post('/api/achievements/start', requireApiKey, (req, res) => {

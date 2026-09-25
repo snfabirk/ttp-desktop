@@ -211,13 +211,15 @@ html, body {
   display: block;
 }
 
-/* Runde Icon-Buttons (Updates/Einstellungen/Beenden/Zurueck) - gemeinsame
-   Basis fuer den "modernisierten" Look: Glass-Panel mit dezentem Schatten,
-   die sich beim Hover leicht anheben statt nur die Farbe zu wechseln. */
+/* Runde Icon-Buttons (Update-Log/Updates/Einstellungen/Beenden/Zurueck) -
+   gemeinsame Basis fuer den "modernisierten" Look: Glass-Panel mit dezentem
+   Schatten, die sich beim Hover leicht anheben statt nur die Farbe zu
+   wechseln. */
 .settings-gear-btn,
 .back-btn,
 .quit-btn,
-.update-indicator-btn {
+.update-indicator-btn,
+.changelog-btn {
   position: fixed;
   top: 18px;
   width: 34px;
@@ -240,7 +242,8 @@ html, body {
 .settings-gear-btn:hover,
 .back-btn:hover,
 .quit-btn:hover,
-.update-indicator-btn:hover {
+.update-indicator-btn:hover,
+.changelog-btn:hover {
   color: var(--gold);
   border-color: var(--border-hover);
   transform: translateY(-2px);
@@ -249,7 +252,8 @@ html, body {
 .settings-gear-btn:active,
 .back-btn:active,
 .quit-btn:active,
-.update-indicator-btn:active {
+.update-indicator-btn:active,
+.changelog-btn:active {
   transform: translateY(0);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
@@ -309,4 +313,128 @@ html, body {
 @keyframes update-indicator-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* Runder "Was gibt's Neues"-Button - viertes/aeusserstes der vier Buttons
+   oben rechts (Update-Log, Updates, Einstellungen, Beenden - in dieser
+   Reihenfolge), oeffnet das rechts aufklappbare Update-Log-Panel unten. */
+.changelog-btn {
+  right: 144px;
+  font-size: 0.95rem;
+}
+
+/* ----- Update-Log Panel (public/changelog.js) - rechts aufklappbare,
+   scrollbare Liste aller Versionen seit 4.0.0. ----- */
+.changelog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  z-index: 90;
+}
+.changelog-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+.changelog-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 360px;
+  max-width: 90vw;
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.4);
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+.changelog-drawer.open {
+  transform: translateX(0);
+}
+.changelog-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.changelog-drawer-header h2 {
+  margin: 0;
+  color: var(--gold);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+}
+.changelog-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.15s ease;
+}
+.changelog-close-btn:hover {
+  color: var(--gold);
+}
+.changelog-drawer-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 18px 20px 30px;
+}
+.changelog-version {
+  margin-bottom: 26px;
+}
+.changelog-version-title {
+  color: var(--gold);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.changelog-notable {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  color: var(--text);
+  font-family: Georgia, serif;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.changelog-notable li {
+  margin-bottom: 5px;
+}
+.changelog-bugfixes-label {
+  color: var(--text-faint);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin: 8px 0 4px;
+}
+.changelog-bugfixes {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-faint);
+  font-family: Georgia, serif;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+@media (max-width: 480px) {
+  .changelog-drawer {
+    width: 100vw;
+    max-width: 100vw;
+  }
 }

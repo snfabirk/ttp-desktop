@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
 <script src="update-indicator.js"></script>
+<script src="changelog.js"></script>
 <style>
   body {
     display: flex;
@@ -17,10 +18,28 @@
   }
   .content {
     width: 100%;
-    max-width: 980px;
+    max-width: 1320px;
     box-sizing: border-box;
     padding: 0 30px;
     margin: 18px 0 24px;
+    display: grid;
+    grid-template-columns: minmax(0, 980px) 300px;
+    gap: 24px;
+    align-items: start;
+    justify-content: center;
+  }
+  .trophies-main {
+    min-width: 0;
+  }
+  @media (max-width: 1360px) {
+    .content {
+      grid-template-columns: minmax(0, 980px);
+      justify-items: center;
+    }
+    .history-panel {
+      width: 100%;
+      max-width: 980px;
+    }
   }
   .panel-heading.centered {
     text-align: center;
@@ -298,6 +317,135 @@
     font-size: 0.8rem;
     margin: -6px 0 18px;
   }
+
+  /* ----- Challenge History (rechte Seitenleiste) ----- */
+  .history-panel {
+    background: var(--panel-bg);
+    backdrop-filter: blur(12px) saturate(1.1);
+    -webkit-backdrop-filter: blur(12px) saturate(1.1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+    box-sizing: border-box;
+    position: sticky;
+    top: 18px;
+    max-height: calc(100vh - 60px);
+    display: flex;
+    flex-direction: column;
+  }
+  .history-panel .panel-heading {
+    color: var(--gold);
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    margin: 0 0 14px;
+    flex-shrink: 0;
+  }
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .history-empty {
+    display: none;
+    color: var(--text-faint);
+    font-family: Georgia, serif;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .history-entry {
+    position: relative;
+    background: rgba(var(--bg-rgb), 0.5);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 30px 12px 14px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .history-entry:hover {
+    border-color: var(--border-hover);
+  }
+  .history-entry.ongoing {
+    border-style: dashed;
+    border-color: var(--border-hover);
+  }
+  .history-entry.platinum {
+    border-color: var(--gold);
+    border-style: solid;
+    box-shadow: 0 0 14px color-mix(in srgb, var(--gold) 30%, transparent);
+    background: linear-gradient(180deg, rgba(200,170,110,0.12), rgba(var(--bg-rgb), 0.5));
+  }
+  .history-platinum-badge {
+    display: block;
+    color: var(--gold);
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .history-dates {
+    color: var(--text);
+    font-family: Georgia, serif;
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .history-live-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: history-live-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes history-live-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .history-meta {
+    color: var(--text-dim);
+    font-family: Georgia, serif;
+    font-size: 0.72rem;
+    margin-top: 3px;
+    display: flex;
+    gap: 4px;
+  }
+  .history-trophies {
+    color: var(--text-dim);
+    font-family: Georgia, serif;
+    font-size: 0.75rem;
+    margin-top: 6px;
+  }
+  .history-entry.platinum .history-trophies {
+    color: var(--gold);
+  }
+  .history-delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .history-delete-btn:hover {
+    color: var(--red);
+    background: rgba(var(--bg-rgb), 0.4);
+  }
 </style>
 </head>
 <body>
@@ -310,28 +458,36 @@
   </header>
 
   <div class="content">
-    <h2 class="panel-heading centered">Trophies</h2>
+    <div class="trophies-main">
+      <h2 class="panel-heading centered">Trophies</h2>
 
-    <div class="trophies-progress-summary">
-      <div class="big-percent" id="trophiesOverallPercent">0%</div>
-      <div class="count-label" id="trophiesOverallCount">0 / 21 unlocked</div>
+      <div class="trophies-progress-summary">
+        <div class="big-percent" id="trophiesOverallPercent">0%</div>
+        <div class="count-label" id="trophiesOverallCount">0 / 21 unlocked</div>
+      </div>
+
+      <p class="rules-status" id="rulesStatus"></p>
+
+      <div class="platinum-trophy">
+        <span class="trophy-icon" data-icon="trophyCup"></span>
+        <span class="platinum-text">
+          <span class="trophy-name">Platinum</span>
+          <span class="trophy-desc">Unlock all 21 other trophies</span>
+        </span>
+      </div>
+
+      <div class="trophy-grid" id="trophyGrid"></div>
+
+      <p class="role-note">Targets aren't random - each one scales with how far your LP Goal is from your current rank, and with your chosen Challenge Level.</p>
+      <p class="role-note" id="roleNote"></p>
+      <p class="achievements-status" id="achievementsStatus"></p>
     </div>
 
-    <p class="rules-status" id="rulesStatus"></p>
-
-    <div class="platinum-trophy">
-      <span class="trophy-icon" data-icon="trophyCup"></span>
-      <span class="platinum-text">
-        <span class="trophy-name">Platinum</span>
-        <span class="trophy-desc">Unlock all 21 other trophies</span>
-      </span>
-    </div>
-
-    <div class="trophy-grid" id="trophyGrid"></div>
-
-    <p class="role-note">Targets aren't random - each one scales with how far your LP Goal is from your current rank, and with your chosen Challenge Level.</p>
-    <p class="role-note" id="roleNote"></p>
-    <p class="achievements-status" id="achievementsStatus"></p>
+    <aside class="history-panel">
+      <h2 class="panel-heading">Challenge History</h2>
+      <div class="history-list" id="historyList"></div>
+      <p class="history-empty" id="historyEmpty">No challenges yet - start one on the Champion Selection page.</p>
+    </aside>
   </div>
 
   <script>
@@ -740,12 +896,142 @@
         }
 
         statusEl.textContent = `Based on ${result.totalGamesScanned} game(s) since ${new Date(since).toLocaleDateString('en-GB')} · Expected games for your goal: ${result.erwarteteSpiele}`;
+
+        // Merkt sich den letzten bekannten Stand lokal (fuer den Reset-Button
+        // auf Seite 1, der die Challenge-History OHNE teuren Neu-Scan
+        // abschliessen will) und synchronisiert ihn gleich auch mit dem
+        // Server-seitigen History-Eintrag dieser laufenden Challenge - so
+        // zeigt die History-Liste weiter unten immer einen halbwegs frischen
+        // Stand, auch fuer die noch laufende Challenge.
+        try {
+          localStorage.setItem('ttp_last_trophy_snapshot', JSON.stringify({
+            since,
+            unlockedCount: result.unlockedCount,
+            totalCount: result.totalCount,
+            platinumUnlocked: Boolean(result.platinumUnlocked)
+          }));
+        } catch (e) {}
+
+        fetch('/api/challenge-history/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            puuid: account.puuid,
+            since,
+            unlockedCount: result.unlockedCount,
+            totalCount: result.totalCount,
+            platinumUnlocked: Boolean(result.platinumUnlocked),
+            ended: false
+          })
+        }).catch(() => {});
       } catch (e) {
         statusEl.textContent = `Could not load trophy progress: ${e.message}`;
       }
     }
 
     loadAchievementProgress();
+
+    // ----- Challenge History (rechte Seitenleiste) - unabhaengig von
+    // loadAchievementProgress() oben, damit vergangene Challenges auch dann
+    // sichtbar bleiben, wenn gerade keine aktive Challenge laeuft (die
+    // fruehen Returns dort wuerden diesen Code sonst nie erreichen). -----
+
+    function formatShortDate(iso) {
+      const d = new Date(iso);
+      const pad = n => String(n).padStart(2, '0');
+      return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`;
+    }
+
+    function formatDuration(sinceIso, untilIso) {
+      const ms = new Date(untilIso).getTime() - new Date(sinceIso).getTime();
+      const totalMinutes = Math.max(0, Math.floor(ms / 60000));
+      const days = Math.floor(totalMinutes / 1440);
+      const hours = Math.floor((totalMinutes % 1440) / 60);
+      const minutes = totalMinutes % 60;
+      if (days > 0) return `${days}d ${hours}h`;
+      if (hours > 0) return `${hours}h ${minutes}m`;
+      return `${minutes}m`;
+    }
+
+    const ROLE_LABELS_SHORT = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'ADC', UTILITY: 'Support' };
+
+    function historyEntryHtml(entry, puuid) {
+      const isOngoing = !entry.until;
+      const dateRange = isOngoing
+        ? `${formatShortDate(entry.since)} – ongoing`
+        : `${formatShortDate(entry.since)} – ${formatShortDate(entry.until)}`;
+      const duration = formatDuration(entry.since, entry.until || new Date().toISOString());
+      const roleLabel = ROLE_LABELS_SHORT[entry.role] || '';
+      const platinumClass = entry.platinumUnlocked ? ' platinum' : '';
+      const ongoingClass = isOngoing ? ' ongoing' : '';
+      return `
+        <div class="history-entry${platinumClass}${ongoingClass}" data-id="${entry.id}">
+          <button type="button" class="history-delete-btn" data-id="${entry.id}" title="Delete this entry" aria-label="Delete this entry">×</button>
+          ${entry.platinumUnlocked ? '<span class="history-platinum-badge">★ Platinum</span>' : ''}
+          <div class="history-dates">${dateRange}${isOngoing ? ' <span class="history-live-dot"></span>' : ''}</div>
+          <div class="history-meta">
+            <span>${duration}</span>
+            ${roleLabel ? `<span>· ${roleLabel}</span>` : ''}
+          </div>
+          <div class="history-trophies">${entry.unlockedCount} / ${entry.totalCount} trophies</div>
+        </div>
+      `;
+    }
+
+    function renderChallengeHistory(entries, puuid) {
+      const listEl = document.getElementById('historyList');
+      const emptyEl = document.getElementById('historyEmpty');
+      if (!entries.length) {
+        listEl.innerHTML = '';
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      listEl.innerHTML = entries.map(e => historyEntryHtml(e, puuid)).join('');
+      listEl.querySelectorAll('.history-delete-btn').forEach(btn => {
+        btn.addEventListener('click', async (ev) => {
+          ev.stopPropagation();
+          const id = btn.dataset.id;
+          const ok = confirm('Delete this challenge from your history? This cannot be undone.');
+          if (window.ttpMain) window.ttpMain.restoreFocus();
+          if (!ok) return;
+          try {
+            await fetch('/api/challenge-history/delete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ puuid, id })
+            });
+          } catch (e) {}
+          loadChallengeHistory(puuid);
+        });
+      });
+    }
+
+    async function loadChallengeHistory(puuid) {
+      try {
+        const res = await fetch(`/api/challenge-history/list?${new URLSearchParams({ puuid })}`);
+        const data = await parseApiResponse(res);
+        if (!res.ok) throw new Error(data.error || 'Unknown error');
+        renderChallengeHistory(data.entries || [], puuid);
+      } catch (e) {
+        document.getElementById('historyEmpty').textContent = `Could not load challenge history: ${e.message}`;
+        document.getElementById('historyEmpty').style.display = 'block';
+      }
+    }
+
+    (async function initChallengeHistory() {
+      try {
+        const summonerName = (localStorage.getItem('ttp_summoner_name') || '').trim();
+        const parts = summonerName.split('#');
+        if (parts.length !== 2 || !parts[0] || !parts[1]) return;
+        const accountRes = await fetch(`/api/account?${new URLSearchParams({ gameName: parts[0], tagLine: parts[1] })}`);
+        const account = await parseApiResponse(accountRes);
+        if (!accountRes.ok) return;
+        loadChallengeHistory(account.puuid);
+      } catch (e) {
+        // Kein API-Key/kein Netz - History bleibt einfach leer, kein harter Fehler.
+      }
+    })();
 
     const settingsGearBtn = document.getElementById('settingsGearBtn');
     settingsGearBtn.addEventListener('click', () => {

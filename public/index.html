@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="theme.js"></script>
   <script src="update-indicator.js"></script>
+  <script src="changelog.js"></script>
   <script>
     // Bei App-Start (Electron laedt immer diese Seite zuerst) direkt zur
     // Overview springen, wenn schon eine Challenge laeuft - statt erst die
@@ -925,8 +926,28 @@
         });
         const data = await parseApiResponse(res);
         if (!res.ok) throw new Error(data.error || 'Unknown error');
-        saveChallengeStart(new Date(data.timestamp).toISOString());
+        const startIso = new Date(data.timestamp).toISOString();
+        saveChallengeStart(startIso);
         renderChallengeState();
+
+        // Legt den History-Eintrag fuer diese Challenge an (siehe
+        // server/lib/challengeHistory.js) - rein informativ fuer die
+        // "Challenge History"-Liste auf trophies.html, ein Fehlschlag hier
+        // soll den eigentlichen Challenge-Start nicht kippen.
+        fetch('/api/challenge-history/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            puuid,
+            since: startIso,
+            champions: selectedChamps.map(c => ({ key: c.key, name: c.name, role: c.role || '' })),
+            role: currentPoolRole,
+            challengeLevel: challengeLevelSelect.value,
+            lpGoalTier: lpGoalTierSelect.value,
+            lpGoalDivision: lpGoalDivisionSelect.value,
+            lpGoalLp: Number(lpGoalLpInput.value) || 0
+          })
+        }).catch(() => {});
       } catch (e) {
         challengeStartError.textContent = e.message;
         challengeStartError.classList.add('visible');
@@ -988,6 +1009,35 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ puuid })
+        }).catch(() => {});
+
+        // Schliesst den Challenge-History-Eintrag final ab (until = jetzt).
+        // Die Trophy-Zahlen kommen aus dem zuletzt von trophies.html
+        // gespeicherten Snapshot (siehe dort) - eine Neuberechnung hier waere
+        // ein kompletter Match-Scan nur fuers Protokoll, das lohnt sich nicht.
+        // Kein Snapshot vorhanden (Trophies-Seite nie waehrend dieser
+        // Challenge geoeffnet) faellt auf 0/21 zurueck statt den Reset zu
+        // blockieren.
+        let snapshot = null;
+        try {
+          const raw = localStorage.getItem('ttp_last_trophy_snapshot');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed.since === since) snapshot = parsed;
+          }
+        } catch (e) {}
+
+        fetch('/api/challenge-history/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            puuid,
+            since,
+            unlockedCount: snapshot ? snapshot.unlockedCount : 0,
+            totalCount: snapshot ? snapshot.totalCount : 21,
+            platinumUnlocked: snapshot ? snapshot.platinumUnlocked : false,
+            ended: true
+          })
         }).catch(() => {});
       }
     });
