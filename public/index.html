@@ -46,6 +46,7 @@
       grid-template-areas:
         "summoner  checklist"
         "champ     list"
+        "start     start"
         "gobtn     gobtn";
       gap: 24px;
       box-sizing: border-box;
@@ -55,6 +56,15 @@
     #checklistBox { grid-area: checklist; }
     .champ-picker { grid-area: champ; }
     .selection-list { grid-area: list; }
+    #startChallengeBox { grid-area: start; }
+    /* Start Challenge ist bewusst der letzte Schritt im Ablauf (erst
+       Summoner+Level+LP-Ziel, dann Champion-Pool+Rolle, dann erst starten) -
+       deshalb eine eigene, volle-Breite Box unterhalb des Champion-Pools statt
+       (wie frueher) ein Button mitten in der Summoner-Box, bevor der Pool
+       ueberhaupt gewaehlt wurde. */
+    .start-challenge-box {
+      text-align: center;
+    }
     @media (max-width: 900px) {
       .content {
         grid-template-columns: 420px;
@@ -63,6 +73,7 @@
           "checklist"
           "champ"
           "list"
+          "start"
           "gobtn";
       }
     }
@@ -452,16 +463,6 @@
       </div>
     </div>
 
-    <div id="challengeNotStarted">
-      <button type="button" id="startChallengeBtn">Start Challenge</button>
-      <p id="challengeStartError" class="error-msg"></p>
-    </div>
-
-    <div id="challengeStarted" style="display:none;">
-      <p class="challenge-started-at" id="challengeStartedAt"></p>
-      <div class="challenge-timer" id="challengeTimer">-</div>
-      <button type="button" id="resetChallengeBtn" class="reset-challenge-link">Reset Challenge</button>
-    </div>
   </div>
 
   <div class="setup-box" id="checklistBox">
@@ -478,7 +479,7 @@
   <div class="champ-picker">
     <label>Select Champion Pool</label>
     <p id="champPickerLockedNote" style="font-size:0.75rem; color:var(--text-faint); margin:0 0 12px; display:none;">
-      Champions are locked for this challenge. Reset the challenge on the left to change your pool.
+      Champions are locked for this challenge. Reset the challenge below to change your pool.
     </p>
 
     <div class="role-icon-picker" id="roleIconPicker">
@@ -514,6 +515,20 @@
 
   <div class="selection-list">
     <div id="selectionCards"></div>
+  </div>
+
+  <div class="setup-box start-challenge-box" id="startChallengeBox">
+    <label>Start Challenge</label>
+    <div id="challengeNotStarted">
+      <button type="button" id="startChallengeBtn">Start Challenge</button>
+      <p id="challengeStartError" class="error-msg"></p>
+    </div>
+
+    <div id="challengeStarted" style="display:none;">
+      <p class="challenge-started-at" id="challengeStartedAt"></p>
+      <div class="challenge-timer" id="challengeTimer">-</div>
+      <button type="button" id="resetChallengeBtn" class="reset-challenge-link">Reset Challenge</button>
+    </div>
   </div>
 
   <a href="overview.html" id="toOverviewBtn" class="big-nav-btn">Go to Overview →</a>
