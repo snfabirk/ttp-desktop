@@ -221,6 +221,38 @@
       border-color: var(--border-hover);
       color: var(--text);
     }
+    .danger-zone {
+      margin-top: 34px;
+      padding-top: 22px;
+      border-top: 1px solid var(--border);
+    }
+    .danger-zone label {
+      color: var(--red);
+    }
+    #factoryResetBtn {
+      background: none;
+      border: 1px solid var(--red);
+      color: var(--red);
+      border-radius: 4px;
+      padding: 9px 18px;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+    }
+    #factoryResetBtn:hover {
+      background: var(--red);
+      color: var(--input-bg);
+    }
+    #factoryResetBtn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    .danger-hint {
+      margin: 8px 0 0;
+      font-size: 0.75rem;
+      color: var(--text-faint);
+    }
   </style>
 </head>
 <body>
@@ -278,6 +310,12 @@
       <button type="button" id="saveApiKeyBtn">Save</button>
     </div>
     <p id="apiKeyError" class="key-error"></p>
+  </div>
+
+  <div class="setting-group danger-zone">
+    <label>Danger Zone</label>
+    <button type="button" id="factoryResetBtn">Reset to Factory Settings</button>
+    <p class="danger-hint">Deletes all local challenge data, trophy progress, and app settings on this device - as if freshly installed. Your Riot API key is kept. This cannot be undone.</p>
   </div>
 
   <div class="apply-row">
@@ -468,6 +506,23 @@
     closeBtn.addEventListener('click', () => {
       if (window.ttpSettings) window.ttpSettings.closeWindow();
       else window.close();
+    });
+
+    const factoryResetBtn = document.getElementById('factoryResetBtn');
+    factoryResetBtn.addEventListener('click', async () => {
+      const confirmed = window.confirm(
+        'Reset to factory settings?\n\nThis deletes all local challenge data, trophy progress, and app settings on this device. Your Riot API key is kept. This cannot be undone.'
+      );
+      if (!confirmed) return;
+      factoryResetBtn.disabled = true;
+      factoryResetBtn.textContent = 'Resetting…';
+      try {
+        if (window.ttpSettings) await window.ttpSettings.factoryReset();
+      } catch (e) {
+        factoryResetBtn.disabled = false;
+        factoryResetBtn.textContent = 'Reset to Factory Settings';
+        window.alert(`Reset failed: ${e.message}`);
+      }
     });
 
     (async function init() {

@@ -46,6 +46,11 @@ function readHistory(puuid) {
 }
 
 function writeHistory(puuid, history) {
+  // HISTORY_DIR wird nur einmal beim Modul-Laden angelegt (siehe oben) - kann
+  // aber zur Laufzeit verschwinden (z.B. durch den "Werkseinstellungen
+  // zuruecksetzen"-Button, der den ganzen Ordner loescht, waehrend der Server
+  // weiterlaeuft), deshalb hier defensiv vor jedem Schreibzugriff neu anlegen.
+  if (!fs.existsSync(HISTORY_DIR)) fs.mkdirSync(HISTORY_DIR, { recursive: true });
   fs.writeFileSync(historyPath(puuid), JSON.stringify(history));
 }
 

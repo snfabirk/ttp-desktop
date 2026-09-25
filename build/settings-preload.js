@@ -14,5 +14,6 @@ contextBridge.exposeInMainWorld('ttpSettings', {
   onUpdateStatus: (callback) => {
     ipcRenderer.on('main-update-status', (event, state) => callback(state));
   },
-  openUpdateWindow: () => ipcRenderer.send('open-update-window')
+  openUpdateWindow: () => ipcRenderer.send('open-update-window'),
+  factoryReset: () => ipcRenderer.invoke('factory-reset')
 });

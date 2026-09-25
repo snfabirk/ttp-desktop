@@ -38,6 +38,11 @@ function loadFinalizedState(puuid, challengeStart) {
 
 function saveFinalizedState(puuid, challengeStart, finalized) {
   try {
+    // STATE_DIR kann zur Laufzeit verschwinden (der "Werkseinstellungen
+    // zuruecksetzen"-Button loescht den Ordner bei laufendem Server), das
+    // einmalige existsSync oben beim Modul-Laden deckt das nicht mehr ab -
+    // deshalb hier vor jedem Schreibzugriff defensiv neu anlegen.
+    if (!fs.existsSync(STATE_DIR)) fs.mkdirSync(STATE_DIR, { recursive: true });
     fs.writeFileSync(statePath(puuid), JSON.stringify({ challengeStart, finalized }));
   } catch (e) {
     // Nicht kritisch - beim naechsten Check wird einfach erneut versucht,

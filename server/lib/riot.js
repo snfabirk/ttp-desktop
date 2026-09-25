@@ -172,6 +172,9 @@ async function getMatch(matchId, apiKey, regionalHost) {
   }
   const url = `https://${regionalHost}.api.riotgames.com/lol/match/v5/matches/${matchId}`;
   const data = await riotFetch(url, apiKey);
+  // CACHE_DIR kann zur Laufzeit verschwinden (Werkseinstellungen-Reset
+  // loescht den Ordner bei laufendem Server) - defensiv neu anlegen.
+  if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
   fs.writeFileSync(cachePath, JSON.stringify(data));
   return data;
 }
@@ -188,6 +191,7 @@ async function getMatchTimeline(matchId, apiKey, regionalHost) {
   }
   const url = `https://${regionalHost}.api.riotgames.com/lol/match/v5/matches/${matchId}/timeline`;
   const data = await riotFetch(url, apiKey);
+  if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
   fs.writeFileSync(cachePath, JSON.stringify(data));
   return data;
 }

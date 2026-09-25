@@ -1,5 +1,6 @@
-const { app, BrowserWindow, Menu, Tray, ipcMain, screen } = require('electron');
+const { app, BrowserWindow, Menu, Tray, ipcMain, screen, session } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const windowStateKeeper = require('electron-window-state');
 const { autoUpdater } = require('electron-updater');
 
@@ -188,6 +189,37 @@ function showSettingsWindow() {
 
 ipcMain.on('open-settings', () => showSettingsWindow());
 ipcMain.on('settings-close', () => { if (settingsWin) settingsWin.close(); });
+
+// "Werkseinstellungen zurücksetzen" - loescht alles, was diese Installation
+// selbst angesammelt hat (Challenge-Status/Champion-Pool/Theme/etc. aus
+// localStorage, persistierter Achievement-Fortschritt, LP-Verlaufshistorie,
+// der Riot-Match-Cache), so dass die App danach wie eine frische Installation
+// wirkt. Der Riot API Key ist bewusst ausgenommen (liegt separat in
+// TTP_USER_DATA_DIR, siehe server/lib/envStore.js) - explizit vom Nutzer so
+// gewuenscht, damit man nicht jedes Mal den Key neu eingeben muss.
+function wipeDir(dirPath) {
+  fs.rmSync(dirPath, { recursive: true, force: true });
+  fs.mkdirSync(dirPath, { recursive: true });
+}
+
+ipcMain.handle('factory-reset', async () => {
+  wipeDir(path.join(__dirname, 'server', 'data'));
+  wipeDir(path.join(__dirname, 'server', 'cache'));
+
+  app.setLoginItemSettings({ openAtLogin: false, args: ['--hidden'] });
+
+  await session.defaultSession.clearStorageData({
+    origin: `http://localhost:${serverPort}`,
+    storages: ['localstorage']
+  });
+
+  if (settingsWin && !settingsWin.isDestroyed()) settingsWin.close();
+  if (mainWin && !mainWin.isDestroyed()) {
+    mainWin.loadURL(`http://localhost:${serverPort}/index.html`);
+  }
+
+  return { ok: true };
+});
 
 ipcMain.handle('settings-get-window-info', () => {
   if (!mainWin) return { width: 1400, height: 960, screenWidth: 1920, screenHeight: 1080 };
