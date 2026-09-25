@@ -57,4 +57,21 @@ function saveFinalizedState(puuid, challengeStart, finalized) {
   }
 }
 
-module.exports = { loadFinalizedState, saveFinalizedState };
+// Loescht den finalisierten Zustand aktiv, statt ihn nur unerreichbar werden
+// zu lassen (loadFinalizedState wuerde ihn wegen des challengeStart-Mismatch
+// ohnehin nie wieder fuer eine NEUE Challenge zurueckgeben) - explizit vom
+// Nutzer gewuenscht, damit beim Reset wirklich nichts Altes liegen bleibt,
+// statt sich auf "wird halt nie wieder gelesen" zu verlassen. Wird von
+// "Reset Challenge" auf Seite 1 bei jedem Reset aufgerufen (nicht nur wenn
+// die Regeln sich geaendert haben - ein Reset heisst immer "frisch anfangen").
+function clearFinalizedState(puuid) {
+  try {
+    const filePath = statePath(puuid);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  } catch (e) {
+    // Nicht kritisch - eine liegen gebliebene Datei wird beim naechsten
+    // Laden ohnehin durch den challengeStart-Mismatch ignoriert.
+  }
+}
+
+module.exports = { loadFinalizedState, saveFinalizedState, clearFinalizedState };

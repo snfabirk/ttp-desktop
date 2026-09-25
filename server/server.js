@@ -15,7 +15,7 @@ const {
   addSoloTowerKillsFromTimeline,
   computeAllTrophyProgress
 } = require('./lib/achievements');
-const { loadFinalizedState, saveFinalizedState } = require('./lib/achievementState');
+const { loadFinalizedState, saveFinalizedState, clearFinalizedState } = require('./lib/achievementState');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -559,6 +559,20 @@ app.get('/api/achievements/rules-status', (req, res) => {
   const finalizedIds = Object.keys(finalizedState);
   const rulesUpToDate = finalizedIds.every(id => finalizedState[id] === RULES_VERSION);
   res.json({ rulesUpToDate, hasFinalizedTrophies: finalizedIds.length > 0 });
+});
+
+// Loescht den finalisierten Ø-Trophy-Zustand einer puuid aktiv, statt ihn nur
+// unerreichbar werden zu lassen - vom "Reset Challenge"-Button auf Seite 1
+// bei JEDEM Reset aufgerufen (siehe [[achievements-trophies-design]]), nicht
+// nur wenn die Regeln sich geaendert haben, da ein Reset immer "frisch
+// anfangen" bedeuten soll. Ohne requireApiKey, da rein lokaler Datei-Zugriff.
+app.post('/api/achievements/clear-state', (req, res) => {
+  const { puuid } = req.body || {};
+  if (!puuid) {
+    return res.status(400).json({ error: 'puuid is required.' });
+  }
+  clearFinalizedState(puuid);
+  res.json({ ok: true });
 });
 
 app.post('/api/achievements/start', requireApiKey, (req, res) => {

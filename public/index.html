@@ -940,27 +940,30 @@
     // zurueckgesetzten) Challenge noch zu den aktuell geltenden Trophy-Regeln
     // passen (siehe /api/achievements/rules-status + RULES_VERSION in
     // achievements.js) - rein informativ, damit der Reset-Hinweis erklaert
-    // WARUM man zuruecksetzt, statt einfach nur zu warnen. Rein lokaler
-    // Datei-Read auf dem Server, aber die puuid-Aufloesung selbst braucht
-    // einen Riot-API-Call - schlaegt der fehl (z.B. kein API-Key gesetzt),
-    // wird der normale Reset-Hinweis ohne Zusatzwarnung gezeigt statt den
-    // ganzen Reset zu blockieren.
+    // WARUM man zuruecksetzt, statt einfach nur zu warnen. Gibt die
+    // aufgeloeste puuid gleich mit zurueck, damit der Aufrufer sie fuer den
+    // anschliessenden clear-state-Call wiederverwenden kann (kein zweiter
+    // Riot-API-Call fuer dieselbe puuid). Rein lokaler Datei-Read auf dem
+    // Server, aber die puuid-Aufloesung selbst braucht einen Riot-API-Call -
+    // schlaegt der fehl (z.B. kein API-Key gesetzt), wird der normale
+    // Reset-Hinweis ohne Zusatzwarnung gezeigt statt den ganzen Reset zu
+    // blockieren (und puuid ist dann null).
     async function checkRulesOutdated(since) {
-      if (!since) return false;
+      if (!since) return { outdated: false, puuid: null };
       try {
         const puuid = await resolvePuuid();
         const res = await fetch(`/api/achievements/rules-status?${new URLSearchParams({ puuid, since })}`);
-        if (!res.ok) return false;
+        if (!res.ok) return { outdated: false, puuid };
         const data = await res.json();
-        return data.rulesUpToDate === false;
+        return { outdated: data.rulesUpToDate === false, puuid };
       } catch (e) {
-        return false;
+        return { outdated: false, puuid: null };
       }
     }
 
     resetChallengeBtn.addEventListener('click', async () => {
       const since = loadChallengeStart();
-      const rulesOutdated = await checkRulesOutdated(since);
+      const { outdated: rulesOutdated, puuid } = await checkRulesOutdated(since);
       const message = rulesOutdated
         ? 'The trophy rules were updated while this challenge was running, so some of your confirmed trophies may no longer match the current targets.\n\nReset the challenge? This clears the start time and timer (your champion pool and match data stay) and recalculates your trophy progress under the current rules.'
         : 'Reset the challenge? This clears the start time and timer (your champion pool and match data stay).';
@@ -974,6 +977,19 @@
       if (!ok) return;
       saveChallengeStart(null);
       renderChallengeState();
+      // Wirft die alte finalisierte Trophy-Historie wirklich weg statt sie
+      // nur unerreichbar werden zu lassen - ein Reset heisst immer "frisch
+      // anfangen", nicht nur bei einer veralteten Regel-Version. Fire-and-
+      // forget: das Ergebnis aendert nichts an der bereits erledigten
+      // localStorage-Reset-UI, ein Fehlschlag hier ist unkritisch (siehe
+      // clearFinalizedState in achievementState.js).
+      if (puuid) {
+        fetch('/api/achievements/clear-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ puuid })
+        }).catch(() => {});
+      }
     });
 
     settingsGearBtn.addEventListener('click', () => {
