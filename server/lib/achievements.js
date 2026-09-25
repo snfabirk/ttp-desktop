@@ -144,6 +144,29 @@ function progressEntry(id, name, current, target, extra) {
   return { id, name, current: round(current), target: round(safeTarget), percent, unlocked: current >= safeTarget && safeTarget > 0, ...extra };
 }
 
+// "Sustained across the challenge" (Ø-Wert) Trophies duerfen nicht schon
+// nach 1-2 zufaellig guten Spielen aufploppen - ein Durchschnitt aus nur
+// 2 Spielen ist kein echter Beleg fuer "sustained". Gleiche 15-Spiele-
+// Mindestgrenze wie bei Consistency, einheitlich fuer alle Ø-Trophies
+// (Jungle Boss, Mid Diff, Death Dealer, Marksman, All-Seeing Eye, Puppet
+// Master) - vorher hatten nur Consistency dieses Gate, der Rest konnte
+// (Bug) schon mit totalGames > 0 unlocken.
+const MIN_GAMES_FOR_AVERAGE = 15;
+
+// scale: 1 fuer rohe Zahlen (DPM, Vision Score, CC-Sekunden, CS/min), 100
+// fuer Anteils-/Prozent-Werte (Kill Participation, Team-Damage-%), die als
+// 0-1-Bruch in den acc.sum-Feldern stecken und als Prozentzahl angezeigt
+// werden sollen.
+function sustainedAverageEntry(id, name, sum, totalGames, target, scale = 1) {
+  const value = totalGames >= MIN_GAMES_FOR_AVERAGE ? (sum / totalGames) * scale : 0;
+  const entry = progressEntry(id, name, value, target);
+  if (totalGames < MIN_GAMES_FOR_AVERAGE) {
+    entry.note = `Needs ${MIN_GAMES_FOR_AVERAGE}+ games (${totalGames} so far)`;
+    entry.unlocked = false;
+  }
+  return entry;
+}
+
 // ----- Rate-Tabellen (Easy/Normal/Hard/VeryHard/Majestic), 1:1 aus der
 // finalen Design-Runde (siehe achievements-trophies-design.md Memory) -----
 const RATES = {
@@ -253,11 +276,7 @@ function computeUniversalProgress(acc, { tier, erwarteteSpiele, role }) {
   list.push(progressEntry('playmaker', 'Playmaker', acc.sum.assists, Math.ceil(rate(isSupport ? 'assistsInsgesamtSupport' : 'assistsInsgesamt', tier) * erwarteteSpiele)));
   list.push(progressEntry('executioner', 'Executioner', acc.sum.damage, Math.ceil(rate(isSupport ? 'damageInsgesamtSupport' : 'damageInsgesamt', tier) * erwarteteSpiele)));
 
-  const winratePercent = acc.totalGames >= 15 ? acc.wins / acc.totalGames : 0;
-  const winrateEntry = progressEntry('consistency', 'Consistency', Math.round(winratePercent * 1000) / 10, Math.round(rate('winrate', tier) * 1000) / 10);
-  winrateEntry.note = acc.totalGames < 15 ? `Needs 15+ games (${acc.totalGames} so far)` : null;
-  winrateEntry.unlocked = acc.totalGames >= 15 && winratePercent >= rate('winrate', tier);
-  list.push(winrateEntry);
+  list.push(sustainedAverageEntry('consistency', 'Consistency', acc.wins, acc.totalGames, Math.round(rate('winrate', tier) * 1000) / 10, 100));
 
   return list;
 }
@@ -290,9 +309,7 @@ function computeRoleProgress(acc, { tier, erwarteteSpiele, role }) {
       progressEntry('monster-slayer', 'Monster Slayer', acc.max.epicTakedowns, rate('monsterSlayer', tier)),
       progressEntry('thief', 'Thief', acc.sum.epicSteals, ceilAtLeast1(rate('thief', tier) * erwarteteSpiele)),
       progressEntry('ganker', 'Ganker', round(acc.max.killParticipation * 1000) / 10, round(rate('ganker', tier) * 1000) / 10),
-      progressEntry('jungle-boss', 'Jungle Boss',
-        acc.totalGames > 0 ? round((acc.sum.killParticipation / acc.totalGames) * 1000) / 10 : 0,
-        round(rate('jungleBoss', tier) * 1000) / 10)
+      sustainedAverageEntry('jungle-boss', 'Jungle Boss', acc.sum.killParticipation, acc.totalGames, round(rate('jungleBoss', tier) * 1000) / 10, 100)
     ];
   }
   if (role === 'MIDDLE') {
@@ -301,18 +318,16 @@ function computeRoleProgress(acc, { tier, erwarteteSpiele, role }) {
       progressEntry('assassin', 'Assassin', acc.max.soloKills, rate('assassin', tier)),
       progressEntry('global-threat', 'Global Threat', acc.sum.roamAllLanes, ceilAtLeast1(rate('globalThreat', tier) * erwarteteSpiele)),
       progressEntry('burst-king', 'Burst King', acc.max.dpm, rate('burstKing', tier)),
-      progressEntry('mid-diff', 'Mid Diff', acc.totalGames > 0 ? acc.sum.dpm / acc.totalGames : 0, rate('midDiff', tier))
+      sustainedAverageEntry('mid-diff', 'Mid Diff', acc.sum.dpm, acc.totalGames, rate('midDiff', tier))
     ];
   }
   if (role === 'BOTTOM') {
     return [
       progressEntry('hyper-carry', 'Hyper Carry', round(acc.max.teamDamagePct * 1000) / 10, round(rate('hyperCarry', tier) * 1000) / 10),
-      progressEntry('death-dealer', 'Death Dealer',
-        acc.totalGames > 0 ? round((acc.sum.teamDamagePct / acc.totalGames) * 1000) / 10 : 0,
-        round(rate('deathDealer', tier) * 1000) / 10),
+      sustainedAverageEntry('death-dealer', 'Death Dealer', acc.sum.teamDamagePct, acc.totalGames, round(rate('deathDealer', tier) * 1000) / 10, 100),
       progressEntry('legendary', 'Legendary', acc.sum.legendaryCount, ceilAtLeast1(rate('legendary', tier) * erwarteteSpiele)),
       progressEntry('farm-machine', 'Farm Machine', acc.max.earlyCs, rate('farmMachine', tier)),
-      progressEntry('marksman', 'Marksman', acc.totalGames > 0 ? acc.sum.csPerMin / acc.totalGames : 0, rate('marksman', tier))
+      sustainedAverageEntry('marksman', 'Marksman', acc.sum.csPerMin, acc.totalGames, rate('marksman', tier))
     ];
   }
   if (role === 'UTILITY') {
@@ -328,9 +343,9 @@ function computeRoleProgress(acc, { tier, erwarteteSpiele, role }) {
       : progressEntry('lifeline', 'Lifeline', acc.sum.damageTaken, Math.ceil(rate('lifelineDamageTaken', tier) * erwarteteSpiele), { path: 'tank' });
     return [
       progressEntry('vision-master', 'Vision Master', acc.max.visionScore, rate('visionMaster', tier)),
-      progressEntry('all-seeing-eye', 'All-Seeing Eye', acc.totalGames > 0 ? acc.sum.visionScore / acc.totalGames : 0, rate('allSeeingEye', tier)),
+      sustainedAverageEntry('all-seeing-eye', 'All-Seeing Eye', acc.sum.visionScore, acc.totalGames, rate('allSeeingEye', tier)),
       progressEntry('crowd-controller', 'Crowd Controller', acc.max.ccTime, rate('crowdController', tier)),
-      progressEntry('puppet-master', 'Puppet Master', acc.totalGames > 0 ? acc.sum.ccTime / acc.totalGames : 0, rate('puppetMaster', tier)),
+      sustainedAverageEntry('puppet-master', 'Puppet Master', acc.sum.ccTime, acc.totalGames, rate('puppetMaster', tier)),
       lifeline
     ];
   }
