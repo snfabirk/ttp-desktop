@@ -333,7 +333,13 @@
       color: var(--text-dim);
       font-family: Georgia, serif;
       font-size: 0.9rem;
+      line-height: 1.4;
       margin-bottom: 16px;
+      /* Reserviert 2 Zeilen (der laengste Statustext - "Start a challenge
+         on the Champion Selection page first..." - braucht 2) - sonst
+         schiebt sich beim Laden/Suchen alles darunter (Progress-Bar,
+         Detail-Bereich) auf und ab. */
+      min-height: 2.8em;
     }
     .otp-row-wrap {
       display: flex;
@@ -757,6 +763,16 @@
       align-items: center;
       gap: 12px;
       margin: -6px 0 16px;
+      /* War per "hidden"-Attribut komplett aus dem Layout genommen, bis eine
+         Suche laeuft - dadurch sprang beim Start/Ende jeder Suche alles
+         darunter (Detail-Bereich) nach unten/oben. Bleibt jetzt immer im
+         Layout, blendet nur noch per Opacity ein/aus. */
+      min-height: 20px;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    .progress-bar.visible {
+      opacity: 1;
     }
     .progress-bar-track {
       flex: 1;
@@ -1029,7 +1045,7 @@
     </p>
 
     <p class="status-msg" id="statusMsg"></p>
-    <div class="progress-bar" id="progressBarWrap" hidden>
+    <div class="progress-bar" id="progressBarWrap">
       <div class="progress-bar-track">
         <div class="progress-bar-fill" id="progressBarFill"></div>
       </div>
@@ -2097,7 +2113,7 @@
     }
 
     function showProgressBar(visible) {
-      progressBarWrap.hidden = !visible;
+      progressBarWrap.classList.toggle('visible', visible);
       if (!visible) {
         progressBarFill.style.width = '0%';
         progressBarFill.classList.remove('indeterminate');

@@ -1,5 +1,19 @@
 # Internal Changelog
 
+## 4.13.0 — 2026-09-26
+
+- Fixed the Overview page's "Searching matches …" progress bar (and the
+  `#statusMsg` line above it) causing everything below to jump up/down as
+  a match search started/finished. `#progressBarWrap` used the `hidden`
+  attribute (display:none/flex toggle); now always in layout with a
+  reserved `min-height: 20px`, toggled via a `.visible` opacity class
+  instead (`showProgressBar()` updated to `classList.toggle` instead of
+  setting `.hidden`). `.status-msg` gained `min-height: 2.8em` (reserves
+  2 lines - the longest status text, "Start a challenge on the Champion
+  Selection page first...", needs both) since it's populated with the
+  same search-status text concurrently and was shifting things too.
+
+
 Private/internal log — **not shown in the app**. The in-app "What's New" drawer
 (`public/changelog.js`) is kept short and generic on purpose (explicit user
 request: bugfixes there show only as a plain "Bugfixes" label, no

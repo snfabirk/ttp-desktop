@@ -21,6 +21,11 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.13.0',
+      notable: [],
+      bugfixes: 2
+    },
+    {
       version: '4.12.0',
       notable: [],
       bugfixes: 6
