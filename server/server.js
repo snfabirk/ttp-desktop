@@ -612,11 +612,17 @@ app.post('/api/achievements/clear-state', (req, res) => {
 // requireApiKey noetig fuer keinen dieser vier Endpunkte. -----
 
 app.post('/api/challenge-history/start', (req, res) => {
-  const { puuid, since, champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp } = req.body || {};
+  const {
+    puuid, since, champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp,
+    startRankTier, startRankDivision, startRankLp
+  } = req.body || {};
   if (!puuid || !since) {
     return res.status(400).json({ error: 'puuid and since are required.' });
   }
-  const entry = startHistoryEntry(puuid, { since, champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp });
+  const entry = startHistoryEntry(puuid, {
+    since, champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp,
+    startRankTier, startRankDivision, startRankLp
+  });
   res.json({ entry });
 });
 

@@ -591,6 +591,21 @@
     display: flex;
     gap: 4px;
   }
+  .history-range {
+    color: var(--text-dim);
+    font-family: Georgia, serif;
+    font-size: 0.72rem;
+    margin-top: 4px;
+  }
+  .history-goal-icon {
+    font-weight: bold;
+  }
+  .history-goal-icon.reached {
+    color: var(--green);
+  }
+  .history-goal-icon.missed {
+    color: var(--red);
+  }
   .history-trophies {
     color: var(--text-dim);
     font-family: Georgia, serif;
@@ -1151,6 +1166,38 @@
     }
 
     const ROLE_LABELS_SHORT = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'ADC', UTILITY: 'Support' };
+    const CHALLENGE_LEVEL_LABELS_SHORT = { easy: 'Easy', normal: 'Normal', hard: 'Hard', very_hard: 'Very Hard', majestic: 'Majestic' };
+    const APEX_TIERS_H = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
+
+    function formatTierDivisionH(tier, division, lp) {
+      if (!tier) return '';
+      const label = tier.charAt(0) + tier.slice(1).toLowerCase();
+      return APEX_TIERS_H.has(tier) ? `${label} ${lp || 0} LP` : `${label} ${division || ''}`.trim();
+    }
+
+    // Baut die kompakte "Schwierigkeit" (fuer die Meta-Zeile) und die
+    // "LP Range"-Zeile (Start-Rang -> Ziel, plus Erreicht/Nicht-erreicht-Icon
+    // je nach "Goal Reached"-Trophy im Snapshot) - explizite Nutzeranfrage,
+    // ohne die Karten mit vielen einzelnen neuen Zeilen zu ueberladen.
+    // isOngoing: bei einer noch laufenden Challenge gibt es kein "nicht
+    // erreicht" (das waere eine Vorverurteilung, solange noch Zeit ist) -
+    // nur "bereits erreicht" (✓) wird dort angezeigt, sonst gar kein Icon.
+    function formatChallengeExtra(entry, isOngoing) {
+      const difficultyLabel = CHALLENGE_LEVEL_LABELS_SHORT[entry.challengeLevel] || '';
+      const startLabel = formatTierDivisionH(entry.startRankTier, entry.startRankDivision, entry.startRankLp);
+      const goalLabel = formatTierDivisionH(entry.lpGoalTier, entry.lpGoalDivision, entry.lpGoalLp);
+      const rangeText = (startLabel && goalLabel) ? `${startLabel} → ${goalLabel}` : (goalLabel ? `Goal: ${goalLabel}` : '');
+
+      const goalTrophy = Array.isArray(entry.trophies) ? entry.trophies.find(t => t.id === 'goal-reached') : null;
+      let iconHtml = '';
+      if (goalTrophy && goalTrophy.unlocked) {
+        iconHtml = '<span class="history-goal-icon reached" title="LP Goal reached">✓</span> ';
+      } else if (goalTrophy && !isOngoing) {
+        iconHtml = '<span class="history-goal-icon missed" title="LP Goal not reached">✗</span> ';
+      }
+
+      return { difficultyLabel, rangeHtml: rangeText ? `${iconHtml}${rangeText}` : '' };
+    }
 
     // Rendert nur noch ABGESCHLOSSENE (until != null) Eintraege - der
     // laufende Eintrag lebt jetzt in einem eigenen, fest angepinnten Block
@@ -1162,6 +1209,7 @@
       const platinumClass = entry.platinumUnlocked ? ' platinum' : '';
       const hasSnapshot = Array.isArray(entry.trophies) && entry.trophies.length > 0;
       const titleText = hasSnapshot ? 'Click to view this challenge\'s trophies' : '';
+      const { difficultyLabel, rangeHtml } = formatChallengeExtra(entry, false);
       return `
         <div class="history-entry${platinumClass}${hasSnapshot ? ' viewable' : ''}" data-id="${entry.id}" title="${titleText}">
           <button type="button" class="history-delete-btn" data-id="${entry.id}" title="Delete this entry" aria-label="Delete this entry">×</button>
@@ -1170,7 +1218,9 @@
           <div class="history-meta">
             <span>${duration}</span>
             ${roleLabel ? `<span>· ${roleLabel}</span>` : ''}
+            ${difficultyLabel ? `<span>· ${difficultyLabel}</span>` : ''}
           </div>
+          ${rangeHtml ? `<div class="history-range">${rangeHtml}</div>` : ''}
           <div class="history-trophies">${entry.unlockedCount} / ${entry.totalCount} trophies</div>
         </div>
       `;
@@ -1185,6 +1235,7 @@
       const duration = formatDuration(entry.since, new Date().toISOString());
       const roleLabel = ROLE_LABELS_SHORT[entry.role] || '';
       const platinumClass = entry.platinumUnlocked ? ' platinum' : '';
+      const { difficultyLabel, rangeHtml } = formatChallengeExtra(entry, true);
       return `
         <div class="history-entry ongoing${platinumClass}">
           ${entry.platinumUnlocked ? '<span class="history-platinum-badge">★ Platinum</span>' : ''}
@@ -1192,7 +1243,9 @@
           <div class="history-meta">
             <span>${duration}</span>
             ${roleLabel ? `<span>· ${roleLabel}</span>` : ''}
+            ${difficultyLabel ? `<span>· ${difficultyLabel}</span>` : ''}
           </div>
+          ${rangeHtml ? `<div class="history-range">${rangeHtml}</div>` : ''}
           <div class="history-trophies">${entry.unlockedCount} / ${entry.totalCount} trophies</div>
         </div>
       `;

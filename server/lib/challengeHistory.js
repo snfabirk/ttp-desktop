@@ -46,7 +46,7 @@ function writeEntries(puuid, entries) {
   }
 }
 
-function makeEntry({ since, champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp }) {
+function makeEntry({ since, champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp, startRankTier, startRankDivision, startRankLp }) {
   return {
     id: crypto.randomUUID(),
     since,
@@ -57,6 +57,15 @@ function makeEntry({ since, champions, role, challengeLevel, lpGoalTier, lpGoalD
     lpGoalTier: lpGoalTier || '',
     lpGoalDivision: lpGoalDivision || '',
     lpGoalLp: lpGoalLp || 0,
+    // Rang zum Zeitpunkt des Starts - nur bekannt, wenn /api/challenge/start
+    // erfolgreich einen aktuellen Rang aufloesen konnte (siehe server.js).
+    // Zusammen mit lpGoal* ergibt das die "LP Range" der Challenge in der
+    // History-Anzeige. Bei nachtraeglich selbst-geheilten Eintraegen (siehe
+    // updateEntry) bleibt das leer - der Startzeitpunkt liegt dann schon in
+    // der Vergangenheit, der Rang von damals ist nicht mehr rekonstruierbar.
+    startRankTier: startRankTier || '',
+    startRankDivision: startRankDivision || '',
+    startRankLp: startRankLp || 0,
     unlockedCount: 0,
     totalCount: 21,
     platinumUnlocked: false,

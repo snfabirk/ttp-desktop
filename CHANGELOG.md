@@ -1,5 +1,48 @@
 # Internal Changelog
 
+## 4.16.0 — 2026-09-26
+
+Challenge History cards (current + past, trophies.html) now show challenge
+difficulty, LP range, and a goal-reached ✓/✗ - explicit user request,
+answered with a design proposal first ("wie können wir das machen ohne
+dass es überladen aussieht") that the user approved before implementing.
+
+- `server/lib/challengeHistory.js` `makeEntry()`: 3 new fields,
+  `startRankTier`/`startRankDivision`/`startRankLp` - the rank at the
+  moment the challenge was started. Only set at creation (never touched by
+  `updateEntry()`), defaults to blank for self-healed entries (pre-existing
+  challenges the history feature never saw start, where the historical
+  rank can't be reconstructed).
+- `server/server.js` `/api/challenge-history/start`: destructures and
+  passes the 3 new fields through to `startHistoryEntry()`.
+- `public/index.html` Start Challenge handler: `/api/challenge/start`'s
+  response already resolves+returns the current rank (`data.current`,
+  used there for match-cache seeding) - now also forwarded to
+  `/api/challenge-history/start` as the new `startRank*` fields. No new
+  API call needed.
+- `public/trophies.html`: new `formatTierDivisionH()` (tier+division/LP
+  formatting, handles apex tiers showing LP instead of a division) and
+  `formatChallengeExtra()` (builds the difficulty label + the "✓/✗ Start →
+  Goal" range line, deriving reached/missed from the `goal-reached` trophy
+  in the entry's stored `trophies` snapshot). Difficulty folded into the
+  existing `.history-meta` line (no new row); range+goal-status is one new
+  `.history-range` line per card - kept to exactly one extra line to avoid
+  clutter, per the user's explicit ask.
+- Ongoing (current) challenge only ever shows ✓ (already reached), never
+  ✗ - a still-running challenge hasn't "failed" yet, showing a red X would
+  be a premature judgment.
+- Graceful degradation: entries without a `trophies` snapshot show the
+  range with no icon; entries without a `startRankTier` (pre-4.16.0
+  entries, or self-healed ones) show `Goal: <tier>` instead of a
+  `Start → Goal` arrow; entries with neither range data show nothing extra.
+- Verified via a CDP test seeding 4 fake entries (ongoing+reached,
+  past+platinum+reached, past+missed at Master/apex-tier LP formatting,
+  past+no-snapshot) and dumping the actual rendered HTML - all 4 variants
+  render correctly, confirmed against a screenshot. Also verified the real
+  `/api/challenge-history/start` → `/api/challenge-history/list`
+  round-trip via curl.
+
+
 ## 4.15.0 — 2026-09-26
 
 - Fixed "Current Challenge" on trophies.html sometimes staying empty the

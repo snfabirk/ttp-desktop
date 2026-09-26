@@ -21,6 +21,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.16.0',
+      notable: [
+        'Challenge History (current + past) now shows the difficulty you played on and your LP range with a ✓/✗ for whether you reached your goal'
+      ],
+      bugfixes: []
+    },
+    {
       version: '4.15.0',
       notable: [],
       bugfixes: 2

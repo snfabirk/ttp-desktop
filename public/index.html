@@ -1127,7 +1127,15 @@
             challengeLevel: challengeLevelSelect.value,
             lpGoalTier: lpGoalTierSelect.value,
             lpGoalDivision: lpGoalDivisionSelect.value,
-            lpGoalLp: Number(lpGoalLpInput.value) || 0
+            lpGoalLp: Number(lpGoalLpInput.value) || 0,
+            // Rang zum Startzeitpunkt - liefert /api/challenge/start schon
+            // mit (dort fuer die Match-Cache-Seedung aufgeloest), hier nur
+            // fuers "LP Range"-Anzeigen in der History mit durchgereicht.
+            // Kann null sein (kein Solo/Duo-Eintrag) - dann bleibt die Range
+            // in der History einfach leer, kein Show-Stopper.
+            startRankTier: data.current ? data.current.tier : '',
+            startRankDivision: data.current ? data.current.rank : '',
+            startRankLp: data.current ? data.current.leaguePoints : 0
           })
         }).catch(() => {});
       } catch (e) {
