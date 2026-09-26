@@ -101,17 +101,30 @@ function startEntry(puuid, opts) {
 // sie kennt, macht das den nachtraeglich angelegten Eintrag vollstaendiger,
 // aber selbst ganz ohne sie ist ein Eintrag mit Datum/Dauer/Trophy-Zahlen
 // besser als gar keiner.
-function updateEntry(puuid, since, { unlockedCount, totalCount, platinumUnlocked, trophies, ended, ...metaFields }) {
+function updateEntry(puuid, since, { unlockedCount, totalCount, platinumUnlocked, trophies, ended, startRankTier, startRankDivision, startRankLp, ...metaFields }) {
   const entries = readEntries(puuid);
   let idx = entries.findIndex(e => e.since === since && e.until === null);
   if (idx === -1) {
-    entries.push(makeEntry({ since, ...metaFields }));
+    entries.push(makeEntry({ since, startRankTier, startRankDivision, startRankLp, ...metaFields }));
     idx = entries.length - 1;
   }
   if (typeof unlockedCount === 'number') entries[idx].unlockedCount = unlockedCount;
   if (typeof totalCount === 'number') entries[idx].totalCount = totalCount;
   if (typeof platinumUnlocked === 'boolean') entries[idx].platinumUnlocked = platinumUnlocked;
   if (Array.isArray(trophies) && trophies.length > 0) entries[idx].trophies = trophies;
+  // Nachtraegliches Auffuellen des Startrangs fuer Eintraege, die VOR der
+  // "LP Range"-Anzeige (v4.16.0) angelegt wurden und deshalb kein
+  // startRankTier haben - NUR wenn noch leer, ueberschreibt also nie einen
+  // echten, zum Start-Zeitpunkt erfassten Wert mit einem spaeteren (und
+  // damit ungenaueren) Rang. trophies.html schickt bei jedem Sync den
+  // aktuellen Rang mit - fuer eine noch laufende, erst kuerzlich gestartete
+  // Challenge ist "aktueller Rang beim ersten Sync nach diesem Update" eine
+  // gute Naeherung an "Rang beim echten Start".
+  if (startRankTier && !entries[idx].startRankTier) {
+    entries[idx].startRankTier = startRankTier;
+    entries[idx].startRankDivision = startRankDivision || '';
+    entries[idx].startRankLp = startRankLp || 0;
+  }
   if (ended) entries[idx].until = new Date().toISOString();
   writeEntries(puuid, entries);
   return entries[idx];

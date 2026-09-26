@@ -1113,6 +1113,19 @@
           }));
         } catch (e) {}
 
+        // Fuer Challenges, die vor v4.16.0 gestartet wurden, fehlt der
+        // Startrang (nie erfasst). Ein frischer Rang-Abruf hier fuellt ihn
+        // beim Server nachtraeglich auf (siehe updateEntry() - NUR wenn dort
+        // noch leer, ueberschreibt also nie einen echten Startwert). Darf
+        // gerne fehlschlagen (z.B. unranked) - dann bleibt die Range-Zeile
+        // einfach weiterhin leer, kein Show-Stopper fuer den eigentlichen Sync.
+        let currentRankForBackfill = null;
+        try {
+          const rankRes = await fetch(`/api/current-rank?${new URLSearchParams({ puuid: account.puuid })}`);
+          const rankData = await parseApiResponse(rankRes);
+          if (rankRes.ok && rankData.current) currentRankForBackfill = rankData.current;
+        } catch (e) {}
+
         fetch('/api/challenge-history/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1133,7 +1146,10 @@
             challengeLevel,
             lpGoalTier,
             lpGoalDivision,
-            lpGoalLp
+            lpGoalLp,
+            startRankTier: currentRankForBackfill ? currentRankForBackfill.tier : '',
+            startRankDivision: currentRankForBackfill ? currentRankForBackfill.rank : '',
+            startRankLp: currentRankForBackfill ? currentRankForBackfill.leaguePoints : 0
           })
         }).then(() => {
           // Dieser Sync kann den "ongoing"-Eintrag fuer diese Challenge

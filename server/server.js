@@ -633,14 +633,19 @@ app.post('/api/challenge-history/update', (req, res) => {
     // werden muss (siehe updateEntry() in challengeHistory.js), weil "since"
     // noch keinen offenen Eintrag hat (z.B. eine Challenge, die schon lief,
     // bevor es die History ueberhaupt gab).
-    champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp
+    champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp,
+    // Fuellt einen fehlenden Startrang nachtraeglich auf (siehe updateEntry()
+    // - wird NUR gesetzt, wenn der Eintrag noch keinen hat), fuer Challenges
+    // die vor v4.16.0 gestartet wurden.
+    startRankTier, startRankDivision, startRankLp
   } = req.body || {};
   if (!puuid || !since) {
     return res.status(400).json({ error: 'puuid and since are required.' });
   }
   const entry = updateHistoryEntry(puuid, since, {
     unlockedCount, totalCount, platinumUnlocked, trophies, ended: Boolean(ended),
-    champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp
+    champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp,
+    startRankTier, startRankDivision, startRankLp
   });
   res.json({ entry });
 });

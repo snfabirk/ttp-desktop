@@ -21,6 +21,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.18.0',
+      notable: [
+        'Challenges started before the LP Range feature will now automatically pick up their start rank on their next sync, so the range shows up without needing to be restarted'
+      ],
+      bugfixes: []
+    },
+    {
       version: '4.17.0',
       notable: [],
       bugfixes: 2

@@ -1,5 +1,41 @@
 # Internal Changelog
 
+## 4.18.0 — 2026-09-26
+
+Backfill for the `startRankTier`/`startRankDivision`/`startRankLp` fields
+added in v4.16.0 - user's real, currently-running challenge (started
+earlier the same day, before v4.16.0 shipped) had these fields present in
+the schema but empty, so the LP-range line correctly stayed hidden
+(v4.17.0 fix) but never got a chance to actually show real data. Verified
+directly against the real installed app's data file
+(`resources/app/server/data/challenge-history/<puuid>.json` - confirmed
+`server/data/` genuinely persists across auto-updates in practice, an
+earlier data-loss theory floated while investigating this turned out
+wrong).
+
+- `server/lib/challengeHistory.js` `updateEntry()`: now also accepts
+  `startRankTier`/`startRankDivision`/`startRankLp` and backfills them onto
+  an EXISTING entry - but only if that entry's `startRankTier` is currently
+  empty. Never overwrites a real, already-known start rank with a later
+  (and by definition less accurate) one.
+- `server/server.js` `/api/challenge-history/update`: destructures and
+  passes the 3 fields through.
+- `public/trophies.html` `loadAchievementProgress()`: now also fetches
+  `/api/current-rank` (one extra lightweight League-V4 call) right before
+  its existing sync call, and includes the result as the backfill fields.
+  Wrapped defensively - a failure here (unranked, API hiccup) just means
+  the range stays hidden for this sync, doesn't block the sync itself.
+- Net effect: any pre-4.16.0 challenge picks up an approximate start rank
+  (whatever rank you're at on your NEXT trophies.html visit/sync) the
+  first time this ships, then keeps it forever after. For a challenge that
+  just started the same day, this is a very close approximation of the
+  real start rank; the drift only matters for older, longer-running
+  challenges, which is an acceptable trade-off vs. showing nothing.
+- Verified via curl against the real server: seeded an entry with blank
+  start rank, synced once (backfilled correctly), synced again with a
+  different rank (confirmed NOT overwritten - the guard holds).
+
+
 ## 4.17.0 — 2026-09-26
 
 - **Actually** fixed "Current Challenge" not showing on the first
