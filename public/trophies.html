@@ -945,7 +945,17 @@
             unlockedCount: result.unlockedCount,
             totalCount: result.totalCount,
             platinumUnlocked: Boolean(result.platinumUnlocked),
-            ended: false
+            ended: false,
+            // Nur relevant, falls der Server hier nachtraeglich einen
+            // Eintrag anlegen muss (Challenge lief schon vor dieser
+            // Funktion, kein /start jemals aufgerufen) - macht den
+            // nachtraeglich angelegten Eintrag vollstaendiger.
+            champions,
+            role,
+            challengeLevel,
+            lpGoalTier,
+            lpGoalDivision,
+            lpGoalLp
           })
         }).catch(() => {});
       } catch (e) {

@@ -1036,7 +1036,18 @@
             unlockedCount: snapshot ? snapshot.unlockedCount : 0,
             totalCount: snapshot ? snapshot.totalCount : 21,
             platinumUnlocked: snapshot ? snapshot.platinumUnlocked : false,
-            ended: true
+            ended: true,
+            // Nur relevant, falls hier nachtraeglich ein Eintrag angelegt
+            // werden muss (trophies.html nie waehrend dieser Challenge
+            // geoeffnet, also auch kein Sync-Aufruf, der ihn schon angelegt
+            // haette) - macht den nachtraeglich angelegten Eintrag
+            // vollstaendiger statt komplett leer.
+            champions: selectedChamps.map(c => ({ key: c.key, name: c.name, role: c.role || '' })),
+            role: currentPoolRole,
+            challengeLevel: challengeLevelSelect.value,
+            lpGoalTier: lpGoalTierSelect.value,
+            lpGoalDivision: lpGoalDivisionSelect.value,
+            lpGoalLp: Number(lpGoalLpInput.value) || 0
           })
         }).catch(() => {});
       }

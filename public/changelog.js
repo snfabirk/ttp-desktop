@@ -13,6 +13,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.7.0',
+      notable: [],
+      bugfixes: [
+        'Fixed challenges already running before the Challenge History feature existed never appearing in it'
+      ]
+    },
+    {
       version: '4.6.0',
       notable: [
         'The update icon now shows a small dismissible notification when a new update is found, so it\'s harder to miss'

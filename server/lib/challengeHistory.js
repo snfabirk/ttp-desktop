@@ -46,9 +46,8 @@ function writeEntries(puuid, entries) {
   }
 }
 
-function startEntry(puuid, { since, champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp }) {
-  const entries = readEntries(puuid);
-  const entry = {
+function makeEntry({ since, champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp }) {
+  return {
     id: crypto.randomUUID(),
     since,
     until: null,
@@ -62,6 +61,11 @@ function startEntry(puuid, { since, champions, role, challengeLevel, lpGoalTier,
     totalCount: 21,
     platinumUnlocked: false
   };
+}
+
+function startEntry(puuid, opts) {
+  const entries = readEntries(puuid);
+  const entry = makeEntry(opts);
   entries.push(entry);
   writeEntries(puuid, entries);
   return entry;
@@ -70,10 +74,24 @@ function startEntry(puuid, { since, champions, role, challengeLevel, lpGoalTier,
 // Findet den zu "since" passenden Eintrag - bei einer laufenden Challenge ist
 // das immer der zuletzt offene (until: null); nach dem Schliessen wird er
 // nicht mehr per "since" gesucht (ended:true macht daraus den finalen Stand).
-function updateEntry(puuid, since, { unlockedCount, totalCount, platinumUnlocked, ended }) {
+//
+// Legt den Eintrag NACHTRAEGLICH an, falls keiner existiert (statt einfach
+// nichts zu tun) - noetig fuer Challenges, die schon liefen BEVOR es diese
+// History ueberhaupt gab: fuer die wurde nie ein /start aufgerufen, ohne
+// diesen Fallback wuerden sie fuer immer weder beim Sync (waehrend sie
+// laufen) noch beim Reset (wenn sie enden) in der History auftauchen - man
+// haette also "die aktuelle Challenge" nie gespeichert bekommen. metaFields
+// sind optional (role/challengeLevel/lpGoal*/champions) - falls der Aufrufer
+// sie kennt, macht das den nachtraeglich angelegten Eintrag vollstaendiger,
+// aber selbst ganz ohne sie ist ein Eintrag mit Datum/Dauer/Trophy-Zahlen
+// besser als gar keiner.
+function updateEntry(puuid, since, { unlockedCount, totalCount, platinumUnlocked, ended, ...metaFields }) {
   const entries = readEntries(puuid);
-  const idx = entries.findIndex(e => e.since === since && e.until === null);
-  if (idx === -1) return null;
+  let idx = entries.findIndex(e => e.since === since && e.until === null);
+  if (idx === -1) {
+    entries.push(makeEntry({ since, ...metaFields }));
+    idx = entries.length - 1;
+  }
   if (typeof unlockedCount === 'number') entries[idx].unlockedCount = unlockedCount;
   if (typeof totalCount === 'number') entries[idx].totalCount = totalCount;
   if (typeof platinumUnlocked === 'boolean') entries[idx].platinumUnlocked = platinumUnlocked;
