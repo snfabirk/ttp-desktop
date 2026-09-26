@@ -131,7 +131,16 @@ function showUpdateWindow() {
   return updateWin;
 }
 
-ipcMain.on('update-restart-now', () => autoUpdater.quitAndInstall());
+// app.isQuitting muss VOR quitAndInstall() gesetzt werden - sonst greift
+// der "X schliesst nur in den Tray"-Handler (win.on('close', ...) weiter
+// unten) und verhindert/verzoegert den normalen Fenster-Close, wodurch
+// electron-window-state seinen finalen Save-on-close nie sauber ausfuehrt
+// und Groesse/Position nach einem Update-Neustart verloren gehen/zuruecksetzen
+// koennen. Gleiches Muster wie beim Quit-Button/IPC weiter oben.
+ipcMain.on('update-restart-now', () => {
+  app.isQuitting = true;
+  autoUpdater.quitAndInstall();
+});
 ipcMain.on('update-later', () => { if (updateWin) updateWin.close(); });
 // Das kleine Update-Symbol im Hauptfenster oeffnet das eigentliche
 // Update-Fenster erst bei Klick - siehe autoUpdater-Events weiter unten,

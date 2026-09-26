@@ -1,5 +1,27 @@
 # Internal Changelog
 
+## 4.15.0 — 2026-09-26
+
+- Fixed "Current Challenge" on trophies.html sometimes staying empty the
+  first time the page loaded right after app start/an update (only a
+  second visit - leave and come back - would show it). `initChallengeHistory()`
+  had no retry, so a transient failure (server/network not quite warm yet,
+  or the Riot API briefly busy from overview.html's own concurrent batch
+  load) gave up permanently instead of just trying again. Added a 2-retry
+  loop (500ms, then 1200ms) around the account-resolve + history-list
+  fetch. Verified via a CDP test stubbing `fetch` to fail once then
+  succeed - confirmed the retry fires exactly once and the card renders.
+- Fixed the main window's size/position resetting after an update-triggered
+  restart. `ipcMain.on('update-restart-now', ...)` called
+  `autoUpdater.quitAndInstall()` without first setting `app.isQuitting =
+  true` - since the window's `close` handler intercepts/hides instead of
+  closing unless that flag is set (the "X hides to tray" behavior), the
+  window never got a clean `close` event before the process died for the
+  update, so `electron-window-state`'s final save-on-close likely never
+  ran. Now sets `app.isQuitting = true` first, matching the other two
+  real-quit call sites (tray Quit item, `app-quit` IPC).
+
+
 ## 4.14.0 — 2026-09-26
 
 Full audit of remaining `display:none`/`hidden`-toggle layout-shift spots

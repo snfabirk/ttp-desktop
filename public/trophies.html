@@ -1332,19 +1332,42 @@
       }
     }
 
-    (async function initChallengeHistory() {
-      try {
-        const summonerName = (localStorage.getItem('ttp_summoner_name') || '').trim();
-        const parts = summonerName.split('#');
-        if (parts.length !== 2 || !parts[0] || !parts[1]) return;
-        const accountRes = await fetch(`/api/account?${new URLSearchParams({ gameName: parts[0], tagLine: parts[1] })}`);
-        const account = await parseApiResponse(accountRes);
-        if (!accountRes.ok) return;
-        loadChallengeHistory(account.puuid);
-      } catch (e) {
-        // Kein API-Key/kein Netz - History bleibt einfach leer, kein harter Fehler.
+    // Direkt nach App-Start/Update-Neustart kann der lokale Server oder die
+    // Riot-API-Anfrage (z.B. weil overview.html gerade parallel ihren
+    // eigenen groesseren Batch-Load macht) kurz nicht bereit/erreichbar
+    // sein - ohne Retry blieb "Current Challenge" dann bis zum naechsten
+    // Verlassen+Wiederkommen der Seite leer, obwohl ein zweiter Versuch
+    // wenig spaeter sofort funktioniert. Bis zu 2 Wiederholungen mit
+    // kurzer, steigender Pause, bevor wirklich (still, kein harter Fehler)
+    // aufgegeben wird - deckt "kein API-Key/kein Netz" weiterhin ab, die
+    // scheitern ja bei jedem Versuch gleich.
+    async function initChallengeHistory() {
+      const summonerName = (localStorage.getItem('ttp_summoner_name') || '').trim();
+      const parts = summonerName.split('#');
+      if (parts.length !== 2 || !parts[0] || !parts[1]) return;
+
+      const RETRY_DELAYS_MS = [500, 1200];
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const accountRes = await fetch(`/api/account?${new URLSearchParams({ gameName: parts[0], tagLine: parts[1] })}`);
+          const account = await parseApiResponse(accountRes);
+          if (!accountRes.ok) throw new Error(account.error || 'Unknown error');
+
+          // Nicht ueber loadChallengeHistory() (schluckt Fehler selbst
+          // still, damit der Delete-Button-Refresh keinen harten Fehler
+          // zeigt) - hier soll ein Fehlschlag den Retry oben auslösen.
+          const listRes = await fetch(`/api/challenge-history/list?${new URLSearchParams({ puuid: account.puuid })}`);
+          const listData = await parseApiResponse(listRes);
+          if (!listRes.ok) throw new Error(listData.error || 'Unknown error');
+          renderChallengeHistory(listData.entries || [], account.puuid);
+          return;
+        } catch (e) {
+          if (attempt >= RETRY_DELAYS_MS.length) return;
+          await new Promise(r => setTimeout(r, RETRY_DELAYS_MS[attempt]));
+        }
       }
-    })();
+    }
+    initChallengeHistory();
 
     const settingsGearBtn = document.getElementById('settingsGearBtn');
     settingsGearBtn.addEventListener('click', () => {
