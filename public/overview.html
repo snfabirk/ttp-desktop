@@ -19,6 +19,11 @@
     }
     .site-header {
       flex: 0 0 auto;
+      /* Ohne text-align:center rutscht "League of Legends" (linksbuendiger
+         Standard eines Block-Elements) bis ganz an den linken Rand und
+         ueberlappt dort den fest positionierten Zurueck-Button - anders als
+         index.html/trophies.html, die ihren eigenen Header schon zentrieren. */
+      text-align: center;
     }
     .split-layout {
       display: flex;
@@ -571,6 +576,14 @@
       justify-content: center;
       gap: 32px;
       flex-wrap: wrap;
+      /* LP-Goal- und Challenge-Timer-Bloecke sind anfangs versteckt und
+         erscheinen erst, sobald feststeht ob ein LP-Ziel/eine laufende
+         Challenge existiert - kommen dann beide dazu, wickelt die Reihe auf
+         eine 2. Zeile um (bei den ueblichen Fensterbreiten). Reserviert
+         immer die 2-zeilige Hoehe, damit die Karte nicht sichtbar waechst,
+         sobald diese Daten geladen sind. */
+      min-height: 124px;
+      align-content: center;
     }
     .account-overview-stats .stat-block {
       text-align: center;
@@ -616,6 +629,14 @@
       margin-top: 16px;
       padding-top: 14px;
       border-top: 1px solid var(--border);
+      /* Startet leer (0 Inhalt) und wird erst nach dem Laden entweder mit
+         dem echten Graph (Labels+SVG sind fix 64px hoch, siehe unten, plus
+         optional eine Disclaimer-Zeile) oder einem "nicht genug Daten"-Text
+         gefuellt - ohne reservierten Platz wird die ganze Karte (und alles
+         darunter) beim Nachladen sichtbar groesser. Deckt den groesstmoeglichen
+         Fall (voller Graph + Disclaimer) ab, die anderen Faelle sind kuerzer
+         und passen locker mit rein. */
+      min-height: 93px;
     }
     .lp-graph-wrap {
       display: flex;
@@ -765,12 +786,17 @@
     }
 
     .extra-stats {
+      box-sizing: border-box;
       display: flex;
       justify-content: center;
       gap: 20px;
       margin-top: 14px;
       padding-top: 14px;
       border-top: 1px solid var(--border);
+      /* Startet leer, wird nach dem Laden mit 3 festen Stat-Bloecken
+         (KDA/KDA-avg/CS-min) gefuellt - reserviert deren Hoehe von vornherein,
+         damit die Matchups-Liste darunter nicht nach unten springt. */
+      min-height: 54px;
     }
     .extra-stats .stat-block {
       text-align: center;
@@ -795,6 +821,10 @@
       justify-content: center;
       gap: 6px;
       margin-top: 14px;
+      /* Startet leer, wird nach dem Laden mit den W/L-Kreisen der letzten
+         Spiele gefuellt - Hoehe eines Kreises reserviert, damit nichts
+         darunter springt. */
+      min-height: 22px;
     }
     .form-pill {
       width: 22px;
@@ -2274,7 +2304,7 @@
       const raw = currentSummoner.trim();
       const parts = raw.split('#');
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
-        statusMsg.textContent = 'No valid summoner set. Please enter it in the format Name#Tag on the Champion Selection page (e.g. Luckshot#796).';
+        statusMsg.textContent = 'No valid summoner set. Please enter it in the format Name#Tag on the Champion Selection page (e.g. ShacoHater#EUW).';
         return;
       }
       const [gameName, tagLine] = parts;

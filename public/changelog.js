@@ -13,6 +13,19 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.11.0',
+      notable: [
+        'Challenge History on the Trophies page reorganized: your current challenge now sits in its own fixed spot above the history list, which now scrolls on its own once it gets long'
+      ],
+      bugfixes: [
+        'Fixed the Trophies page history list not scrolling and instead pushing the whole page down once you had several past challenges',
+        'Fixed the "viewing a past challenge" banner abruptly shifting the whole page instead of transitioning smoothly',
+        'Fixed trophy progress bars sitting at different heights depending on how long each trophy\'s description was',
+        'Fixed the Overview page header overlapping the back button',
+        'Fixed several spots on the Champion Selection and Overview pages shifting around as data loaded or errors appeared/disappeared (champion pool box, Start Challenge box, summoner stats card, and more)'
+      ]
+    },
+    {
       version: '4.10.0',
       notable: [],
       bugfixes: [

@@ -66,6 +66,15 @@
     .start-challenge-box {
       text-align: center;
     }
+    /* #challengeNotStarted/#challengeStarted zeigen komplett unterschiedlichen
+       Inhalt (Button vs. Datum+Timer+Reset-Link) und sind dadurch von Natur
+       aus unterschiedlich hoch - ohne Angleichung springt die Box (und damit
+       auch der "Go to Overview"-Button darunter) beim Start/Reset der
+       Challenge nach oben/unten. Gleiche min-height fuer beide reserviert
+       immer den Platz der jeweils groesseren Variante. */
+    #challengeNotStarted, #challengeStarted {
+      min-height: 94px;
+    }
     @media (max-width: 900px) {
       .content {
         grid-template-columns: 420px;
@@ -103,7 +112,16 @@
       transform: translateY(-2px);
       box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
     }
-    .champ-picker, .setup-box {
+    /* .selection-list ist hier bewusst mit dabei (nicht nur .champ-picker/
+       .setup-box) - vorher hatte die Karten-Spalte rechts vom Champion-Pool
+       gar keinen eigenen Rahmen, wodurch die per Grid-Stretch ohnehin gleich
+       hohe Zelle rechts unsichtbar blieb und die 3 Karten/Platzhalter nicht
+       buendig mit dem linken Kasten abschlossen (sichtbar v.a. bei
+       Platzhaltern oder wenn links durch den Locked-Hinweis mehr Inhalt
+       steht). Mit eigenem Rahmen zieht sich die Box IMMER exakt auf die
+       Hoehe der Nachbarzelle (Grid-Stretch macht das automatisch), egal was
+       links passiert - kein manuelles Nachjustieren noetig. */
+    .champ-picker, .setup-box, .selection-list {
       box-sizing: border-box;
       background: rgba(var(--bg-rgb), 0.6);
       backdrop-filter: blur(12px) saturate(1.1);
@@ -161,6 +179,11 @@
       font-size: 0.75rem;
       color: var(--text-faint);
       line-height: 1.4;
+      /* Reserviert immer Platz fuer 2 Zeilen (der laengste Warnhinweis
+         braucht 2) - sonst verschiebt sich der Rest der Seite je nachdem
+         ob/wie viel Hinweistext gerade steht. Explizite Nutzeranfrage:
+         nichts soll sich je verschieben, egal welcher Zustand/Fehler. */
+      min-height: 2.8em;
     }
     .lp-goal-hint.warn {
       color: var(--red);
@@ -222,6 +245,42 @@
       margin: 0 0 13px;
       font-size: 0.93rem;
       color: var(--text);
+      line-height: 1.4;
+      /* Reserviert 2 Zeilen (lange Fehlermeldungen - z.B. abgelaufener API
+         Key - brauchen 2), damit der Kasten nicht springt sobald der Rang
+         geladen ist/ein Fehler auftritt. */
+      min-height: 2.8em;
+    }
+    /* .error-msg (globale Regel in style.css) blendet per display:none/block
+       hart ein/aus - das wuerde beim Auftreten/Verschwinden eines Fehlers
+       den restlichen Seiteninhalt verschieben. Fuer diese beiden Meldungen
+       hier stattdessen ueber Opacity ein-/ausblenden und den Platz IMMER
+       reservieren (2 Zeilen, deckt auch die laengeren Meldungen ab). */
+    #selectionError, #challengeStartError {
+      display: block;
+      min-height: 2.8em;
+      line-height: 1.4;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    #selectionError.visible, #challengeStartError.visible {
+      opacity: 1;
+    }
+    /* Gleiches Prinzip wie oben - der Hinweis erscheint erst NACH dem
+       Challenge-Start, soll dabei aber nicht den Champion-Pool-Kasten
+       (und damit auch die parallele Karten-Spalte rechts, siehe
+       .selection-list oben) in der Hoehe veraendern. */
+    .champ-picker-locked-note {
+      font-size: 0.75rem;
+      color: var(--text-faint);
+      line-height: 1.4;
+      margin: 0 0 12px;
+      min-height: 2.8em;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    .champ-picker-locked-note.visible {
+      opacity: 1;
     }
     .setup-box button.reset-challenge-link {
       background: none;
@@ -471,7 +530,7 @@
   <div class="setup-box" id="summonerDateBox">
     <label>Summoner &amp; Challenge</label>
     <div class="summoner-input-row">
-      <input type="text" id="summonerInput" placeholder="Luckshot#796">
+      <input type="text" id="summonerInput" placeholder="ShacoHater#EUW">
       <button type="button" id="summonerSaveBtn" title="Resolve summoner now">Save</button>
     </div>
 
@@ -531,7 +590,7 @@
 
   <div class="champ-picker">
     <label>Select Champion Pool</label>
-    <p id="champPickerLockedNote" style="font-size:0.75rem; color:var(--text-faint); margin:0 0 12px; display:none;">
+    <p id="champPickerLockedNote" class="champ-picker-locked-note">
       Champions are locked for this challenge. Reset the challenge below to change your pool.
     </p>
 
@@ -915,7 +974,7 @@
       const raw = summonerInput.value.trim();
       const parts = raw.split('#');
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
-        throw new Error('Please enter your summoner name as Name#Tag first (e.g. Luckshot#796).');
+        throw new Error('Please enter your summoner name as Name#Tag first (e.g. ShacoHater#EUW).');
       }
       const [gameName, tagLine] = parts;
       const res = await fetch(`/api/account?${new URLSearchParams({ gameName, tagLine })}`);
@@ -941,7 +1000,7 @@
       lpGoalDivisionSelect.disabled = locked;
       lpGoalLpInput.disabled = locked;
       summonerInput.disabled = locked;
-      champPickerLockedNote.style.display = locked ? '' : 'none';
+      champPickerLockedNote.classList.toggle('visible', locked);
       renderSelection();
     }
 
