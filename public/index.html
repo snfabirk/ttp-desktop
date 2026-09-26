@@ -141,6 +141,33 @@
       border-color: var(--gold);
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 25%, transparent);
     }
+    .summoner-input-row {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .summoner-input-row input {
+      flex: 1;
+      min-width: 0;
+      margin-bottom: 0;
+    }
+    .summoner-input-row button {
+      flex-shrink: 0;
+      padding: 0 18px;
+    }
+    .lp-goal-hint {
+      margin: 8px 0 0;
+      font-size: 0.75rem;
+      color: var(--text-faint);
+      line-height: 1.4;
+    }
+    .lp-goal-hint.warn {
+      color: var(--red);
+    }
+    .lp-goal-hint.ok {
+      color: var(--green);
+    }
     .checklist {
       list-style: none;
       margin: 0;
@@ -443,7 +470,10 @@
   <div class="content">
   <div class="setup-box" id="summonerDateBox">
     <label>Summoner &amp; Challenge</label>
-    <input type="text" id="summonerInput" placeholder="Luckshot#796">
+    <div class="summoner-input-row">
+      <input type="text" id="summonerInput" placeholder="Luckshot#796">
+      <button type="button" id="summonerSaveBtn" title="Resolve summoner now">Save</button>
+    </div>
 
     <div class="challenge-rank-row" id="challengeRankRow">Loading current rank…</div>
 
@@ -483,6 +513,7 @@
         </select>
         <input type="number" id="lpGoalLpInput" class="meta-select" min="0" max="100" placeholder="LP">
       </div>
+      <p class="lp-goal-hint" id="lpGoalHint"></p>
     </div>
 
   </div>
@@ -569,6 +600,7 @@
     const STORAGE_KEY_POOL_ROLE = 'ttp_pool_role';
     const APEX_TIERS = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
     const summonerInput = document.getElementById('summonerInput');
+    const summonerSaveBtn = document.getElementById('summonerSaveBtn');
     const challengeNotStarted = document.getElementById('challengeNotStarted');
     const challengeStarted = document.getElementById('challengeStarted');
     const startChallengeBtn = document.getElementById('startChallengeBtn');
@@ -813,10 +845,52 @@
 
     function formatRankText(current) {
       if (!current) return 'Unranked or no Solo/Duo entry found.';
-      const apex = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
       const tierLabel = current.tier.charAt(0) + current.tier.slice(1).toLowerCase();
-      const divisionText = apex.has(current.tier) ? '' : ` ${current.rank}`;
+      const divisionText = APEX_TIERS.has(current.tier) ? '' : ` ${current.rank}`;
       return `Current rank: ${tierLabel}${divisionText} - ${current.leaguePoints} LP`;
+    }
+
+    function formatTierDivision(tier, division) {
+      if (!tier) return '';
+      const tierLabel = tier.charAt(0) + tier.slice(1).toLowerCase();
+      return APEX_TIERS.has(tier) ? tierLabel : `${tierLabel} ${division}`;
+    }
+
+    // Spiegelt server/lib/rankHistory.js' toComparableLP() - bewusst hier
+    // dupliziert (kleine reine Funktion) statt fuer jede Aenderung am LP-Ziel
+    // extra einen Server-Roundtrip zu machen, damit der Hinweistext sofort
+    // beim Tippen/Auswaehlen reagiert.
+    const TIER_ORDER_CLIENT = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'];
+    const RANK_VALUE_CLIENT = { I: 3, II: 2, III: 1, IV: 0 };
+    function toComparableLPClient(tier, rank, lp) {
+      const tierIndex = TIER_ORDER_CLIENT.indexOf(tier);
+      if (tierIndex < 0) return lp || 0;
+      if (APEX_TIERS.has(tier)) return tierIndex * 400 + (lp || 0);
+      return tierIndex * 400 + (RANK_VALUE_CLIENT[rank] ?? 0) * 100 + (lp || 0);
+    }
+
+    // Vom letzten erfolgreichen Rang-Abruf (Save-Button oder Auto-Refresh) -
+    // Grundlage fuer den LP-Ziel-Mindestabstand-Hinweis unten.
+    let lastKnownMinGoal = null;
+
+    function updateLpGoalHint() {
+      const hintEl = document.getElementById('lpGoalHint');
+      if (!lastKnownMinGoal || !lpGoalTierSelect.value) {
+        hintEl.textContent = '';
+        hintEl.className = 'lp-goal-hint';
+        return;
+      }
+      const minLabel = formatTierDivision(lastKnownMinGoal.tier, lastKnownMinGoal.division) +
+        (APEX_TIERS.has(lastKnownMinGoal.tier) ? ` ${lastKnownMinGoal.lp} LP` : '');
+      const goalComparable = toComparableLPClient(lpGoalTierSelect.value, lpGoalDivisionSelect.value, Number(lpGoalLpInput.value) || 0);
+      const minComparable = toComparableLPClient(lastKnownMinGoal.tier, lastKnownMinGoal.division, lastKnownMinGoal.lp);
+      if (goalComparable >= minComparable) {
+        hintEl.textContent = `✓ Meets the minimum distance (at least ${minLabel}).`;
+        hintEl.className = 'lp-goal-hint ok';
+      } else {
+        hintEl.textContent = `⚠ Too close to your current rank - goal must be at least ${minLabel} for this to be a real challenge.`;
+        hintEl.className = 'lp-goal-hint warn';
+      }
     }
 
     async function refreshCurrentRank(puuid) {
@@ -826,8 +900,12 @@
         const data = await parseApiResponse(res);
         if (!res.ok) throw new Error(data.error || 'Unknown error');
         challengeRankRow.textContent = formatRankText(data.current);
+        lastKnownMinGoal = data.minGoal || null;
+        updateLpGoalHint();
       } catch (e) {
         challengeRankRow.textContent = `Rank unavailable: ${e.message}`;
+        lastKnownMinGoal = null;
+        updateLpGoalHint();
       }
     }
 
@@ -913,6 +991,21 @@
         challengeStartError.textContent = 'Select an LP goal before starting the challenge.';
         challengeStartError.classList.add('visible');
         return;
+      }
+      // Mindestabstand nur pruefbar, wenn der aktuelle Rang schon bekannt ist
+      // (Save-Button oder Auto-Refresh) - ohne den laesst sich das nicht
+      // beurteilen, dann wird nicht blockiert (kein Grund, den Start wegen
+      // eines fehlgeschlagenen Rang-Abrufs zu verhindern).
+      if (lastKnownMinGoal) {
+        const goalComparable = toComparableLPClient(lpGoalTierSelect.value, lpGoalDivisionSelect.value, Number(lpGoalLpInput.value) || 0);
+        const minComparable = toComparableLPClient(lastKnownMinGoal.tier, lastKnownMinGoal.division, lastKnownMinGoal.lp);
+        if (goalComparable < minComparable) {
+          const minLabel = formatTierDivision(lastKnownMinGoal.tier, lastKnownMinGoal.division) +
+            (APEX_TIERS.has(lastKnownMinGoal.tier) ? ` ${lastKnownMinGoal.lp} LP` : '');
+          challengeStartError.textContent = `Your LP goal is too close to your current rank - it must be at least ${minLabel} for this to be a real challenge.`;
+          challengeStartError.classList.add('visible');
+          return;
+        }
       }
 
       startChallengeBtn.disabled = true;
@@ -1057,6 +1150,28 @@
       if (window.ttpMain) window.ttpMain.openSettings();
     });
 
+    // Loest den Rang SOFORT auf statt erst beim naechsten Seitenladen/Start/
+    // Reset (renderChallengeState()) - explizite Nutzeranfrage, da sonst nach
+    // dem Eintippen des Namens nichts sichtbar passiert und man auf die
+    // Overview-Seite wechseln muss, um ueberhaupt einen Rang zu sehen.
+    summonerSaveBtn.addEventListener('click', async () => {
+      summonerSaveBtn.disabled = true;
+      const originalLabel = summonerSaveBtn.textContent;
+      summonerSaveBtn.textContent = '…';
+      try {
+        saveSummonerName();
+        const puuid = await resolvePuuid();
+        await refreshCurrentRank(puuid);
+      } catch (e) {
+        challengeRankRow.textContent = `Rank unavailable: ${e.message}`;
+        lastKnownMinGoal = null;
+        updateLpGoalHint();
+      } finally {
+        summonerSaveBtn.disabled = false;
+        summonerSaveBtn.textContent = originalLabel;
+      }
+    });
+
     const quitBtn = document.getElementById('quitBtn');
     quitBtn.addEventListener('click', () => {
       const ok = confirm('Quit Three-Trick-Pony completely? It will no longer run in the background (no more update checks or LP tracking until you start it again).');
@@ -1166,9 +1281,10 @@
       updateLpGoalDivisionVisibility();
       saveLpGoal();
       updateChecklist();
+      updateLpGoalHint();
     });
-    lpGoalDivisionSelect.addEventListener('change', saveLpGoal);
-    lpGoalLpInput.addEventListener('input', saveLpGoal);
+    lpGoalDivisionSelect.addEventListener('change', () => { saveLpGoal(); updateLpGoalHint(); });
+    lpGoalLpInput.addEventListener('input', () => { saveLpGoal(); updateLpGoalHint(); });
     lpGoalLpInput.addEventListener('change', () => {
       let v = Number(lpGoalLpInput.value);
       if (Number.isNaN(v) || lpGoalLpInput.value === '') { lpGoalLpInput.value = ''; }

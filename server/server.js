@@ -6,7 +6,7 @@ const { getAccountByRiotId, getAccountByPuuid, getAllMatchIds, getMatch, getMatc
 const { loadPersistedApiKey, savePersistedApiKey } = require('./lib/envStore');
 const { createBucket, addMatchToBucket, finalizeBucket, isRemake, computeStreaks } = require('./lib/stats');
 const { createJob, updateProgress, completeJob, failJob, getJob } = require('./lib/jobs');
-const { recordSnapshot, readHistory, findSnapshotAtOrBefore, toComparableLP, seedManualSnapshot } = require('./lib/rankHistory');
+const { recordSnapshot, readHistory, findSnapshotAtOrBefore, toComparableLP, computeMinGoalLP, seedManualSnapshot } = require('./lib/rankHistory');
 const {
   RULES_VERSION,
   computeErwarteteSpiele,
@@ -113,7 +113,9 @@ app.get('/api/current-rank', requireApiKey, async (req, res) => {
     if (!solo) {
       return res.json({ current: null, note: 'Unranked or no Solo/Duo entry found.' });
     }
-    res.json({ current: { tier: solo.tier, rank: solo.rank, leaguePoints: solo.leaguePoints } });
+    const current = { tier: solo.tier, rank: solo.rank, leaguePoints: solo.leaguePoints };
+    const minGoal = computeMinGoalLP(current.tier, current.rank, current.leaguePoints);
+    res.json({ current, minGoal });
   } catch (e) {
     res.status(e.status || 500).json({ error: e.message });
   }

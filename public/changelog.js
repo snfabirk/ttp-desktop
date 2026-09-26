@@ -13,6 +13,14 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.8.0',
+      notable: [
+        'New: a Save button next to your summoner name resolves your current rank immediately, instead of only after starting a challenge',
+        'New: LP Goals now need a minimum distance from your current rank (2 divisions, or +100 LP at Master+) so it stays an actual challenge'
+      ],
+      bugfixes: []
+    },
+    {
       version: '4.7.0',
       notable: [],
       bugfixes: [

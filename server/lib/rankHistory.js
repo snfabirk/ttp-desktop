@@ -31,6 +31,37 @@ function toComparableLP(tier, rank, leaguePoints) {
   return tierIndex * 400 + rankValue * 100 + (leaguePoints || 0);
 }
 
+const RANK_VALUE_REVERSE = { 0: 'IV', 1: 'III', 2: 'II', 3: 'I' };
+const APEX_TIER_START = TIER_ORDER.indexOf('MASTER');
+
+// Mindest-LP-Ziel fuer eine "echte" Challenge (explizite Nutzervorgabe,
+// 2026-09-26): unterhalb Master zaehlen nur volle Divisions, nicht der
+// aktuelle LP-Stand innerhalb der Division - Platin IV bei 1 LP UND bei 99 LP
+// ergeben beide "mindestens Platin II, 0 LP" (+2 Divisions, LP-Anteil auf 0
+// abgerundet). Ab Master (keine Divisions mehr) gilt stattdessen ein reiner
+// LP-Abstand von +100. Ueberschreitet "+2 Divisions" die aktuelle Tier
+// (z.B. von Diamond I aus), wird vereinfachend "naechste Tier, 0 LP" verlangt
+// statt in Bruch-Divisions zu rechnen, die es in der Zieltier evtl. gar nicht
+// gibt (z.B. beim Sprung in eine Apex-Tier ohne Divisions).
+function computeMinGoalLP(tier, rank, leaguePoints) {
+  const tierIndex = TIER_ORDER.indexOf(tier);
+  if (tierIndex < 0) return null;
+  if (tierIndex >= APEX_TIER_START) {
+    return { tier, division: '', lp: (leaguePoints || 0) + 100 };
+  }
+  const currentRankValue = RANK_VALUE[rank] ?? 0;
+  let targetRankValue = currentRankValue + 2;
+  let targetTierIndex = tierIndex;
+  while (targetRankValue > 3) {
+    targetRankValue -= 4;
+    targetTierIndex += 1;
+  }
+  if (targetTierIndex >= APEX_TIER_START) {
+    return { tier: 'MASTER', division: '', lp: 0 };
+  }
+  return { tier: TIER_ORDER[targetTierIndex], division: RANK_VALUE_REVERSE[targetRankValue], lp: 0 };
+}
+
 function historyPath(puuid) {
   return path.join(HISTORY_DIR, `${puuid}.json`);
 }
@@ -133,4 +164,4 @@ function seedManualSnapshot(puuid, timestampMs, entry) {
   return history;
 }
 
-module.exports = { recordSnapshot, readHistory, findSnapshotAtOrBefore, toComparableLP, seedManualSnapshot };
+module.exports = { recordSnapshot, readHistory, findSnapshotAtOrBefore, toComparableLP, computeMinGoalLP, seedManualSnapshot };
