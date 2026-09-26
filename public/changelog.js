@@ -21,6 +21,15 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.19.0',
+      notable: [
+        'Challenge History list now shows 5 challenges at a time with a subtle down-arrow hint when there\'s more to scroll to'
+      ],
+      bugfixes: [
+        'Fixed the goal-reached checkmark/cross disappearing on challenges where the LP range isn\'t known yet'
+      ]
+    },
+    {
       version: '4.18.0',
       notable: [
         'Challenges started before the LP Range feature will now automatically pick up their start rank on their next sync, so the range shows up without needing to be restarted'

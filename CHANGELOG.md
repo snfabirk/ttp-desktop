@@ -1,5 +1,42 @@
 # Internal Changelog
 
+## 4.19.0 — 2026-09-26
+
+- Fixed a regression from v4.17.0: the goal-reached ✓/✗ icon lived INSIDE
+  the LP-range line's HTML, so hiding the range line (when `startRankTier`
+  is unknown) also silently hid the icon - even though reached/missed
+  status is independently derivable from the `goal-reached` trophy
+  regardless of whether the range is known. `formatChallengeExtra()` now
+  decouples them: shows the icon + a short fallback text ("Goal reached"/
+  "Goal not reached") when the range isn't available, instead of hiding
+  everything. User caught this immediately after the v4.17.0 "don't show
+  a half-empty range" fix shipped.
+- Challenge History list now caps at showing 5 entries (`max-height: 520px`
+  on `.history-list`, empirically measured: 5 × ~96px card + 4 × 10px gap)
+  and scrolls internally beyond that, regardless of window height (previously
+  it just filled however much vertical space the panel had). Added a
+  subtle gold down-arrow hint (`.history-scroll-hint`, absolutely
+  positioned, opacity-toggled) that appears only when there's unscrolled
+  content below, and disappears once scrolled to the bottom (`scroll`
+  listener on `#historyList` recomputes on every scroll).
+- **Layout gotcha hit while building the above:** the arrow initially
+  rendered in the wrong place (invisible, off in blank space below the
+  visible cards) because the wrapping `.history-list-wrap` (needed as the
+  `position:relative` anchor for the absolutely-positioned arrow) had
+  `flex: 1 1 auto`, letting it stretch to fill more of `.history-panel`'s
+  available height than `.history-list`'s own (capped) content actually
+  used - so the arrow's `bottom: 0` (relative to the taller wrap) landed
+  below the list's real visible edge. Fix: removed `flex: 1 1 auto` from
+  the wrap so it hugs `.history-list`'s actual rendered height instead.
+- **Testing gotcha:** a CDP test that toggles an opacity-transitioned class
+  and reads `getComputedStyle(...).opacity` in the exact same synchronous
+  tick can report the PRE-transition value (0), even though the class was
+  correctly applied - the transition needs at least one animation frame to
+  start interpolating. Don't trust an immediate post-toggle opacity read;
+  either check `classList.contains(...)` instead (which is real/immediate),
+  or add a short delay before checking computed opacity or screenshotting.
+
+
 ## 4.18.0 — 2026-09-26
 
 Backfill for the `startRankTier`/`startRankDivision`/`startRankLp` fields

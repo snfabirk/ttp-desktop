@@ -510,20 +510,59 @@
     border-color: var(--history-view-accent);
     box-shadow: 0 0 10px color-mix(in srgb, var(--history-view-accent) 30%, transparent);
   }
-  .history-list {
-    /* flex:1+min-height:0 ist der Teil, der hier bisher fehlte - ohne das
-       wollte dieses Flex-Kind nie kleiner als sein Inhalt werden, wodurch
-       die ganze .history-panel (trotz eigenem max-height) einfach ueber
-       den Bildschirm hinaus mitwuchs, statt dass NUR diese Liste ab einer
-       Handvoll Eintraegen (~5-6) intern scrollt. Neueste bleiben oben,
-       wie von der API (listEntries(), newest-first) schon geliefert. */
-    flex: 1 1 auto;
+  /* Haelt .history-list + den Scroll-Hint-Pfeil zusammen - position:relative
+     Ankerpunkt fuer den absolut positionierten Pfeil, der so ueber der
+     Liste "schwebt" (kein eigener Platz im Flex-Layout) statt als 6.
+     Eintrag mitgezaehlt zu werden. */
+  .history-list-wrap {
+    /* KEIN flex:1 1 auto hier - die Wrap-Box soll sich exakt an die eigene
+       (durch .history-list max-height begrenzte) Inhaltshoehe anschmiegen,
+       sonst waechst sie als Flex-Kind der .history-panel-Spalte ueber
+       .history-list hinaus und der absolut positionierte Pfeil (bottom:0
+       relativ zu DIESER Box) landet in der Luecke darunter statt sichtbar
+       am unteren Rand der Liste. */
+    position: relative;
     min-height: 0;
+  }
+  .history-list {
+    /* max-height explizit auf ~5 Eintraege (5*96px Kartenhoehe + 4*10px
+       Gap, empirisch gemessen) begrenzt - explizite Nutzeranfrage: immer
+       genau 5 zeigen und danach scrollen, unabhaengig von der
+       Fensterhoehe. Braucht dafuer kein flex mehr (die Wrap-Box aussen
+       ist nicht mehr display:flex, siehe .history-list-wrap) - max-height
+       + overflow-y:auto reichen fuer sich genommen. Neueste bleiben oben,
+       wie von der API (listEntries(), newest-first) schon geliefert. */
+    max-height: 520px;
     display: flex;
     flex-direction: column;
     gap: 10px;
     overflow-y: auto;
     padding-right: 4px;
+  }
+  /* Dezenter Pfeil unten in der Liste, nur sichtbar wenn tatsaechlich noch
+     mehr Eintraege unterhalb der aktuellen Scroll-Position liegen (per JS
+     bei Render + bei jedem Scroll aktualisiert) - verschwindet, sobald man
+     ganz runtergescrollt ist. Ueberlagert die Liste per position:absolute
+     statt eigenen Platz zu beanspruchen, damit nichts springt. */
+  .history-scroll-hint {
+    position: absolute;
+    left: 0;
+    right: 4px;
+    bottom: 0;
+    height: 30px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 2px;
+    background: linear-gradient(to bottom, transparent, var(--panel-bg) 60%);
+    color: var(--gold);
+    font-size: 1rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .history-scroll-hint.visible {
+    opacity: 1;
   }
   .history-empty {
     display: none;
@@ -685,7 +724,10 @@
         <div id="currentChallengeCard"></div>
       </div>
       <h2 class="panel-heading">Challenge History</h2>
-      <div class="history-list" id="historyList"></div>
+      <div class="history-list-wrap">
+        <div class="history-list" id="historyList"></div>
+        <div class="history-scroll-hint" id="historyScrollHint" aria-hidden="true">▾</div>
+      </div>
       <p class="history-empty" id="historyEmpty">No challenges yet - start one on the Champion Selection page.</p>
     </aside>
   </div>
@@ -1218,15 +1260,24 @@
       const goalLabel = formatTierDivisionH(entry.lpGoalTier, entry.lpGoalDivision, entry.lpGoalLp);
       const rangeText = (startLabel && goalLabel) ? `${startLabel} → ${goalLabel}` : '';
 
+      // Der Geschafft/Nicht-geschafft-Status ist UNABHAENGIG vom Startrang
+      // bekannt (kommt aus der "Goal Reached"-Trophy im Snapshot) - darf
+      // deshalb nicht mitverschwinden, nur weil kein Startrang (und damit
+      // keine Range-Zeile) vorhanden ist. Ohne Range zeigt die Zeile dann
+      // stattdessen einen kurzen Text ("Goal reached"/"Goal not reached").
       const goalTrophy = Array.isArray(entry.trophies) ? entry.trophies.find(t => t.id === 'goal-reached') : null;
       let iconHtml = '';
+      let fallbackText = '';
       if (goalTrophy && goalTrophy.unlocked) {
         iconHtml = '<span class="history-goal-icon reached" title="LP Goal reached">✓</span> ';
+        fallbackText = 'Goal reached';
       } else if (goalTrophy && !isOngoing) {
         iconHtml = '<span class="history-goal-icon missed" title="LP Goal not reached">✗</span> ';
+        fallbackText = 'Goal not reached';
       }
 
-      return { difficultyLabel, rangeHtml: rangeText ? `${iconHtml}${rangeText}` : '' };
+      const lineText = rangeText || fallbackText;
+      return { difficultyLabel, rangeHtml: lineText ? `${iconHtml}${lineText}` : '' };
     }
 
     // Rendert nur noch ABGESCHLOSSENE (until != null) Eintraege - der
@@ -1303,6 +1354,18 @@
       if (card) card.classList.toggle('muted', muted);
     }
 
+    // Zeigt/versteckt den Scroll-Pfeil je nachdem, ob unterhalb der aktuellen
+    // Scroll-Position noch weitere Eintraege liegen - bei Render UND bei
+    // jedem Scroll aufgerufen (Listener einmalig unten am Modul-Ende
+    // gebunden, #historyList wird nie neu erstellt, nur sein innerHTML).
+    function updateHistoryScrollHint() {
+      const listEl = document.getElementById('historyList');
+      const hintEl = document.getElementById('historyScrollHint');
+      const hasMore = listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight > 2;
+      hintEl.classList.toggle('visible', hasMore);
+    }
+    document.getElementById('historyList').addEventListener('scroll', updateHistoryScrollHint);
+
     function renderChallengeHistory(entries, puuid) {
       const ongoingEntry = entries.find(e => !e.until) || null;
       const pastEntries = entries.filter(e => e.until);
@@ -1323,11 +1386,13 @@
       if (!pastEntries.length) {
         listEl.innerHTML = '';
         emptyEl.style.display = 'block';
+        updateHistoryScrollHint();
         return;
       }
       emptyEl.style.display = 'none';
       listEl.innerHTML = pastEntries.map(e => historyEntryHtml(e, puuid)).join('');
       markActiveHistoryEntry(activeHistoricalEntryId);
+      updateHistoryScrollHint();
       listEl.querySelectorAll('.history-delete-btn').forEach(btn => {
         btn.addEventListener('click', async (ev) => {
           ev.stopPropagation();
