@@ -13,6 +13,15 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.6.0',
+      notable: [
+        'The update icon now shows a small dismissible notification when a new update is found, so it\'s harder to miss'
+      ],
+      bugfixes: [
+        'Fixed the Trophies page header being off-center and the heading text being unreadable in some themes after the Challenge History sidebar was added'
+      ]
+    },
+    {
       version: '4.5.0',
       notable: [],
       bugfixes: [

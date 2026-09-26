@@ -315,6 +315,68 @@ html, body {
   to { transform: rotate(360deg); }
 }
 
+/* Dismissbare Sprechblase unterhalb des Update-Buttons (public/update-
+   indicator.js) - erscheint automatisch, sobald ein Update gefunden wird,
+   damit man das kleine Kreis-Icon nicht uebersehen kann. Kleiner Pfeil oben
+   zeigt zurueck auf den Button, aus dem sie "herauskommt". */
+.update-toast {
+  position: fixed;
+  top: 60px;
+  right: 24px;
+  width: 176px;
+  box-sizing: border-box;
+  background: var(--input-bg);
+  border: 1px solid var(--green);
+  border-radius: 8px;
+  padding: 10px 28px 10px 14px;
+  color: var(--text);
+  font-family: Georgia, serif;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 80;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.update-toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* Zeigt exakt auf die Mitte des Update-Check-Buttons (.update-indicator-btn:
+   right:104px, 34px breit -> Mitte bei right:121px vom Fensterrand). Die Box
+   selbst sitzt bei right:24px, also right:97px relativ zur Box-Kante
+   (121 - 24 = 97) - NICHT auf den "Was gibt's Neues"-Button (weiter links,
+   right:144px) zeigen, auch wenn der optisch naeher an der Box-Kante liegt. */
+.update-toast::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  right: 97px;
+  width: 12px;
+  height: 12px;
+  background: var(--input-bg);
+  border-left: 1px solid var(--green);
+  border-top: 1px solid var(--green);
+  transform: rotate(45deg);
+}
+.update-toast-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  transition: color 0.15s ease;
+}
+.update-toast-close:hover {
+  color: var(--text);
+}
+
 /* Runder "Was gibt's Neues"-Button - viertes/aeusserstes der vier Buttons
    oben rechts (Update-Log, Updates, Einstellungen, Beenden - in dieser
    Reihenfolge), oeffnet das rechts aufklappbare Update-Log-Panel unten. */
