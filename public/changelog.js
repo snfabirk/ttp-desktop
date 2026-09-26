@@ -9,9 +9,22 @@
 // knackig fuer alles, was fuer den Nutzer wirklich sichtbar/relevant ist
 // (neue Themes, UI-Aenderungen, neue Features). "bugfixes" ist ein Sammel-
 // becken fuer alles andere, das fuer den Nutzer nicht sonderlich relevant
-// ist - auch wenn es kein echter Bugfix war.
+// ist - auch wenn es kein echter Bugfix war. Seit v4.12.0 (explizite
+// Nutzeranfrage) wird "bugfixes" NICHT mehr als Liste mit Beschreibungen
+// angezeigt, nur noch als schlichtes "Bugfixes"-Label - den Nutzer
+// interessiert bei Dingen, die keine Funktion fuer ihn aendern, nicht WAS
+// genau, nur DASS ueberhaupt was war. Kann weiterhin ein Array (fuer
+// Eintraege vor 4.12.0, deren Inhalt jetzt einfach ignoriert wird) oder ab
+// jetzt eine blosse Zahl sein - beides wird nur noch gezaehlt, nie gelistet.
+// Das genaue "was" steht stattdessen in CHANGELOG.md (Repo-Root) - ein
+// privates, nicht in der App angezeigtes Log fuer Fabian/Claude selbst.
 (function () {
   const CHANGELOG = [
+    {
+      version: '4.12.0',
+      notable: [],
+      bugfixes: 6
+    },
     {
       version: '4.11.0',
       notable: [
@@ -141,7 +154,7 @@
           <div class="changelog-version">
             <div class="changelog-version-title">v${v.version}</div>
             ${v.notable.length ? `<ul class="changelog-notable">${v.notable.map(n => `<li>${n}</li>`).join('')}</ul>` : ''}
-            ${v.bugfixes.length ? `<div class="changelog-bugfixes-label">Bugfixes</div><ul class="changelog-bugfixes">${v.bugfixes.map(b => `<li>${b}</li>`).join('')}</ul>` : ''}
+            ${(Array.isArray(v.bugfixes) ? v.bugfixes.length : v.bugfixes) ? `<div class="changelog-bugfixes-label">Bugfixes</div>` : ''}
           </div>
         `).join('')}
       </div>

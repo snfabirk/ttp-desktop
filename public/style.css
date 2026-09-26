@@ -345,14 +345,18 @@ html, body {
 }
 /* Zeigt exakt auf die Mitte des Update-Check-Buttons (.update-indicator-btn:
    right:104px, 34px breit -> Mitte bei right:121px vom Fensterrand). Die Box
-   selbst sitzt bei right:24px, also right:97px relativ zur Box-Kante
-   (121 - 24 = 97) - NICHT auf den "Was gibt's Neues"-Button (weiter links,
+   selbst sitzt bei right:24px, also waere die Button-Mitte bei right:97px
+   relativ zur Box-Kante (121 - 24 = 97) - ABER "right" positioniert hier die
+   RECHTE KANTE des 12px breiten Pfeils, nicht seine Mitte, deshalb nochmal
+   die halbe Pfeilbreite (6px) abziehen: right:91px, damit die Pfeilspitze
+   (Mitte des um 45 Grad gedrehten Quadrats) exakt auf der Button-Mitte
+   landet - NICHT auf den "Was gibt's Neues"-Button (weiter links,
    right:144px) zeigen, auch wenn der optisch naeher an der Box-Kante liegt. */
 .update-toast::before {
   content: '';
   position: absolute;
   top: -7px;
-  right: 97px;
+  right: 91px;
   width: 12px;
   height: 12px;
   background: var(--input-bg);

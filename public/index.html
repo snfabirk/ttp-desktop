@@ -51,7 +51,7 @@
         "gobtn     gobtn";
       gap: 22px;
       box-sizing: border-box;
-      margin: 22px 0 30px;
+      margin: 18px 0 18px;
     }
     #summonerDateBox { grid-area: summoner; }
     #checklistBox { grid-area: checklist; }
@@ -131,6 +131,26 @@
       padding: 20px;
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
       transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    /* Etwas knapper als .setup-box speziell fuer diese Reihe (Champion-Pool +
+       Karten-Spalte) - die Reihe war durch die Platzreservierungen fuer
+       Locked-Hinweis/Fehler zuletzt zu hoch geworden und hat die Seite
+       wieder scrollbar gemacht. */
+    .champ-picker, .selection-list {
+      padding: 14px;
+    }
+    /* .champ-picker, .selection-list, #startChallengeBox etc. alle haben
+       backdrop-filter, was jede einzelne Box zu einem eigenen Stacking-
+       Context macht - dadurch landet die Champion-Such-Vorschlagsliste
+       (z-index:20, aber NUR innerhalb des Stacking-Contexts von
+       .champ-picker wirksam) hinter der spaeter im DOM folgenden
+       #startChallengeBox, egal wie hoch ihr eigener z-index ist. Erst ein
+       expliziter z-index HIER (auf der Box, die den Stacking-Context
+       aufmacht) hebt die ganze Box inkl. Vorschlagsliste ueber die
+       nachfolgenden Geschwister-Boxen. */
+    .champ-picker {
+      position: relative;
+      z-index: 5;
     }
     .setup-box label {
       display: block;
@@ -256,14 +276,21 @@
        den restlichen Seiteninhalt verschieben. Fuer diese beiden Meldungen
        hier stattdessen ueber Opacity ein-/ausblenden und den Platz IMMER
        reservieren (2 Zeilen, deckt auch die laengeren Meldungen ab). */
-    #selectionError, #challengeStartError {
+    /* Nur #challengeStartError reserviert seinen Platz (deckt u.a. "kein
+       Champion/Summoner/Level/LP-Ziel gesetzt" ab, explizit von Nutzer
+       genannt) - #selectionError (Klick auf gesperrten/vollen Pool) bleibt
+       beim normalen display:none/block-Verhalten (.error-msg Basisregel in
+       style.css), das ist deutlich seltener und die zweite Reservierung hier
+       hat die Reihe zuletzt zu hoch/scrollbar gemacht. */
+    #challengeStartError {
       display: block;
-      min-height: 2.8em;
-      line-height: 1.4;
+      min-height: 2.6em;
+      line-height: 1.3;
+      margin-top: 8px;
       opacity: 0;
       transition: opacity 0.15s ease;
     }
-    #selectionError.visible, #challengeStartError.visible {
+    #challengeStartError.visible {
       opacity: 1;
     }
     /* Gleiches Prinzip wie oben - der Hinweis erscheint erst NACH dem
@@ -273,9 +300,9 @@
     .champ-picker-locked-note {
       font-size: 0.75rem;
       color: var(--text-faint);
-      line-height: 1.4;
-      margin: 0 0 12px;
-      min-height: 2.8em;
+      line-height: 1.3;
+      margin: 0 0 8px;
+      min-height: 2.6em;
       opacity: 0;
       transition: opacity 0.15s ease;
     }
@@ -325,9 +352,9 @@
       display: block;
       color: var(--gold);
       font-family: 'Cinzel', Georgia, serif;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       letter-spacing: 1px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
     #champSearchInput, .meta-select {
       width: 100%;
@@ -339,6 +366,9 @@
       border-radius: 4px;
       font-size: 1rem;
       font-family: Georgia, serif;
+    }
+    #champSearchInput {
+      padding: 8px 14px;
     }
     select.meta-select {
       cursor: pointer;
@@ -389,7 +419,7 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       overflow: hidden;
-      max-height: 240px;
+      max-height: 190px;
       overflow-y: auto;
       z-index: 20;
       box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
@@ -423,7 +453,7 @@
     .role-icon-picker {
       display: flex;
       gap: 10px;
-      margin-bottom: 13px;
+      margin-bottom: 10px;
     }
     .role-icon-btn {
       flex: 1;
@@ -434,7 +464,7 @@
       background: var(--input-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 8px 4px;
+      padding: 6px 4px;
       cursor: pointer;
       transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
     }
@@ -617,7 +647,7 @@
       </button>
     </div>
 
-    <div style="position:relative; margin-bottom:12px;">
+    <div style="position:relative; margin-bottom:8px;">
       <input type="text" id="champSearchInput" placeholder="e.g. C for Caitlyn, Camille, …" autocomplete="off">
       <div id="champSuggestions" class="suggestion-list" hidden></div>
     </div>
