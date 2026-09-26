@@ -96,11 +96,14 @@
     text-align: center;
     font-family: Georgia, serif;
     font-size: 0.75rem;
+    line-height: 1.4;
     margin: -6px 0 16px;
-    display: none;
+    min-height: 2.8em;
+    opacity: 0;
+    transition: opacity 0.15s ease;
   }
   .rules-status.visible {
-    display: block;
+    opacity: 1;
   }
   .rules-status.current {
     color: var(--text-faint);
@@ -444,7 +447,12 @@
     color: var(--text-dim);
     font-family: Georgia, serif;
     font-size: 0.8rem;
+    line-height: 1.4;
     margin: -6px 0 18px;
+    /* Text wechselt mehrfach waehrend eines Ladevorgangs (leer -> "Loading
+       trophy progress..." -> Fortschritts-Updates -> finale "Based on X
+       games..."-Zeile) - 2 Zeilen reserviert, damit dabei nichts springt. */
+    min-height: 2.8em;
   }
 
   /* ----- Challenge History (rechte Seitenleiste) ----- */

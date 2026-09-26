@@ -1,5 +1,47 @@
 # Internal Changelog
 
+## 4.14.0 — 2026-09-26
+
+Full audit of remaining `display:none`/`hidden`-toggle layout-shift spots
+across index.html/overview.html/trophies.html, per explicit user request
+to go through "jede Kleinigkeit" (every little thing). Found and fixed:
+
+- `trophies.html` `.rules-status` ("This list reflects the current trophy
+  rules" / outdated-rules warning) - was `display:none/block`, now always
+  in layout with `min-height: 2.8em` + opacity toggle. This was the one
+  the user explicitly reported this round.
+- `trophies.html` `.achievements-status` (progress text below the trophy
+  grid - cycles through empty → "Loading trophy progress…" → polling
+  updates → final "Based on X games…" summary) had NO reservation at all
+  before this - added `min-height: 2.8em`.
+
+Audited and deliberately left alone (documented so it isn't
+re-"discovered" and re-investigated later):
+- `#champSuggestions`/`#enemySuggestions` dropdowns - `position:absolute`
+  overlays, don't push sibling layout regardless of shown/hidden.
+- `lpGoalDivisionSelect` show/hide (index.html) - changes flex-row width
+  only, not height (same-height siblings).
+- `#detailSection` (overview.html champion detail) / `#enemyResultSection`
+  (opponent analysis result) / `#emptyHint` - "select something to reveal
+  its view" pattern, a direct result of an explicit click, not a passive
+  load shift. Reserving space for an unselected detail panel would show a
+  large empty box by default, which is worse UX than the current reveal.
+- `#accountOverviewNoteIcon` (overview.html) - 16px icon in a flex row,
+  toggles row width not height.
+- `#currentContext` (overview.html) - always set synchronously from
+  localStorage at the start of `performLoad()`/`init()`, before any
+  `await` - never changes as a side effect of data finishing loading.
+- `loadBtn`/`startChallengeBtn`/`summonerSaveBtn` text changing to
+  "Loading…"/"Starting…"/"…" - standard button-clicked feedback, width
+  change only, and it's the direct/expected result of the exact button
+  the user just clicked.
+- `.key-error` (settings.html) and the update-window.html download→ready
+  transition - real but low-frequency/secondary-window cases, deprioritized
+  given the settings window's already-precise scroll-free height tuning
+  (v4.10.0) would need re-tuning to add a reservation there; revisit if
+  reported.
+
+
 ## 4.13.0 — 2026-09-26
 
 - Fixed the Overview page's "Searching matches …" progress bar (and the
