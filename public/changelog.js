@@ -13,6 +13,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.10.0',
+      notable: [],
+      bugfixes: [
+        'Champion Selection page slightly resized to stop it from needing to scroll in most cases',
+        'Settings window tidied up so it no longer needs to scroll',
+        'Clicking your currently running challenge in the Challenge History list now just takes you back to it, instead of trying to show it as a past snapshot',
+        'A brief visual cue now shows when switching between the current and a past challenge view on the Trophies page'
+      ]
+    },
+    {
       version: '4.9.0',
       notable: [
         'New: click an old Challenge History entry to see exactly which trophies you had (and hadn\'t) unlocked when it ended - clearly marked as a read-only past view, with a button to jump back to your current challenge'

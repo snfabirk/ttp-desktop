@@ -11,19 +11,19 @@
   <style>
     body {
       margin: 0;
-      padding: 26px 28px;
+      padding: 16px 24px 8px;
       box-sizing: border-box;
       color: var(--text);
     }
     h1 {
       font-family: 'Cinzel', Georgia, serif;
       color: var(--gold);
-      font-size: 1.3rem;
+      font-size: 1.15rem;
       letter-spacing: 1px;
-      margin: 0 0 22px;
+      margin: 0 0 11px;
     }
     .setting-group {
-      margin-bottom: 26px;
+      margin-bottom: 13px;
     }
     .setting-group label {
       display: block;
@@ -31,12 +31,12 @@
       font-family: 'Cinzel', Georgia, serif;
       font-size: 0.8rem;
       letter-spacing: 0.5px;
-      margin-bottom: 10px;
+      margin-bottom: 6px;
     }
     .size-row {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
     .size-row input[type="range"] {
       flex: 1;
@@ -49,7 +49,7 @@
       color: var(--text);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 7px 8px;
+      padding: 5px 8px;
       font-family: Georgia, serif;
       font-size: 0.9rem;
       color-scheme: dark;
@@ -79,14 +79,14 @@
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
     .theme-hint {
-      margin: 8px 0 0;
+      margin: 5px 0 0;
       font-size: 0.75rem;
       color: var(--text-faint);
     }
     .checkbox-row {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
     .checkbox-row input[type="checkbox"] {
       width: 16px;
@@ -125,7 +125,7 @@
       color: var(--text);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 9px 12px;
+      padding: 7px 12px;
       font-family: Georgia, serif;
       font-size: 0.9rem;
       color-scheme: dark;
@@ -141,7 +141,7 @@
       border: 1px solid var(--gold);
       color: var(--gold);
       border-radius: 6px;
-      padding: 9px 18px;
+      padding: 7px 18px;
       font-family: 'Cinzel', Georgia, serif;
       font-size: 0.85rem;
       letter-spacing: 0.5px;
@@ -181,14 +181,18 @@
       display: block;
     }
     #updateCheckStatus {
-      margin: 8px 0 0;
+      margin: 4px 0 0;
       font-size: 0.75rem;
       color: var(--text-faint);
+      min-height: 0;
+    }
+    #updateCheckStatus:empty {
+      margin: 0;
     }
     #updateCheckStatus.positive { color: var(--green); }
     #updateCheckStatus.negative { color: var(--red); }
     .apply-row {
-      margin-top: 32px;
+      margin-top: 14px;
       display: flex;
       align-items: center;
       justify-content: flex-end;
@@ -205,7 +209,7 @@
     }
     .apply-row button {
       border-radius: 6px;
-      padding: 9px 26px;
+      padding: 8px 24px;
       font-family: 'Cinzel', Georgia, serif;
       font-size: 0.9rem;
       letter-spacing: 1px;
@@ -238,8 +242,8 @@
       color: var(--text);
     }
     .danger-zone {
-      margin-top: 34px;
-      padding-top: 22px;
+      margin-top: 14px;
+      padding-top: 12px;
       border-top: 1px solid var(--border);
     }
     .danger-zone label {
@@ -250,7 +254,7 @@
       border: 1px solid var(--red);
       color: var(--red);
       border-radius: 6px;
-      padding: 9px 18px;
+      padding: 7px 18px;
       font-family: 'Cinzel', Georgia, serif;
       font-size: 0.85rem;
       letter-spacing: 0.5px;
@@ -268,9 +272,10 @@
       cursor: default;
     }
     .danger-hint {
-      margin: 8px 0 0;
-      font-size: 0.75rem;
+      margin: 5px 0 0;
+      font-size: 0.72rem;
       color: var(--text-faint);
+      line-height: 1.35;
     }
   </style>
 </head>

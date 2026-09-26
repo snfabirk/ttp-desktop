@@ -167,6 +167,18 @@
   .history-entry.viewable {
     cursor: pointer;
   }
+  /* Dezenter, kurzer Blitz auf dem Trophy-Grid beim Wechseln zwischen
+     aktueller und historischer Ansicht (oder zwischen zwei historischen
+     Eintraegen) - nur ein leichter Hinweis, dass gerade umgeschaltet wurde,
+     kein auffaelliger Effekt. */
+  @keyframes historySwapFlash {
+    0% { opacity: 1; }
+    35% { opacity: 0.35; }
+    100% { opacity: 1; }
+  }
+  .trophy-grid.swap-flash {
+    animation: historySwapFlash 0.4s ease;
+  }
   .role-note {
     text-align: center;
     color: var(--text-dim);
@@ -1065,9 +1077,18 @@
       const roleLabel = ROLE_LABELS_SHORT[entry.role] || '';
       const platinumClass = entry.platinumUnlocked ? ' platinum' : '';
       const ongoingClass = isOngoing ? ' ongoing' : '';
-      const viewable = Array.isArray(entry.trophies) && entry.trophies.length > 0;
+      const hasSnapshot = Array.isArray(entry.trophies) && entry.trophies.length > 0;
+      // Der laufende Eintrag zeigt ohnehin schon die aktuelle Challenge - ein
+      // Klick darauf springt deshalb einfach dahin zurueck (wie "Back to
+      // current"), statt (nochmal) einen Snapshot ins Grid zu laden. Bleibt
+      // deshalb IMMER klickbar, unabhaengig davon ob schon ein Trophy-Snapshot
+      // fuer ihn existiert.
+      const clickable = isOngoing || hasSnapshot;
+      const titleText = isOngoing
+        ? 'Click to go to the current challenge'
+        : (hasSnapshot ? 'Click to view this challenge\'s trophies' : '');
       return `
-        <div class="history-entry${platinumClass}${ongoingClass}${viewable ? ' viewable' : ''}" data-id="${entry.id}" title="${viewable ? 'Click to view this challenge\'s trophies' : ''}">
+        <div class="history-entry${platinumClass}${ongoingClass}${clickable ? ' viewable' : ''}" data-id="${entry.id}" title="${titleText}">
           <button type="button" class="history-delete-btn" data-id="${entry.id}" title="Delete this entry" aria-label="Delete this entry">×</button>
           ${entry.platinumUnlocked ? '<span class="history-platinum-badge">★ Platinum</span>' : ''}
           <div class="history-dates">${dateRange}${isOngoing ? ' <span class="history-live-dot"></span>' : ''}</div>
@@ -1116,7 +1137,16 @@
       listEl.querySelectorAll('.history-entry.viewable').forEach(el => {
         el.addEventListener('click', () => {
           const entry = currentHistoryEntries.find(e => e.id === el.dataset.id);
-          if (entry) viewHistoricalEntry(entry);
+          if (!entry) return;
+          // Der laufende Eintrag ist immer klickbar (siehe historyEntryHtml)
+          // und fuehrt einfach zur aktuellen Ansicht - identisch zu "Back to
+          // current", kein Snapshot-Laden noetig, da es ja die Challenge ist,
+          // die gerade laeuft.
+          if (!entry.until) {
+            location.reload();
+            return;
+          }
+          viewHistoricalEntry(entry);
         });
       });
     }
@@ -1127,6 +1157,15 @@
     // Wird per Banner + Rahmen um die ganze linke Spalte klar als "nicht die
     // aktuelle Challenge" markiert, siehe .historical-view CSS oben.
     function viewHistoricalEntry(entry) {
+      // Dezenter Hinweis, dass gerade umgeschaltet wird (auch beim Wechsel
+      // von einer historischen Ansicht direkt in eine andere, ohne
+      // dazwischenliegenden Reload) - siehe .swap-flash CSS oben.
+      const grid = document.getElementById('trophyGrid');
+      grid.classList.remove('swap-flash');
+      void grid.offsetWidth;
+      grid.classList.add('swap-flash');
+      grid.addEventListener('animationend', () => grid.classList.remove('swap-flash'), { once: true });
+
       applyAchievementProgress(entry.trophies);
 
       const overallPercent = entry.totalCount > 0 ? Math.round((entry.unlockedCount / entry.totalCount) * 100) : 0;
