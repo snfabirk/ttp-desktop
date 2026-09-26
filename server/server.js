@@ -2,7 +2,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const fs = require('fs');
 const express = require('express');
-const { getAccountByRiotId, getAllMatchIds, getMatch, getMatchTimeline, getLeagueEntriesByPuuid, getSummonerByPuuid } = require('./lib/riot');
+const { getAccountByRiotId, getAccountByPuuid, getAllMatchIds, getMatch, getMatchTimeline, getLeagueEntriesByPuuid, getSummonerByPuuid } = require('./lib/riot');
 const { loadPersistedApiKey, savePersistedApiKey } = require('./lib/envStore');
 const { createBucket, addMatchToBucket, finalizeBucket, isRemake, computeStreaks } = require('./lib/stats');
 const { createJob, updateProgress, completeJob, failJob, getJob } = require('./lib/jobs');
@@ -179,19 +179,45 @@ app.get('/api/rank-history', (req, res) => {
 // Findet den eigenen Teilnehmer und den Lane-Gegner (gleiche teamPosition,
 // anderes Team) in einem Match. Wird von den einzelnen und dem Batch-
 // Endpoint gleichermassen genutzt.
-function findMeAndOpponent(match, puuid) {
+//
+// Matcht primaer ueber puuid, faellt aber auf die Riot ID (gameName+tagLine)
+// zurueck, falls das fehlschlaegt - real beobachtet: puuids koennen sich bei
+// einem Account aendern (hier: 2026-09-22), aeltere bereits gecachte/ueber
+// die eigene Match-Liste gefundene Matches tragen dann noch die ALTE puuid
+// in ihren participants[], obwohl der Spieler unveraendert derselbe ist.
+// riotId ist optional (nur puuid-Vergleich, wenn nicht mitgegeben) - siehe
+// resolveRiotId() weiter unten fuer die Aufloesung.
+function findMeAndOpponent(match, puuid, riotId) {
   const participants = match.info.participants;
-  const me = participants.find(p => p.puuid === puuid);
+  const me = participants.find(p =>
+    p.puuid === puuid ||
+    (riotId && p.riotIdGameName === riotId.gameName && p.riotIdTagline === riotId.tagLine)
+  );
   if (!me) return { me: null, opponent: null };
 
   const opponent = participants.find(
-    p => p.puuid !== puuid &&
+    p => p.puuid !== me.puuid &&
          p.teamId !== me.teamId &&
          p.teamPosition === me.teamPosition &&
          me.teamPosition !== ''
   );
 
   return { me, opponent };
+}
+
+// Loest die aktuelle Riot ID (gameName/tagLine) zu einer puuid auf - fuer den
+// Riot-ID-Fallback in findMeAndOpponent() oben. Ein einzelner zusaetzlicher
+// Account-V1-Call pro Batch-Job/Request (nicht pro Match), scheitert er (z.B.
+// kein API-Key, oder die puuid selbst ist inzwischen ungueltig), wird einfach
+// ohne Fallback weitergemacht statt den ganzen Job scheitern zu lassen - der
+// reine puuid-Vergleich deckt ja weiterhin den Normalfall ab.
+async function resolveRiotId(puuid, apiKey) {
+  try {
+    const account = await getAccountByPuuid(puuid, apiKey, REGION);
+    return { gameName: account.gameName, tagLine: account.tagLine };
+  } catch (e) {
+    return null;
+  }
 }
 
 app.get('/api/summary', requireApiKey, async (req, res) => {
@@ -221,10 +247,11 @@ app.get('/api/summary', requireApiKey, async (req, res) => {
     );
 
     const bucket = createBucket();
+    const riotId = await resolveRiotId(puuid, config.apiKey);
 
     for (const matchId of matchIds) {
       const match = await getMatch(matchId, config.apiKey, REGION);
-      const { me, opponent } = findMeAndOpponent(match, puuid);
+      const { me, opponent } = findMeAndOpponent(match, puuid, riotId);
       if (!me || String(me.championId) !== String(championKey) || isRemake(me)) {
         continue;
       }
@@ -331,13 +358,14 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime }) {
     let overallWins = 0;
     let overallLosses = 0;
     const overallGames = []; // fuer Win/Loss-Streaks - {win, gameCreation}
+    const riotId = await resolveRiotId(puuid, config.apiKey);
 
     for (const matchId of matchIds) {
       const match = await getMatch(matchId, config.apiKey, REGION);
       processed += 1;
       updateProgress(jobId, processed, matchIds.length);
 
-      const { me, opponent } = findMeAndOpponent(match, puuid);
+      const { me, opponent } = findMeAndOpponent(match, puuid, riotId);
       if (!me || isRemake(me)) continue;
 
       if (me.win) overallWins += 1; else overallLosses += 1;
@@ -474,6 +502,7 @@ async function runAchievementsBatch(jobId, { puuid, champions, since, startTime,
 
     const championKeys = new Set(champions.map(c => String(c.key)));
     const acc = createAchievementAccumulator();
+    const riotId = await resolveRiotId(puuid, config.apiKey);
 
     let processed = 0;
     for (const matchId of matchIds) {
@@ -481,7 +510,7 @@ async function runAchievementsBatch(jobId, { puuid, champions, since, startTime,
       processed += 1;
       updateProgress(jobId, processed, matchIds.length);
 
-      const { me } = findMeAndOpponent(match, puuid);
+      const { me } = findMeAndOpponent(match, puuid, riotId);
       if (!me || isRemake(me)) continue;
       if (!championKeys.has(String(me.championId))) continue;
       if (role && me.teamPosition !== role) continue;

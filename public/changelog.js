@@ -13,6 +13,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.5.0',
+      notable: [],
+      bugfixes: [
+        'Fixed a rare case where some accounts\' older games weren\'t being counted toward stats/trophies'
+      ]
+    },
+    {
       version: '4.4.0',
       notable: [
         'Rebalanced Double/Triple/Quadra Kill trophy targets using real match data instead of estimates - Triple and Quadra Kill were up to 5x too high before'

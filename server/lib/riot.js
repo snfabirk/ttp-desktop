@@ -121,6 +121,18 @@ async function getAccountByRiotId(gameName, tagLine, apiKey, regionalHost) {
   return riotFetch(url, apiKey, { priority: true });
 }
 
+// Rueckwaerts-Aufloesung puuid -> aktueller Riot ID (gameName/tagLine) - noetig
+// weil puuids sich offenbar aendern KOENNEN (real beobachtet: ein Account
+// bekam am 2026-09-22 eine neue puuid, alte gecachte/abgerufene Matches
+// tragen noch die alte puuid in ihren participants[], match-v5's eigene
+// "meine Match-IDs"-Liste findet ueber die aktuelle puuid trotzdem auch die
+// alten Matches - siehe findMeAndOpponent() in server.js, das hierueber
+// einen Riot-ID-Fallback bekommt, falls der reine puuid-Vergleich fehlschlaegt).
+async function getAccountByPuuid(puuid, apiKey, regionalHost) {
+  const url = `https://${regionalHost}.api.riotgames.com/riot/account/v1/accounts/by-puuid/${puuid}`;
+  return riotFetch(url, apiKey, { priority: true });
+}
+
 async function getMatchIdsPage(puuid, { queueId, startTime, start, count }, apiKey, regionalHost) {
   const params = new URLSearchParams({
     queue: String(queueId),
@@ -198,6 +210,7 @@ async function getMatchTimeline(matchId, apiKey, regionalHost) {
 
 module.exports = {
   getAccountByRiotId,
+  getAccountByPuuid,
   getAllMatchIds,
   getMatch,
   getMatchTimeline,
