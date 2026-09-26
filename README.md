@@ -15,7 +15,8 @@ This is a personal project built for myself and a small group of friends. It is 
 - **Matchup breakdown**: win/loss record against specific enemy champions, to spot good and bad matchups at a glance.
 - **Recent match history & streaks**: last games played and current win/loss streak.
 - **Trophies (achievements)**: 21 trophies per challenge (16 universal + 5 specific to your chosen role) plus a separate Platinum trophy for unlocking all of them, each scaled to your Challenge Level and Expected Games. Real-time progress bars per trophy, calculated from your actual match history.
-- **Settings**: adjustable window size (as a percentage of screen size), a choice of 6 color themes (Classic, Graphite, Light, Hextech, Arcane, Noxus), "Start with Windows", and manual/automatic update checks.
+- **Challenge History**: every challenge you've run is kept, with your current one pinned at the top and past ones in a scrollable list below. Each entry shows the champion pool, role, Challenge Level, trophy count, your LP range (start rank → goal) with a checkmark or cross for whether you reached it, and can be clicked to view that challenge's full trophy snapshot as a read-only past view. Challenges abandoned with zero trophies unlocked aren't kept.
+- **Settings**: adjustable window size (as a percentage of screen size), a choice of 8 color themes (Classic, Graphite, Light, Hextech, Arcane, Noxus, Freljord, Ionia), "Start with Windows", and manual/automatic update checks.
 - **Runs in the background**: minimizes to the system tray instead of quitting, keeps tracking LP and checking for updates even when no window is open.
 - **Auto-updates**: the app checks for and installs new versions automatically via GitHub Releases, with a small non-intrusive indicator instead of an interrupting popup.
 
