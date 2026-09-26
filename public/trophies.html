@@ -1135,6 +1135,15 @@
             lpGoalDivision,
             lpGoalLp
           })
+        }).then(() => {
+          // Dieser Sync kann den "ongoing"-Eintrag fuer diese Challenge
+          // gerade erst angelegt/aktualisiert haben (z.B. allererster Besuch
+          // dieser Seite seit App-Start - initChallengeHistory() lief oben
+          // schon parallel und schneller durch und hat dann noch NICHTS
+          // gefunden, weil dieser Sync-Call - der real erst Matches scannen
+          // muss - noch nicht fertig war). Einfach nochmal neu laden statt
+          // eine Wartezeit zu raten, robust gegen jede Reihenfolge/Dauer.
+          initChallengeHistory();
         }).catch(() => {});
       } catch (e) {
         statusEl.textContent = `Could not load trophy progress: ${e.message}`;
@@ -1184,9 +1193,14 @@
     // nur "bereits erreicht" (✓) wird dort angezeigt, sonst gar kein Icon.
     function formatChallengeExtra(entry, isOngoing) {
       const difficultyLabel = CHALLENGE_LEVEL_LABELS_SHORT[entry.challengeLevel] || '';
+      // Nur eine Zeile zeigen, wenn BEIDE Enden bekannt sind - ein Ziel
+      // allein ("Goal: Diamond IV") ohne Startpunkt ist keine "Range" und
+      // damit nutzlos (explizites Nutzerfeedback). Faehlt der Startrang
+      // (aeltere/selbst-geheilte Eintraege ohne startRankTier), bleibt die
+      // Zeile komplett weg statt eines halben, nichtssagenden Werts.
       const startLabel = formatTierDivisionH(entry.startRankTier, entry.startRankDivision, entry.startRankLp);
       const goalLabel = formatTierDivisionH(entry.lpGoalTier, entry.lpGoalDivision, entry.lpGoalLp);
-      const rangeText = (startLabel && goalLabel) ? `${startLabel} → ${goalLabel}` : (goalLabel ? `Goal: ${goalLabel}` : '');
+      const rangeText = (startLabel && goalLabel) ? `${startLabel} → ${goalLabel}` : '';
 
       const goalTrophy = Array.isArray(entry.trophies) ? entry.trophies.find(t => t.id === 'goal-reached') : null;
       let iconHtml = '';

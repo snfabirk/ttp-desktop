@@ -1,5 +1,32 @@
 # Internal Changelog
 
+## 4.17.0 — 2026-09-26
+
+- **Actually** fixed "Current Challenge" not showing on the first
+  trophies.html visit after an app start/update (the v4.15.0 retry fix
+  helped but didn't fully solve it). Real root cause: a genuine race, not
+  just transient network slowness - `initChallengeHistory()` (fast: 2
+  small API calls) can finish and find NO "ongoing" entry simply because
+  `loadAchievementProgress()`'s own sync-to-history call (which creates/
+  updates that exact entry) is a slower, real match-scan running
+  concurrently and hasn't completed yet. No amount of short retrying
+  reliably outraces a scan that can take many seconds. Fixed properly by
+  making it event-driven: the sync call's `fetch(...).then(() => { ... })`
+  now calls `initChallengeHistory()` again once it actually completes,
+  guaranteeing a fresh look right after the entry is known to exist/be
+  current - regardless of how long the scan took. Kept the v4.15.0 retry
+  loop too (still useful for the case where no challenge is running at all,
+  or genuine transient errors). Verified via a CDP test simulating exactly
+  this race (first list-fetch returns empty, second - after the "sync"
+  resolves - returns the entry): confirmed the card is absent after the
+  first pass and present after the sync-triggered refresh.
+- Challenge History range line ("Start → Goal") no longer shows a
+  half-empty `Goal: X` when the start rank isn't known (older/self-healed
+  entries) - per explicit user feedback ("goal bringt nichts wenn start
+  nicht da auch steht, sonst kennt man die range ja garnicht"), the whole
+  line is now omitted unless BOTH ends are known.
+
+
 ## 4.16.0 — 2026-09-26
 
 Challenge History cards (current + past, trophies.html) now show challenge
