@@ -59,7 +59,14 @@ function makeEntry({ since, champions, role, challengeLevel, lpGoalTier, lpGoalD
     lpGoalLp: lpGoalLp || 0,
     unlockedCount: 0,
     totalCount: 21,
-    platinumUnlocked: false
+    platinumUnlocked: false,
+    // Voller Trophy-Snapshot (id/name/current/target/unlocked/percent je
+    // Trophy) vom letzten Sync/Close - erlaubt der History-Liste, eine
+    // vergangene Challenge im Detail zu zeigen ("woran ist es gescheitert"),
+    // nicht nur die Summe. Bewusst NICHT live neu berechenbar, sobald die
+    // Challenge geschlossen ist (achievement-state wird beim Reset aktiv
+    // geloescht) - dieser Snapshot ist der einzige verbleibende Beleg.
+    trophies: []
   };
 }
 
@@ -85,7 +92,7 @@ function startEntry(puuid, opts) {
 // sie kennt, macht das den nachtraeglich angelegten Eintrag vollstaendiger,
 // aber selbst ganz ohne sie ist ein Eintrag mit Datum/Dauer/Trophy-Zahlen
 // besser als gar keiner.
-function updateEntry(puuid, since, { unlockedCount, totalCount, platinumUnlocked, ended, ...metaFields }) {
+function updateEntry(puuid, since, { unlockedCount, totalCount, platinumUnlocked, trophies, ended, ...metaFields }) {
   const entries = readEntries(puuid);
   let idx = entries.findIndex(e => e.since === since && e.until === null);
   if (idx === -1) {
@@ -95,6 +102,7 @@ function updateEntry(puuid, since, { unlockedCount, totalCount, platinumUnlocked
   if (typeof unlockedCount === 'number') entries[idx].unlockedCount = unlockedCount;
   if (typeof totalCount === 'number') entries[idx].totalCount = totalCount;
   if (typeof platinumUnlocked === 'boolean') entries[idx].platinumUnlocked = platinumUnlocked;
+  if (Array.isArray(trophies) && trophies.length > 0) entries[idx].trophies = trophies;
   if (ended) entries[idx].until = new Date().toISOString();
   writeEntries(puuid, entries);
   return entries[idx];

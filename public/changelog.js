@@ -13,6 +13,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.9.0',
+      notable: [
+        'New: click an old Challenge History entry to see exactly which trophies you had (and hadn\'t) unlocked when it ended - clearly marked as a read-only past view, with a button to jump back to your current challenge'
+      ],
+      bugfixes: []
+    },
+    {
       version: '4.8.0',
       notable: [
         'New: a Save button next to your summoner name resolves your current rank immediately, instead of only after starting a challenge',

@@ -622,7 +622,7 @@ app.post('/api/challenge-history/start', (req, res) => {
 
 app.post('/api/challenge-history/update', (req, res) => {
   const {
-    puuid, since, unlockedCount, totalCount, platinumUnlocked, ended,
+    puuid, since, unlockedCount, totalCount, platinumUnlocked, trophies, ended,
     // Optional - nur genutzt, falls hier nachtraeglich ein Eintrag angelegt
     // werden muss (siehe updateEntry() in challengeHistory.js), weil "since"
     // noch keinen offenen Eintrag hat (z.B. eine Challenge, die schon lief,
@@ -633,7 +633,7 @@ app.post('/api/challenge-history/update', (req, res) => {
     return res.status(400).json({ error: 'puuid and since are required.' });
   }
   const entry = updateHistoryEntry(puuid, since, {
-    unlockedCount, totalCount, platinumUnlocked, ended: Boolean(ended),
+    unlockedCount, totalCount, platinumUnlocked, trophies, ended: Boolean(ended),
     champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp
   });
   res.json({ entry });

@@ -108,6 +108,65 @@
   .rules-status.outdated {
     color: var(--red);
   }
+
+  /* ----- Historische Ansicht (Klick auf einen History-Eintrag laedt dessen
+     Trophy-Snapshot in dasselbe Grid statt eine neue Detail-UI zu bauen) -
+     bewusst deutlich abgesetzte Farbe (Amber, in keinem Theme sonst benutzt),
+     damit klar erkennbar ist "das ist NICHT die aktuelle Challenge". ----- */
+  :root { --history-view-accent: #e0a458; }
+  .history-view-banner {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: color-mix(in srgb, var(--history-view-accent) 16%, var(--panel-bg));
+    border: 1px solid var(--history-view-accent);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-family: Georgia, serif;
+    font-size: 0.82rem;
+    color: var(--text);
+  }
+  .history-view-banner.visible {
+    display: flex;
+  }
+  .history-view-banner-icon {
+    flex-shrink: 0;
+    font-size: 1rem;
+  }
+  .history-view-banner-text {
+    flex: 1;
+    min-width: 0;
+  }
+  .history-view-back-btn {
+    flex-shrink: 0;
+    background: none;
+    border: 1px solid var(--history-view-accent);
+    color: var(--history-view-accent);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .history-view-back-btn:hover {
+    background: var(--history-view-accent);
+    color: var(--input-bg);
+  }
+  /* Rahmen um die gesamte linke Spalte, solange eine vergangene Challenge
+     angezeigt wird - zusaetzlich zum Banner, damit es auch beim Scrollen
+     (Banner nicht mehr im Blick) noch erkennbar bleibt. */
+  .trophies-main.historical-view {
+    outline: 2px solid var(--history-view-accent);
+    outline-offset: 10px;
+    border-radius: 10px;
+  }
+  .history-entry.viewable {
+    cursor: pointer;
+  }
   .role-note {
     text-align: center;
     color: var(--text-dim);
@@ -484,7 +543,13 @@
   </header>
 
   <div class="content">
-    <div class="trophies-main">
+    <div class="trophies-main" id="trophiesMain">
+      <div class="history-view-banner" id="historyViewBanner">
+        <span class="history-view-banner-icon">🕘</span>
+        <span class="history-view-banner-text" id="historyViewBannerText"></span>
+        <button type="button" class="history-view-back-btn" id="historyViewBackBtn">← Back to current challenge</button>
+      </div>
+
       <div class="trophies-progress-summary">
         <div class="big-percent" id="trophiesOverallPercent">0%</div>
         <div class="count-label" id="trophiesOverallCount">0 / 21 unlocked</div>
@@ -932,7 +997,8 @@
             since,
             unlockedCount: result.unlockedCount,
             totalCount: result.totalCount,
-            platinumUnlocked: Boolean(result.platinumUnlocked)
+            platinumUnlocked: Boolean(result.platinumUnlocked),
+            trophies: result.trophies
           }));
         } catch (e) {}
 
@@ -945,6 +1011,7 @@
             unlockedCount: result.unlockedCount,
             totalCount: result.totalCount,
             platinumUnlocked: Boolean(result.platinumUnlocked),
+            trophies: result.trophies,
             ended: false,
             // Nur relevant, falls der Server hier nachtraeglich einen
             // Eintrag anlegen muss (Challenge lief schon vor dieser
@@ -998,8 +1065,9 @@
       const roleLabel = ROLE_LABELS_SHORT[entry.role] || '';
       const platinumClass = entry.platinumUnlocked ? ' platinum' : '';
       const ongoingClass = isOngoing ? ' ongoing' : '';
+      const viewable = Array.isArray(entry.trophies) && entry.trophies.length > 0;
       return `
-        <div class="history-entry${platinumClass}${ongoingClass}" data-id="${entry.id}">
+        <div class="history-entry${platinumClass}${ongoingClass}${viewable ? ' viewable' : ''}" data-id="${entry.id}" title="${viewable ? 'Click to view this challenge\'s trophies' : ''}">
           <button type="button" class="history-delete-btn" data-id="${entry.id}" title="Delete this entry" aria-label="Delete this entry">×</button>
           ${entry.platinumUnlocked ? '<span class="history-platinum-badge">★ Platinum</span>' : ''}
           <div class="history-dates">${dateRange}${isOngoing ? ' <span class="history-live-dot"></span>' : ''}</div>
@@ -1012,7 +1080,13 @@
       `;
     }
 
+    // Merkt sich die zuletzt geladenen History-Eintraege komplett (inkl.
+    // Trophy-Snapshot) - der Klick-Handler braucht den vollen Eintrag, nicht
+    // nur die id, die im DOM steht.
+    let currentHistoryEntries = [];
+
     function renderChallengeHistory(entries, puuid) {
+      currentHistoryEntries = entries;
       const listEl = document.getElementById('historyList');
       const emptyEl = document.getElementById('historyEmpty');
       if (!entries.length) {
@@ -1039,7 +1113,46 @@
           loadChallengeHistory(puuid);
         });
       });
+      listEl.querySelectorAll('.history-entry.viewable').forEach(el => {
+        el.addEventListener('click', () => {
+          const entry = currentHistoryEntries.find(e => e.id === el.dataset.id);
+          if (entry) viewHistoricalEntry(entry);
+        });
+      });
     }
+
+    // Laedt den Trophy-Snapshot einer VERGANGENEN Challenge in dasselbe Grid,
+    // das sonst die laufende Challenge zeigt - keine neue Detail-UI noetig,
+    // die Komponente (Icons/Fortschrittsbalken/Zielzahlen) existiert schon.
+    // Wird per Banner + Rahmen um die ganze linke Spalte klar als "nicht die
+    // aktuelle Challenge" markiert, siehe .historical-view CSS oben.
+    function viewHistoricalEntry(entry) {
+      applyAchievementProgress(entry.trophies);
+
+      const overallPercent = entry.totalCount > 0 ? Math.round((entry.unlockedCount / entry.totalCount) * 100) : 0;
+      document.getElementById('trophiesOverallPercent').textContent = `${overallPercent}%`;
+      document.getElementById('trophiesOverallCount').textContent = `${entry.unlockedCount} / ${entry.totalCount} unlocked`;
+      document.querySelector('.platinum-trophy').classList.toggle('unlocked', Boolean(entry.platinumUnlocked));
+
+      const dateRange = entry.until
+        ? `${formatShortDate(entry.since)} – ${formatShortDate(entry.until)}`
+        : `${formatShortDate(entry.since)} – ongoing`;
+      document.getElementById('historyViewBannerText').textContent =
+        `Viewing challenge from ${dateRange} - this is a read-only snapshot, not the current challenge.`;
+      document.getElementById('historyViewBanner').classList.add('visible');
+      document.getElementById('trophiesMain').classList.add('historical-view');
+
+      // Live-spezifische Statustexte ergeben fuer einen historischen Snapshot
+      // keinen Sinn (beziehen sich auf die aktuell laufende Challenge/Regeln).
+      document.getElementById('rulesStatus').classList.remove('visible');
+      document.getElementById('achievementsStatus').textContent = '';
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.getElementById('historyViewBackBtn').addEventListener('click', () => {
+      location.reload();
+    });
 
     async function loadChallengeHistory(puuid) {
       try {
