@@ -16,6 +16,27 @@
     flex-direction: column;
     align-items: center;
   }
+  /* Header UND .content teilen sich exakt dasselbe Grid (gleiche Spalten,
+     gleicher Gap, gleiches justify-content) - Titel/Untertitel/"Trophies"
+     leben alle in Spalte 1, Spalte 2 bleibt leer aber reserviert. So ist
+     der Header garantiert pixelgenau ueber trophies-main zentriert statt
+     ueber die volle (durch die History-Sidebar breitere) Seite - vorher
+     wirkte das mit der neuen Sidebar sichtbar schief. */
+  .site-header {
+    width: 100%;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 0 30px;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 980px) 300px;
+    gap: 24px;
+    justify-content: center;
+  }
+  .site-header > * {
+    grid-column: 1;
+    text-align: center;
+  }
   .content {
     width: 100%;
     max-width: 1320px;
@@ -32,6 +53,9 @@
     min-width: 0;
   }
   @media (max-width: 1360px) {
+    .site-header {
+      grid-template-columns: minmax(0, 980px);
+    }
     .content {
       grid-template-columns: minmax(0, 980px);
       justify-items: center;
@@ -42,8 +66,9 @@
     }
   }
   .panel-heading.centered {
+    color: var(--gold);
     text-align: center;
-    margin: 0 0 14px;
+    margin: 14px 0 0;
   }
   .trophies-progress-summary {
     background: var(--panel-bg);
@@ -455,12 +480,11 @@
   <header class="site-header">
     <h1>League of Legends</h1>
     <p class="subtitle">Three-Trick-Pony</p>
+    <h2 class="panel-heading centered">Trophies</h2>
   </header>
 
   <div class="content">
     <div class="trophies-main">
-      <h2 class="panel-heading centered">Trophies</h2>
-
       <div class="trophies-progress-summary">
         <div class="big-percent" id="trophiesOverallPercent">0%</div>
         <div class="count-label" id="trophiesOverallCount">0 / 21 unlocked</div>
