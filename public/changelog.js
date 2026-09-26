@@ -13,6 +13,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.4.0',
+      notable: [
+        'Rebalanced Double/Triple/Quadra Kill trophy targets using real match data instead of estimates - Triple and Quadra Kill were up to 5x too high before'
+      ],
+      bugfixes: []
+    },
+    {
       version: '4.3.0',
       notable: [
         'New: Challenge History list on the Trophies page - every challenge you\'ve run, with start/end dates, duration, and trophy count',

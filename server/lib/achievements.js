@@ -208,14 +208,20 @@ function applyAverageTrophyFinalization(trophies, { goalReached, finalizedState 
 // unter welcher Version sie finalisiert wurde, damit die Trophies-Seite
 // anzeigen kann, ob der Stand noch zu den aktuell geltenden Regeln passt -
 // siehe achievementState.js/server.js "rulesUpToDate".
-const RULES_VERSION = 1;
+const RULES_VERSION = 2;
 
 // ----- Rate-Tabellen (Easy/Normal/Hard/VeryHard/Majestic), 1:1 aus der
 // finalen Design-Runde (siehe achievements-trophies-design.md Memory) -----
 const RATES = {
-  doubleKill: [0.5, 0.9, 1.3, 1.7, 2.1],
-  tripleKill: [0.25, 0.45, 0.65, 0.85, 1.05],
-  quadraKill: [0.05, 0.09, 0.13, 0.17, 0.21],
+  // Neu kalibriert (2026-09-26) anhand echter Ø-Werte aus 733 realen Ranked-
+  // Solo-Spielen des Nutzers (0.962/0.145/0.018 Double/Triple/Quadra pro
+  // Spiel) - Normal = echter Schnitt minus 10%/60%/70% (explizite Nutzer-
+  // vorgabe: Double war schon fast passend kalibriert, Triple/Quadra waren
+  // 3x/5x zu hoch). Die anderen 4 Tiers behalten das gleiche relative
+  // Verhaeltnis zu Normal wie zuvor (5/9, 1, 13/9, 17/9, 21/9).
+  doubleKill: [0.481, 0.866, 1.251, 1.636, 2.021],
+  tripleKill: [0.032, 0.058, 0.084, 0.110, 0.135],
+  quadraKill: [0.003, 0.0054, 0.0078, 0.0102, 0.0126],
   pentaKill: [1, 1, 1, 2, 3],
   firstBlood: [0.1, 0.2, 0.4, 0.6, 0.8],
   flawless: [2, 5, 7, 10, 14],
