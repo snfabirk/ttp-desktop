@@ -125,7 +125,19 @@ function updateEntry(puuid, since, { unlockedCount, totalCount, platinumUnlocked
     entries[idx].startRankDivision = startRankDivision || '';
     entries[idx].startRankLp = startRankLp || 0;
   }
-  if (ended) entries[idx].until = new Date().toISOString();
+  if (ended) {
+    entries[idx].until = new Date().toISOString();
+    // Eine Challenge, die mit 0 Trophaeen endet, wurde praktisch sofort
+    // wieder verworfen (z.B. LP-Ziel nochmal angepasst und direkt neu
+    // gestartet) - kein echter Versuch, den es sich lohnt in der History
+    // aufzuheben. Explizite Nutzeranfrage: solche Eintraege gar nicht erst
+    // speichern, statt die Liste mit "0/21"-Karteileichen vollzumuellen.
+    if (entries[idx].unlockedCount === 0) {
+      entries.splice(idx, 1);
+      writeEntries(puuid, entries);
+      return null;
+    }
+  }
   writeEntries(puuid, entries);
   return entries[idx];
 }

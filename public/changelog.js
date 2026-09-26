@@ -21,6 +21,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.20.0',
+      notable: [
+        'Challenges ended with 0 trophies unlocked (e.g. restarted right away after tweaking a setting) no longer get saved to Challenge History'
+      ],
+      bugfixes: []
+    },
+    {
       version: '4.19.0',
       notable: [
         'Challenge History list now shows 5 challenges at a time with a subtle down-arrow hint when there\'s more to scroll to'

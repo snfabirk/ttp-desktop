@@ -1,5 +1,31 @@
 # Internal Changelog
 
+## 4.20.0 — 2026-09-26
+
+- Challenges closed with `unlockedCount === 0` no longer get saved to
+  Challenge History - explicit user request for the exact scenario of
+  starting a challenge, immediately deciding to tweak a setting (LP goal,
+  difficulty, etc.), and resetting/restarting right away. `updateEntry()`
+  (`server/lib/challengeHistory.js`) now removes the entry from the array
+  entirely (instead of just closing it with `until` set) when `ended:
+  true` AND the final `unlockedCount` is 0. Scoped to only the `ended`
+  path - an ongoing challenge legitimately starts at 0/21 and must not be
+  deleted just for that.
+- Verified via curl: an entry closed with 0 trophies is dropped from the
+  list; one closed with ≥1 trophy is kept.
+- **Only applies going forward** - doesn't retroactively purge existing
+  0-trophy entries already in a user's history file. Found 6 real
+  examples of exactly this in the user's own installed-app data while
+  verifying the fix (rapid start/reset cycles from earlier the same
+  session) - offered to clean them up directly but the auto-mode
+  permission classifier blocked editing the real installed app's live
+  data file as "irreversible local destruction," which is the right call
+  for a change like that outside of an explicit go-ahead. User can delete
+  old junk entries manually via the existing "×" button on each history
+  card; a retroactive cleanup could be added later if asked (e.g. a
+  one-time filter pass in `listEntries()` or a migration on read).
+
+
 ## 4.19.0 — 2026-09-26
 
 - Fixed a regression from v4.17.0: the goal-reached ✓/✗ icon lived INSIDE
