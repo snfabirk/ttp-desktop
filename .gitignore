@@ -5,3 +5,6 @@ server/.env
 server/cache/
 server/data/
 server/riot-api-key.txt
+
+# Local Claude Code settings (holds GH_TOKEN for release publishing) - never commit
+.claude/settings.local.json
