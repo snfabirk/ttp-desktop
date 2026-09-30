@@ -1,5 +1,12 @@
 # Internal Changelog
 
+## 4.28.4 — 2026-09-30
+
+- Overview "Roles & Picks" card: with no games (and before data loads)
+  the mini chart shows 4 grey stubs (`TTPRoleChart.emptyMini()`, 10px,
+  --text-faint at 75%) instead of the round empty-dot placeholder, so the
+  icon always has the same shape (user request).
+
 ## 4.28.3 — 2026-09-30
 
 - Bars: only the game count above each bar; win rate is a "NN% WR" badge

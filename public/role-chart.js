@@ -202,10 +202,20 @@
 
   // Mini-Version fuer die Overview-Karte: 4 gestapelte Balken, 34x34px,
   // gleiche Skalierung (hoechster Balken = volle Hoehe).
+  // Ohne Spiele (oder bevor Daten da sind): 4 leere graue Stummel statt
+  // eines anderen Platzhalters - das Symbol sieht so immer gleich aus
+  // (Nutzerwunsch 2026-09-30).
+  function emptyMini() {
+    const H = 34, W = 6, GAP = 3, STUB = 10;
+    const rects = [0, 1, 2, 3].map(i =>
+      `<rect x="${i * (W + GAP)}" y="${H - STUB}" width="${W}" height="${STUB}" rx="1" fill="var(--text-faint)" opacity="0.75"/>`).join('');
+    return `<svg viewBox="0 0 ${4 * W + 3 * GAP} ${H}" class="role-breakdown-svg" aria-hidden="true">${rects}</svg>`;
+  }
+
   function renderMini(roleStats) {
     const cats = totals(roleStats);
     const max = Math.max(...cats.map(c => c.games));
-    if (!max) return '';
+    if (!max) return emptyMini();
     const H = 34, W = 6, GAP = 3;
     const rects = cats.map((c, i) => {
       const x = i * (W + GAP);
@@ -228,5 +238,5 @@
     return { text: `${wr}% WR`, tone: wr > 50 ? 'pos' : wr < 50 ? 'neg' : '' };
   }
 
-  window.TTPRoleChart = { renderFull, renderMini, summary, niceAxis };
+  window.TTPRoleChart = { renderFull, renderMini, emptyMini, summary, niceAxis };
 })();

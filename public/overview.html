@@ -1053,7 +1053,7 @@
     </a>
 
     <a href="role.html" class="trophies-card role-breakdown-card" id="roleBreakdownCard">
-      <span class="role-breakdown-chart-wrap" id="roleBreakdownChartWrap"><span class="role-breakdown-empty-dot"></span></span>
+      <span class="role-breakdown-chart-wrap" id="roleBreakdownChartWrap"><svg viewBox="0 0 33 34" class="role-breakdown-svg" aria-hidden="true"><rect x="0" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/><rect x="9" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/><rect x="18" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/><rect x="27" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/></svg></span>
       <span class="trophies-label">Roles &amp; Picks</span>
       <span class="trophies-progress" id="roleBreakdownSummary">–</span>
       <span class="role-breakdown-more" aria-hidden="true">More →</span>
@@ -1616,10 +1616,9 @@
       const summaryEl = document.getElementById('roleBreakdownSummary');
       if (!wrap || !summaryEl) return;
 
-      const svg = roleStats ? TTPRoleChart.renderMini(roleStats) : '';
-      // Ohne Daten/Spiele: neutraler Platzhalter statt einer Luecke (siehe
-      // Trophies-Karte daneben, die immer ein Icon zeigt).
-      wrap.innerHTML = svg || '<span class="role-breakdown-empty-dot"></span>';
+      // Ohne Daten/Spiele: 4 graue Stummel (TTPRoleChart.emptyMini) statt
+      // einer Luecke - gleiches Symbol wie mit Daten, nur ohne Farbe.
+      wrap.innerHTML = roleStats ? TTPRoleChart.renderMini(roleStats) : TTPRoleChart.emptyMini();
       // Nur die Winrate "nach Plan", positiv/negativ eingefaerbt.
       const sum = roleStats ? TTPRoleChart.summary(roleStats) : { text: '–', tone: '' };
       summaryEl.textContent = (roleStats && simulated ? 'TEST DATA · ' : '') + sum.text;
