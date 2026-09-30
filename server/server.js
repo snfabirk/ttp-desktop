@@ -16,7 +16,6 @@ const {
   computeAllTrophyProgress
 } = require('./lib/achievements');
 const { loadFinalizedState, saveFinalizedState, clearFinalizedState } = require('./lib/achievementState');
-const { DATA_DIR } = require('./lib/dataPaths');
 const { startEntry: startHistoryEntry, updateEntry: updateHistoryEntry, listEntries: listHistoryEntries, deleteEntry: deleteHistoryEntry } = require('./lib/challengeHistory');
 
 const app = express();
@@ -455,31 +454,10 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
 
     const streaks = computeStreaks(overallGames);
 
-    // TEST-HOOK (Nutzerwunsch 2026-09-30, zum Ausprobieren der Rollen-
-    // Balken ohne echte Spiele): liegt ttp-data/debug-role-stats.json vor,
-    // ersetzt deren Inhalt die echten roleStats. Die Datei wird nur von Hand
-    // auf dem Rechner des Nutzers angelegt/geloescht - bei allen anderen
-    // existiert sie nicht, dann aendert sich nichts. Das Ergebnis traegt
-    // roleStatsSimulated:true, damit die Oberflaeche es klar als Testdaten
-    // kennzeichnet.
-    let roleStatsSimulated = false;
-    try {
-      const simPath = path.join(DATA_DIR, 'debug-role-stats.json');
-      if (fs.existsSync(simPath)) {
-        const sim = JSON.parse(fs.readFileSync(simPath, 'utf-8'));
-        for (const id of Object.keys(roleStats)) {
-          if (sim[id]) roleStats[id] = { wins: sim[id].wins || 0, losses: sim[id].losses || 0, champs: sim[id].champs || [] };
-        }
-        roleStatsSimulated = true;
-      }
-    } catch (e) {
-      // Kaputte Testdatei -> einfach echte Daten zeigen.
-    }
-
     // Champs pro Kategorie als Liste, meistgespielt zuerst (bei Gleichstand
     // mehr Wins zuerst).
     for (const cat of Object.values(roleStats)) {
-      cat.champs = (Array.isArray(cat.champs) ? cat.champs : Object.values(cat.champs)).sort((a, b) =>
+      cat.champs = Object.values(cat.champs).sort((a, b) =>
         (b.wins + b.losses) - (a.wins + a.losses) || b.wins - a.wins);
     }
 
@@ -491,7 +469,6 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
       streaks,
       roleBreakdown,
       roleStats,
-      roleStatsSimulated,
       overall: {
         wins: overallWins,
         losses: overallLosses,

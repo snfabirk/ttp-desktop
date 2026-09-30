@@ -1,5 +1,13 @@
 # Internal Changelog
 
+## 4.28.5 — 2026-09-30
+
+- Removed the temporary Roles & Picks test hook from 4.28.1 (agreed with
+  the user): no more `debug-role-stats.json` override in `runSummaryBatch`,
+  no "Simulated test data" badge on role.html, no "TEST DATA" prefix on the
+  Overview card. server.js is byte-identical to 4.28.0 again. The test
+  file itself was deleted from the user's `ttp-data`.
+
 ## 4.28.4 — 2026-09-30
 
 - Overview "Roles & Picks" card: with no games (and before data loads)

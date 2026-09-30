@@ -1611,7 +1611,7 @@
     // Win/Loss-Balken (Main+Pony, Main+andere, Second, Off) plus Kurzfassung
     // "X% on plan · Y% WR there" als Text, damit die Bedeutung nie nur an der
     // Grafik haengt.
-    function renderRoleBreakdownChart(roleStats, simulated) {
+    function renderRoleBreakdownChart(roleStats) {
       const wrap = document.getElementById('roleBreakdownChartWrap');
       const summaryEl = document.getElementById('roleBreakdownSummary');
       if (!wrap || !summaryEl) return;
@@ -1621,7 +1621,7 @@
       wrap.innerHTML = roleStats ? TTPRoleChart.renderMini(roleStats) : TTPRoleChart.emptyMini();
       // Nur die Winrate "nach Plan", positiv/negativ eingefaerbt.
       const sum = roleStats ? TTPRoleChart.summary(roleStats) : { text: '–', tone: '' };
-      summaryEl.textContent = (roleStats && simulated ? 'TEST DATA · ' : '') + sum.text;
+      summaryEl.textContent = sum.text;
       summaryEl.classList.toggle('role-wr-pos', sum.tone === 'pos');
       summaryEl.classList.toggle('role-wr-neg', sum.tone === 'neg');
     }
@@ -2211,7 +2211,7 @@
         renderAccountOverview(data);
         loadLpGraph(currentPuuid, since, data.rank);
         loadTrophiesProgress(currentPuuid, since, champsWithKeys.map(x => ({ key: x.key, role: x.champ.role || '' })));
-        renderRoleBreakdownChart(data.roleStats, data.roleStatsSimulated);
+        renderRoleBreakdownChart(data.roleStats);
         hasLoadedOnce = true;
         updateLoadButtonLabel();
       } catch (e) {
