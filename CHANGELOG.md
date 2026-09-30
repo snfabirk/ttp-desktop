@@ -1,5 +1,16 @@
 # Internal Changelog
 
+## 4.28.1 — 2026-09-30
+
+- TEMPORARY test hook (user wanted to see the Role Balance chart with ~30
+  games before having real ones): if `ttp-data/debug-role-stats.json`
+  exists, `runSummaryBatch` replaces `roleStats` with its content and sets
+  `roleStatsSimulated: true`; role.html shows a red "Simulated test data"
+  badge, the Overview card prefixes "TEST DATA ·". The file only exists on
+  the user's machine (written by hand: 30 games, Mid/Fizz-Akali-Anivia,
+  Support second role) - inert for everyone else. To remove together with
+  the user later: delete the file, then drop the hook in a later version.
+
 ## 4.28.0 — 2026-09-30
 
 - Role Balance, designed together with the user: vertical stacked bar

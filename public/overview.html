@@ -1609,7 +1609,7 @@
     // Win/Loss-Balken (Main+Pony, Main+andere, Second, Off) plus Kurzfassung
     // "X% on plan · Y% WR there" als Text, damit die Bedeutung nie nur an der
     // Grafik haengt.
-    function renderRoleBreakdownChart(roleStats) {
+    function renderRoleBreakdownChart(roleStats, simulated) {
       const wrap = document.getElementById('roleBreakdownChartWrap');
       const summaryEl = document.getElementById('roleBreakdownSummary');
       if (!wrap || !summaryEl) return;
@@ -1618,7 +1618,9 @@
       // Ohne Daten/Spiele: neutraler Platzhalter statt einer Luecke (siehe
       // Trophies-Karte daneben, die immer ein Icon zeigt).
       wrap.innerHTML = svg || '<span class="role-breakdown-empty-dot"></span>';
-      summaryEl.textContent = roleStats ? TTPRoleChart.summaryText(roleStats) : '–';
+      summaryEl.textContent = roleStats
+        ? (simulated ? 'TEST DATA · ' : '') + TTPRoleChart.summaryText(roleStats)
+        : '–';
     }
 
     // Die Rolle gilt fuer den GESAMTEN Pool (OTP-Challenge, alle 3 Champions
@@ -2206,7 +2208,7 @@
         renderAccountOverview(data);
         loadLpGraph(currentPuuid, since, data.rank);
         loadTrophiesProgress(currentPuuid, since, champsWithKeys.map(x => ({ key: x.key, role: x.champ.role || '' })));
-        renderRoleBreakdownChart(data.roleStats);
+        renderRoleBreakdownChart(data.roleStats, data.roleStatsSimulated);
         hasLoadedOnce = true;
         updateLoadButtonLabel();
       } catch (e) {

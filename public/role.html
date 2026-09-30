@@ -59,6 +59,18 @@
       min-height: 1.4em;
     }
 
+    .role-sim-badge {
+      display: inline-block;
+      color: var(--input-bg);
+      background: var(--red);
+      border-radius: 4px;
+      padding: 1px 7px;
+      margin-right: 6px;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.5px;
+    }
+
     /* ----- Balkendiagramm (siehe role-chart.js) ----- */
     .rc-empty {
       color: var(--text-dim);
@@ -317,7 +329,12 @@
         }
 
         const total = result.overall ? result.overall.totalGames : 0;
-        statusEl.textContent = `${total} ranked game(s) since ${new Date(since).toLocaleDateString('en-GB')}`;
+        if (result.roleStatsSimulated) {
+          const simGames = Object.values(result.roleStats).reduce((n, c) => n + c.wins + c.losses, 0);
+          statusEl.innerHTML = `<span class="role-sim-badge">Simulated test data</span> ${simGames} made-up games - not your real matches`;
+        } else {
+          statusEl.textContent = `${total} ranked game(s) since ${new Date(since).toLocaleDateString('en-GB')}`;
+        }
         TTPRoleChart.renderFull(chartEl, result.roleStats, { mainRole, secondRole, iconUrl: championIconUrl });
       } catch (e) {
         statusEl.textContent = `Could not load role stats: ${e.message}`;
