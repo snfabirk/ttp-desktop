@@ -1,5 +1,11 @@
 # Internal Changelog
 
+## 4.28.7 — 2026-09-30
+
+- index.html: the challenge box heading reads "Your Challenge" instead of
+  "Start Challenge" (it also holds timer, Reset and Go to Overview once a
+  challenge runs; before that it no longer duplicates the button's text).
+
 ## 4.28.6 — 2026-09-30
 
 - index.html: "Go to Overview →" moved into the Start Challenge box, in one
