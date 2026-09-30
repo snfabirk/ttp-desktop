@@ -47,8 +47,7 @@
       grid-template-areas:
         "summoner  checklist"
         "champ     list"
-        "start     start"
-        "gobtn     gobtn";
+        "start     start";
       /* 16px statt frueher 22px - die "Assign Roles"-Box (jetzt Main+Second
          Role) und "Select Champion Pool" (jetzt inkl. Label+Suche) brauchen
          seit dem Rollen-Umbau (2026-09-30) mehr Hoehe als vorher; der
@@ -72,13 +71,15 @@
       text-align: center;
     }
     /* #challengeNotStarted/#challengeStarted zeigen komplett unterschiedlichen
-       Inhalt (Button vs. Datum+Timer+Reset-Link) und sind dadurch von Natur
-       aus unterschiedlich hoch - ohne Angleichung springt die Box (und damit
-       auch der "Go to Overview"-Button darunter) beim Start/Reset der
-       Challenge nach oben/unten. Gleiche min-height fuer beide reserviert
-       immer den Platz der jeweils groesseren Variante. */
+       Inhalt (Button vs. Datum+Timer+Reset-Button) und sind dadurch von Natur
+       aus unterschiedlich hoch - ohne Angleichung springt die Box beim
+       Start/Reset der Challenge nach oben/unten. Gleiche min-height fuer
+       beide reserviert immer den Platz der jeweils groesseren Variante.
+       112px statt frueher 94px, seit der Reset-Button (2026-09-30) als
+       richtiger, groesserer roter Button statt eines kleinen Textlinks
+       gebaut ist und dadurch mehr Hoehe braucht. */
     #challengeNotStarted, #challengeStarted {
-      min-height: 94px;
+      min-height: 112px;
     }
     @media (max-width: 900px) {
       .content {
@@ -88,34 +89,8 @@
           "checklist"
           "champ"
           "list"
-          "start"
-          "gobtn";
+          "start";
       }
-    }
-    .big-nav-btn {
-      grid-area: gobtn;
-      display: block;
-      box-sizing: border-box;
-      width: 100%;
-      text-align: center;
-      color: var(--gold);
-      background: rgba(var(--bg-rgb), 0.6);
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      padding: 16px;
-      font-family: 'Cinzel', Georgia, serif;
-      font-weight: 700;
-      font-size: 1.15rem;
-      letter-spacing: 1px;
-      text-decoration: none;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-      transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
-    }
-    .big-nav-btn:hover {
-      border-color: var(--gold);
-      background: rgba(200, 170, 110, 0.12);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
     }
     /* .selection-list ist hier bewusst mit dabei (nicht nur .champ-picker/
        .setup-box) - vorher hatte die Karten-Spalte rechts vom Champion-Pool
@@ -318,19 +293,32 @@
     .champ-picker-locked-note.visible {
       opacity: 1;
     }
+    /* Groesser/farbiger statt frueher ein kleiner unterstrichener Textlink
+       (explizite Nutzeranfrage 2026-09-30) - selbe "Danger Zone"-Optik wie
+       #factoryResetBtn in settings.html, zur Wiedererkennung als
+       destruktive Aktion. */
     .setup-box button.reset-challenge-link {
       background: none;
-      border: none;
-      color: var(--text-faint);
-      font-family: Georgia, serif;
-      font-size: 0.75rem;
-      text-decoration: underline;
+      border: 1px solid var(--red);
+      color: var(--red);
+      border-radius: 6px;
+      padding: 8px 22px;
+      margin-top: 6px;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+      text-decoration: none;
       cursor: pointer;
-      padding: 0;
+      transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
     }
     .setup-box button.reset-challenge-link:hover {
-      color: var(--red);
-      background: none;
+      background: var(--red);
+      color: var(--input-bg);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px color-mix(in srgb, var(--red) 30%, transparent);
+    }
+    .setup-box button.reset-challenge-link:active {
+      transform: translateY(0);
     }
     .setup-box button {
       background: none;
@@ -597,6 +585,7 @@
   </style>
 </head>
 <body>
+  <a href="overview.html" class="overview-nav-btn" id="toOverviewBtn" title="Go to Overview" aria-label="Go to Overview">→</a>
   <button type="button" class="settings-gear-btn" id="settingsGearBtn" title="Settings" aria-label="Settings">⚙</button>
   <button type="button" class="quit-btn" id="quitBtn" title="Quit completely" aria-label="Quit completely">⏻</button>
   <header class="site-header">
@@ -749,8 +738,6 @@
       <button type="button" id="resetChallengeBtn" class="reset-challenge-link">Reset Challenge</button>
     </div>
   </div>
-
-  <a href="overview.html" id="toOverviewBtn" class="big-nav-btn">Go to Overview →</a>
   </div>
 
   <script>

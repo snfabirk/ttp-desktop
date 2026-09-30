@@ -26,6 +26,17 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.26.2',
+      date: '2026-09-30',
+      notable: [
+        'Overview page no longer shows two "Three-Trick-Pony" headings - your role now shows once, right in the page subtitle',
+        '"What\'s New" now shows the 5 most recent updates by default instead of 3',
+        '"Go to Overview" is now a small arrow icon next to Settings/Updates/What\'s New, and Reset Challenge is a proper red button - both to fix Champion Selection needing to scroll again at the default window size',
+        'The update/restart window now centers on the app window instead of the screen'
+      ],
+      bugfixes: []
+    },
+    {
       version: '4.26.1',
       date: '2026-09-30',
       notable: [],
@@ -319,7 +330,7 @@
     // + 3 weitere aeltere" (siehe renderBody()), waechst dann per "Load
     // more" um je 5 weitere.
     const LAST_SEEN_KEY = 'ttp_changelog_last_seen_version';
-    const INITIAL_OLDER_COUNT = 3;
+    const INITIAL_OLDER_COUNT = 5;
     const LOAD_MORE_COUNT = 5;
     let visibleCount = 0;
 

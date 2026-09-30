@@ -383,23 +383,13 @@
          Detail-Bereich) auf und ab. */
       min-height: 2.8em;
     }
-    /* Zeigt die EINE explizit gewaehlte (Haupt-)Rolle fuer den ganzen
-       Champion-Pool einmalig oberhalb der Kartenreihe, statt sie (redundant,
-       da fuer alle 3 Champions gleich) auf jeder einzelnen Karte zu
-       wiederholen - Platz dort wird stattdessen fuer WR/Spiele pro Champion
-       genutzt (siehe .otp-card-stats). */
-    .otp-role-heading {
-      color: var(--text-dim);
-      font-family: Georgia, serif;
-      font-size: 0.85rem;
-      letter-spacing: 0.5px;
-      margin: 0 0 14px;
-      min-height: 1.3em;
-    }
-    .otp-role-heading strong {
+    /* Die (Haupt-)Rolle wird direkt in den Seiten-Untertitel eingeblendet
+       ("Three-Trick-Pony MID-Challenge") statt in einer zweiten, redundanten
+       Unterueberschrift darunter zu stehen (Bugfix 2026-09-30 - vorher gab
+       es 2 Unterueberschriften auf dieser Seite). Siehe renderPageSubtitle(). */
+    .subtitle strong {
       color: var(--gold);
-      font-family: 'Cinzel', Georgia, serif;
-      letter-spacing: 0.5px;
+      font-style: normal;
     }
     .otp-row-wrap {
       display: flex;
@@ -1007,7 +997,7 @@
   <button type="button" class="quit-btn" id="quitBtn" title="Quit completely" aria-label="Quit completely">⏻</button>
   <header class="site-header">
     <h1>League of Legends</h1>
-    <p class="subtitle">Three-Trick-Pony</p>
+    <p class="subtitle" id="pageSubtitle">Three-Trick-Pony</p>
   </header>
 
   <div class="split-layout">
@@ -1107,7 +1097,6 @@
 
   <div class="split-right">
   <div class="content">
-    <p class="otp-role-heading" id="otpRoleHeading"></p>
     <div class="otp-row-wrap">
       <div class="otp-row" id="otpRow"></div>
       <button type="button" id="loadBtn" class="primary-btn">Load</button>
@@ -1218,6 +1207,7 @@
     const trophiesProgressEl = document.getElementById('trophiesProgress');
     const trophiesCardEl = document.getElementById('trophiesCard');
     const accountOverviewNoteIcon = document.getElementById('accountOverviewNoteIcon');
+    const pageSubtitle = document.getElementById('pageSubtitle');
     const settingsGearBtn = document.getElementById('settingsGearBtn');
     settingsGearBtn.addEventListener('click', () => {
       if (window.ttpMain) window.ttpMain.openSettings();
@@ -1670,17 +1660,18 @@
     }
 
     // Die Rolle gilt fuer den GESAMTEN Pool (OTP-Challenge, alle 3 Champions
-    // teilen sie sich) - deshalb einmal oberhalb der Kartenreihe statt
-    // redundant auf jeder Karte (siehe renderOtpRow()).
-    function renderOtpRoleHeading() {
+    // teilen sie sich) - deshalb einmal im Seiten-Untertitel statt redundant
+    // auf jeder Karte (siehe renderOtpRow()) UND statt einer zweiten,
+    // eigenen Unterueberschrift darunter (Bugfix 2026-09-30).
+    function renderPageSubtitle() {
       let role = '';
       try { role = localStorage.getItem('ttp_pool_role') || ''; } catch (e) {}
-      otpRoleHeading.innerHTML = role
+      pageSubtitle.innerHTML = role
         ? `Three-Trick-Pony <strong>${ROLE_LABELS[role] || role}</strong>-Challenge`
-        : '';
+        : 'Three-Trick-Pony';
     }
 
-    // Ersetzt das Rollen-Label (jetzt einmalig in renderOtpRoleHeading()) -
+    // Ersetzt das Rollen-Label (jetzt einmalig im Seiten-Untertitel) -
     // zeigt stattdessen Winrate + Spielanzahl fuer genau diesen Champion,
     // sobald die Daten geladen sind (summaryCache). "–" reserviert den Platz
     // schon vor dem ersten Laden, siehe .otp-card-stats min-height.
@@ -2569,7 +2560,7 @@
       currentSummoner = loadSummonerName();
       renderCurrentContext();
       renderLpGoal();
-      renderOtpRoleHeading();
+      renderPageSubtitle();
       await loadChampionKeys();
       populateEnemySelect();
       loadSelectedChamps();

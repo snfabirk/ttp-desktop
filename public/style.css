@@ -219,7 +219,8 @@ html, body {
 .back-btn,
 .quit-btn,
 .update-indicator-btn,
-.changelog-btn {
+.changelog-btn,
+.overview-nav-btn {
   position: fixed;
   top: 18px;
   width: 34px;
@@ -243,7 +244,8 @@ html, body {
 .back-btn:hover,
 .quit-btn:hover,
 .update-indicator-btn:hover,
-.changelog-btn:hover {
+.changelog-btn:hover,
+.overview-nav-btn:hover {
   color: var(--gold);
   border-color: var(--border-hover);
   transform: translateY(-2px);
@@ -253,9 +255,24 @@ html, body {
 .back-btn:active,
 .quit-btn:active,
 .update-indicator-btn:active,
-.changelog-btn:active {
+.changelog-btn:active,
+.overview-nav-btn:active {
   transform: translateY(0);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* "Go to Overview" - jetzt ein rundes Icon oben rechts statt eines grossen
+   Banner-Buttons unten auf der Seite (explizite Nutzeranfrage 2026-09-30:
+   der Banner nahm eine ganze Grid-Reihe ein und machte Seite 1 bei 70%/80%
+   Fenstergroesse wieder scrollbar). Staendig dezent gold statt erst beim
+   Hovern, weil es - anders als Zahnrad/Beenden/Update/Log - die primaere
+   Aktion dieser Seite ist, kein reines Utility-Icon. */
+.overview-nav-btn {
+  right: 184px;
+  font-size: 1.3rem;
+  color: var(--gold);
+  border-color: var(--gold);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--gold) 25%, transparent), 0 2px 8px rgba(0, 0, 0, 0.28);
 }
 
 /* Zahnrad-Button oben rechts fuer die Einstellungen - auf allen Seiten gleich */

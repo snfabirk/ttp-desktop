@@ -103,13 +103,31 @@ function pushCurrentStateToUpdateWindow(win) {
 
 function showUpdateWindow() {
   if (updateWin) { updateWin.focus(); return updateWin; }
+
+  const width = 380;
+  const height = 230;
+  // "center: true" zentriert nur relativ zum BILDSCHIRM, nicht zum
+  // uebergebenen "parent" - selbst mit parent:mainWin gesetzt (explizite
+  // Nutzeranfrage 2026-09-30: soll zur App zentriert sein, nicht zum
+  // Bildschirm). Deshalb x/y hier selbst aus den Hauptfenster-Bounds
+  // berechnen; nur falls das Hauptfenster ausnahmsweise nicht verfuegbar
+  // ist, faellt es auf die alte Bildschirm-Zentrierung zurueck.
+  let x, y;
+  if (mainWin && !mainWin.isDestroyed()) {
+    const parentBounds = mainWin.getBounds();
+    x = Math.round(parentBounds.x + (parentBounds.width - width) / 2);
+    y = Math.round(parentBounds.y + (parentBounds.height - height) / 2);
+  }
+
   updateWin = new BrowserWindow({
-    width: 380,
-    height: 230,
+    width,
+    height,
+    x,
+    y,
     resizable: false,
     minimizable: false,
     maximizable: false,
-    center: true,
+    center: x === undefined,
     parent: mainWin || undefined,
     frame: false,
     show: false,

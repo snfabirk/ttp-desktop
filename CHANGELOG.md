@@ -1,5 +1,36 @@
 # Internal Changelog
 
+## 4.26.2 — 2026-09-30
+
+Five small user-requested fixes/tweaks in one batch:
+
+- `overview.html`: had two "Three-Trick-Pony" headings after the 4.25.0
+  Role Balance work (the static `.subtitle` in the site header, plus the
+  new `otpRoleHeading` paragraph above the champion row). Removed the
+  second one; the role now merges into the subtitle itself
+  (`renderPageSubtitle()`, was `renderOtpRoleHeading()`) - falls back to
+  plain "Three-Trick-Pony" when no role is set yet.
+- `changelog.js`: `INITIAL_OLDER_COUNT` 3 -> 5.
+- `index.html`: removed the full-width "Go to Overview" banner (`.big-nav-btn`,
+  its own grid row `"gobtn gobtn"`) that was making the page scroll again
+  at the default 70%/80% window size. Replaced with a small arrow icon
+  (`.overview-nav-btn`) in the top-right icon row, right of Settings/
+  Updates/What's New - permanently gold-tinted (not just on hover) since
+  it's this page's primary action, not a utility icon. Reset Challenge
+  (`.reset-challenge-link`) restyled from a small underlined text link to
+  a proper bordered red button, matching `#factoryResetBtn`'s Danger Zone
+  look in settings.html; bumped `#challengeNotStarted`/`#challengeStarted`
+  min-height 94px -> 112px to match its new size. Net effect verified live:
+  content bottom now ~1044px vs. the ~1114px budget (80% of a 1392px
+  screen), around 70px of margin.
+- `electron-main.js` `showUpdateWindow()`: `center: true` centers on the
+  *screen*, not the `parent` window, even with `parent: mainWn` set.
+  Computes x/y from `mainWin.getBounds()` instead, falling back to the old
+  screen-centering only if the main window is unavailable. Not verifiable
+  via the browser-only test harness (real Electron BrowserWindow behavior) -
+  syntax-checked, logic straightforward, but only actually confirmed on
+  next real update flow.
+
 ## 4.26.1 — 2026-09-30
 
 Comprehensive bug/visual audit of the Second Role + Role Balance work
