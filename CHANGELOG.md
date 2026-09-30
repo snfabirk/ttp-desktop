@@ -1,5 +1,24 @@
 # Internal Changelog
 
+## 4.27.6 — 2026-09-30
+
+- trophies.html: Current Challenge card no longer dashed; it is highlighted
+  with `--live-accent` only while the live view is shown, a clicked past
+  entry uses `--history-view-accent`. Both are now defined PER THEME in
+  style.css (user: every theme has different colors, nothing may get lost) -
+  e.g. Freljord's gold is orange (#e8935a, ~ the old fixed amber) -> past
+  accent is ice blue there; Hextech's gold is teal (~ green) -> live accent
+  is warm yellow, past accent pink. Checked visually in all 8 themes.
+- Fix: `.history-entry:hover` (declared later, same specificity) overrode
+  the `.active` border color, so the selected card lost its highlight
+  while hovered / right after clicking.
+- What's New button pulses (`.changelog-btn.has-news`) until What's New is
+  opened after an update (same last-seen version as the "New since your
+  last update" section). No prefers-reduced-motion opt-out on purpose: the
+  user's Windows reports `reduce`, which would have hidden the requested
+  blinking entirely; it's a slow color pulse, no motion.
+- Verified in dev Electron with the user's data and real mouse events.
+
 ## 4.27.5 — 2026-09-30
 
 - Root cause of "Back to current challenge does nothing" (4.27.3 and

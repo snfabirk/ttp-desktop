@@ -25,6 +25,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.27.6',
+      date: '2026-09-30',
+      notable: [],
+      refinements: 2,
+      bugfixes: 1
+    },
+    {
       version: '4.27.5',
       date: '2026-09-30',
       notable: [
@@ -491,6 +498,21 @@
       }
     }
 
+    // "Neues seit dem letzten Update"-Hinweis: der Button pulsiert sanft,
+    // bis What's New nach einem Update einmal geoeffnet wurde (explizite
+    // Nutzeranfrage 2026-09-30). Gleiche "gesehen"-Logik wie der
+    // "New since your last update"-Abschnitt (LAST_SEEN_KEY).
+    function refreshNewsHint() {
+      const lastSeen = getLastSeenVersion();
+      const apply = v => btn.classList.toggle('has-news', Boolean(v) && (!lastSeen || compareVersions(v, lastSeen) > 0));
+      if (window.ttpMain && window.ttpMain.getAppVersion) {
+        window.ttpMain.getAppVersion().then(apply).catch(() => {});
+      } else {
+        apply(CHANGELOG[0] && CHANGELOG[0].version);
+      }
+    }
+    refreshNewsHint();
+
     function openDrawer() {
       visibleOlderCount = INITIAL_OLDER_COUNT; // jedes Oeffnen startet wieder beim Standard-Ausschnitt
       renderBody();
@@ -499,8 +521,11 @@
       // Markiert erst NACH dem Rendern als "gesehen" (renderBody() oben hat
       // newCount ja schon anhand des VORHERIGEN Standes berechnet) - sonst
       // waere "neu seit dem letzten Update" bei jedem Oeffnen sofort leer.
+      btn.classList.remove('has-news');
       if (window.ttpMain && window.ttpMain.getAppVersion) {
         window.ttpMain.getAppVersion().then(v => { if (v) setLastSeenVersion(v); }).catch(() => {});
+      } else if (CHANGELOG[0]) {
+        setLastSeenVersion(CHANGELOG[0].version);
       }
     }
     function closeDrawer() {

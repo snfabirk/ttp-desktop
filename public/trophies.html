@@ -115,7 +115,10 @@
      Trophy-Snapshot in dasselbe Grid statt eine neue Detail-UI zu bauen) -
      bewusst deutlich abgesetzte Farbe (Amber, in keinem Theme sonst benutzt),
      damit klar erkennbar ist "das ist NICHT die aktuelle Challenge". ----- */
-  :root { --history-view-accent: #e0a458; }
+  /* --history-view-accent (vergangene Challenge) und --live-accent (aktuelle
+     Challenge) sind pro Theme in style.css definiert - so gewaehlt, dass sie
+     sich in JEDEM Theme klar voneinander und von dessen Gold/Rahmenfarben
+     abheben (z.B. Freljord: Gold ist orange -> Amber waere untergegangen). */
   /* Banner und "rules status"-Zeile teilen sich EINEN Platz (Grid-Stacking:
      beide liegen in derselben Zelle, die Zelle ist immer so hoch wie der
      groessere von beiden). Beim Wechsel zwischen aktueller und vergangener
@@ -523,6 +526,14 @@
   .current-challenge-block .history-entry {
     cursor: pointer;
   }
+  /* Aktuelle Challenge wird angezeigt: --live-accent (meist Gruen, passend
+     zum Live-Punkt), klar unterscheidbar von --history-view-accent einer
+     angeklickten vergangenen Challenge - beides pro Theme in style.css. */
+  .current-challenge-block .history-entry.active {
+    border-color: var(--live-accent);
+    border-style: solid;
+    box-shadow: 0 0 10px color-mix(in srgb, var(--live-accent) 35%, transparent);
+  }
   /* Markiert den gerade im Trophy-Grid angezeigten History-Eintrag - sonst
      ist beim Durchklicken mehrerer vergangener Challenges nicht erkennbar,
      welche davon aktuell aktiv ist. Gleiche Akzentfarbe wie das Review-Mode-
@@ -604,9 +615,22 @@
   .history-entry:hover {
     border-color: var(--border-hover);
   }
+  /* Die Markierungen muessen auch beim Hovern stehen bleiben - vorher
+     ueberschrieb die (spaeter deklarierte, gleich spezifische) :hover-Regel
+     die Farbe der gerade angezeigten Karte. */
+  .history-entry.active,
+  .history-entry.active:hover {
+    border-color: var(--history-view-accent);
+  }
+  .current-challenge-block .history-entry.active:hover {
+    border-color: var(--live-accent);
+  }
+  /* Frueher gestrichelt - sah zu sehr nach der Markierung einer angeklickten
+     Challenge aus (Nutzerfeedback 2026-09-30). Jetzt eine ganz normale Karte;
+     hervorgehoben wird sie nur, solange sie wirklich angezeigt wird (siehe
+     .current-challenge-block .history-entry.active). */
   .history-entry.ongoing {
-    border-style: dashed;
-    border-color: var(--border-hover);
+    border-style: solid;
   }
   .history-entry.platinum {
     border-color: var(--gold);

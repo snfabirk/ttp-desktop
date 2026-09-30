@@ -11,6 +11,8 @@
   --text-faint: #6f6a5e;
   --red: #e84057;
   --green: #4caf7d;
+  --live-accent: #4caf7d;
+  --history-view-accent: #e0a458;
   --scrollbar: #555a60;
   --scrollbar-hover: #71767c;
 }
@@ -28,6 +30,8 @@ html[data-theme="graphite"] {
   --text-faint: #6b6b70;
   --red: #e84057;
   --green: #4caf7d;
+  --live-accent: #4caf7d;
+  --history-view-accent: #e0a458;
   --scrollbar: #52525b;
   --scrollbar-hover: #71717a;
 }
@@ -45,6 +49,8 @@ html[data-theme="light"] {
   --text-faint: #8a8370;
   --red: #c0392b;
   --green: #2e7d47;
+  --live-accent: #2e7d47;
+  --history-view-accent: #b8651b;
   --scrollbar: #c9b892;
   --scrollbar-hover: #8b6914;
 }
@@ -62,6 +68,8 @@ html[data-theme="hextech"] {
   --text-faint: #4a7975;
   --red: #ff5c6c;
   --green: #4ce0a0;
+  --live-accent: #f0c75e;
+  --history-view-accent: #ff7ab6;
   --scrollbar: #0e4f57;
   --scrollbar-hover: #0ac8b9;
 }
@@ -79,6 +87,8 @@ html[data-theme="arcane"] {
   --text-faint: #6f5a94;
   --red: #ff5c8a;
   --green: #5ce0b0;
+  --live-accent: #5ce0b0;
+  --history-view-accent: #e0a458;
   --scrollbar: #4a2f7a;
   --scrollbar-hover: #b088ff;
 }
@@ -96,6 +106,8 @@ html[data-theme="noxus"] {
   --text-faint: #7a5c5c;
   --red: #ff5a5a;
   --green: #4caf7d;
+  --live-accent: #4caf7d;
+  --history-view-accent: #e0a458;
   --scrollbar: #6e1f1f;
   --scrollbar-hover: #d1373f;
 }
@@ -114,6 +126,8 @@ html[data-theme="freljord"] {
   --text-faint: #64798a;
   --red: #ff6b5b;
   --green: #5fd9a0;
+  --live-accent: #5fd9a0;
+  --history-view-accent: #7fb8ff;
   --scrollbar: #2c4a63;
   --scrollbar-hover: #e8935a;
 }
@@ -132,6 +146,8 @@ html[data-theme="ionia"] {
   --text-faint: #5f8574;
   --red: #ff5c6c;
   --green: #4ce08a;
+  --live-accent: #4ce08a;
+  --history-view-accent: #e0a458;
   --scrollbar: #2c5245;
   --scrollbar-hover: #ff8fb1;
 }
@@ -539,6 +555,26 @@ html, body {
 .changelog-notable li {
   margin-bottom: 5px;
 }
+/* What's-New-Button pulsiert sanft, solange es seit dem letzten Update noch
+   ungelesene Neuigkeiten gibt (siehe refreshNewsHint() in changelog.js).
+   Bewusst OHNE prefers-reduced-motion-Abschaltung: das Windows des Nutzers
+   meldet "reduce" (Animationseffekte aus), dann haette er das explizit
+   gewuenschte Blinken nie gesehen. Reines langsames Farb-Pulsieren (1.8s),
+   keine Bewegung, kein schnelles Flackern. */
+@keyframes changelog-news-pulse {
+  0%, 100% {
+    border-color: var(--border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  }
+  50% {
+    border-color: var(--gold);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--gold) 70%, transparent), 0 2px 8px rgba(0, 0, 0, 0.28);
+  }
+}
+.changelog-btn.has-news {
+  animation: changelog-news-pulse 1.8s ease-in-out infinite;
+}
+
 /* "Refinements" + "Bug Fixes" nebeneinander, nur als Labels ohne Liste */
 .changelog-minor-labels {
   display: flex;
