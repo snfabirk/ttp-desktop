@@ -10,6 +10,7 @@
   <script src="theme.js"></script>
   <script src="update-indicator.js"></script>
   <script src="changelog.js"></script>
+  <script src="role-chart.js"></script>
   <style>
     body {
       display: flex;
@@ -123,12 +124,11 @@
       font-family: Georgia, serif;
       font-size: 0.9rem;
     }
-    /* Kleines Kreisdiagramm (Main/Second/Fill-Verhaeltnis dieser Challenge) -
-       nutzt bewusst nur vorhandene Theme-Variablen als Farben (gold/green/
-       text-faint), keine eigene Palette, damit es automatisch zu jedem der 8
-       Farbthemes passt (explizite Nutzeranfrage: "nicht dass hier wilde
-       Farben kommen"). Die vollen Zahlen/Details leben auf einer eigenen
-       Seite (role.html), hier nur eine kompakte Vorschau + Link dorthin. */
+    /* Mini-Balkendiagramm (4 Rollen-Kategorien, Wins/Losses gestapelt, siehe
+       role-chart.js) - nutzt bewusst nur Theme-Variablen als Farben
+       (--green/--red), keine eigene Palette, damit es zu jedem der 8
+       Farbthemes passt. Die vollen Zahlen + Champ-Listen leben auf
+       role.html, hier nur eine kompakte Vorschau + Link dorthin. */
     .role-breakdown-chart-wrap {
       flex-shrink: 0;
       width: 34px;
@@ -1604,59 +1604,21 @@
       UTILITY: 'Support'
     };
 
-    // Kleines Donut-Diagramm: Main/Second/Fill-Verhaeltnis dieser Challenge
-    // (siehe roleBreakdown im /api/summary-batch-Ergebnis, server.js
-    // runSummaryBatch()). Reine SVG-Kreise mit stroke-dasharray statt einer
-    // Chart-Bibliothek - fuer 3 statische Segmente reicht das locker.
-    // Farben kommen ausschliesslich aus den Theme-Variablen (siehe CSS-
-    // Kommentar bei .role-breakdown-chart-wrap). Der Text daneben nennt
-    // Prozentzahlen ausdruecklich beim Namen, damit die Bedeutung nie an
-    // Farberkennung haengt.
-    function renderRoleBreakdownChart(breakdown) {
+    // Mini-Version des Rollen-Balkendiagramms (siehe role-chart.js - die
+    // volle Version mit Champ-Listen lebt auf role.html): 4 gestapelte
+    // Win/Loss-Balken (Main+Pony, Main+andere, Second, Off) plus Kurzfassung
+    // "X% on plan · Y% WR there" als Text, damit die Bedeutung nie nur an der
+    // Grafik haengt.
+    function renderRoleBreakdownChart(roleStats) {
       const wrap = document.getElementById('roleBreakdownChartWrap');
       const summaryEl = document.getElementById('roleBreakdownSummary');
       if (!wrap || !summaryEl) return;
 
-      if (!breakdown) {
-        // Gleicher neutraler Platzhalter-Ring wie der "noch keine Spiele"-Fall
-        // unten - NICHT leer lassen (Bugfix 2026-09-30: vor dem ersten Laden
-        // klaffte hier eine sichtbare Luecke, wo bei der Trophies-Karte
-        // daneben immer ein Icon steht).
-        wrap.innerHTML = '<span class="role-breakdown-empty-dot"></span>';
-        summaryEl.textContent = '–';
-        return;
-      }
-
-      const { main = 0, second = 0, fill = 0 } = breakdown;
-      const total = main + second + fill;
-      if (total === 0) {
-        wrap.innerHTML = '<span class="role-breakdown-empty-dot"></span>';
-        summaryEl.textContent = 'No games yet';
-        return;
-      }
-
-      const segments = [
-        { value: main, color: 'var(--gold)' },
-        { value: second, color: 'var(--green)' },
-        { value: fill, color: 'var(--text-faint)' }
-      ].filter(s => s.value > 0);
-
-      const R = 15;
-      const CIRC = 2 * Math.PI * R;
-      let offset = 0;
-      const circles = segments.map(s => {
-        const dash = (s.value / total) * CIRC;
-        const circle = `<circle cx="18" cy="18" r="${R}" fill="none" stroke="${s.color}" stroke-width="6" ` +
-          `stroke-dasharray="${dash.toFixed(2)} ${(CIRC - dash).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" ` +
-          `transform="rotate(-90 18 18)" />`;
-        offset += dash;
-        return circle;
-      }).join('');
-
-      wrap.innerHTML = `<svg viewBox="0 0 36 36" class="role-breakdown-svg">${circles}</svg>`;
-
-      const pct = n => Math.round((n / total) * 100);
-      summaryEl.textContent = `${pct(main)}% Main · ${pct(second)}% 2nd · ${pct(fill)}% Fill`;
+      const svg = roleStats ? TTPRoleChart.renderMini(roleStats) : '';
+      // Ohne Daten/Spiele: neutraler Platzhalter statt einer Luecke (siehe
+      // Trophies-Karte daneben, die immer ein Icon zeigt).
+      wrap.innerHTML = svg || '<span class="role-breakdown-empty-dot"></span>';
+      summaryEl.textContent = roleStats ? TTPRoleChart.summaryText(roleStats) : '–';
     }
 
     // Die Rolle gilt fuer den GESAMTEN Pool (OTP-Challenge, alle 3 Champions
@@ -2244,7 +2206,7 @@
         renderAccountOverview(data);
         loadLpGraph(currentPuuid, since, data.rank);
         loadTrophiesProgress(currentPuuid, since, champsWithKeys.map(x => ({ key: x.key, role: x.champ.role || '' })));
-        renderRoleBreakdownChart(data.roleBreakdown);
+        renderRoleBreakdownChart(data.roleStats);
         hasLoadedOnce = true;
         updateLoadButtonLabel();
       } catch (e) {

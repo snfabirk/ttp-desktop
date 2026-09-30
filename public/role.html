@@ -10,11 +10,18 @@
   <script src="theme.js"></script>
   <script src="update-indicator.js"></script>
   <script src="changelog.js"></script>
+  <script src="role-chart.js"></script>
   <style>
     body {
       display: flex;
       flex-direction: column;
       align-items: center;
+    }
+    .site-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
     }
     .panel-heading {
       color: var(--gold);
@@ -25,32 +32,207 @@
     }
     .content {
       width: 100%;
-      max-width: 700px;
+      max-width: 940px;
       box-sizing: border-box;
       padding: 0 30px;
-      margin: 30px 0 60px;
-      text-align: center;
+      margin: 24px 0 30px;
     }
-    .placeholder-card {
+    .role-card {
       background: var(--panel-bg);
       backdrop-filter: blur(12px) saturate(1.1);
       -webkit-backdrop-filter: blur(12px) saturate(1.1);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 40px 30px;
+      padding: 22px 26px 18px;
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+      /* Platz fuer das fertige Diagramm schon beim Laden reservieren, damit
+         nichts springt, sobald die Daten da sind. */
+      min-height: 520px;
+      box-sizing: border-box;
     }
-    .placeholder-card .placeholder-icon {
-      font-size: 2rem;
-      display: block;
-      margin-bottom: 14px;
-    }
-    .placeholder-card p {
+    .role-status {
       color: var(--text-dim);
       font-family: Georgia, serif;
-      font-size: 0.95rem;
-      line-height: 1.6;
+      font-size: 0.85rem;
+      text-align: center;
       margin: 0;
+      min-height: 1.4em;
+    }
+
+    /* ----- Balkendiagramm (siehe role-chart.js) ----- */
+    .rc-empty {
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      text-align: center;
+      margin: 60px 0;
+    }
+    .rc-legend {
+      display: flex;
+      justify-content: flex-end;
+      gap: 16px;
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.8rem;
+      margin-bottom: 6px;
+    }
+    .rc-swatch {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 6px;
+      vertical-align: -1px;
+    }
+    .rc-grid {
+      display: grid;
+      grid-template-columns: 34px repeat(4, minmax(0, 1fr));
+      column-gap: 16px;
+    }
+    .rc-axis, .rc-plot {
+      position: relative;
+      height: 250px;
+    }
+    .rc-plot {
+      grid-column: 2 / 6;
+    }
+    /* Innenflaeche: oben 22px frei fuer die Zahlen ueber dem hoechsten Balken */
+    .rc-area {
+      position: absolute;
+      inset: 22px 0 0 0;
+    }
+    .rc-bars {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      column-gap: 16px;
+    }
+    .rc-tick {
+      position: absolute;
+      right: 0;
+      transform: translateY(50%);
+      color: var(--text-faint);
+      font-family: Georgia, serif;
+      font-size: 0.72rem;
+    }
+    .rc-gridline {
+      position: absolute;
+      left: 0;
+      right: 0;
+      border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+    }
+    .rc-col {
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      height: 100%;
+    }
+    .rc-bar {
+      position: relative;
+      width: min(64%, 84px);
+      display: flex;
+      flex-direction: column;
+      border-radius: 5px 5px 0 0;
+      transition: height 0.35s ease;
+    }
+    .rc-bar-label {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding-bottom: 4px;
+      white-space: nowrap;
+      color: var(--text);
+      font-family: Georgia, serif;
+      font-size: 0.82rem;
+    }
+    .rc-seg {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+      overflow: hidden;
+      color: var(--input-bg);
+      font-family: Georgia, serif;
+      font-size: 0.72rem;
+      font-weight: bold;
+    }
+    .rc-seg span {
+      white-space: nowrap;
+    }
+    .rc-win { background: var(--green); }
+    .rc-loss { background: var(--red); }
+    .rc-seg:first-of-type { border-radius: 5px 5px 0 0; }
+    .rc-xlabel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+      margin-top: -1px;
+    }
+    .rc-xlabel strong {
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+    }
+    .rc-xlabel span {
+      color: var(--text-faint);
+      font-family: Georgia, serif;
+      font-size: 0.75rem;
+      font-style: italic;
+    }
+    .rc-champs {
+      list-style: none;
+      margin: 12px 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .rc-champ {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      font-family: Georgia, serif;
+      font-size: 0.8rem;
+    }
+    .rc-champ img, .rc-champ-noicon {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    .rc-champ-name {
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+    .rc-champ-rec {
+      margin-left: auto;
+      flex-shrink: 0;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+    .rc-champ-rec em {
+      font-style: normal;
+      color: var(--text-faint);
+      font-size: 0.72rem;
+    }
+    .rc-champ-none, .rc-champ-more {
+      color: var(--text-faint);
+      font-family: Georgia, serif;
+      font-size: 0.78rem;
+      text-align: center;
+    }
+    .rc-champ-more {
+      cursor: help;
+      font-style: italic;
     }
   </style>
 </head>
@@ -65,13 +247,84 @@
   </header>
 
   <div class="content">
-    <div class="placeholder-card">
-      <span class="placeholder-icon">🚧</span>
-      <p>This page is still under construction - detailed Main/Second/Fill role stats are coming here soon.</p>
+    <div class="role-card">
+      <p class="role-status" id="roleStatus">Loading …</p>
+      <div id="roleChart"></div>
     </div>
   </div>
 
   <script>
+    const DDRAGON_VERSION = '16.17.1';
+    const statusEl = document.getElementById('roleStatus');
+    const chartEl = document.getElementById('roleChart');
+
+    function championIconUrl(id) {
+      return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${id}.png`;
+    }
+
+    async function parseApiResponse(res) {
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error(`Server did not return a valid response (status ${res.status}).`);
+      }
+      return res.json();
+    }
+
+    // Gleicher Match-Scan wie die Overview (/api/summary-batch) - Matches
+    // liegen dort schon im Cache, deshalb schnell.
+    async function loadRoleStats() {
+      const ls = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
+      const summonerName = ls('ttp_summoner_name').trim();
+      const since = ls('ttp_challenge_start');
+      const mainRole = ls('ttp_pool_role');
+      const secondRole = ls('ttp_pool_second_role');
+      let champions = [];
+      try { champions = JSON.parse(ls('ttp_selected_champs') || '[]'); } catch (e) {}
+
+      if (!since) { statusEl.textContent = 'Start a challenge on the Champion Selection page first.'; return; }
+      const parts = summonerName.split('#');
+      if (parts.length !== 2 || !parts[0] || !parts[1]) { statusEl.textContent = 'No valid summoner set - please set one on the Champion Selection page.'; return; }
+      if (!champions.length) { statusEl.textContent = 'No champion pool set yet.'; return; }
+
+      try {
+        statusEl.textContent = 'Loading …';
+        const accountRes = await fetch(`/api/account?${new URLSearchParams({ gameName: parts[0], tagLine: parts[1] })}`);
+        const account = await parseApiResponse(accountRes);
+        if (!accountRes.ok) throw new Error(account.error || 'Could not find summoner.');
+
+        const startRes = await fetch('/api/summary-batch/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            puuid: account.puuid,
+            champions: champions.filter(c => c.key).map(c => ({ key: c.key, role: c.role || '' })),
+            since,
+            mainRole,
+            secondRole
+          })
+        });
+        const startData = await parseApiResponse(startRes);
+        if (!startRes.ok) throw new Error(startData.error || 'Unknown error');
+
+        let result = null;
+        while (!result) {
+          const res = await fetch(`/api/summary-batch/status/${startData.jobId}`);
+          const status = await parseApiResponse(res);
+          if (!res.ok || status.status === 'error') throw new Error(status.error || 'Unknown error');
+          if (status.status === 'done') { result = status.result; break; }
+          statusEl.textContent = status.total > 0 ? `Scanning matches … (${status.processed}/${status.total})` : 'Searching matches …';
+          await new Promise(r => setTimeout(r, 600));
+        }
+
+        const total = result.overall ? result.overall.totalGames : 0;
+        statusEl.textContent = `${total} ranked game(s) since ${new Date(since).toLocaleDateString('en-GB')}`;
+        TTPRoleChart.renderFull(chartEl, result.roleStats, { mainRole, secondRole, iconUrl: championIconUrl });
+      } catch (e) {
+        statusEl.textContent = `Could not load role stats: ${e.message}`;
+      }
+    }
+    loadRoleStats();
+
     const settingsGearBtn = document.getElementById('settingsGearBtn');
     settingsGearBtn.addEventListener('click', () => {
       if (window.ttpMain) window.ttpMain.openSettings();

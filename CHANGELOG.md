@@ -1,5 +1,28 @@
 # Internal Changelog
 
+## 4.28.0 — 2026-09-30
+
+- Role Balance, designed together with the user: vertical stacked bar
+  chart, x-axis = 4 categories (main role + pool champ "Ponys", main role
+  + other champ, second role with any champ, off role), bar height = games,
+  wins (bottom, --green) / losses (top, --red) stacked; label above each
+  bar "games · WR%". Scaling: tallest bar ~full height, axis ends at the
+  tallest value rounded up to a nice step (<=5 ticks: 8->8, 23->25,
+  200->200) so the chart keeps its size from 8 to 200+ games. Under each
+  bar the champs, most played first, "icon Name 5 (4W/1L)", top 5 + "+N
+  more" (tooltip lists the rest). Segment labels hidden when <16px tall.
+- Server: `runSummaryBatch` now also returns `roleStats` (per category
+  wins/losses + sorted champ list with key/id/name/W/L). `roleBreakdown`
+  kept for compatibility.
+- New shared `public/role-chart.js` (`renderFull`, `renderMini`,
+  `summaryText`, `niceAxis`); role.html (was a placeholder) renders the full
+  chart via the same `/api/summary-batch` scan (matches are cached);
+  overview.html's Role Balance card shows 4 mini stacked bars instead of the
+  donut, text "X% on plan · Y% WR there". role.html header now centered.
+- Verified in dev Electron with a copy of the user's data (13 and 46
+  games) at the user's window size (fits without scrolling), Freljord +
+  Hextech + default themes, no errors.
+
 ## 4.27.6 — 2026-09-30
 
 - trophies.html: Current Challenge card no longer dashed; it is highlighted

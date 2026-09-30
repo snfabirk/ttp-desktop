@@ -367,6 +367,18 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
     // Rolle picken als vereinbart - zaehlt dann bewusst als Fill, das ist
     // sein eigenes Problem, wenn er die Challenge nicht ernst nimmt.
     const roleBreakdown = { main: 0, second: 0, fill: 0 };
+    // Feinere Aufteilung fuer das Rollen-Balkendiagramm (Overview-Mini-
+    // Version + role.html, explizite Nutzeranfrage 2026-09-30): Main Role
+    // mit einem der 3 Pool-Champs ("Ponys") vs. Main Role mit anderem Champ,
+    // Second Role (jeder Champ - dort ist kein Pool festgelegt) und Off Role.
+    // Pro Kategorie Wins/Losses und die gespielten Champs mit eigener Bilanz.
+    const poolKeys = new Set(champions.map(c => String(c.key)));
+    const roleStats = {
+      mainPony: { wins: 0, losses: 0, champs: {} },
+      mainOther: { wins: 0, losses: 0, champs: {} },
+      second: { wins: 0, losses: 0, champs: {} },
+      off: { wins: 0, losses: 0, champs: {} }
+    };
     const riotId = await resolveRiotId(puuid, config.apiKey);
 
     for (const matchId of matchIds) {
@@ -385,6 +397,18 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
       else roleBreakdown.fill += 1;
 
       const myKey = String(me.championId);
+
+      const category = (mainRole && me.teamPosition === mainRole)
+        ? (poolKeys.has(myKey) ? 'mainPony' : 'mainOther')
+        : (secondRole && me.teamPosition === secondRole) ? 'second' : 'off';
+      const cat = roleStats[category];
+      if (me.win) cat.wins += 1; else cat.losses += 1;
+      if (!cat.champs[myKey]) {
+        const info = championByKey.get(myKey);
+        cat.champs[myKey] = { key: myKey, id: info ? info.id : '', name: info ? info.name : (me.championName || myKey), wins: 0, losses: 0 };
+      }
+      if (me.win) cat.champs[myKey].wins += 1; else cat.champs[myKey].losses += 1;
+
       const bucket = buckets[myKey];
       if (!bucket) continue; // nicht einer der gesuchten Champions
 
@@ -430,6 +454,13 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
 
     const streaks = computeStreaks(overallGames);
 
+    // Champs pro Kategorie als Liste, meistgespielt zuerst (bei Gleichstand
+    // mehr Wins zuerst).
+    for (const cat of Object.values(roleStats)) {
+      cat.champs = Object.values(cat.champs).sort((a, b) =>
+        (b.wins + b.losses) - (a.wins + a.losses) || b.wins - a.wins);
+    }
+
     completeJob(jobId, {
       since,
       queue: RANKED_SOLO_QUEUE_ID,
@@ -437,6 +468,7 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
       byChampion,
       streaks,
       roleBreakdown,
+      roleStats,
       overall: {
         wins: overallWins,
         losses: overallLosses,

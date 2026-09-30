@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.28.0',
+      date: '2026-09-30',
+      notable: [
+        "New: Role Balance page - a bar chart of your games in your main role with your 3 picks, main role with other picks, second role and off role, each split into wins and losses, with the champions you played listed below",
+        "The Role Balance card on the Overview page now shows a mini version of that chart and how much of your playing is \"on plan\""
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '4.27.6',
       date: '2026-09-30',
       notable: [],
