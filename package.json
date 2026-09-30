@@ -1,6 +1,6 @@
 {
   "name": "three-trick-pony-desktop",
-  "version": "4.27.0",
+  "version": "4.27.1",
   "private": true,
   "description": "Desktop-App fuer die Three-Trick-Pony OTP-Uebersicht (Electron-Wrapper um den lokalen Server)",
   "author": "Fabian",
@@ -60,7 +60,8 @@
     },
     "nsis": {
       "installerIcon": "build/icon.ico",
-      "uninstallerIcon": "build/icon.ico"
+      "uninstallerIcon": "build/icon.ico",
+      "include": "build/installer.nsh"
     }
   },
   "allowScripts": {

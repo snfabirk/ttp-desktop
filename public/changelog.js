@@ -25,6 +25,15 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.27.1',
+      date: '2026-09-30',
+      notable: [
+        "Updating from an older version now also keeps your Challenge History - the installer rescues it before replacing the old version"
+      ],
+      refinements: 1,
+      bugfixes: 0
+    },
+    {
       version: '4.27.0',
       date: '2026-09-30',
       notable: [
@@ -339,14 +348,17 @@
     `;
     document.body.appendChild(drawer);
 
-    // Wie viele Eintraege (von oben, neueste zuerst) gerade sichtbar sind -
-    // startet bei jedem Oeffnen neu bei "alles Neue seit dem letzten Update
-    // + 3 weitere aeltere" (siehe renderBody()), waechst dann per "Load
-    // more" um je 5 weitere.
+    // Wie viele AELTERE Anzeige-Bloecke (unterhalb von "neu seit dem letzten
+    // Update") gerade sichtbar sind - startet bei jedem Oeffnen neu bei 5,
+    // waechst per "Load more" um je 5 weitere. Gezaehlt werden Bloecke, nicht
+    // Versionen: mehrere aufeinanderfolgende Versionen ohne relevante
+    // Notizen (nur Refinements/Bug Fixes) sind EIN Block (siehe
+    // groupEntries()), damit sie keine Plaetze fuer relevantere Eintraege
+    // wegnehmen.
     const LAST_SEEN_KEY = 'ttp_changelog_last_seen_version';
     const INITIAL_OLDER_COUNT = 5;
     const LOAD_MORE_COUNT = 5;
-    let visibleCount = 0;
+    let visibleOlderCount = INITIAL_OLDER_COUNT;
 
     function getLastSeenVersion() {
       try { return localStorage.getItem(LAST_SEEN_KEY) || ''; } catch (e) { return ''; }
@@ -370,42 +382,77 @@
       return count;
     }
 
+    // Fasst direkt aufeinanderfolgende Versionen OHNE notable-Text zu einem
+    // Block zusammen (explizite Nutzeranfrage 2026-09-30: 5x hintereinander
+    // nur "Refinements" bringt nichts und verdraengt relevante Notes).
+    function groupEntries(entries) {
+      const groups = [];
+      for (const e of entries) {
+        const minor = !e.notable.length;
+        const last = groups[groups.length - 1];
+        if (minor && last && last.minor) last.entries.push(e);
+        else groups.push({ minor, entries: [e] });
+      }
+      return groups;
+    }
+
+    function minorLabelsHtml(refinements, bugfixes) {
+      if (!refinements && !bugfixes) return '';
+      return `<div class="changelog-minor-labels">${refinements ? '<span class="changelog-bugfixes-label">Refinements</span>' : ''}${bugfixes ? '<span class="changelog-bugfixes-label">Bug Fixes</span>' : ''}</div>`;
+    }
+
+    function renderGroupHtml(group) {
+      if (group.entries.length === 1) return renderEntryHtml(group.entries[0]);
+      const newest = group.entries[0];
+      const oldest = group.entries[group.entries.length - 1];
+      const newestDate = formatChangelogDate(newest.date);
+      const oldestDate = formatChangelogDate(oldest.date);
+      const dateText = newestDate === oldestDate ? newestDate : `${oldestDate} – ${newestDate}`;
+      const refinements = group.entries.some(e => e.refinements);
+      const bugfixes = group.entries.some(e => e.bugfixes);
+      return `
+        <div class="changelog-version">
+          <div class="changelog-version-title">v${oldest.version} – v${newest.version} ${dateText ? `<span class="changelog-date">${dateText}</span>` : ''}</div>
+          ${minorLabelsHtml(refinements, bugfixes)}
+        </div>
+      `;
+    }
+
     function renderEntryHtml(v) {
       const dateHtml = v.date ? `<span class="changelog-date">${formatChangelogDate(v.date)}</span>` : '';
       return `
         <div class="changelog-version">
           <div class="changelog-version-title">v${v.version} ${dateHtml}</div>
           ${v.notable.length ? `<ul class="changelog-notable">${v.notable.map(n => `<li>${n}</li>`).join('')}</ul>` : ''}
-          ${(v.refinements || v.bugfixes) ? `<div class="changelog-minor-labels">${v.refinements ? '<span class="changelog-bugfixes-label">Refinements</span>' : ''}${v.bugfixes ? '<span class="changelog-bugfixes-label">Bug Fixes</span>' : ''}</div>` : ''}
+          ${minorLabelsHtml(v.refinements, v.bugfixes)}
         </div>
       `;
     }
 
     function renderBody() {
       const body = drawer.querySelector('.changelog-drawer-body');
-      const lastSeen = getLastSeenVersion();
-      const newCount = countNewSince(lastSeen);
-      const defaultCount = Math.min(CHANGELOG.length, newCount + INITIAL_OLDER_COUNT);
-      if (visibleCount < defaultCount) visibleCount = defaultCount;
+      const newCount = countNewSince(getLastSeenVersion());
+      // Neu/alt getrennt gruppieren, damit ein Block nie ueber die Grenze
+      // "neu seit dem letzten Update" hinweg zusammengefasst wird.
+      const newGroups = groupEntries(CHANGELOG.slice(0, newCount));
+      const olderGroups = groupEntries(CHANGELOG.slice(newCount));
 
       let html = '';
-      if (newCount > 0) {
+      if (newGroups.length) {
         html += `<div class="changelog-section-label">New since your last update</div>`;
-        html += CHANGELOG.slice(0, newCount).map(renderEntryHtml).join('');
-        if (visibleCount > newCount) {
-          html += `<div class="changelog-section-label">Earlier</div>`;
-        }
+        html += newGroups.map(renderGroupHtml).join('');
+        if (olderGroups.length) html += `<div class="changelog-section-label">Earlier</div>`;
       }
-      html += CHANGELOG.slice(newCount, visibleCount).map(renderEntryHtml).join('');
+      html += olderGroups.slice(0, visibleOlderCount).map(renderGroupHtml).join('');
       body.innerHTML = html;
 
-      if (visibleCount < CHANGELOG.length) {
+      if (visibleOlderCount < olderGroups.length) {
         const loadMoreBtn = document.createElement('button');
         loadMoreBtn.type = 'button';
         loadMoreBtn.className = 'changelog-load-more';
         loadMoreBtn.innerHTML = 'Load 5 more <span class="changelog-load-more-arrow">↓</span>';
         loadMoreBtn.addEventListener('click', () => {
-          visibleCount = Math.min(CHANGELOG.length, visibleCount + LOAD_MORE_COUNT);
+          visibleOlderCount += LOAD_MORE_COUNT;
           renderBody();
         });
         body.appendChild(loadMoreBtn);
@@ -413,7 +460,7 @@
     }
 
     function openDrawer() {
-      visibleCount = 0; // jedes Oeffnen startet wieder beim Standard-Ausschnitt
+      visibleOlderCount = INITIAL_OLDER_COUNT; // jedes Oeffnen startet wieder beim Standard-Ausschnitt
       renderBody();
       drawer.classList.add('open');
       overlay.classList.add('visible');

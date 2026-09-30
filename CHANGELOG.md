@@ -1,5 +1,26 @@
 # Internal Changelog
 
+## 4.27.1 — 2026-09-30
+
+- `build/installer.nsh` (`build.nsis.include`): `customInit` copies
+  `$INSTDIResourcespp\server\data` to `%APPDATA%	hree-trick-pony-desktop	tp-data`
+  (only if that doesn't exist yet) BEFORE the old version is uninstalled.
+  4.27.0's own migration in dataPaths.js could never see legacy data on an
+  auto-update, because the update (driven by the old app) had already
+  wiped it - this closes that gap for anyone updating from <=4.26.5 straight
+  to 4.27.1+. Build verified (NSIS compiles); the real upgrade path from an
+  old install was not exercised.
+- What's New: consecutive versions without `notable` text are merged into
+  one block ("v4.26.0 – v4.26.5", date range, combined Refinements/Bug Fixes
+  labels). "5 older" / "Load 5 more" now count blocks, not versions; new vs.
+  older are grouped separately so a block never spans that boundary.
+- (Not a code change) The user's lost challenge (26.09. 17:41 – 30.09.
+  09:00 UTC) was restored into their history file: since/until recovered
+  from leftover localStorage LevelDB records, trophies recomputed from the
+  13 real ranked matches with the app's own engine (current rules v3, so
+  e.g. Assassin shows 11/6 instead of the remembered 8/4), start rank
+  Plat IV from the dev folder's rank history. Entry flagged `restored: true`.
+
 ## 4.27.0 — 2026-09-30
 
 - **Data loss on every auto-update fixed.** `server/data` (challenge
