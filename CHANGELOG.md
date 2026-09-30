@@ -1,5 +1,21 @@
 # Internal Changelog
 
+## 4.28.3 — 2026-09-30
+
+- Bars: only the game count above each bar; win rate is a "NN% WR" badge
+  sitting on the win/loss seam, green >50 / red <50 / neutral =50. Edge
+  cases handled in role-chart.js with pixel geometry (plot area 228px):
+  0 games -> no bar/badge, just "0"; wins-only / losses-only -> badge
+  clamped inside the bar at the top/bottom edge; bar shorter than the
+  badge (<24px) -> badge above the bar, count above it; "NW"/"NL" labels
+  only when the segment is >=16px AND >=18px away from the badge.
+  Verified 7 variants (1-game bars, 30 wins only, 200 games, one loss only,
+  tiny counts, no games...) in dev Electron: no overlapping/clipped labels,
+  no page scroll, no errors.
+- Renamed "Role Balance" -> "Roles & Picks" (user disliked the old name);
+  on role.html the heading now sits directly above the chart instead of in
+  the page header. Overview card shows only the on-plan "NN% WR", colored.
+
 ## 4.28.2 — 2026-09-30
 
 - role.html / role-chart.js, per user spec: 3 champs per bar (was 5), then

@@ -154,6 +154,8 @@
     .role-breakdown-card .trophies-progress {
       white-space: nowrap;
     }
+    .role-breakdown-card .trophies-progress.role-wr-pos { color: var(--green); }
+    .role-breakdown-card .trophies-progress.role-wr-neg { color: var(--red); }
     .role-breakdown-more {
       flex-shrink: 0;
       color: var(--text-faint);
@@ -1052,7 +1054,7 @@
 
     <a href="role.html" class="trophies-card role-breakdown-card" id="roleBreakdownCard">
       <span class="role-breakdown-chart-wrap" id="roleBreakdownChartWrap"><span class="role-breakdown-empty-dot"></span></span>
-      <span class="trophies-label">Role Balance</span>
+      <span class="trophies-label">Roles &amp; Picks</span>
       <span class="trophies-progress" id="roleBreakdownSummary">–</span>
       <span class="role-breakdown-more" aria-hidden="true">More →</span>
     </a>
@@ -1618,9 +1620,11 @@
       // Ohne Daten/Spiele: neutraler Platzhalter statt einer Luecke (siehe
       // Trophies-Karte daneben, die immer ein Icon zeigt).
       wrap.innerHTML = svg || '<span class="role-breakdown-empty-dot"></span>';
-      summaryEl.textContent = roleStats
-        ? (simulated ? 'TEST DATA · ' : '') + TTPRoleChart.summaryText(roleStats)
-        : '–';
+      // Nur die Winrate "nach Plan", positiv/negativ eingefaerbt.
+      const sum = roleStats ? TTPRoleChart.summary(roleStats) : { text: '–', tone: '' };
+      summaryEl.textContent = (roleStats && simulated ? 'TEST DATA · ' : '') + sum.text;
+      summaryEl.classList.toggle('role-wr-pos', sum.tone === 'pos');
+      summaryEl.classList.toggle('role-wr-neg', sum.tone === 'neg');
     }
 
     // Die Rolle gilt fuer den GESAMTEN Pool (OTP-Challenge, alle 3 Champions

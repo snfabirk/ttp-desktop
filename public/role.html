@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Role Balance – Three-Trick-Pony</title>
+  <title>Roles &amp; Picks – Three-Trick-Pony</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -45,6 +45,12 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
+    }
+    /* Ueberschrift direkt ueber der Grafik statt oben im Seitenkopf
+       (Nutzerwunsch) - wird zusammen mit der Karte vertikal zentriert. */
+    .role-heading {
+      text-align: center;
+      margin: 0 0 12px;
     }
     .role-card {
       background: var(--panel-bg);
@@ -155,17 +161,55 @@
       border-radius: 5px 5px 0 0;
       transition: height 0.35s ease;
     }
-    .rc-bar-label {
+    /* Ueber dem Balken: Anzahl Spiele (und das WR-Schild, falls der Balken
+       zu niedrig dafuer ist) */
+    .rc-bar-top {
       position: absolute;
       bottom: 100%;
       left: 50%;
       transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
       padding-bottom: 4px;
+    }
+    .rc-bar-empty {
+      height: 0;
+    }
+    .rc-count {
       white-space: nowrap;
       color: var(--text);
       font-family: Georgia, serif;
-      font-size: 0.82rem;
+      font-size: 0.85rem;
+      font-weight: bold;
     }
+    /* WR-Schild auf der Naht zwischen Wins und Losses */
+    .rc-wr-anchor {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      line-height: 0;
+    }
+    .rc-wr {
+      display: inline-block;
+      box-sizing: border-box;
+      height: 18px;
+      line-height: 16px;
+      padding: 0 6px;
+      border-radius: 9px;
+      border: 1px solid currentColor;
+      background: var(--input-bg);
+      font-family: Georgia, serif;
+      font-size: 0.7rem;
+      font-weight: bold;
+      white-space: nowrap;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    }
+    .rc-wr-pos { color: var(--green); }
+    .rc-wr-neg { color: var(--red); }
+    .rc-wr-even { color: var(--text); }
     .rc-seg {
       display: flex;
       align-items: center;
@@ -337,10 +381,10 @@
   <header class="site-header">
     <h1>League of Legends</h1>
     <p class="subtitle">Three-Trick-Pony</p>
-    <h2 class="panel-heading">Role Balance</h2>
   </header>
 
   <div class="content">
+    <h2 class="panel-heading role-heading">Roles &amp; Picks</h2>
     <div class="role-card">
       <p class="role-status" id="roleStatus">Loading …</p>
       <div id="roleChart"></div>

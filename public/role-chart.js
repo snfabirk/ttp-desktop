@@ -1,6 +1,6 @@
 // Rollen-Balkendiagramm (explizite Nutzeranfrage 2026-09-30) - gemeinsam
 // genutzt von role.html (volle Version mit Champ-Listen) und overview.html
-// (Mini-Version in der "Role Balance"-Karte). Daten: roleStats aus dem
+// (Mini-Version in der "Roles & Picks"-Karte). Daten: roleStats aus dem
 // /api/summary-batch-Ergebnis (server.js runSummaryBatch()).
 //
 // Vier Kategorien auf der x-Achse: Main Role mit Pool-Champ ("Ponys"), Main
@@ -59,11 +59,14 @@
     const labels = categoryLabels(mainRole, secondRole);
     const { axisMax, step } = niceAxis(Math.max(...cats.map(c => c.games)));
     const pct = v => (v / axisMax) * 100;
-    // Zahl nur IN ein Balkenstueck schreiben, wenn es hoch genug dafuer ist
-    // (Balkenflaeche ist 228px hoch, siehe .rc-axis/.rc-area in role.html) -
-    // sonst wird sie abgeschnitten; die Bilanz steht ohnehin im Tooltip und
-    // in der Champ-Liste darunter.
-    const fits = n => (n / axisMax) * 228 >= 16;
+    // Pixel-Geometrie der Balkenflaeche (228px hoch, siehe .rc-axis/.rc-area
+    // in role.html) - noetig, um WR-Schild und W/L-Zahlen kollisionsfrei zu
+    // platzieren.
+    const AREA = 228;
+    const px = v => (v / axisMax) * AREA;
+    const BADGE_H = 18; // Hoehe des WR-Schilds
+    const EDGE = 3;     // Mindestabstand des Schilds zur Balkenkante
+    const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
 
     let ticks = '';
     let gridlines = '';
@@ -72,15 +75,43 @@
       gridlines += `<span class="rc-gridline" style="bottom:${pct(v)}%"></span>`;
     }
 
+    // Ueber dem Balken nur die Anzahl Spiele; die Winrate sitzt als Schild
+    // genau auf der Naht zwischen Wins (unten) und Losses (oben) - Nutzer-
+    // wunsch 2026-09-30. Randfaelle:
+    //  - 0 Spiele: kein Balken, kein Schild, nur "0".
+    //  - nur Wins / nur Losses: keine Naht -> Schild an die obere bzw. untere
+    //    Kante geklemmt, bleibt im Balken.
+    //  - Balken niedriger als das Schild: Schild direkt UEBER den Balken,
+    //    die Anzahl darueber.
+    //  - "7W"/"4L" im Balken nur, wenn das Stueck hoch genug ist UND sie
+    //    dem Schild nicht in die Quere kommen.
     const bars = cats.map(c => {
-      const wr = c.games ? Math.round((c.wins / c.games) * 100) : 0;
-      const top = c.games ? `${c.games} · ${wr}%` : '0';
+      if (!c.games) {
+        return `
+        <div class="rc-col">
+          <div class="rc-bar rc-bar-empty"><div class="rc-bar-top"><span class="rc-count">0</span></div></div>
+        </div>`;
+      }
+      const wr = Math.round((c.wins / c.games) * 100);
+      const tone = wr > 50 ? 'pos' : wr < 50 ? 'neg' : 'even';
+      const badge = `<span class="rc-wr rc-wr-${tone}">${wr}% WR</span>`;
+      const barPx = px(c.games);
+      const winPx = px(c.wins);
+      const lossPx = px(c.losses);
+      const badgeInside = barPx >= BADGE_H + 2 * EDGE;
+      // Mitte des Schilds, gemessen von der Balken-Unterkante
+      const badgeMid = badgeInside ? clamp(winPx, BADGE_H / 2 + EDGE, barPx - BADGE_H / 2 - EDGE) : null;
+      const labelFits = (segPx, segMid) => segPx >= 16 &&
+        (!badgeInside || Math.abs(segMid - badgeMid) >= BADGE_H / 2 + 9);
+      const showLoss = c.losses && labelFits(lossPx, winPx + lossPx / 2);
+      const showWin = c.wins && labelFits(winPx, winPx / 2);
       return `
         <div class="rc-col">
-          <div class="rc-bar" style="height:${pct(c.games)}%" title="${c.wins}W ${c.losses}L">
-            <span class="rc-bar-label">${top}</span>
-            ${c.losses ? `<div class="rc-seg rc-loss" style="flex:${c.losses}">${fits(c.losses) ? `<span>${c.losses}L</span>` : ''}</div>` : ''}
-            ${c.wins ? `<div class="rc-seg rc-win" style="flex:${c.wins}">${fits(c.wins) ? `<span>${c.wins}W</span>` : ''}</div>` : ''}
+          <div class="rc-bar" style="height:${pct(c.games)}%" title="${c.wins}W ${c.losses}L · ${wr}% WR">
+            <div class="rc-bar-top"><span class="rc-count">${c.games}</span>${badgeInside ? '' : badge}</div>
+            ${c.losses ? `<div class="rc-seg rc-loss" style="flex:${c.losses}">${showLoss ? `<span>${c.losses}L</span>` : ''}</div>` : ''}
+            ${c.wins ? `<div class="rc-seg rc-win" style="flex:${c.wins}">${showWin ? `<span>${c.wins}W</span>` : ''}</div>` : ''}
+            ${badgeInside ? `<div class="rc-wr-anchor" style="bottom:${(badgeMid - BADGE_H / 2).toFixed(1)}px">${badge}</div>` : ''}
           </div>
         </div>`;
     }).join('');
@@ -187,17 +218,15 @@
     return `<svg viewBox="0 0 ${4 * W + 3 * GAP} ${H}" class="role-breakdown-svg" aria-hidden="true">${rects}</svg>`;
   }
 
-  // Kurzfassung fuer die Overview-Karte: Anteil "nach Plan" (Main Role mit
-  // Pony) + dessen Winrate.
-  function summaryText(roleStats) {
-    const cats = totals(roleStats);
-    const all = cats.reduce((n, c) => n + c.games, 0);
-    if (!all) return 'No games yet';
-    const plan = cats[0];
-    const share = Math.round((plan.games / all) * 100);
-    const wr = plan.games ? Math.round((plan.wins / plan.games) * 100) : 0;
-    return plan.games ? `${share}% on plan · ${wr}% WR there` : '0% on plan';
+  // Kurzfassung fuer die Overview-Karte (Nutzerwunsch 2026-09-30): nur noch
+  // die Winrate "nach Plan" (Main Role mit Pony), plus Tonalitaet fuer die
+  // Einfaerbung (>50 positiv, <50 negativ).
+  function summary(roleStats) {
+    const plan = totals(roleStats)[0];
+    if (!plan.games) return { text: 'No games yet', tone: '' };
+    const wr = Math.round((plan.wins / plan.games) * 100);
+    return { text: `${wr}% WR`, tone: wr > 50 ? 'pos' : wr < 50 ? 'neg' : '' };
   }
 
-  window.TTPRoleChart = { renderFull, renderMini, summaryText, niceAxis };
+  window.TTPRoleChart = { renderFull, renderMini, summary, niceAxis };
 })();
