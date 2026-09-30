@@ -258,19 +258,18 @@ html, body {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-/* "Go to Overview" - bewusst NICHT ein weiterer kleiner Kreis wie die
-   Utility-Icons daneben (Zahnrad/Beenden/Update/Log) - genau das war das
-   Problem an der ersten Version (2026-09-30): als unauffaelliger Kreis
-   zwischen den anderen ging der wichtigste Button der Seite optisch
-   komplett unter. Stattdessen ein solider goldener Pill-Button mit Text -
-   voller Kontrast/Farbe/Groesse statt nur Outline, damit er sofort als DIE
-   Aktion erkennbar ist, mit der man weiterkommt. Steht trotzdem oben rechts
-   neben den anderen (spart weiterhin die volle Grid-Reihe, die die Seite
-   bei 70%/80% Fenstergroesse scrollbar gemacht hat). */
+/* "Go to Overview" - solider goldener Pill-Button (nicht noch ein kleiner
+   Kreis wie die Utility-Icons, daran ist v4.26.2 gescheitert). Sitzt seit
+   v4.26.4 NICHT mehr oben rechts in der Icon-Leiste (dort wirkte er als
+   primaere Aktion fehl am Platz, Nutzerwunsch 2026-09-30), sondern
+   rechtsbuendig, vertikal mittig am Fensterrand. position:fixed, damit er
+   weiterhin keine Grid-Reihe belegt (die Seite bei 70%/80% sonst wieder
+   scrollbar). */
 .overview-nav-btn {
   position: fixed;
-  top: 16px;
-  right: 194px;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%);
   z-index: 50;
   display: flex;
   align-items: center;
@@ -291,11 +290,20 @@ html, body {
 }
 .overview-nav-btn:hover {
   background: var(--border-hover);
-  transform: translateY(-2px);
+  transform: translateY(-50%) translateX(-3px);
   box-shadow: 0 8px 20px color-mix(in srgb, var(--gold) 55%, transparent);
 }
 .overview-nav-btn:active {
-  transform: translateY(0);
+  transform: translateY(-50%);
+}
+/* Schmale Fenster: der 860px-Grid reicht fast bis an den Rand - dann nur
+   noch der Pfeil als runder Button, damit er keine Box-Inhalte verdeckt. */
+@media (max-width: 1100px) {
+  .overview-nav-btn {
+    right: 8px;
+    padding: 12px 14px;
+  }
+  .overview-nav-btn .overview-nav-label { display: none; }
 }
 
 /* Zahnrad-Button oben rechts fuer die Einstellungen - auf allen Seiten gleich */

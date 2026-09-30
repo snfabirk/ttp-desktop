@@ -1,5 +1,14 @@
 # Internal Changelog
 
+## 4.26.4 — 2026-09-30
+
+- `index.html`/`style.css`: the gold "Overview →" pill moved out of the
+  top-right icon row ("da oben ist es fehl am Platz") to the right window
+  edge, vertically centered. Still `position: fixed` so it takes no grid
+  row (no 70%/80% scroll regression). Below 1100px viewport width the
+  label hides and it shrinks to an arrow-only button at `right: 8px` so it
+  doesn't cover the 860px grid.
+
 ## 4.26.3 — 2026-09-30
 
 - `index.html`/`style.css`: the 4.26.2 "Overview" icon (a 34px circle

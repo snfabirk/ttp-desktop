@@ -26,6 +26,14 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.26.4',
+      date: '2026-09-30',
+      notable: [
+        'The "Overview" button moved from the top icon row to the right edge, centered on the page'
+      ],
+      bugfixes: []
+    },
+    {
       version: '4.26.3',
       date: '2026-09-30',
       notable: [
