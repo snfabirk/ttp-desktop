@@ -1,5 +1,14 @@
 # Internal Changelog
 
+## 4.26.5 — 2026-09-30
+
+- `index.html`/`style.css`: 4.26.4's right-window-edge spot was still not
+  what the user meant - the "Overview →" pill now sits directly beside the
+  content grid (absolute child of `.content`, `left: calc(100% + 28px)`,
+  vertically centered). Arrow-only below 1180px; between 901-1000px (where
+  even the arrow would overflow and cause horizontal scroll) it falls back
+  to `position: fixed` at the window edge.
+
 ## 4.26.4 — 2026-09-30
 
 - `index.html`/`style.css`: the gold "Overview →" pill moved out of the

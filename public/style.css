@@ -259,22 +259,23 @@ html, body {
 }
 
 /* "Go to Overview" - solider goldener Pill-Button (nicht noch ein kleiner
-   Kreis wie die Utility-Icons, daran ist v4.26.2 gescheitert). Sitzt seit
-   v4.26.4 NICHT mehr oben rechts in der Icon-Leiste (dort wirkte er als
-   primaere Aktion fehl am Platz, Nutzerwunsch 2026-09-30), sondern
-   rechtsbuendig, vertikal mittig am Fensterrand. position:fixed, damit er
-   weiterhin keine Grid-Reihe belegt (die Seite bei 70%/80% sonst wieder
-   scrollbar). */
+   Kreis wie die Utility-Icons, daran ist v4.26.2 gescheitert). Seit v4.26.5
+   direkt RECHTS NEBEN dem Inhaltsbereich, vertikal mittig (Nutzerwunsch
+   2026-09-30: weder oben in der Icon-Leiste noch am Fensterrand). Liegt als
+   absolut positioniertes Kind in .content (position:relative) - belegt
+   dadurch keine Grid-Reihe/-Spalte, die Seite bleibt bei 70%/80% ohne
+   Scrollen. */
 .overview-nav-btn {
-  position: fixed;
+  position: absolute;
   top: 50%;
-  right: 24px;
+  left: calc(100% + 28px);
   transform: translateY(-50%);
   z-index: 50;
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 9px 20px;
+  white-space: nowrap;
   background: var(--gold);
   color: var(--input-bg);
   border: none;
@@ -290,20 +291,28 @@ html, body {
 }
 .overview-nav-btn:hover {
   background: var(--border-hover);
-  transform: translateY(-50%) translateX(-3px);
+  transform: translateY(-50%) translateX(3px);
   box-shadow: 0 8px 20px color-mix(in srgb, var(--gold) 55%, transparent);
 }
 .overview-nav-btn:active {
   transform: translateY(-50%);
 }
-/* Schmale Fenster: der 860px-Grid reicht fast bis an den Rand - dann nur
-   noch der Pfeil als runder Button, damit er keine Box-Inhalte verdeckt. */
-@media (max-width: 1100px) {
+/* Wenig Platz neben dem 860px-Grid: nur noch der Pfeil, naeher dran. */
+@media (max-width: 1180px) {
   .overview-nav-btn {
-    right: 8px;
+    left: calc(100% + 12px);
     padding: 12px 14px;
   }
   .overview-nav-btn .overview-nav-label { display: none; }
+}
+/* Unter ~1000px passt nicht mal der Pfeil neben das Zwei-Spalten-Grid
+   (sonst horizontaler Scroll) - dann am Fensterrand fixieren. */
+@media (max-width: 1000px) and (min-width: 901px) {
+  .overview-nav-btn {
+    position: fixed;
+    left: auto;
+    right: 6px;
+  }
 }
 
 /* Zahnrad-Button oben rechts fuer die Einstellungen - auf allen Seiten gleich */
