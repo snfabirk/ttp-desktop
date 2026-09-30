@@ -49,11 +49,58 @@
     });
   }
 
-  function renderFull(container, roleStats, { mainRole, secondRole, iconUrl }) {
+  // Platzhalter-Geruest (Nutzerwunsch 2026-09-30): ohne Spiele und waehrend
+  // des Ladens dasselbe Layout wie das fertige Diagramm - Achse, Rollen-
+  // Beschriftungen, blasse gestrichelte Balken-Umrisse, unter "your 3 picks"
+  // schon die Pool-Champs (gedimmt, ohne Zahlen), sonst "no games yet".
+  // Beim ersten echten Spiel fuellen sich nur Balken/Zahlen, nichts springt.
+  function renderSkeleton(container, { mainRole, secondRole, iconUrl, poolChamps = [] }) {
+    const labels = categoryLabels(mainRole, secondRole);
+    let ticks = '';
+    let gridlines = '';
+    // Rasterlinien ja, Achsenzahlen nein - die Umrisse sind Platzhalter
+    // ohne Wert, eine Skala daneben wuerde "Balken bei 3, Beschriftung 0"
+    // suggerieren.
+    for (let v = 0; v <= 5; v += 1) {
+      gridlines += `<span class="rc-gridline" style="bottom:${v * 20}%"></span>`;
+    }
+    const bars = CATEGORY_IDS.map(() => `
+        <div class="rc-col">
+          <div class="rc-bar rc-ghost" style="height:55%">
+            <div class="rc-bar-top"><span class="rc-count rc-count-ghost">0</span></div>
+          </div>
+        </div>`).join('');
+    const xlabels = CATEGORY_IDS.map(id => `
+      <div class="rc-xlabel"><strong>${escapeHtml(labels[id].title)}</strong><span>${escapeHtml(labels[id].sub)}</span></div>`).join('');
+    const lists = CATEGORY_IDS.map(id => {
+      if (id === 'mainPony' && poolChamps.length) {
+        const items = poolChamps.slice(0, MAX_CHAMPS_SHOWN).map(ch => `
+        <li class="rc-champ rc-champ-ghost">
+          ${ch.id ? `<img src="${iconUrl(ch.id)}" alt="" loading="lazy">` : '<span class="rc-champ-noicon"></span>'}
+          <span class="rc-champ-name">${escapeHtml(ch.name || ch.id || '')}</span>
+        </li>`).join('');
+        return `<div class="rc-champ-col"><ul class="rc-champs">${items}</ul></div>`;
+      }
+      return '<div class="rc-champ-col"><ul class="rc-champs"><li class="rc-champ-none">no games yet</li></ul></div>';
+    }).join('');
+    container.innerHTML = `
+      <div class="rc-legend">
+        <span><i class="rc-swatch rc-win"></i>Wins</span>
+        <span><i class="rc-swatch rc-loss"></i>Losses</span>
+      </div>
+      <div class="rc-grid">
+        <div class="rc-axis"><div class="rc-area">${ticks}</div></div>
+        <div class="rc-plot"><div class="rc-area rc-bars">${gridlines}${bars}</div></div>
+        <div></div>${xlabels}
+        <div></div>${lists}
+      </div>`;
+  }
+
+  function renderFull(container, roleStats, { mainRole, secondRole, iconUrl, poolChamps }) {
     const cats = totals(roleStats);
     const allGames = cats.reduce((n, c) => n + c.games, 0);
     if (!allGames) {
-      container.innerHTML = '<p class="rc-empty">No ranked games in this challenge yet.</p>';
+      renderSkeleton(container, { mainRole, secondRole, iconUrl, poolChamps });
       return;
     }
     const labels = categoryLabels(mainRole, secondRole);
@@ -238,5 +285,5 @@
     return { text: `${wr}% WR`, tone: wr > 50 ? 'pos' : wr < 50 ? 'neg' : '' };
   }
 
-  window.TTPRoleChart = { renderFull, renderMini, emptyMini, summary, niceAxis };
+  window.TTPRoleChart = { renderFull, renderSkeleton, renderMini, emptyMini, summary, niceAxis };
 })();

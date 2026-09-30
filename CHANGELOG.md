@@ -1,5 +1,16 @@
 # Internal Changelog
 
+## 4.28.8 — 2026-09-30
+
+- Roles & Picks placeholder skeleton (`TTPRoleChart.renderSkeleton`),
+  shown with no games AND while loading (replaces the empty card with
+  "Loading …" / "No ranked games in this challenge yet"): same layout as
+  the real chart - gridlines (no axis numbers, the ghost bars have no
+  value), 4 dashed ghost bars with "0", role labels, the 3 pool champs
+  dimmed under "your 3 picks", "no games yet" in the other columns. Status
+  line: "No ranked games yet – your games will show up here" / scan
+  progress. Verified in dev Electron with the user's data (0 and 46 games).
+
 ## 4.28.7 — 2026-09-30
 
 - index.html: the challenge box heading reads "Your Challenge" instead of

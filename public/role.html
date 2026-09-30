@@ -350,6 +350,19 @@
       color: var(--text-faint);
       font-size: 0.72rem;
     }
+    /* Platzhalter-Geruest (keine Spiele / laedt noch) */
+    .rc-bar.rc-ghost {
+      border: 1.5px dashed color-mix(in srgb, var(--text-faint) 85%, transparent);
+      border-bottom: none;
+      background: color-mix(in srgb, var(--text-faint) 9%, transparent);
+    }
+    .rc-count-ghost {
+      color: var(--text-faint);
+      font-weight: normal;
+    }
+    .rc-champ-ghost {
+      opacity: 0.45;
+    }
     .rc-champ-none, .rc-champ-more {
       color: var(--text-faint);
       font-family: Georgia, serif;
@@ -412,6 +425,11 @@
       if (parts.length !== 2 || !parts[0] || !parts[1]) { statusEl.textContent = 'No valid summoner set - please set one on the Champion Selection page.'; return; }
       if (!champions.length) { statusEl.textContent = 'No champion pool set yet.'; return; }
 
+      // Geruest sofort zeigen (statt leerer Karte + "Loading …"), die echten
+      // Daten fuellen es spaeter nur auf.
+      const chartOpts = { mainRole, secondRole, iconUrl: championIconUrl, poolChamps: champions };
+      TTPRoleChart.renderSkeleton(chartEl, chartOpts);
+
       try {
         statusEl.textContent = 'Loading …';
         const accountRes = await fetch(`/api/account?${new URLSearchParams({ gameName: parts[0], tagLine: parts[1] })}`);
@@ -443,8 +461,10 @@
         }
 
         const total = result.overall ? result.overall.totalGames : 0;
-        statusEl.textContent = `${total} ranked game(s) since ${new Date(since).toLocaleDateString('en-GB')}`;
-        TTPRoleChart.renderFull(chartEl, result.roleStats, { mainRole, secondRole, iconUrl: championIconUrl });
+        statusEl.textContent = total
+          ? `${total} ranked game(s) since ${new Date(since).toLocaleDateString('en-GB')}`
+          : 'No ranked games yet – your games will show up here';
+        TTPRoleChart.renderFull(chartEl, result.roleStats, chartOpts);
       } catch (e) {
         statusEl.textContent = `Could not load role stats: ${e.message}`;
       }
