@@ -1,5 +1,27 @@
 # Internal Changelog
 
+## 4.27.4 — 2026-09-30
+
+- Fix: "Back to current challenge" could leave the past challenge's
+  trophies in the grid. `applyAchievementProgress()` only touches trophies
+  present in the given data, and 4.27.3's back handler called it with `[]`
+  when no live result existed yet (scan still running/failed) - so nothing
+  was reset. Now the grid is restored from a pristine snapshot
+  (`resetTrophyGrid()`) before EVERY switch (both directions, also fixes
+  values leaking between challenges with different trophy sets), and a
+  new scan is started if none is running and no live result exists.
+- Gold frame now wraps only summary -> grid (`.trophies-frame`), not the
+  notes/status lines below; spacing under the grid tightened and the
+  bottom status line reserves 1 line instead of 2 (it is the last element,
+  nothing below can shift). At the user's window (1796x1116, ~1077px inner
+  height) the page was 1103px tall -> scrollable, frame cut off at the
+  bottom; now exactly fits (1077), frame fully visible.
+- Banner text: "Viewing challenge from X - Y · trophies and stats as they
+  were back then" (or "· older trophy list - targets and stats may differ
+  from today") instead of "read-only snapshot" wording.
+- Verified headless at 1796x1077 inner: live -> past -> back, with and
+  without a finished live scan; grid position constant, no exceptions.
+
 ## 4.27.3 — 2026-09-30
 
 - trophies.html: switching into / out of a past challenge no longer moves

@@ -182,13 +182,17 @@
   /* Rahmen um die gesamte linke Spalte, solange eine vergangene Challenge
      angezeigt wird - zusaetzlich zum Banner, damit es auch beim Scrollen
      (Banner nicht mehr im Blick) noch erkennbar bleibt. */
-  .trophies-main {
+  /* Rahmen nur um den eigentlichen Trophy-Bereich (Prozent bis Grid), NICHT
+     um die Hinweis-/Statuszeilen darunter - sonst reichte er bei normaler
+     Fenstergroesse unten aus dem Bild und machte die Seite scrollbar
+     (Nutzerfeedback 2026-09-30). */
+  .trophies-frame {
     outline: 2px solid transparent;
     outline-offset: 10px;
     border-radius: 10px;
     transition: outline-color 0.2s ease;
   }
-  .trophies-main.historical-view {
+  .trophies-main.historical-view .trophies-frame {
     outline: 2px solid var(--history-view-accent);
     outline-offset: 10px;
     border-radius: 10px;
@@ -213,8 +217,11 @@
     color: var(--text-dim);
     font-family: Georgia, serif;
     font-size: 0.8rem;
-    margin-bottom: 10px;
+    margin: 8px 0 2px;
     opacity: 0.85;
+  }
+  .trophies-frame + .role-note {
+    margin-top: 22px;
   }
   .role-note strong {
     color: var(--gold);
@@ -476,11 +483,13 @@
     font-family: Georgia, serif;
     font-size: 0.8rem;
     line-height: 1.4;
-    margin: -6px 0 18px;
+    margin: 4px 0 4px;
     /* Text wechselt mehrfach waehrend eines Ladevorgangs (leer -> "Loading
        trophy progress..." -> Fortschritts-Updates -> finale "Based on X
-       games..."-Zeile) - 2 Zeilen reserviert, damit dabei nichts springt. */
-    min-height: 2.8em;
+       games..."-Zeile). Eine Zeile reserviert reicht: das ist das letzte
+       Element der Seite, darunter kann nichts springen - eine zweite
+       reservierte Zeile machte die Seite nur unnoetig scrollbar. */
+    min-height: 1.4em;
   }
 
   /* ----- Challenge History (rechte Seitenleiste) ----- */
@@ -728,6 +737,7 @@
 
   <div class="content">
     <div class="trophies-main" id="trophiesMain">
+      <div class="trophies-frame" id="trophiesFrame">
       <div class="trophies-progress-summary">
         <div class="big-percent" id="trophiesOverallPercent">0%</div>
         <div class="count-label" id="trophiesOverallCount">0 / 21 unlocked</div>
@@ -751,6 +761,7 @@
       </div>
 
       <div class="trophy-grid" id="trophyGrid"></div>
+      </div>
 
       <p class="role-note">Targets aren't random - each one scales with how far your LP Goal is from your current rank, and with your chosen Challenge Level.</p>
       <p class="role-note" id="roleNote"></p>
@@ -1281,6 +1292,21 @@
       }
     }
 
+    // Unbefuellter Ausgangszustand des Trophy-Grids (alle Slots ohne
+    // Fortschritt) - wird vor JEDEM Wechsel zwischen aktueller und
+    // vergangener Challenge wiederhergestellt. applyAchievementProgress()
+    // aktualisiert nur die Trophies, die im jeweiligen Datensatz vorkommen;
+    // ohne Zuruecksetzen blieben Werte der vorher angezeigten Challenge
+    // stehen (z.B. "Back to current challenge", bevor der Live-Scan fertig
+    // war -> Grid zeigte weiter die alte Challenge).
+    const pristineTrophyGridHtml = trophyGrid.innerHTML;
+    function resetTrophyGrid() {
+      trophyGrid.innerHTML = pristineTrophyGridHtml;
+      document.getElementById('trophiesOverallPercent').textContent = '0%';
+      document.getElementById('trophiesOverallCount').textContent = '0 / 21 unlocked';
+      document.querySelector('.platinum-trophy').classList.remove('unlocked');
+    }
+
     loadAchievementProgress();
 
     // ----- Challenge History (rechte Seitenleiste) - unabhaengig von
@@ -1531,6 +1557,7 @@
       // dazwischenliegenden Reload) - siehe .swap-flash CSS oben.
       flashTrophyGrid();
 
+      resetTrophyGrid();
       applyAchievementProgress(entry.trophies);
 
       const overallPercent = entry.totalCount > 0 ? Math.round((entry.unlockedCount / entry.totalCount) * 100) : 0;
@@ -1541,9 +1568,12 @@
       const dateRange = entry.until
         ? `${formatShortDate(entry.since)} – ${formatShortDate(entry.until)}`
         : `${formatShortDate(entry.since)} – ongoing`;
-      document.getElementById('historyViewBannerText').textContent =
-        `Viewing challenge from ${dateRange} - this is a read-only snapshot, not the current challenge.` +
-        (isOutdatedTrophyList(entry) ? ' It uses an older version of the trophy list - targets have been adjusted since.' : '');
+      // Kurz und fuer den Nutzer verstaendlich statt "read-only snapshot"
+      // (Nutzerfeedback 2026-09-30: "was will der Viewer damit anfangen").
+      // Einzeilig gehalten, damit das Banner in den Platz der Rules-Zeile passt.
+      document.getElementById('historyViewBannerText').textContent = isOutdatedTrophyList(entry)
+        ? `Viewing challenge from ${dateRange} · older trophy list - targets and stats may differ from today`
+        : `Viewing challenge from ${dateRange} · trophies and stats as they were back then`;
       document.getElementById('historyViewBanner').classList.add('visible');
       document.getElementById('trophiesMain').classList.add('historical-view');
 
@@ -1565,17 +1595,16 @@
       document.getElementById('historyViewBanner').classList.remove('visible');
       document.getElementById('trophiesMain').classList.remove('historical-view');
       flashTrophyGrid();
+      resetTrophyGrid();
+      document.getElementById('achievementsStatus').textContent = lastLiveStatusText;
       if (lastLiveResult) {
         renderLiveResult(lastLiveResult);
-      } else {
-        // Noch kein Live-Ergebnis (Scan laeuft noch/ist gescheitert) - leeres
-        // Grid statt der alten Challenge, der laufende Scan fuellt es gleich.
-        applyAchievementProgress([]);
-        document.getElementById('trophiesOverallPercent').textContent = '0%';
-        document.getElementById('trophiesOverallCount').textContent = '0 / 21 unlocked';
-        document.querySelector('.platinum-trophy').classList.remove('unlocked');
+      } else if (!achievementRefreshInProgress) {
+        // Noch kein Live-Ergebnis und auch kein Scan unterwegs (z.B. der
+        // erste ist gescheitert) - neu anstossen statt leer stehen zu bleiben.
+        // Laeuft einer, fuellt der das Grid gleich selbst.
+        loadAchievementProgress();
       }
-      document.getElementById('achievementsStatus').textContent = lastLiveStatusText;
     });
 
     async function loadChallengeHistory(puuid) {
