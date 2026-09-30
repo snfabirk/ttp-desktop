@@ -1,5 +1,20 @@
 # Internal Changelog
 
+## 4.27.3 — 2026-09-30
+
+- trophies.html: switching into / out of a past challenge no longer moves
+  anything (user: "das hin und her gespringe sieht so unsauber aus").
+  The banner used to expand at the top (max-height animation) and push the
+  whole column ~70px down; it now shares a grid-stacked `.status-slot` with
+  the "rules status" line under the progress summary and just cross-fades.
+  The gold outline now fades in (outline doesn't affect layout anyway).
+  "Back to current challenge" used to `location.reload()` (empty re-render,
+  full re-scan, jump to top); it now re-renders the cached last live result
+  (`lastLiveResult`/`renderLiveResult`) in place. The 15-min auto-refresh
+  no longer overwrites the grid while a past challenge is shown - it only
+  updates the cache. Verified headless: trophy grid stays at the same page
+  offset (484px) in live -> past -> back, no exceptions.
+
 ## 4.27.2 — 2026-09-30
 
 - New `POST /api/challenge-history/close` (used by "Reset Challenge" in

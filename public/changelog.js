@@ -25,6 +25,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.27.3',
+      date: '2026-09-30',
+      notable: [],
+      refinements: 1,
+      bugfixes: 0
+    },
+    {
       version: '4.27.2',
       date: '2026-09-30',
       notable: [

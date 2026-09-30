@@ -97,7 +97,6 @@
     font-family: Georgia, serif;
     font-size: 0.75rem;
     line-height: 1.4;
-    margin: -6px 0 16px;
     min-height: 2.8em;
     opacity: 0;
     transition: opacity 0.15s ease;
@@ -117,41 +116,42 @@
      bewusst deutlich abgesetzte Farbe (Amber, in keinem Theme sonst benutzt),
      damit klar erkennbar ist "das ist NICHT die aktuelle Challenge". ----- */
   :root { --history-view-accent: #e0a458; }
-  /* Immer im Layout (kein display:none/flex-Toggle mehr) und ueber
-     max-height/Padding/Margin animiert statt hart ein-/auszublenden -
-     ein reiner display-Toggle liess beim Rein-/Rausklicken aus der
-     History-Ansicht alles darunter (Fortschritt, Trophy-Grid, ...)
-     abrupt nach unten/oben springen. So waechst/schrumpft die Leiste
-     weich, statt die Seite ruckartig zu verschieben - explizite
-     Nutzeranfrage ("verschiebt sich visuell jedesmal alles... soll
-     nicht so hin und her springen"). Bei max-height:0 nimmt sie trotzdem
-     (fast) keinen Platz weg, damit die Live-Ansicht keine permanente
-     Luecke zeigt. */
+  /* Banner und "rules status"-Zeile teilen sich EINEN Platz (Grid-Stacking:
+     beide liegen in derselben Zelle, die Zelle ist immer so hoch wie der
+     groessere von beiden). Beim Wechsel zwischen aktueller und vergangener
+     Challenge wird nur ueberblendet - nichts darunter verschiebt sich.
+     Frueher klappte das Banner oben per max-height auf und schob die ganze
+     Spalte ~70px nach unten (explizites Nutzerfeedback 2026-09-30: "das hin
+     und her gespringe sieht so unsauber aus"). */
+  .status-slot {
+    display: grid;
+    margin: -6px 0 16px;
+  }
+  .status-slot > * {
+    grid-area: 1 / 1;
+    align-self: center;
+  }
+  .status-slot .rules-status {
+    margin: 0;
+  }
   .history-view-banner {
     display: flex;
     align-items: center;
     gap: 10px;
     background: color-mix(in srgb, var(--history-view-accent) 16%, var(--panel-bg));
-    border-color: var(--history-view-accent);
-    border-style: solid;
-    border-width: 0;
+    border: 1px solid var(--history-view-accent);
     border-radius: 8px;
-    padding: 0 14px;
-    margin-bottom: 0;
+    padding: 8px 14px;
     font-family: Georgia, serif;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     color: var(--text);
-    max-height: 0;
     opacity: 0;
-    overflow: hidden;
-    transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease, margin-bottom 0.25s ease, border-width 0.25s ease;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s;
   }
   .history-view-banner.visible {
-    max-height: 80px;
     opacity: 1;
-    padding: 10px 14px;
-    margin-bottom: 14px;
-    border-width: 1px;
+    visibility: visible;
   }
   .history-view-banner-icon {
     flex-shrink: 0;
@@ -182,6 +182,12 @@
   /* Rahmen um die gesamte linke Spalte, solange eine vergangene Challenge
      angezeigt wird - zusaetzlich zum Banner, damit es auch beim Scrollen
      (Banner nicht mehr im Blick) noch erkennbar bleibt. */
+  .trophies-main {
+    outline: 2px solid transparent;
+    outline-offset: 10px;
+    border-radius: 10px;
+    transition: outline-color 0.2s ease;
+  }
   .trophies-main.historical-view {
     outline: 2px solid var(--history-view-accent);
     outline-offset: 10px;
@@ -722,18 +728,19 @@
 
   <div class="content">
     <div class="trophies-main" id="trophiesMain">
-      <div class="history-view-banner" id="historyViewBanner">
-        <span class="history-view-banner-icon">🕘</span>
-        <span class="history-view-banner-text" id="historyViewBannerText"></span>
-        <button type="button" class="history-view-back-btn" id="historyViewBackBtn">← Back to current challenge</button>
-      </div>
-
       <div class="trophies-progress-summary">
         <div class="big-percent" id="trophiesOverallPercent">0%</div>
         <div class="count-label" id="trophiesOverallCount">0 / 21 unlocked</div>
       </div>
 
-      <p class="rules-status" id="rulesStatus"></p>
+      <div class="status-slot">
+        <p class="rules-status" id="rulesStatus"></p>
+        <div class="history-view-banner" id="historyViewBanner">
+          <span class="history-view-banner-icon">🕘</span>
+          <span class="history-view-banner-text" id="historyViewBannerText"></span>
+          <button type="button" class="history-view-back-btn" id="historyViewBackBtn">← Back to current challenge</button>
+        </div>
+      </div>
 
       <div class="platinum-trophy">
         <span class="trophy-icon" data-icon="trophyCup"></span>
@@ -1094,12 +1101,46 @@
     // kollidieren koennte.
     let achievementRefreshInProgress = false;
 
+    // Letztes Live-Ergebnis + Statuszeile, damit "Back to current challenge"
+    // die aktuelle Challenge sofort wieder zeigen kann, statt die Seite neu
+    // zu laden (das liess alles leer neu aufbauen und an den Seitenanfang
+    // springen, explizites Nutzerfeedback 2026-09-30).
+    let lastLiveResult = null;
+    // id des gerade im Trophy-Grid angezeigten History-Eintrags, oder null
+    // auf der Live-Ansicht (siehe viewHistoricalEntry()).
+    let activeHistoricalEntryId = null;
+    let lastLiveStatusText = '';
+    function setLiveStatus(text) {
+      lastLiveStatusText = text;
+      if (activeHistoricalEntryId === null) document.getElementById('achievementsStatus').textContent = text;
+    }
+
+    function renderLiveResult(result) {
+      applyAchievementProgress(result.trophies);
+
+      const rulesStatusEl = document.getElementById('rulesStatus');
+      rulesStatusEl.classList.add('visible');
+      if (result.rulesUpToDate === false) {
+        rulesStatusEl.classList.remove('current');
+        rulesStatusEl.classList.add('outdated');
+        rulesStatusEl.textContent = '⚠ The trophy rules changed since some of these were confirmed - reset your challenge on the Champion Selection page to recalculate them under the current rules.';
+      } else {
+        rulesStatusEl.classList.remove('outdated');
+        rulesStatusEl.classList.add('current');
+        rulesStatusEl.textContent = '✓ This list reflects the current trophy rules.';
+      }
+
+      const overallPercent = result.totalCount > 0 ? Math.round((result.unlockedCount / result.totalCount) * 100) : 0;
+      document.getElementById('trophiesOverallPercent').textContent = `${overallPercent}%`;
+      document.getElementById('trophiesOverallCount').textContent = `${result.unlockedCount} / ${result.totalCount} unlocked`;
+      document.querySelector('.platinum-trophy').classList.toggle('unlocked', Boolean(result.platinumUnlocked));
+    }
+
     async function loadAchievementProgress() {
       if (achievementRefreshInProgress) return;
       achievementRefreshInProgress = true;
-      const statusEl = document.getElementById('achievementsStatus');
       try {
-        if (!role) { statusEl.textContent = ''; return; }
+        if (!role) { setLiveStatus(''); return; }
 
         const summonerName = (localStorage.getItem('ttp_summoner_name') || '').trim();
         const since = localStorage.getItem('ttp_challenge_start') || '';
@@ -1109,24 +1150,24 @@
         const lpGoalLp = localStorage.getItem('ttp_lp_goal_lp') || '0';
 
         if (!since) {
-          statusEl.textContent = 'Start a challenge on the Champion Selection page to track trophy progress.';
+          setLiveStatus('Start a challenge on the Champion Selection page to track trophy progress.');
           return;
         }
 
         const parts = summonerName.split('#');
         if (parts.length !== 2 || !parts[0] || !parts[1]) {
-          statusEl.textContent = 'No valid summoner set - please set one on the Champion Selection page.';
+          setLiveStatus('No valid summoner set - please set one on the Champion Selection page.');
           return;
         }
 
         let champions = [];
         try { champions = JSON.parse(localStorage.getItem('ttp_selected_champs') || '[]'); } catch (e) {}
         if (!champions.length) {
-          statusEl.textContent = 'No champion pool set yet.';
+          setLiveStatus('No champion pool set yet.');
           return;
         }
 
-        statusEl.textContent = 'Loading trophy progress …';
+        setLiveStatus('Loading trophy progress …');
 
         const accountRes = await fetch(`/api/account?${new URLSearchParams({ gameName: parts[0], tagLine: parts[1] })}`);
         const account = await parseApiResponse(accountRes);
@@ -1154,36 +1195,20 @@
           if (!statusRes.ok) throw new Error(status.error || 'Unknown error');
           if (status.status === 'error') throw new Error(status.error || 'Unknown error while processing.');
 
-          statusEl.textContent = status.total > 0
+          setLiveStatus(status.total > 0
             ? `Scanning matches … (${status.processed}/${status.total})`
-            : 'Searching matches …';
+            : 'Searching matches …');
 
           if (status.status === 'done') { result = status.result; break; }
           await new Promise(r => setTimeout(r, 600));
         }
 
-        applyAchievementProgress(result.trophies);
-
-        const rulesStatusEl = document.getElementById('rulesStatus');
-        rulesStatusEl.classList.add('visible');
-        if (result.rulesUpToDate === false) {
-          rulesStatusEl.classList.remove('current');
-          rulesStatusEl.classList.add('outdated');
-          rulesStatusEl.textContent = '⚠ The trophy rules changed since some of these were confirmed - reset your challenge on the Champion Selection page to recalculate them under the current rules.';
-        } else {
-          rulesStatusEl.classList.remove('outdated');
-          rulesStatusEl.classList.add('current');
-          rulesStatusEl.textContent = '✓ This list reflects the current trophy rules.';
-        }
-
-        const overallPercent = result.totalCount > 0 ? Math.round((result.unlockedCount / result.totalCount) * 100) : 0;
-        document.getElementById('trophiesOverallPercent').textContent = `${overallPercent}%`;
-        document.getElementById('trophiesOverallCount').textContent = `${result.unlockedCount} / ${result.totalCount} unlocked`;
-        if (result.platinumUnlocked) {
-          document.querySelector('.platinum-trophy').classList.add('unlocked');
-        }
-
-        statusEl.textContent = `Based on ${result.totalGamesScanned} game(s) since ${new Date(since).toLocaleDateString('en-GB')} · Expected games for your goal: ${result.erwarteteSpiele}`;
+        lastLiveResult = result;
+        setLiveStatus(`Based on ${result.totalGamesScanned} game(s) since ${new Date(since).toLocaleDateString('en-GB')} · Expected games for your goal: ${result.erwarteteSpiele}`);
+        // Waehrend gerade eine vergangene Challenge angezeigt wird (z.B. der
+        // 15-Minuten-Auto-Refresh laeuft im Hintergrund), NICHT ins Grid
+        // schreiben - nur merken, "Back to current challenge" zeigt es dann.
+        if (activeHistoricalEntryId === null) renderLiveResult(result);
 
         // Merkt sich den letzten bekannten Stand lokal (fuer den Reset-Button
         // auf Seite 1, der die Challenge-History OHNE teuren Neu-Scan
@@ -1250,7 +1275,7 @@
           initChallengeHistory();
         }).catch(() => {});
       } catch (e) {
-        statusEl.textContent = `Could not load trophy progress: ${e.message}`;
+        setLiveStatus(`Could not load trophy progress: ${e.message}`);
       } finally {
         achievementRefreshInProgress = false;
       }
@@ -1390,7 +1415,8 @@
     // als auch dafuer, einen erneuten Klick auf denselben (bereits
     // aktiven) Eintrag als No-Op zu behandeln (kein Grund, die Swap-
     // Animation nochmal abzuspielen, wenn sich inhaltlich nichts aendert).
-    let activeHistoricalEntryId = null;
+    // (activeHistoricalEntryId selbst ist weiter oben deklariert, bei
+    // lastLiveResult - wird schon von loadAchievementProgress() gebraucht.)
     // Aktuelle Trophy-Regelversion (achievements.js RULES_VERSION, kommt mit
     // /api/challenge-history/list). Vergangene Challenges bleiben auch nach
     // spaeteren Ziel-Anpassungen in der History (explizite Nutzeranfrage) -
@@ -1483,6 +1509,14 @@
     // die Komponente (Icons/Fortschrittsbalken/Zielzahlen) existiert schon.
     // Wird per Banner + Rahmen um die ganze linke Spalte klar als "nicht die
     // aktuelle Challenge" markiert, siehe .historical-view CSS oben.
+    function flashTrophyGrid() {
+      const grid = document.getElementById('trophyGrid');
+      grid.classList.remove('swap-flash');
+      void grid.offsetWidth;
+      grid.classList.add('swap-flash');
+      grid.addEventListener('animationend', () => grid.classList.remove('swap-flash'), { once: true });
+    }
+
     function viewHistoricalEntry(entry) {
       // Ein erneuter Klick auf den bereits aktiven Eintrag aendert
       // inhaltlich nichts - dann auch keine (erneute) Swap-Animation/kein
@@ -1495,11 +1529,7 @@
       // Dezenter Hinweis, dass gerade umgeschaltet wird (auch beim Wechsel
       // von einer historischen Ansicht direkt in eine andere, ohne
       // dazwischenliegenden Reload) - siehe .swap-flash CSS oben.
-      const grid = document.getElementById('trophyGrid');
-      grid.classList.remove('swap-flash');
-      void grid.offsetWidth;
-      grid.classList.add('swap-flash');
-      grid.addEventListener('animationend', () => grid.classList.remove('swap-flash'), { once: true });
+      flashTrophyGrid();
 
       applyAchievementProgress(entry.trophies);
 
@@ -1525,8 +1555,27 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // Zurueck zur aktuellen Challenge OHNE Neuladen: gleiche Ueberblendung
+    // wie beim Reinklicken, Scroll-Position bleibt, wo sie ist.
     document.getElementById('historyViewBackBtn').addEventListener('click', () => {
-      location.reload();
+      if (activeHistoricalEntryId === null) return;
+      activeHistoricalEntryId = null;
+      markActiveHistoryEntry(null);
+      muteCurrentChallengeBlock(false);
+      document.getElementById('historyViewBanner').classList.remove('visible');
+      document.getElementById('trophiesMain').classList.remove('historical-view');
+      flashTrophyGrid();
+      if (lastLiveResult) {
+        renderLiveResult(lastLiveResult);
+      } else {
+        // Noch kein Live-Ergebnis (Scan laeuft noch/ist gescheitert) - leeres
+        // Grid statt der alten Challenge, der laufende Scan fuellt es gleich.
+        applyAchievementProgress([]);
+        document.getElementById('trophiesOverallPercent').textContent = '0%';
+        document.getElementById('trophiesOverallCount').textContent = '0 / 21 unlocked';
+        document.querySelector('.platinum-trophy').classList.remove('unlocked');
+      }
+      document.getElementById('achievementsStatus').textContent = lastLiveStatusText;
     });
 
     async function loadChallengeHistory(puuid) {
