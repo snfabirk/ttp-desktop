@@ -1,5 +1,19 @@
 # Internal Changelog
 
+## 4.26.3 — 2026-09-30
+
+- `index.html`/`style.css`: the 4.26.2 "Overview" icon (a 34px circle
+  matching Settings/Updates/What's New) was immediately rejected by the
+  user - "das ist der wichtigste Button... da sieht den keine Sau und ist
+  auch voellig unintuitiv." As a same-sized, same-style outline circle it
+  had zero visual weight relative to the utility icons next to it, even
+  though it's the primary way to proceed past this page. Replaced with a
+  solid gold pill button with text ("Overview →"), same position (top
+  right, still off the grid so it doesn't reintroduce the 70%/80% scroll
+  regression from before 4.26.2), but now unmistakably the most visually
+  prominent element in that row - full gold fill + glow instead of an
+  outline, larger, with a label instead of a bare arrow.
+
 ## 4.26.2 — 2026-09-30
 
 Five small user-requested fixes/tweaks in one batch:

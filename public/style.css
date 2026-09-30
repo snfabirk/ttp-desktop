@@ -219,8 +219,7 @@ html, body {
 .back-btn,
 .quit-btn,
 .update-indicator-btn,
-.changelog-btn,
-.overview-nav-btn {
+.changelog-btn {
   position: fixed;
   top: 18px;
   width: 34px;
@@ -244,8 +243,7 @@ html, body {
 .back-btn:hover,
 .quit-btn:hover,
 .update-indicator-btn:hover,
-.changelog-btn:hover,
-.overview-nav-btn:hover {
+.changelog-btn:hover {
   color: var(--gold);
   border-color: var(--border-hover);
   transform: translateY(-2px);
@@ -255,24 +253,49 @@ html, body {
 .back-btn:active,
 .quit-btn:active,
 .update-indicator-btn:active,
-.changelog-btn:active,
-.overview-nav-btn:active {
+.changelog-btn:active {
   transform: translateY(0);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-/* "Go to Overview" - jetzt ein rundes Icon oben rechts statt eines grossen
-   Banner-Buttons unten auf der Seite (explizite Nutzeranfrage 2026-09-30:
-   der Banner nahm eine ganze Grid-Reihe ein und machte Seite 1 bei 70%/80%
-   Fenstergroesse wieder scrollbar). Staendig dezent gold statt erst beim
-   Hovern, weil es - anders als Zahnrad/Beenden/Update/Log - die primaere
-   Aktion dieser Seite ist, kein reines Utility-Icon. */
+/* "Go to Overview" - bewusst NICHT ein weiterer kleiner Kreis wie die
+   Utility-Icons daneben (Zahnrad/Beenden/Update/Log) - genau das war das
+   Problem an der ersten Version (2026-09-30): als unauffaelliger Kreis
+   zwischen den anderen ging der wichtigste Button der Seite optisch
+   komplett unter. Stattdessen ein solider goldener Pill-Button mit Text -
+   voller Kontrast/Farbe/Groesse statt nur Outline, damit er sofort als DIE
+   Aktion erkennbar ist, mit der man weiterkommt. Steht trotzdem oben rechts
+   neben den anderen (spart weiterhin die volle Grid-Reihe, die die Seite
+   bei 70%/80% Fenstergroesse scrollbar gemacht hat). */
 .overview-nav-btn {
-  right: 184px;
-  font-size: 1.3rem;
-  color: var(--gold);
-  border-color: var(--gold);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--gold) 25%, transparent), 0 2px 8px rgba(0, 0, 0, 0.28);
+  position: fixed;
+  top: 16px;
+  right: 194px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  background: var(--gold);
+  color: var(--input-bg);
+  border: none;
+  border-radius: 20px;
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--gold) 45%, transparent);
+  transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+.overview-nav-btn:hover {
+  background: var(--border-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--gold) 55%, transparent);
+}
+.overview-nav-btn:active {
+  transform: translateY(0);
 }
 
 /* Zahnrad-Button oben rechts fuer die Einstellungen - auf allen Seiten gleich */

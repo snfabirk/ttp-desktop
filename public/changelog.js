@@ -26,6 +26,14 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.26.3',
+      date: '2026-09-30',
+      notable: [
+        'The "Overview" button on Champion Selection is now a solid gold button with text instead of a small icon that blended in with Settings/Updates/What\'s New'
+      ],
+      bugfixes: []
+    },
+    {
       version: '4.26.2',
       date: '2026-09-30',
       notable: [
