@@ -488,11 +488,16 @@ app.get('/api/summary-batch/status/:jobId', (req, res) => {
 
 // Wie runSummaryBatch(), aber sammelt statt Matchup-Statistiken die rohen
 // Achievement-Kennzahlen (Kills/CS/Gold/Multikills/Vision/... - siehe
-// server/lib/achievements.js) ueber ALLE Matches der Challenge (Champion-
-// Pool + Rolle + "since", exakt dieselbe Match-Auswahl wie beim normalen
-// Summary). Fuer Top zusaetzlich ein Timeline-API-Call pro Match, um "echt
-// solo" zerstoerte Tuerme zu erkennen (siehe [[achievements-trophies-design]]).
-async function runAchievementsBatch(jobId, { puuid, champions, since, startTime, role, challengeLevel, lpGoal }) {
+// server/lib/achievements.js) ueber ALLE Ranked-Solo-Matches seit "since",
+// account-weit (NICHT auf Champion-Pool/Rolle gescopt - explizite
+// Nutzeranfrage 2026-09-26: Trophies sollen immer den tatsaechlich besten
+// erreichten Stat zeigen, auch aus Autofill-Spielen auf anderen Champions/
+// Rollen, statt hinter dem in "overall" auf der Overview-Seite gezeigten
+// Account-Wert zurueckzubleiben - z.B. eine 6er Win-Streak zaehlt auch dann,
+// wenn 2 der Spiele nicht auf dem OTP-Pool/in der gewaehlten Rolle waren).
+// Fuer Top zusaetzlich ein Timeline-API-Call pro Match, um "echt solo"
+// zerstoerte Tuerme zu erkennen (siehe [[achievements-trophies-design]]).
+async function runAchievementsBatch(jobId, { puuid, since, startTime, role, challengeLevel, lpGoal }) {
   try {
     const matchIds = await getAllMatchIds(
       puuid,
@@ -502,7 +507,6 @@ async function runAchievementsBatch(jobId, { puuid, champions, since, startTime,
     );
     updateProgress(jobId, 0, matchIds.length);
 
-    const championKeys = new Set(champions.map(c => String(c.key)));
     const acc = createAchievementAccumulator();
     const riotId = await resolveRiotId(puuid, config.apiKey);
 
@@ -514,8 +518,6 @@ async function runAchievementsBatch(jobId, { puuid, champions, since, startTime,
 
       const { me } = findMeAndOpponent(match, puuid, riotId);
       if (!me || isRemake(me)) continue;
-      if (!championKeys.has(String(me.championId))) continue;
-      if (role && me.teamPosition !== role) continue;
 
       addMatchToAchievementAccumulator(acc, me, match);
 
@@ -673,12 +675,6 @@ app.post('/api/achievements/start', requireApiKey, (req, res) => {
     return res.status(400).json({ error: 'puuid and champions are required.' });
   }
 
-  const byKey = new Map();
-  champions.forEach(c => {
-    if (c && c.key) byKey.set(String(c.key), { key: String(c.key), role: c.role || '' });
-  });
-  const dedupedChampions = [...byKey.values()];
-
   let startTime = 0;
   if (since) {
     startTime = Math.floor(new Date(since).getTime() / 1000);
@@ -690,7 +686,6 @@ app.post('/api/achievements/start', requireApiKey, (req, res) => {
   const jobId = createJob();
   runAchievementsBatch(jobId, {
     puuid,
-    champions: dedupedChampions,
     since,
     startTime,
     role: role || '',

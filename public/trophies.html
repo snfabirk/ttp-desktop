@@ -368,6 +368,27 @@
     color: var(--gold);
     opacity: 0.75;
   }
+  /* Kleines Hourglass-Badge oben rechts, nur bei .provisional sichtbar -
+     position:absolute nimmt keinen Platz im Kartenlayout ein, aendert also
+     nie die Kartenhoehe/das Grid (siehe Layout-Test vor dieser Aenderung).
+     Eigener, kurzer nativer title-Tooltip direkt am Badge (unabhaengig vom
+     grossen .trophy-tooltip beim Hovern der ganzen Karte, der weiterhin die
+     volle Erklaerung zeigt) - explizite Nutzeranfrage: der provisorische
+     Status soll auch ohne die frueher immer sichtbare Textzeile im Label
+     sofort erkennbar UND beim Hovern kurz erklaert sein. */
+  .trophy-provisional-badge {
+    display: none;
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 0.8rem;
+    line-height: 1;
+    opacity: 0.85;
+    cursor: help;
+  }
+  .trophy-slot.provisional .trophy-provisional-badge {
+    display: block;
+  }
   .trophy-slot.role-specific {
     border-style: dashed;
     border-width: 2px;
@@ -435,9 +456,10 @@
     background: var(--green, var(--gold));
   }
   .trophy-slot .trophy-progress-label {
-    color: var(--text-dim);
+    color: var(--text);
     font-family: Georgia, serif;
-    font-size: 0.6rem;
+    font-size: 0.68rem;
+    font-weight: bold;
   }
   .trophy-slot.unlocked .trophy-progress-label {
     color: var(--gold);
@@ -909,6 +931,7 @@
       slot.dataset.detailTemplate = t.detail || t.desc;
       slot.dataset.roleTag = roleTag;
       slot.innerHTML = `
+        <span class="trophy-provisional-badge" title="Provisional - reach your LP Goal to confirm">⏳</span>
         <span class="trophy-icon">${iconSvg(t.icon)}</span>
         <span class="trophy-name">${t.name}</span>
         <span class="trophy-desc">${t.desc.replace(/\{target\}/g, '…')}</span>
@@ -1039,18 +1062,31 @@
 
         const label = slot.querySelector('.trophy-progress-label');
         if (label) {
-          if (t.unlocked) {
-            label.textContent = t.note || `${formatTrophyValue(t.id, t.current)} / ${formatTrophyValue(t.id, t.target)}`;
-          } else if (t.provisional) {
-            label.textContent = 'Provisional - reach your LP Goal to confirm';
-          } else {
-            label.textContent = t.note || `${formatTrophyValue(t.id, t.current)} / ${formatTrophyValue(t.id, t.target)}`;
-          }
+          // Provisional (Ø-Trophies vor Zielerreichung) zeigte bisher NUR den
+          // Hinweistext statt der Zahlen - explizite Nutzeranfrage: die
+          // aktuellen Stats sollen immer sichtbar bleiben. Bewusst OHNE einen
+          // zusaetzlichen "Provisional"-Textzusatz (das haette die
+          // Labelbreite/-hoehe ggue. den anderen Zustaenden vergroessert und
+          // je nach Trophy unterschiedlich stark, also potenziell die
+          // Kartenhoehen im Grid verschieden hoch werden lassen) - der
+          // provisorische Status ist bereits ueber den gepunkteten goldenen
+          // Rahmen (.trophy-slot.provisional) UND den Tooltip beim Hovern
+          // erkennbar, genau wie "unlocked" auch nur ueber den soliden
+          // Rahmen kommuniziert wird statt per Extra-Text im Label.
+          label.textContent = t.note || `${formatTrophyValue(t.id, t.current)} / ${formatTrophyValue(t.id, t.target)}`;
         }
       }
     }
 
+    // Verhindert ueberlappende Aufrufe - noetig, sobald ein periodischer
+    // Auto-Refresh dazukommt (siehe scheduleNextPageAutoRefresh() weiter
+    // unten), der sonst mit einem noch laufenden manuellen/initialen Aufruf
+    // kollidieren koennte.
+    let achievementRefreshInProgress = false;
+
     async function loadAchievementProgress() {
+      if (achievementRefreshInProgress) return;
+      achievementRefreshInProgress = true;
       const statusEl = document.getElementById('achievementsStatus');
       try {
         if (!role) { statusEl.textContent = ''; return; }
@@ -1205,6 +1241,8 @@
         }).catch(() => {});
       } catch (e) {
         statusEl.textContent = `Could not load trophy progress: ${e.message}`;
+      } finally {
+        achievementRefreshInProgress = false;
       }
     }
 
@@ -1516,6 +1554,36 @@
       }
     }
     initChallengeHistory();
+
+    // Gleiche Ursache/Fix wie auf der Overview-Seite (siehe deren Kommentar
+    // vor scheduleNextPageAutoRefresh()): der zentrale 15-Minuten-Hintergrund-
+    // Job im Hauptprozess aktualisiert nur den Server-seitigen Cache/
+    // Rang-Verlauf, NICHT diese bereits angezeigte Seite - ohne einen eigenen
+    // periodischen Reload hier blieb der Trophy-Fortschritt beim Offenlassen
+    // dieser Seite eingefroren und sprang erst bei einem manuellen Neuladen
+    // auf den aktuellen Stand.
+    const QUARTER_HOUR_MS_PAGE = 15 * 60 * 1000;
+    let pageAutoRefreshTimeoutId = null;
+
+    function scheduleNextPageAutoRefresh() {
+      if (pageAutoRefreshTimeoutId) clearTimeout(pageAutoRefreshTimeoutId);
+      const now = new Date();
+      const msIntoHour = (now.getMinutes() * 60 + now.getSeconds()) * 1000 + now.getMilliseconds();
+      const msIntoQuarter = msIntoHour % QUARTER_HOUR_MS_PAGE;
+      const BUFFER_MS = 15000;
+      const delay = (QUARTER_HOUR_MS_PAGE - msIntoQuarter) + BUFFER_MS;
+      pageAutoRefreshTimeoutId = setTimeout(async () => {
+        // Waehrend eine vergangene Challenge im Read-Only-Modus angezeigt
+        // wird, soll ein automatischer Refresh nicht ungefragt zurueck zur
+        // aktuellen Challenge springen - das passiert weiterhin nur ueber den
+        // expliziten "Back to current challenge"-Button/Reload.
+        if (activeHistoricalEntryId === null) {
+          await loadAchievementProgress();
+        }
+        scheduleNextPageAutoRefresh();
+      }, delay);
+    }
+    scheduleNextPageAutoRefresh();
 
     const settingsGearBtn = document.getElementById('settingsGearBtn');
     settingsGearBtn.addEventListener('click', () => {

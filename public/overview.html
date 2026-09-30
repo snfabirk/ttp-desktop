@@ -2362,11 +2362,46 @@
       return !!currentSince && currentSummoner.includes('#') && selectedChamps.length > 0;
     }
 
-    // Der wiederkehrende Viertelstunden-Auto-Refresh laeuft jetzt zentral im
-    // Hauptprozess (electron-main.js: backgroundStatsRefresh), unabhaengig
-    // davon ob diese Seite gerade offen/sichtbar ist - siehe [[update-indicator]]
-    // Memory bzw. den Hintergrund-Scheduler-Kommentar dort. Hier bleibt nur
-    // noch das einmalige Auto-Laden beim Oeffnen dieser Seite (siehe init()).
+    // Die eigentliche Datenerhebung (Match-Scan/Rang-Abruf) laeuft alle 15
+    // Minuten zentral im Hauptprozess (electron-main.js: backgroundStatsRefresh),
+    // unabhaengig davon ob diese Seite gerade offen/sichtbar ist - siehe
+    // [[update-indicator]] Memory. Das aktualisiert aber nur den Server-
+    // seitigen Cache/Rang-Verlauf, NICHT die hier bereits angezeigte Seite:
+    // ohne einen eigenen periodischen Reload HIER blieb die sichtbare
+    // Overview beim Offenlassen ueber mehrere Spiele hinweg komplett
+    // eingefroren und zeigte erst bei einem manuellen Neuladen/Zurueckkommen
+    // ploetzlich alle inzwischen aufgelaufenen Aenderungen auf einmal -
+    // faelschlich wie ein "der 15-Minuten-Job laeuft nicht" wirkendes
+    // Verhalten, tatsaechlich lief der Hintergrund-Job die ganze Zeit korrekt,
+    // nur ohne dass die offene Seite je davon erfuhr (vom Nutzer ueber
+    // mehrere Tage beobachtet, 2026-09-29). Deshalb laedt sich diese Seite,
+    // wenn sie offen ist, jetzt selbst auf demselben Viertelstunden-Takt neu -
+    // der eigentliche Match-Scan bleibt guenstig, weil der Hauptprozess-Job
+    // den Cache meist schon gefuellt hat.
+    const QUARTER_HOUR_MS_PAGE = 15 * 60 * 1000;
+    let pageAutoRefreshTimeoutId = null;
+
+    function scheduleNextPageAutoRefresh() {
+      if (pageAutoRefreshTimeoutId) clearTimeout(pageAutoRefreshTimeoutId);
+      const now = new Date();
+      const msIntoHour = (now.getMinutes() * 60 + now.getSeconds()) * 1000 + now.getMilliseconds();
+      const msIntoQuarter = msIntoHour % QUARTER_HOUR_MS_PAGE;
+      // Kleiner Puffer nach der vollen Viertelstunde, damit der zentrale
+      // Hintergrund-Job im Hauptprozess (der auf denselben Takt zielt) seinen
+      // Match-Scan/Cache-Fuellung ueblicherweise schon abgeschlossen hat,
+      // bevor diese Seite ihren eigenen (dann meist guenstigen) Reload startet.
+      const BUFFER_MS = 15000;
+      const delay = (QUARTER_HOUR_MS_PAGE - msIntoQuarter) + BUFFER_MS;
+      pageAutoRefreshTimeoutId = setTimeout(async () => {
+        // loadBtn.disabled deckt sowohl "laedt gerade" als auch die 30s-
+        // Abklingzeit nach einem Load ab - kein Grund, dann zusaetzlich
+        // draufzudruecken.
+        if (isAutoLoadEligible() && !loadBtn.disabled) {
+          await performLoad();
+        }
+        scheduleNextPageAutoRefresh();
+      }, delay);
+    }
 
     (async function init() {
       currentSince = loadChallengeStart();
@@ -2387,6 +2422,8 @@
       if (isAutoLoadEligible()) {
         performLoad();
       }
+
+      scheduleNextPageAutoRefresh();
     })();
   </script>
 </body>

@@ -208,7 +208,7 @@ function applyAverageTrophyFinalization(trophies, { goalReached, finalizedState 
 // unter welcher Version sie finalisiert wurde, damit die Trophies-Seite
 // anzeigen kann, ob der Stand noch zu den aktuell geltenden Regeln passt -
 // siehe achievementState.js/server.js "rulesUpToDate".
-const RULES_VERSION = 2;
+const RULES_VERSION = 3;
 
 // ----- Rate-Tabellen (Easy/Normal/Hard/VeryHard/Majestic), 1:1 aus der
 // finalen Design-Runde (siehe achievements-trophies-design.md Memory) -----
@@ -256,8 +256,10 @@ const RATES = {
   ganker: [0.40, 0.50, 0.60, 0.70, 0.80],
   jungleBoss: [0.40, 0.45, 0.50, 0.55, 0.60],
   // Mid
-  duelist: [1.5, 2.0, 2.6, 3.3, 4.2],
-  assassin: [3, 4, 6, 8, 11],
+  // +50% auf allen 5 Stufen (explizite Nutzeranfrage, 2026-09-30) - vorher
+  // [1.5, 2.0, 2.6, 3.3, 4.2] / [3, 4, 6, 8, 11].
+  duelist: [2.25, 3.0, 3.9, 4.95, 6.3],
+  assassin: [4.5, 6, 9, 12, 16.5],
   globalThreat: [0.017, 0.033, 0.05, 0.066, 0.083],
   burstKing: [900, 1100, 1350, 1550, 1900],
   midDiff: [750, 850, 950, 1100, 1300],
