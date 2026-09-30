@@ -3,7 +3,7 @@
 ## 4.27.1 — 2026-09-30
 
 - `build/installer.nsh` (`build.nsis.include`): `customInit` copies
-  `$INSTDIResourcespp\server\data` to `%APPDATA%	hree-trick-pony-desktop	tp-data`
+  `$INSTDIR/resources/app/server/data` to `%APPDATA%/three-trick-pony-desktop/ttp-data`
   (only if that doesn't exist yet) BEFORE the old version is uninstalled.
   4.27.0's own migration in dataPaths.js could never see legacy data on an
   auto-update, because the update (driven by the old app) had already
