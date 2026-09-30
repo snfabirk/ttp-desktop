@@ -42,7 +42,6 @@
       text-align: center;
     }
     .content {
-      position: relative;
       display: grid;
       grid-template-columns: 420px 420px;
       grid-template-areas:
@@ -319,6 +318,48 @@
       box-shadow: 0 6px 14px color-mix(in srgb, var(--red) 30%, transparent);
     }
     .setup-box button.reset-challenge-link:active {
+      transform: translateY(0);
+    }
+    /* "Go to Overview" sitzt seit v4.28.6 hier im Start-Challenge-Kasten,
+       in einer Reihe mit "Reset Challenge" (Nutzerwunsch 2026-09-30: der
+       schwebende Pill-Button neben dem Raster wirkte fremd/verrutscht).
+       Gleiche Form/Schrift/Groesse wie die anderen Buttons der Seite; als
+       Hauptaktion gold GEFUELLT (= Hover-Zustand der uebrigen Buttons),
+       Reset daneben rot umrandet. Gleiche Reihe -> Kasten wird nicht hoeher,
+       Seite bleibt bei 70%/80% ohne Scrollen. */
+    .challenge-actions {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .setup-box .challenge-actions button.reset-challenge-link {
+      margin-top: 0;
+    }
+    .challenge-overview-btn {
+      display: inline-block;
+      box-sizing: border-box;
+      background: var(--gold);
+      border: 1px solid var(--gold);
+      color: var(--input-bg);
+      border-radius: 6px;
+      padding: 8px 22px;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .challenge-overview-btn:hover {
+      background: var(--border-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px color-mix(in srgb, var(--gold) 35%, transparent);
+    }
+    .challenge-overview-btn:active {
       transform: translateY(0);
     }
     .setup-box button {
@@ -735,10 +776,12 @@
     <div id="challengeStarted" style="display:none;">
       <p class="challenge-started-at" id="challengeStartedAt"></p>
       <div class="challenge-timer" id="challengeTimer">-</div>
-      <button type="button" id="resetChallengeBtn" class="reset-challenge-link">Reset Challenge</button>
+      <div class="challenge-actions">
+        <button type="button" id="resetChallengeBtn" class="reset-challenge-link">Reset Challenge</button>
+        <a href="overview.html" class="challenge-overview-btn" id="toOverviewBtn">Go to Overview →</a>
+      </div>
     </div>
   </div>
-  <a href="overview.html" class="overview-nav-btn" id="toOverviewBtn" title="Go to Overview" aria-label="Go to Overview"><span class="overview-nav-label">Overview</span> →</a>
   </div>
 
   <script>

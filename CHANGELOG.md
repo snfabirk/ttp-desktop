@@ -1,5 +1,18 @@
 # Internal Changelog
 
+## 4.28.6 — 2026-09-30
+
+- index.html: "Go to Overview →" moved into the Start Challenge box, in one
+  row with "Reset Challenge" (only visible once a challenge runs). The
+  floating gold pill beside the grid (4.26.x) looked foreign: the only
+  element outside the grid, aligned to nothing, the only filled/glowing
+  control on the page. Now same shape/font/size as the page's other
+  buttons, filled with the theme gold as the primary action. Old
+  `.overview-nav-btn` CSS removed from style.css; `.content` no longer
+  needs position:relative. Same row -> box height unchanged, page still
+  fits (1077px). Verified with real mouse click -> overview.html, in
+  default/Freljord/Hextech.
+
 ## 4.28.5 — 2026-09-30
 
 - Removed the temporary Roles & Picks test hook from 4.28.1 (agreed with
