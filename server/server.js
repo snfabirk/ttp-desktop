@@ -516,56 +516,68 @@ app.get('/api/summary-batch/status/:jobId', (req, res) => {
 // wenn 2 der Spiele nicht auf dem OTP-Pool/in der gewaehlten Rolle waren).
 // Fuer Top zusaetzlich ein Timeline-API-Call pro Match, um "echt solo"
 // zerstoerte Tuerme zu erkennen (siehe [[achievements-trophies-design]]).
-async function runAchievementsBatch(jobId, { puuid, since, startTime, role, challengeLevel, lpGoal }) {
-  try {
-    const matchIds = await getAllMatchIds(
-      puuid,
-      { queueId: RANKED_SOLO_QUEUE_ID, startTime },
-      config.apiKey,
-      REGION
-    );
-    updateProgress(jobId, 0, matchIds.length);
+// Kern der Trophy-Berechnung, gemeinsam genutzt vom normalen Achievement-Job
+// (Trophies-Seite) und vom Abschluss einer Challenge beim Reset (siehe
+// /api/challenge-history/close) - letzterer braucht die FRISCHEN Zahlen,
+// nicht den zuletzt auf der Trophies-Seite angezeigten Stand.
+async function computeAchievementProgress({ puuid, since, startTime, role, challengeLevel, lpGoal }, onProgress = () => {}) {
+  const matchIds = await getAllMatchIds(
+    puuid,
+    { queueId: RANKED_SOLO_QUEUE_ID, startTime },
+    config.apiKey,
+    REGION
+  );
+  onProgress(0, matchIds.length);
 
-    const acc = createAchievementAccumulator();
-    const riotId = await resolveRiotId(puuid, config.apiKey);
+  const acc = createAchievementAccumulator();
+  const riotId = await resolveRiotId(puuid, config.apiKey);
 
-    let processed = 0;
-    for (const matchId of matchIds) {
-      const match = await getMatch(matchId, config.apiKey, REGION);
-      processed += 1;
-      updateProgress(jobId, processed, matchIds.length);
+  let processed = 0;
+  for (const matchId of matchIds) {
+    const match = await getMatch(matchId, config.apiKey, REGION);
+    processed += 1;
+    onProgress(processed, matchIds.length);
 
-      const { me } = findMeAndOpponent(match, puuid, riotId);
-      if (!me || isRemake(me)) continue;
+    const { me } = findMeAndOpponent(match, puuid, riotId);
+    if (!me || isRemake(me)) continue;
 
-      addMatchToAchievementAccumulator(acc, me, match);
+    addMatchToAchievementAccumulator(acc, me, match);
 
-      if (role === 'TOP') {
-        try {
-          const timeline = await getMatchTimeline(matchId, config.apiKey, REGION);
-          addSoloTowerKillsFromTimeline(acc, timeline, me.participantId);
-        } catch (e) {
-          // Timeline-Fehler sollen den restlichen Achievement-Fortschritt
-          // nicht kippen - Solo-Turm-Trophies bleiben fuer dieses Match dann
-          // einfach unveraendert statt den ganzen Job scheitern zu lassen.
-        }
+    if (role === 'TOP') {
+      try {
+        const timeline = await getMatchTimeline(matchId, config.apiKey, REGION);
+        addSoloTowerKillsFromTimeline(acc, timeline, me.participantId);
+      } catch (e) {
+        // Timeline-Fehler sollen den restlichen Achievement-Fortschritt
+        // nicht kippen - Solo-Turm-Trophies bleiben fuer dieses Match dann
+        // einfach unveraendert statt den ganzen Job scheitern zu lassen.
       }
     }
+  }
 
-    let currentRank = null;
-    try {
-      const entries = await getLeagueEntriesByPuuid(puuid, config.apiKey, PLATFORM);
-      const solo = entries.find(e => e.queueType === 'RANKED_SOLO_5x5');
-      if (solo) currentRank = { tier: solo.tier, rank: solo.rank, leaguePoints: solo.leaguePoints };
-    } catch (e) {
-      // Ohne aktuellen Rang faellt computeErwarteteSpiele() auf den 20er-
-      // Mindestwert zurueck - kein harter Fehler noetig.
-    }
+  let currentRank = null;
+  try {
+    const entries = await getLeagueEntriesByPuuid(puuid, config.apiKey, PLATFORM);
+    const solo = entries.find(e => e.queueType === 'RANKED_SOLO_5x5');
+    if (solo) currentRank = { tier: solo.tier, rank: solo.rank, leaguePoints: solo.leaguePoints };
+  } catch (e) {
+    // Ohne aktuellen Rang faellt computeErwarteteSpiele() auf den 20er-
+    // Mindestwert zurueck - kein harter Fehler noetig.
+  }
 
-    const erwarteteSpiele = computeErwarteteSpiele(currentRank, lpGoal);
-    const tier = (challengeLevel || 'normal').toLowerCase();
-    const finalizedState = loadFinalizedState(puuid, since);
-    const progress = computeAllTrophyProgress(acc, { tier, erwarteteSpiele, role, currentRank, lpGoal, finalizedState });
+  const erwarteteSpiele = computeErwarteteSpiele(currentRank, lpGoal);
+  const tier = (challengeLevel || 'normal').toLowerCase();
+  const finalizedState = loadFinalizedState(puuid, since);
+  const progress = computeAllTrophyProgress(acc, { tier, erwarteteSpiele, role, currentRank, lpGoal, finalizedState });
+  return { acc, erwarteteSpiele, tier, finalizedState, progress };
+}
+
+async function runAchievementsBatch(jobId, { puuid, since, startTime, role, challengeLevel, lpGoal }) {
+  try {
+    const { acc, erwarteteSpiele, tier, finalizedState, progress } = await computeAchievementProgress(
+      { puuid, since, startTime, role, challengeLevel, lpGoal },
+      (done, total) => updateProgress(jobId, done, total)
+    );
 
     if (progress.newlyFinalizedIds.length > 0) {
       const merged = { ...finalizedState };
@@ -673,6 +685,55 @@ app.post('/api/challenge-history/update', (req, res) => {
     startRankTier, startRankDivision, startRankLp
   });
   res.json({ entry });
+});
+
+// Schliesst eine Challenge beim "Reset Challenge" final ab. Rechnet die
+// Trophies dafuer FRISCH aus den Matches nach (Match-Cache macht das schnell)
+// statt den zuletzt auf der Trophies-Seite angezeigten Snapshot zu nehmen -
+// der war oft veraltet (z.B. Win Streak 4/3 gespeichert, real 6/3) oder
+// fehlte ganz, wenn die Trophies-Seite nie geoeffnet wurde, wodurch die
+// Challenge als "0 Trophaeen" sogar komplett verworfen wurde. Nur wenn die
+// Neuberechnung scheitert (kein Netz/API-Key), faellt es auf den
+// mitgeschickten Snapshot zurueck. Loescht danach den finalisierten
+// Ø-Trophy-Zustand (wie /api/achievements/clear-state) - erst NACH der
+// Berechnung, die ihn noch braucht.
+app.post('/api/challenge-history/close', async (req, res) => {
+  const {
+    puuid, since, fallback,
+    champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp
+  } = req.body || {};
+  if (!puuid || !since) {
+    return res.status(400).json({ error: 'puuid and since are required.' });
+  }
+  const startTime = Math.floor(new Date(since).getTime() / 1000);
+  let snapshot = fallback || null;
+  let recomputed = false;
+  if (config.apiKey && !Number.isNaN(startTime)) {
+    try {
+      const lpGoal = { tier: lpGoalTier, division: lpGoalDivision, lp: lpGoalLp };
+      const { progress } = await computeAchievementProgress({ puuid, since, startTime, role, challengeLevel, lpGoal });
+      snapshot = {
+        unlockedCount: progress.unlockedCount,
+        totalCount: progress.totalCount,
+        platinumUnlocked: progress.platinumUnlocked,
+        trophies: progress.trophies.map(({ id, name, current, target, percent, unlocked }) => ({ id, name, current, target, percent, unlocked }))
+      };
+      recomputed = true;
+    } catch (e) {
+      // Faellt auf den mitgeschickten Snapshot zurueck.
+    }
+  }
+  const entry = updateHistoryEntry(puuid, since, {
+    unlockedCount: snapshot ? snapshot.unlockedCount : 0,
+    totalCount: snapshot ? snapshot.totalCount : 21,
+    platinumUnlocked: snapshot ? snapshot.platinumUnlocked : false,
+    trophies: snapshot ? snapshot.trophies : undefined,
+    rulesVersion: RULES_VERSION,
+    ended: true,
+    champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp
+  });
+  clearFinalizedState(puuid);
+  res.json({ entry, recomputed });
 });
 
 app.get('/api/challenge-history/list', (req, res) => {

@@ -25,6 +25,15 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.27.2',
+      date: '2026-09-30',
+      notable: [
+        "Resetting a challenge now saves its real final trophy numbers to your Challenge History - before, it saved whatever the Trophies page showed last (often outdated), and a challenge whose Trophies page you never opened could even be dropped entirely"
+      ],
+      refinements: 0,
+      bugfixes: 1
+    },
+    {
       version: '4.27.1',
       date: '2026-09-30',
       notable: [

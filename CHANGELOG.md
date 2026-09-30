@@ -1,5 +1,23 @@
 # Internal Changelog
 
+## 4.27.2 — 2026-09-30
+
+- New `POST /api/challenge-history/close` (used by "Reset Challenge" in
+  index.html instead of `/update` + `/achievements/clear-state`): recomputes
+  the trophies from the matches via the new shared
+  `computeAchievementProgress()` (extracted from `runAchievementsBatch`),
+  then closes the entry and clears the finalized state. The localStorage
+  snapshot is only a fallback if the recompute fails. Before, the closed
+  entry got the last snapshot trophies.html happened to save (user's lost
+  challenge had Win Streak 4/3 stored vs. 6/3 real), or 0/21 if the Trophies
+  page was never opened - which the 0-trophy rule then deleted outright.
+- `challengeHistory.startEntry()`: any still-open entry from an earlier
+  challenge (reset couldn't close it, e.g. puuid not resolvable) is closed
+  at the new start time with its last synced numbers (0-trophy rule applies)
+  instead of dangling as "ongoing" forever.
+- Tested against an isolated server with the real puuid: stale fallback
+  (4/3) was replaced by the recomputed 6/3; safety-net close verified.
+
 ## 4.27.1 — 2026-09-30
 
 - `build/installer.nsh` (`build.nsis.include`): `customInit` copies

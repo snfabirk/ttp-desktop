@@ -80,7 +80,20 @@ function makeEntry({ since, champions, role, challengeLevel, lpGoalTier, lpGoalD
 }
 
 function startEntry(puuid, opts) {
-  const entries = readEntries(puuid);
+  let entries = readEntries(puuid);
+  // Sicherheitsnetz: ein noch offener Eintrag einer frueheren Challenge (der
+  // Reset konnte ihn nicht abschliessen, z.B. weil die puuid in dem Moment
+  // nicht aufloesbar war) wird mit seinem zuletzt gesyncten Stand
+  // abgeschlossen statt fuer immer als "laeuft noch" haengen zu bleiben.
+  // Gleiche 0-Trophaeen-Regel wie beim normalen Abschluss (updateEntry).
+  const autoClosed = new Set();
+  entries.forEach(e => {
+    if (e.until === null && e.since !== opts.since) {
+      e.until = opts.since || new Date().toISOString();
+      autoClosed.add(e);
+    }
+  });
+  entries = entries.filter(e => !autoClosed.has(e) || e.unlockedCount > 0);
   const entry = makeEntry(opts);
   entries.push(entry);
   writeEntries(puuid, entries);
