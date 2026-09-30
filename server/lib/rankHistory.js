@@ -6,7 +6,7 @@ const path = require('path');
 // selbst einen Snapshot ab - der Delta-Wert wird dadurch erst mit der Zeit
 // verlaesslich, ab dem Moment ab dem wir selbst zu tracken begonnen haben.
 
-const HISTORY_DIR = path.join(__dirname, '..', 'data', 'rank-history');
+const HISTORY_DIR = path.join(require('./dataPaths').DATA_DIR, 'rank-history');
 if (!fs.existsSync(HISTORY_DIR)) {
   fs.mkdirSync(HISTORY_DIR, { recursive: true });
 }

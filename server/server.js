@@ -665,6 +665,10 @@ app.post('/api/challenge-history/update', (req, res) => {
   }
   const entry = updateHistoryEntry(puuid, since, {
     unlockedCount, totalCount, platinumUnlocked, trophies, ended: Boolean(ended),
+    // Unter welcher Trophy-Regelversion dieser Snapshot entstanden ist -
+    // die History zeigt alte Challenges auch nach spaeteren Ziel-
+    // Anpassungen weiter an, nur als "aeltere Trophy-Liste" markiert.
+    rulesVersion: RULES_VERSION,
     champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp,
     startRankTier, startRankDivision, startRankLp
   });
@@ -676,7 +680,7 @@ app.get('/api/challenge-history/list', (req, res) => {
   if (!puuid) {
     return res.status(400).json({ error: 'puuid is required.' });
   }
-  res.json({ entries: listHistoryEntries(puuid) });
+  res.json({ entries: listHistoryEntries(puuid), currentRulesVersion: RULES_VERSION });
 });
 
 app.post('/api/challenge-history/delete', (req, res) => {

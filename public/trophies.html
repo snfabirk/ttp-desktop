@@ -676,6 +676,16 @@
   .history-entry.platinum .history-trophies {
     color: var(--gold);
   }
+  /* Bewusst dezent (text-faint, kursiv) statt rot wie .rules-status.outdated -
+     eine alte Challenge ist nicht "kaputt", sie wurde nur unter anderen
+     Zielzahlen gespielt. */
+  .history-outdated {
+    color: var(--text-faint);
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 0.7rem;
+    margin-top: 4px;
+  }
   .history-delete-btn {
     position: absolute;
     top: 8px;
@@ -1341,6 +1351,7 @@
           </div>
           ${rangeHtml ? `<div class="history-range">${rangeHtml}</div>` : ''}
           <div class="history-trophies">${entry.unlockedCount} / ${entry.totalCount} trophies</div>
+          ${isOutdatedTrophyList(entry) ? `<div class="history-outdated" title="Trophy targets have been adjusted since this challenge - it is shown with the trophy list that applied back then.">⧗ Older trophy list</div>` : ''}
         </div>
       `;
     }
@@ -1380,6 +1391,16 @@
     // aktiven) Eintrag als No-Op zu behandeln (kein Grund, die Swap-
     // Animation nochmal abzuspielen, wenn sich inhaltlich nichts aendert).
     let activeHistoricalEntryId = null;
+    // Aktuelle Trophy-Regelversion (achievements.js RULES_VERSION, kommt mit
+    // /api/challenge-history/list). Vergangene Challenges bleiben auch nach
+    // spaeteren Ziel-Anpassungen in der History (explizite Nutzeranfrage) -
+    // sie zeigen ihren damaligen Snapshot, nur als "Older trophy list"
+    // markiert. Eintraege ohne rulesVersion stammen von vor v4.27.0 und
+    // gelten ebenfalls als aelter.
+    let currentRulesVersion = null;
+    function isOutdatedTrophyList(entry) {
+      return currentRulesVersion !== null && entry.rulesVersion !== currentRulesVersion;
+    }
 
     function markActiveHistoryEntry(id) {
       document.querySelectorAll('#historyList .history-entry').forEach(el => {
@@ -1404,7 +1425,8 @@
     }
     document.getElementById('historyList').addEventListener('scroll', updateHistoryScrollHint);
 
-    function renderChallengeHistory(entries, puuid) {
+    function renderChallengeHistory(entries, puuid, rulesVersion) {
+      if (typeof rulesVersion === 'number') currentRulesVersion = rulesVersion;
       const ongoingEntry = entries.find(e => !e.until) || null;
       const pastEntries = entries.filter(e => e.until);
       currentHistoryEntries = pastEntries;
@@ -1490,7 +1512,8 @@
         ? `${formatShortDate(entry.since)} – ${formatShortDate(entry.until)}`
         : `${formatShortDate(entry.since)} – ongoing`;
       document.getElementById('historyViewBannerText').textContent =
-        `Viewing challenge from ${dateRange} - this is a read-only snapshot, not the current challenge.`;
+        `Viewing challenge from ${dateRange} - this is a read-only snapshot, not the current challenge.` +
+        (isOutdatedTrophyList(entry) ? ' It uses an older version of the trophy list - targets have been adjusted since.' : '');
       document.getElementById('historyViewBanner').classList.add('visible');
       document.getElementById('trophiesMain').classList.add('historical-view');
 
@@ -1511,7 +1534,7 @@
         const res = await fetch(`/api/challenge-history/list?${new URLSearchParams({ puuid })}`);
         const data = await parseApiResponse(res);
         if (!res.ok) throw new Error(data.error || 'Unknown error');
-        renderChallengeHistory(data.entries || [], puuid);
+        renderChallengeHistory(data.entries || [], puuid, data.currentRulesVersion);
       } catch (e) {
         document.getElementById('historyEmpty').textContent = `Could not load challenge history: ${e.message}`;
         document.getElementById('historyEmpty').style.display = 'block';
@@ -1545,7 +1568,7 @@
           const listRes = await fetch(`/api/challenge-history/list?${new URLSearchParams({ puuid: account.puuid })}`);
           const listData = await parseApiResponse(listRes);
           if (!listRes.ok) throw new Error(listData.error || 'Unknown error');
-          renderChallengeHistory(listData.entries || [], account.puuid);
+          renderChallengeHistory(listData.entries || [], account.puuid, listData.currentRulesVersion);
           return;
         } catch (e) {
           if (attempt >= RETRY_DELAYS_MS.length) return;

@@ -539,6 +539,11 @@ html, body {
 .changelog-notable li {
   margin-bottom: 5px;
 }
+/* "Refinements" + "Bug Fixes" nebeneinander, nur als Labels ohne Liste */
+.changelog-minor-labels {
+  display: flex;
+  gap: 14px;
+}
 .changelog-bugfixes-label {
   color: var(--text-faint);
   font-family: 'Cinzel', Georgia, serif;

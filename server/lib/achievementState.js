@@ -23,7 +23,7 @@ const path = require('path');
 // Fortschritt selbst neu berechnen zu muessen (siehe rulesUpToDate in
 // server.js und /api/achievements/rules-status).
 
-const STATE_DIR = path.join(__dirname, '..', 'data', 'achievement-state');
+const STATE_DIR = path.join(require('./dataPaths').DATA_DIR, 'achievement-state');
 if (!fs.existsSync(STATE_DIR)) {
   fs.mkdirSync(STATE_DIR, { recursive: true });
 }

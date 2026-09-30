@@ -17,7 +17,7 @@ const crypto = require('crypto');
 // - der zuletzt bekannte Stand (aus dem letzten /update waehrend die Challenge
 // noch lief) bleibt einfach stehen.
 
-const HISTORY_DIR = path.join(__dirname, '..', 'data', 'challenge-history');
+const HISTORY_DIR = path.join(require('./dataPaths').DATA_DIR, 'challenge-history');
 if (!fs.existsSync(HISTORY_DIR)) {
   fs.mkdirSync(HISTORY_DIR, { recursive: true });
 }
@@ -101,7 +101,7 @@ function startEntry(puuid, opts) {
 // sie kennt, macht das den nachtraeglich angelegten Eintrag vollstaendiger,
 // aber selbst ganz ohne sie ist ein Eintrag mit Datum/Dauer/Trophy-Zahlen
 // besser als gar keiner.
-function updateEntry(puuid, since, { unlockedCount, totalCount, platinumUnlocked, trophies, ended, startRankTier, startRankDivision, startRankLp, ...metaFields }) {
+function updateEntry(puuid, since, { unlockedCount, totalCount, platinumUnlocked, trophies, ended, rulesVersion, startRankTier, startRankDivision, startRankLp, ...metaFields }) {
   const entries = readEntries(puuid);
   let idx = entries.findIndex(e => e.since === since && e.until === null);
   if (idx === -1) {
@@ -111,7 +111,13 @@ function updateEntry(puuid, since, { unlockedCount, totalCount, platinumUnlocked
   if (typeof unlockedCount === 'number') entries[idx].unlockedCount = unlockedCount;
   if (typeof totalCount === 'number') entries[idx].totalCount = totalCount;
   if (typeof platinumUnlocked === 'boolean') entries[idx].platinumUnlocked = platinumUnlocked;
-  if (Array.isArray(trophies) && trophies.length > 0) entries[idx].trophies = trophies;
+  if (Array.isArray(trophies) && trophies.length > 0) {
+    entries[idx].trophies = trophies;
+    // Gehoert immer zum zuletzt gespeicherten Trophy-Snapshot - fehlt bei
+    // Eintraegen, die vor v4.27.0 geschlossen wurden (gelten dann als
+    // "aeltere Trophy-Liste", siehe trophies.html).
+    if (typeof rulesVersion === 'number') entries[idx].rulesVersion = rulesVersion;
+  }
   // Nachtraegliches Auffuellen des Startrangs fuer Eintraege, die VOR der
   // "LP Range"-Anzeige (v4.16.0) angelegt wurden und deshalb kein
   // startRankTier haben - NUR wenn noch leer, ueberschreibt also nie einen

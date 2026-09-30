@@ -233,8 +233,11 @@ function wipeDir(dirPath) {
 }
 
 ipcMain.handle('factory-reset', async () => {
-  wipeDir(path.join(__dirname, 'server', 'data'));
-  wipeDir(path.join(__dirname, 'server', 'cache'));
+  // Seit v4.27.0 update-fest unter userData (siehe server/lib/dataPaths.js);
+  // die alten Orte im Installationsordner werden sicherheitshalber mit
+  // geleert, damit dort nichts fuer eine spaetere Migration liegen bleibt.
+  const { DATA_DIR, CACHE_DIR, LEGACY_DATA_DIR, LEGACY_CACHE_DIR } = require('./server/lib/dataPaths');
+  for (const dir of new Set([DATA_DIR, CACHE_DIR, LEGACY_DATA_DIR, LEGACY_CACHE_DIR])) wipeDir(dir);
 
   app.setLoginItemSettings({ openAtLogin: false, args: ['--hidden'] });
 

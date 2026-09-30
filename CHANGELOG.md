@@ -1,5 +1,28 @@
 # Internal Changelog
 
+## 4.27.0 — 2026-09-30
+
+- **Data loss on every auto-update fixed.** `server/data` (challenge
+  history, rank history, achievement state) and `server/cache` lived inside
+  the install dir, which every auto-update replaces - found when the user
+  asked why an old challenge was missing from the history (on disk the
+  installed app's `data` folder was recreated at 15:27, 2 min after the
+  4.26.5 install). New `server/lib/dataPaths.js` moves both to
+  `TTP_USER_DATA_DIR/ttp-data` and `ttp-cache` (not `data`/`cache`:
+  Chromium already has a `Cache` dir there, Windows is case-insensitive),
+  with a one-time copy from the legacy location if the new one doesn't exist
+  yet. Dev mode without Electron keeps using `server/`. Factory reset wipes
+  both new and legacy dirs.
+- Challenge history entries now store `rulesVersion` (achievements.js
+  RULES_VERSION) with every trophy snapshot; `/list` returns
+  `currentRulesVersion`. trophies.html marks past entries from another rules
+  version as "Older trophy list" (card + banner text) instead of anything
+  hiding them. Nothing ever filtered by rules version before - the missing
+  challenge was purely the data-loss bug above.
+- What's New regrouped (explicit user request): only user-relevant changes
+  are listed as text; everything else is a count shown as a "Refinements"
+  or "Bug Fixes" label. All existing entries re-sorted into the new scheme.
+
 ## 4.26.5 — 2026-09-30
 
 - `index.html`/`style.css`: 4.26.4's right-window-edge spot was still not

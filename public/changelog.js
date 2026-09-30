@@ -5,19 +5,18 @@
 // von Hand um den neuesten Eintrag ergaenzt (kein automatischer Abgleich
 // mit package.json/Git-Historie).
 //
-// Kategorisierung (ebenfalls explizit so gewuenscht): "notable" ist kurz und
-// knackig fuer alles, was fuer den Nutzer wirklich sichtbar/relevant ist
-// (neue Themes, UI-Aenderungen, neue Features). "bugfixes" ist ein Sammel-
-// becken fuer alles andere, das fuer den Nutzer nicht sonderlich relevant
-// ist - auch wenn es kein echter Bugfix war. Seit v4.12.0 (explizite
-// Nutzeranfrage) wird "bugfixes" NICHT mehr als Liste mit Beschreibungen
-// angezeigt, nur noch als schlichtes "Bugfixes"-Label - den Nutzer
-// interessiert bei Dingen, die keine Funktion fuer ihn aendern, nicht WAS
-// genau, nur DASS ueberhaupt was war. Kann weiterhin ein Array (fuer
-// Eintraege vor 4.12.0, deren Inhalt jetzt einfach ignoriert wird) oder ab
-// jetzt eine blosse Zahl sein - beides wird nur noch gezaehlt, nie gelistet.
-// Das genaue "was" steht stattdessen in CHANGELOG.md (Repo-Root) - ein
-// privates, nicht in der App angezeigtes Log fuer Fabian/Claude selbst.
+// Kategorisierung (explizite Nutzeranfrage, neu geordnet 2026-09-30): nur
+// "notable" wird als Liste mit Text angezeigt - und zwar NUR fuer Dinge, die
+// dem Nutzer wirklich etwas bringen (neue Features, geaenderte Trophy-Ziele/
+// Zaehlregeln, Verhalten, auf das er sich einstellen muss). Leitfrage: "Ist
+// das relevante Information fuer den Nutzer, bringt ihm die Info was?"
+// Alles andere ist nur eine Zahl und erscheint als schlichtes Label:
+//   - "refinements" (Label "Refinements"): kosmetische/Layout-Anpassungen,
+//     Button verschoben/anders gestylt, Texte, Panel-Details, kleine
+//     Komfort-Aenderungen.
+//   - "bugfixes" (Label "Bug Fixes"): echte Fehlerbehebungen.
+// Das genaue "was" steht in CHANGELOG.md (Repo-Root) - ein privates, nicht
+// in der App angezeigtes Log fuer Fabian/Claude selbst.
 //
 // "date" (explizite Nutzeranfrage, 2026-09-30): Erscheinungsdatum dieser
 // Version, klein neben der Versionsnummer angezeigt - aus der echten
@@ -26,272 +25,271 @@
 (function () {
   const CHANGELOG = [
     {
-      version: '4.26.5',
+      version: '4.27.0',
       date: '2026-09-30',
       notable: [
-        'The "Overview" button moved from the top icon row to right beside the page content, vertically centered'
+        "Challenge History, LP history and trophy progress now survive app updates - until now every update wiped them",
+        "Past challenges stay in your Challenge History even after trophy targets get adjusted later - they're shown with the trophy list that applied back then, marked \"Older trophy list\""
       ],
-      bugfixes: []
+      refinements: 1,
+      bugfixes: 0
+    },
+    {
+      version: '4.26.5',
+      date: '2026-09-30',
+      notable: [],
+      refinements: 1,
+      bugfixes: 0
     },
     {
       version: '4.26.3',
       date: '2026-09-30',
-      notable: [
-        'The "Overview" button on Champion Selection is now a solid gold button with text instead of a small icon that blended in with Settings/Updates/What\'s New'
-      ],
-      bugfixes: []
+      notable: [],
+      refinements: 1,
+      bugfixes: 0
     },
     {
       version: '4.26.2',
       date: '2026-09-30',
-      notable: [
-        'Overview page no longer shows two "Three-Trick-Pony" headings - your role now shows once, right in the page subtitle',
-        '"What\'s New" now shows the 5 most recent updates by default instead of 3',
-        '"Go to Overview" is now a small arrow icon next to Settings/Updates/What\'s New, and Reset Challenge is a proper red button - both to fix Champion Selection needing to scroll again at the default window size',
-        'The update/restart window now centers on the app window instead of the screen'
-      ],
-      bugfixes: []
+      notable: [],
+      refinements: 4,
+      bugfixes: 0
     },
     {
       version: '4.26.1',
       date: '2026-09-30',
       notable: [],
+      refinements: 0,
       bugfixes: 2
     },
     {
       version: '4.26.0',
       date: '2026-09-30',
-      notable: [
-        'This panel now shows what\'s actually new since you last updated first, then 3 more, with a "Load 5 more" button for the rest - each entry now also shows its release date'
-      ],
-      bugfixes: []
+      notable: [],
+      refinements: 1,
+      bugfixes: 0
     },
     {
       version: '4.25.0',
       date: '2026-09-30',
       notable: [
-        'New: Second Role on the Champion Selection page - pick a backup role alongside your Main Role (both required to start a challenge)',
-        'New: Role Balance chart on the Overview page shows your Main/Second/Fill split for this challenge, with a link to a dedicated Role page (more details coming there soon)',
-        'Overview page now shows each champion\'s win rate + games played instead of repeating the role on every card (the role is now shown once, above the row)'
+        "New: Second Role on the Champion Selection page - pick a backup role alongside your Main Role (both required to start a challenge)",
+        "New: Role Balance chart on the Overview page shows your Main/Second/Fill split for this challenge",
+        "Overview page now shows each champion's win rate + games played"
       ],
-      bugfixes: []
+      refinements: 1,
+      bugfixes: 0
     },
     {
       version: '4.24.0',
       date: '2026-09-30',
       notable: [
-        'Duelist and Assassin (Mid) trophy targets raised 50% across all difficulty levels'
+        "Duelist and Assassin (Mid) trophy targets raised 50% across all difficulty levels"
       ],
-      bugfixes: []
+      refinements: 0,
+      bugfixes: 0
     },
     {
       version: '4.23.0',
       date: '2026-09-30',
       notable: [
-        'Provisional trophies (Consistency, Mid Diff, and similar) now always show their live current/target numbers, marked with a small hourglass badge instead of hiding the numbers behind a text-only placeholder'
+        "Provisional trophies (Consistency, Mid Diff, and similar) now always show their live current/target numbers, marked with a small hourglass badge"
       ],
-      bugfixes: []
+      refinements: 0,
+      bugfixes: 0
     },
     {
       version: '4.22.0',
       date: '2026-09-30',
       notable: [
-        'Overview and Trophies pages now refresh themselves automatically every 15 minutes while open, instead of only updating the next time you reopen them'
+        "Overview and Trophies pages now refresh themselves automatically every 15 minutes while open"
       ],
-      bugfixes: []
+      refinements: 0,
+      bugfixes: 0
     },
     {
       version: '4.21.0',
       date: '2026-09-30',
       notable: [
-        'Trophies (Win Streak, Consistency, and all others) now count every ranked game since your challenge started, not just games played on your exact champion pool/role - matching the account-wide numbers already shown on the Overview page'
+        "Trophies now count every ranked game since your challenge started, not just games on your exact champion pool/role"
       ],
-      bugfixes: []
+      refinements: 0,
+      bugfixes: 0
     },
     {
       version: '4.20.1',
       date: '2026-09-30',
-      notable: [
-        'Trophy progress numbers are bolder and brighter, easier to read at a glance'
-      ],
-      bugfixes: []
+      notable: [],
+      refinements: 1,
+      bugfixes: 0
     },
     {
       version: '4.20.0',
       date: '2026-09-26',
       notable: [
-        'Challenges ended with 0 trophies unlocked (e.g. restarted right away after tweaking a setting) no longer get saved to Challenge History'
+        "Challenges ended with 0 trophies unlocked (e.g. restarted right away after tweaking a setting) no longer get saved to Challenge History"
       ],
-      bugfixes: []
+      refinements: 0,
+      bugfixes: 0
     },
     {
       version: '4.19.0',
       date: '2026-09-26',
-      notable: [
-        'Challenge History list now shows 5 challenges at a time with a subtle down-arrow hint when there\'s more to scroll to'
-      ],
-      bugfixes: [
-        'Fixed the goal-reached checkmark/cross disappearing on challenges where the LP range isn\'t known yet'
-      ]
+      notable: [],
+      refinements: 1,
+      bugfixes: 1
     },
     {
       version: '4.18.0',
       date: '2026-09-26',
-      notable: [
-        'Challenges started before the LP Range feature will now automatically pick up their start rank on their next sync, so the range shows up without needing to be restarted'
-      ],
-      bugfixes: []
+      notable: [],
+      refinements: 1,
+      bugfixes: 0
     },
     {
       version: '4.17.0',
       date: '2026-09-26',
       notable: [],
+      refinements: 0,
       bugfixes: 2
     },
     {
       version: '4.16.0',
       date: '2026-09-26',
       notable: [
-        'Challenge History (current + past) now shows the difficulty you played on and your LP range with a ✓/✗ for whether you reached your goal'
+        "Challenge History now shows the difficulty you played on and your LP range with a ✓/✗ for whether you reached your goal"
       ],
-      bugfixes: []
+      refinements: 0,
+      bugfixes: 0
     },
     {
       version: '4.15.0',
       date: '2026-09-26',
       notable: [],
+      refinements: 0,
       bugfixes: 2
     },
     {
       version: '4.14.0',
       date: '2026-09-26',
       notable: [],
+      refinements: 0,
       bugfixes: 2
     },
     {
       version: '4.13.0',
       date: '2026-09-26',
       notable: [],
+      refinements: 0,
       bugfixes: 2
     },
     {
       version: '4.12.0',
       date: '2026-09-26',
       notable: [],
+      refinements: 0,
       bugfixes: 6
     },
     {
       version: '4.11.0',
       date: '2026-09-26',
-      notable: [
-        'Challenge History on the Trophies page reorganized: your current challenge now sits in its own fixed spot above the history list, which now scrolls on its own once it gets long'
-      ],
-      bugfixes: [
-        'Fixed the Trophies page history list not scrolling and instead pushing the whole page down once you had several past challenges',
-        'Fixed the "viewing a past challenge" banner abruptly shifting the whole page instead of transitioning smoothly',
-        'Fixed trophy progress bars sitting at different heights depending on how long each trophy\'s description was',
-        'Fixed the Overview page header overlapping the back button',
-        'Fixed several spots on the Champion Selection and Overview pages shifting around as data loaded or errors appeared/disappeared (champion pool box, Start Challenge box, summoner stats card, and more)'
-      ]
+      notable: [],
+      refinements: 1,
+      bugfixes: 5
     },
     {
       version: '4.10.0',
       date: '2026-09-26',
       notable: [],
-      bugfixes: [
-        'Champion Selection page slightly resized to stop it from needing to scroll in most cases',
-        'Settings window tidied up so it no longer needs to scroll',
-        'Clicking your currently running challenge in the Challenge History list now just takes you back to it, instead of trying to show it as a past snapshot',
-        'A brief visual cue now shows when switching between the current and a past challenge view on the Trophies page'
-      ]
+      refinements: 3,
+      bugfixes: 1
     },
     {
       version: '4.9.0',
       date: '2026-09-26',
       notable: [
-        'New: click an old Challenge History entry to see exactly which trophies you had (and hadn\'t) unlocked when it ended - clearly marked as a read-only past view, with a button to jump back to your current challenge'
+        "New: click an old Challenge History entry to see exactly which trophies you had (and hadn't) unlocked when it ended"
       ],
-      bugfixes: []
+      refinements: 0,
+      bugfixes: 0
     },
     {
       version: '4.8.0',
       date: '2026-09-26',
       notable: [
-        'New: a Save button next to your summoner name resolves your current rank immediately, instead of only after starting a challenge',
-        'New: LP Goals now need a minimum distance from your current rank (2 divisions, or +100 LP at Master+) so it stays an actual challenge'
+        "New: a Save button next to your summoner name resolves your current rank immediately",
+        "New: LP Goals now need a minimum distance from your current rank (2 divisions, or +100 LP at Master+) so it stays an actual challenge"
       ],
-      bugfixes: []
+      refinements: 0,
+      bugfixes: 0
     },
     {
       version: '4.7.0',
       date: '2026-09-26',
       notable: [],
-      bugfixes: [
-        'Fixed challenges already running before the Challenge History feature existed never appearing in it'
-      ]
+      refinements: 0,
+      bugfixes: 1
     },
     {
       version: '4.6.0',
       date: '2026-09-26',
       notable: [
-        'The update icon now shows a small dismissible notification when a new update is found, so it\'s harder to miss'
+        "The update icon now shows a small notification when a new update is found"
       ],
-      bugfixes: [
-        'Fixed the Trophies page header being off-center and the heading text being unreadable in some themes after the Challenge History sidebar was added'
-      ]
+      refinements: 0,
+      bugfixes: 1
     },
     {
       version: '4.5.0',
       date: '2026-09-26',
       notable: [],
-      bugfixes: [
-        'Fixed a rare case where some accounts\' older games weren\'t being counted toward stats/trophies'
-      ]
+      refinements: 0,
+      bugfixes: 1
     },
     {
       version: '4.4.0',
       date: '2026-09-26',
       notable: [
-        'Rebalanced Double/Triple/Quadra Kill trophy targets using real match data instead of estimates - Triple and Quadra Kill were up to 5x too high before'
+        "Rebalanced Double/Triple/Quadra Kill trophy targets using real match data - Triple and Quadra Kill were up to 5x too high before"
       ],
-      bugfixes: []
+      refinements: 0,
+      bugfixes: 0
     },
     {
       version: '4.3.0',
       date: '2026-09-25',
       notable: [
-        'New: Challenge History list on the Trophies page - every challenge you\'ve run, with start/end dates, duration, and trophy count',
-        'New: clean up old challenge entries you abandoned early',
-        'New: this update log'
+        "New: Challenge History list on the Trophies page - every challenge you've run, with start/end dates, duration, and trophy count",
+        "New: this update log"
       ],
-      bugfixes: [
-        'Various small under-the-hood improvements'
-      ]
+      refinements: 2,
+      bugfixes: 0
     },
     {
       version: '4.2.0',
       date: '2026-09-25',
-      notable: [
-        'Resetting a challenge now fully clears its old trophy progress instead of leaving it behind'
-      ],
-      bugfixes: []
+      notable: [],
+      refinements: 0,
+      bugfixes: 1
     },
     {
       version: '4.1.0',
       date: '2026-09-25',
       notable: [
-        'The Trophies page now tells you if your trophy list is still up to date with the current targets'
+        "The Trophies page now tells you if your trophy list is still up to date with the current targets"
       ],
-      bugfixes: []
+      refinements: 0,
+      bugfixes: 0
     },
     {
       version: '4.0.0',
       date: '2026-09-25',
       notable: [
-        '2 new themes: Freljord & Ionia',
-        'Refreshed, more modern look across the whole app'
+        "2 new themes: Freljord & Ionia",
+        "Refreshed, more modern look across the whole app"
       ],
-      bugfixes: []
+      refinements: 0,
+      bugfixes: 0
     }
   ];
 
@@ -378,7 +376,7 @@
         <div class="changelog-version">
           <div class="changelog-version-title">v${v.version} ${dateHtml}</div>
           ${v.notable.length ? `<ul class="changelog-notable">${v.notable.map(n => `<li>${n}</li>`).join('')}</ul>` : ''}
-          ${(Array.isArray(v.bugfixes) ? v.bugfixes.length : v.bugfixes) ? `<div class="changelog-bugfixes-label">Bugfixes</div>` : ''}
+          ${(v.refinements || v.bugfixes) ? `<div class="changelog-minor-labels">${v.refinements ? '<span class="changelog-bugfixes-label">Refinements</span>' : ''}${v.bugfixes ? '<span class="changelog-bugfixes-label">Bug Fixes</span>' : ''}</div>` : ''}
         </div>
       `;
     }
