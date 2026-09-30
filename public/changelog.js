@@ -25,6 +25,15 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.27.5',
+      date: '2026-09-30',
+      notable: [
+        "To get back from a past challenge on the Trophies page, click the Current Challenge card above your Challenge History"
+      ],
+      refinements: 1,
+      bugfixes: 1
+    },
+    {
       version: '4.27.4',
       date: '2026-09-30',
       notable: [],

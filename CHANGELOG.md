@@ -1,5 +1,23 @@
 # Internal Changelog
 
+## 4.27.5 — 2026-09-30
+
+- Root cause of "Back to current challenge does nothing" (4.27.3 and
+  4.27.4): in the grid-stacked `.status-slot`, the hidden `.rules-status`
+  (opacity 0 -> own stacking context) was painted ABOVE the non-positioned
+  banner and swallowed every real mouse click on the button. My headless
+  tests used `el.click()`, which bypasses hit-testing, so they passed.
+  Reproduced in an isolated copy of the installed app with CDP
+  `Input.dispatchMouseEvent` + `elementFromPoint` (returned `rulesStatus`).
+- Per user request the button is gone: the "Current Challenge" card above
+  Challenge History is now the way back (`showCurrentChallenge()`), marked
+  `.active` while the live view is shown (no more muted/greyed style).
+  Hidden slot children get `pointer-events: none`.
+- Banner text: "Viewing challenge from X - Y · some numbers may differ"
+  (older rules: "· older trophy list, some numbers may differ").
+- Verified in dev Electron with a copy of the user's real data and real
+  mouse events: past -> current -> past -> current, no errors.
+
 ## 4.27.4 — 2026-09-30
 
 - Fix: "Back to current challenge" could leave the past challenge's

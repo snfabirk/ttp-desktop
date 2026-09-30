@@ -131,6 +131,13 @@
     grid-area: 1 / 1;
     align-self: center;
   }
+  /* Ausgeblendetes Element im selben Platz darf keine Klicks abfangen -
+     genau das hat in 4.27.3/4.27.4 den "Back"-Button unklickbar gemacht
+     (die unsichtbare Rules-Zeile lag per opacity-Stacking-Context DARUEBER). */
+  .status-slot > .rules-status:not(.visible),
+  .status-slot > .history-view-banner:not(.visible) {
+    pointer-events: none;
+  }
   .status-slot .rules-status {
     margin: 0;
   }
@@ -161,27 +168,6 @@
     flex: 1;
     min-width: 0;
   }
-  .history-view-back-btn {
-    flex-shrink: 0;
-    background: none;
-    border: 1px solid var(--history-view-accent);
-    color: var(--history-view-accent);
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-family: 'Cinzel', Georgia, serif;
-    font-size: 0.75rem;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .history-view-back-btn:hover {
-    background: var(--history-view-accent);
-    color: var(--input-bg);
-  }
-  /* Rahmen um die gesamte linke Spalte, solange eine vergangene Challenge
-     angezeigt wird - zusaetzlich zum Banner, damit es auch beim Scrollen
-     (Banner nicht mehr im Blick) noch erkennbar bleibt. */
   /* Rahmen nur um den eigentlichen Trophy-Bereich (Prozent bis Grid), NICHT
      um die Hinweis-/Statuszeilen darunter - sonst reichte er bei normaler
      Fenstergroesse unten aus dem Bild und machte die Seite scrollbar
@@ -531,13 +517,11 @@
   .current-challenge-block .panel-heading {
     margin-bottom: 10px;
   }
-  /* Waehrend des Review-Modus (ein History-Eintrag wird angezeigt) bleibt
-     dieser Block sichtbar, wird aber optisch als "gerade nicht aktiv"
-     gekennzeichnet - Klicks darauf sollen ohnehin nichts ausloesen, siehe
-     JS (kein Click-Listener wird je darauf gesetzt). */
-  .current-challenge-block .history-entry.muted {
-    opacity: 0.4;
-    filter: grayscale(0.4);
+  /* Die "Current Challenge"-Karte ist der Weg zurueck aus einer
+     vergangenen Challenge (ersetzt seit 4.27.5 den "Back"-Button im Banner,
+     Nutzerwunsch) - klickbar wie jeder History-Eintrag. */
+  .current-challenge-block .history-entry {
+    cursor: pointer;
   }
   /* Markiert den gerade im Trophy-Grid angezeigten History-Eintrag - sonst
      ist beim Durchklicken mehrerer vergangener Challenges nicht erkennbar,
@@ -748,7 +732,6 @@
         <div class="history-view-banner" id="historyViewBanner">
           <span class="history-view-banner-icon">🕘</span>
           <span class="history-view-banner-text" id="historyViewBannerText"></span>
-          <button type="button" class="history-view-back-btn" id="historyViewBackBtn">← Back to current challenge</button>
         </div>
       </div>
 
@@ -1408,9 +1391,8 @@
     }
 
     // Der fest angepinnte "Current Challenge"-Block oben in der rechten
-    // Spalte - bewusst OHNE Delete-Button und OHNE Click-Listener (man
-    // verlaesst den Review-Modus ausschliesslich ueber den "Back to current
-    // challenge"-Button, siehe Nutzeranfrage).
+    // Spalte - ohne Delete-Button. Klick darauf fuehrt aus einer vergangenen
+    // Challenge zurueck zur aktuellen (siehe showCurrentChallenge()).
     function currentChallengeCardHtml(entry) {
       const dateRange = `${formatShortDate(entry.since)} – ongoing`;
       const duration = formatDuration(entry.since, new Date().toISOString());
@@ -1418,7 +1400,7 @@
       const platinumClass = entry.platinumUnlocked ? ' platinum' : '';
       const { difficultyLabel, rangeHtml } = formatChallengeExtra(entry, true);
       return `
-        <div class="history-entry ongoing${platinumClass}">
+        <div class="history-entry ongoing${platinumClass}" title="Show your current challenge">
           ${entry.platinumUnlocked ? '<span class="history-platinum-badge">★ Platinum</span>' : ''}
           <div class="history-dates">${dateRange} <span class="history-live-dot"></span></div>
           <div class="history-meta">
@@ -1460,9 +1442,12 @@
       });
     }
 
-    function muteCurrentChallengeBlock(muted) {
+    // Markiert die "Current Challenge"-Karte als aktiv, solange die Live-
+    // Ansicht gezeigt wird - gleiche Markierung wie ein angeklickter
+    // History-Eintrag, damit immer genau eine Karte "an" ist.
+    function markCurrentChallengeCard(active) {
       const card = document.querySelector('#currentChallengeCard .history-entry');
-      if (card) card.classList.toggle('muted', muted);
+      if (card) card.classList.toggle('active', active);
     }
 
     // Zeigt/versteckt den Scroll-Pfeil je nachdem, ob unterhalb der aktuellen
@@ -1488,7 +1473,8 @@
       if (ongoingEntry) {
         currentCard.innerHTML = currentChallengeCardHtml(ongoingEntry);
         currentBlock.style.display = '';
-        muteCurrentChallengeBlock(activeHistoricalEntryId !== null);
+        markCurrentChallengeCard(activeHistoricalEntryId === null);
+        currentCard.querySelector('.history-entry').addEventListener('click', showCurrentChallenge);
       } else {
         currentBlock.style.display = 'none';
       }
@@ -1550,7 +1536,7 @@
       if (activeHistoricalEntryId === entry.id) return;
       activeHistoricalEntryId = entry.id;
       markActiveHistoryEntry(entry.id);
-      muteCurrentChallengeBlock(true);
+      markCurrentChallengeCard(false);
 
       // Dezenter Hinweis, dass gerade umgeschaltet wird (auch beim Wechsel
       // von einer historischen Ansicht direkt in eine andere, ohne
@@ -1572,8 +1558,8 @@
       // (Nutzerfeedback 2026-09-30: "was will der Viewer damit anfangen").
       // Einzeilig gehalten, damit das Banner in den Platz der Rules-Zeile passt.
       document.getElementById('historyViewBannerText').textContent = isOutdatedTrophyList(entry)
-        ? `Viewing challenge from ${dateRange} · older trophy list - targets and stats may differ from today`
-        : `Viewing challenge from ${dateRange} · trophies and stats as they were back then`;
+        ? `Viewing challenge from ${dateRange} · older trophy list, some numbers may differ`
+        : `Viewing challenge from ${dateRange} · some numbers may differ`;
       document.getElementById('historyViewBanner').classList.add('visible');
       document.getElementById('trophiesMain').classList.add('historical-view');
 
@@ -1585,13 +1571,14 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Zurueck zur aktuellen Challenge OHNE Neuladen: gleiche Ueberblendung
-    // wie beim Reinklicken, Scroll-Position bleibt, wo sie ist.
-    document.getElementById('historyViewBackBtn').addEventListener('click', () => {
+    // Zurueck zur aktuellen Challenge (Klick auf die "Current Challenge"-
+    // Karte) OHNE Neuladen: gleiche Ueberblendung wie beim Reinklicken,
+    // Scroll-Position bleibt, wo sie ist.
+    function showCurrentChallenge() {
       if (activeHistoricalEntryId === null) return;
       activeHistoricalEntryId = null;
       markActiveHistoryEntry(null);
-      muteCurrentChallengeBlock(false);
+      markCurrentChallengeCard(true);
       document.getElementById('historyViewBanner').classList.remove('visible');
       document.getElementById('trophiesMain').classList.remove('historical-view');
       flashTrophyGrid();
@@ -1605,7 +1592,7 @@
         // Laeuft einer, fuellt der das Grid gleich selbst.
         loadAchievementProgress();
       }
-    });
+    }
 
     async function loadChallengeHistory(puuid) {
       try {
