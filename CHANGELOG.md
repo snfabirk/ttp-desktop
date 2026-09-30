@@ -1,5 +1,21 @@
 # Internal Changelog
 
+## 4.28.2 — 2026-09-30
+
+- role.html / role-chart.js, per user spec: 3 champs per bar (was 5), then
+  "▾ N more"; clicking opens a panel in the same row style attached right
+  under the list (visually separated, floating - no layout shift),
+  max 10 rows then scrollable, "Show less" / click outside / Esc closes, one
+  open at a time. Panel height is capped to the space left in the window;
+  it opens downward if >= 5 rows fit, otherwise upward (70% window).
+  Closed panels are display:none (a hidden absolute panel still counted
+  toward page height and made the page scrollable).
+- Each champ column is its own subtle box with wider gaps - the record on
+  the right no longer reads as belonging to the neighbour column's champ.
+- Chart card is vertically centered in the free area under the header.
+- Verified in dev Electron (user data copy + 15-champ column) at 1077px and
+  860px window height with real mouse clicks: no page scroll, no errors.
+
 ## 4.28.1 — 2026-09-30
 
 - TEMPORARY test hook (user wanted to see the Role Balance chart with ~30

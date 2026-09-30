@@ -16,6 +16,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
     }
     .site-header {
       display: flex;
@@ -30,12 +32,19 @@
       letter-spacing: 1px;
       margin: 8px 0 0;
     }
+    /* Karte im freien Bereich unter der Ueberschrift vertikal mittig (oben
+       und unten gleich viel Luft); bei kleinem Fenster rueckt sie nach oben
+       statt abgeschnitten zu werden. */
     .content {
       width: 100%;
-      max-width: 940px;
+      max-width: 960px;
       box-sizing: border-box;
       padding: 0 30px;
-      margin: 24px 0 30px;
+      margin: 20px 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
     .role-card {
       background: var(--panel-bg);
@@ -47,7 +56,7 @@
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
       /* Platz fuer das fertige Diagramm schon beim Laden reservieren, damit
          nichts springt, sobald die Daten da sind. */
-      min-height: 520px;
+      min-height: 470px;
       box-sizing: border-box;
     }
     .role-status {
@@ -98,7 +107,7 @@
     .rc-grid {
       display: grid;
       grid-template-columns: 34px repeat(4, minmax(0, 1fr));
-      column-gap: 16px;
+      column-gap: 22px;
     }
     .rc-axis, .rc-plot {
       position: relative;
@@ -115,7 +124,7 @@
     .rc-bars {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      column-gap: 16px;
+      column-gap: 22px;
     }
     .rc-tick {
       position: absolute;
@@ -195,13 +204,86 @@
       font-size: 0.75rem;
       font-style: italic;
     }
+    /* Eigenes Kaestchen pro Spalte - klare Trennung zur Nachbarspalte */
+    .rc-champ-col {
+      position: relative;
+      align-self: start;
+      margin-top: 12px;
+      padding: 8px 10px;
+      border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--input-bg) 55%, transparent);
+    }
     .rc-champs {
       list-style: none;
-      margin: 12px 0 0;
+      margin: 0;
       padding: 0;
       display: flex;
       flex-direction: column;
       gap: 6px;
+    }
+    .rc-more-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      width: 100%;
+      margin-top: 8px;
+      padding: 4px 0 0;
+      background: none;
+      border: none;
+      border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+      color: var(--text-faint);
+      font-family: Georgia, serif;
+      font-size: 0.76rem;
+      font-style: italic;
+      cursor: pointer;
+    }
+    .rc-more-btn:hover {
+      color: var(--gold);
+    }
+    .rc-more-arrow {
+      font-style: normal;
+      font-size: 0.95rem;
+      line-height: 1;
+      transition: transform 0.2s ease;
+    }
+    .rc-champ-col.open .rc-more-arrow {
+      transform: rotate(180deg);
+    }
+    /* Aufgeklapptes Feld: haengt direkt unter dem Kaestchen, gleicher
+       Zeilenstil, deutlich abgesetzt; legt sich UEBER die Seite (keine
+       Layout-Verschiebung). Max. 10 Zeilen, dann scrollbar. */
+    .rc-more-panel {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: -1px;
+      right: -1px;
+      z-index: 20;
+      box-sizing: border-box;
+      max-height: calc(10 * 28px + 16px);
+      overflow-y: auto;
+      padding: 8px 10px;
+      border: 1px solid var(--border-hover);
+      border-radius: 8px;
+      background: var(--input-bg);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+      /* Zu: display:none statt nur unsichtbar - ein unsichtbares, absolut
+         positioniertes Feld zaehlt sonst trotzdem zur Seitenhoehe und macht
+         die Seite scrollbar. */
+      display: none;
+    }
+    .rc-champ-col.open .rc-more-panel {
+      display: block;
+      animation: rc-panel-in 0.15s ease;
+    }
+    .rc-champ-col.up .rc-more-panel {
+      top: auto;
+      bottom: calc(100% + 6px);
+    }
+    @keyframes rc-panel-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .rc-champ {
       display: flex;
