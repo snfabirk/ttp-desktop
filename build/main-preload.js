@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('ttpMain', {
   openSettings: () => ipcRenderer.send('open-settings'),
   openUpdateWindow: () => ipcRenderer.send('open-update-window'),
   getUpdateState: () => ipcRenderer.invoke('get-update-state'),
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   onUpdateStatus: (callback) => {
     ipcRenderer.on('main-update-status', (event, state) => callback(state));
   },

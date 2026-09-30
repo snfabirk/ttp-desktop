@@ -147,6 +147,9 @@ ipcMain.on('update-later', () => { if (updateWin) updateWin.close(); });
 // die das Fenster nicht mehr automatisch aufreissen.
 ipcMain.on('open-update-window', () => showUpdateWindow());
 ipcMain.handle('get-update-state', () => updateState);
+// Fuer das "What's New"-Panel (public/changelog.js), um zu wissen, ab
+// welcher Version alles "neu seit dem letzten Update" ist.
+ipcMain.handle('get-app-version', () => app.getVersion());
 
 // Manueller "Check for Updates"-Button im Einstellungsfenster - merkt sich,
 // welches Fenster den Check angefordert hat, um genau dorthin (und nur
@@ -337,6 +340,7 @@ async function readChallengeStateFromRenderer() {
         summoner: localStorage.getItem('ttp_summoner_name') || '',
         champsRaw: localStorage.getItem('ttp_selected_champs') || '[]',
         role: localStorage.getItem('ttp_pool_role') || '',
+        secondRole: localStorage.getItem('ttp_pool_second_role') || '',
         challengeLevel: localStorage.getItem('ttp_challenge_level') || '',
         lpGoalTier: localStorage.getItem('ttp_lp_goal_tier') || '',
         lpGoalDivision: localStorage.getItem('ttp_lp_goal_division') || '',
@@ -376,7 +380,13 @@ async function backgroundStatsRefresh() {
     const startRes = await fetch(`${base}/api/summary-batch/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ puuid: accountData.puuid, champions: champsWithKeys, since: state.since })
+      body: JSON.stringify({
+        puuid: accountData.puuid,
+        champions: champsWithKeys,
+        since: state.since,
+        mainRole: state.role,
+        secondRole: state.secondRole
+      })
     });
     const startData = await startRes.json();
     if (!startRes.ok) return;

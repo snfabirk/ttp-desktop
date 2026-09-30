@@ -498,6 +498,62 @@ html, body {
   font-size: 0.75rem;
   line-height: 1.5;
 }
+/* Erscheinungsdatum klein neben der Versionsnummer (explizite Nutzeranfrage,
+   2026-09-30). */
+.changelog-date {
+  color: var(--text-faint);
+  font-family: Georgia, serif;
+  font-size: 0.68rem;
+  font-weight: normal;
+  letter-spacing: normal;
+  margin-left: 4px;
+}
+/* Trennt "seit dem letzten Update neu" von den aelteren Eintraegen darunter
+   (siehe changelog.js renderBody()) - nur eine dezente Kapitel-Ueberschrift,
+   kein eigener Kasten. */
+.changelog-section-label {
+  color: var(--gold);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin: 0 0 14px;
+  opacity: 0.85;
+}
+.changelog-section-label:not(:first-child) {
+  margin-top: 4px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+/* "Load 5 more"-Button unten in der Liste - selber Look wie andere
+   sekundaere Buttons in der App (dezenter Goldrahmen, wird beim Hovern
+   voll). */
+.changelog-load-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 4px;
+  padding: 9px 16px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.changelog-load-more:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.changelog-load-more-arrow {
+  font-size: 0.85rem;
+}
 @media (max-width: 480px) {
   .changelog-drawer {
     width: 100vw;

@@ -49,7 +49,12 @@
         "champ     list"
         "start     start"
         "gobtn     gobtn";
-      gap: 22px;
+      /* 16px statt frueher 22px - die "Assign Roles"-Box (jetzt Main+Second
+         Role) und "Select Champion Pool" (jetzt inkl. Label+Suche) brauchen
+         seit dem Rollen-Umbau (2026-09-30) mehr Hoehe als vorher; der
+         geringere Reihenabstand kompensiert das, damit die Seite bei
+         70%/80% Fenstergroesse weiterhin ohne Scrollen passt. */
+      gap: 16px;
       box-sizing: border-box;
       margin: 18px 0 18px;
     }
@@ -143,12 +148,12 @@
        backdrop-filter, was jede einzelne Box zu einem eigenen Stacking-
        Context macht - dadurch landet die Champion-Such-Vorschlagsliste
        (z-index:20, aber NUR innerhalb des Stacking-Contexts von
-       .champ-picker wirksam) hinter der spaeter im DOM folgenden
-       #startChallengeBox, egal wie hoch ihr eigener z-index ist. Erst ein
-       expliziter z-index HIER (auf der Box, die den Stacking-Context
-       aufmacht) hebt die ganze Box inkl. Vorschlagsliste ueber die
-       nachfolgenden Geschwister-Boxen. */
-    .champ-picker {
+       .selection-list wirksam, seit die Suche dorthin umgezogen ist) hinter
+       der spaeter im DOM folgenden #startChallengeBox, egal wie hoch ihr
+       eigener z-index ist. Erst ein expliziter z-index HIER (auf der Box,
+       die den Stacking-Context aufmacht) hebt die ganze Box inkl.
+       Vorschlagsliste ueber die nachfolgenden Geschwister-Boxen. */
+    .selection-list {
       position: relative;
       z-index: 5;
     }
@@ -217,7 +222,11 @@
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 13px;
+      /* 8px statt frueher 13px - die Checkliste hat jetzt 6 statt 5 Punkte
+         (Second Role dazugekommen), das kompensiert den zusaetzlichen
+         Eintrag, damit die Seite bei 70%/80% Fenstergroesse weiterhin ohne
+         Scrollen passt. */
+      gap: 8px;
     }
     .checklist-item {
       display: flex;
@@ -356,6 +365,18 @@
       letter-spacing: 1px;
       margin-bottom: 8px;
     }
+    /* Kompakter als .champ-picker label (kleiner, gedaempfter, wie die
+       Main/Second-Role-Sublabels gegenueber) - spart Hoehe in der Spalte,
+       die seit dem Rollen-Umbau (Suche+Karten hier drin) zur eigentlichen
+       Engstelle fuer "nicht scrollbar bei 70%/80%" geworden ist. */
+    .selection-list label {
+      display: block;
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+      margin-bottom: 5px;
+    }
     #champSearchInput, .meta-select {
       width: 100%;
       box-sizing: border-box;
@@ -450,21 +471,36 @@
       font-size: 0.85rem;
       font-style: italic;
     }
+    /* Zwei Rollen-Reihen (Main + Second) statt frueher einer - kompakter
+       dimensioniert (kleinerer Glyph/Label/Padding als frueher) damit die
+       zusaetzliche zweite Reihe die Seite nicht wieder scrollbar macht. */
+    .role-picker-group {
+      margin-bottom: 10px;
+    }
+    .role-picker-group:last-of-type {
+      margin-bottom: 4px;
+    }
+    .role-picker-sublabel {
+      display: block;
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.78rem;
+      margin-bottom: 5px;
+    }
     .role-icon-picker {
       display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
+      gap: 8px;
     }
     .role-icon-btn {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 3px;
+      gap: 2px;
       background: var(--input-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 6px 4px;
+      padding: 5px 4px;
       cursor: pointer;
       transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
     }
@@ -478,12 +514,12 @@
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 18%, transparent);
     }
     .role-icon-glyph {
-      font-size: 1.3rem;
+      font-size: 1.1rem;
     }
     .role-icon-label {
       color: var(--text-dim);
       font-family: Georgia, serif;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
     }
     .role-icon-btn.active .role-icon-label {
       color: var(--gold);
@@ -491,6 +527,14 @@
     .role-icon-btn:disabled {
       opacity: 0.5;
       cursor: default;
+    }
+    /* Second-Role-Button, der gerade der Main Role entspricht (bzw.
+       umgekehrt) - ausgegraut/unklickbar, damit man nicht dieselbe Rolle
+       zweimal waehlen kann (siehe updateRoleButtonStates() im Script). */
+    .role-icon-btn.role-conflict {
+      opacity: 0.35;
+      cursor: default;
+      pointer-events: none;
     }
     .champ-card {
       position: relative;
@@ -500,8 +544,12 @@
       background: rgba(var(--bg-rgb), 0.6);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 10px 44px 10px 14px;
-      margin-bottom: 8px;
+      /* Etwas knapper vertikal (7px/6px statt frueher 10px/8px) - schafft
+         zusaetzlichen Sicherheitsabstand fuer "nicht scrollbar bei 70%/80%"
+         seit die rechte Spalte durch Label+Suche (Rollen-Umbau 2026-09-30)
+         mehr eigenen Inhalt hat. */
+      padding: 7px 44px 7px 14px;
+      margin-bottom: 6px;
       min-height: 44px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
       transition: border-color 0.18s ease, box-shadow 0.18s ease;
@@ -612,50 +660,79 @@
     <ul class="checklist" id="checklistList">
       <li class="checklist-item" id="checklistSummoner"><span class="checklist-mark">○</span> Summoner name set</li>
       <li class="checklist-item" id="checklistChamps"><span class="checklist-mark">○</span> 1-3 champions selected</li>
-      <li class="checklist-item" id="checklistRoles"><span class="checklist-mark">○</span> Role assigned</li>
+      <li class="checklist-item" id="checklistRoles"><span class="checklist-mark">○</span> Main role assigned</li>
+      <li class="checklist-item" id="checklistSecondRole"><span class="checklist-mark">○</span> Second role assigned</li>
       <li class="checklist-item" id="checklistLevel"><span class="checklist-mark">○</span> Challenge Level set</li>
       <li class="checklist-item" id="checklistLpGoal"><span class="checklist-mark">○</span> LP Goal set</li>
     </ul>
   </div>
 
   <div class="champ-picker">
-    <label>Select Champion Pool</label>
+    <label>Assign Roles</label>
     <p id="champPickerLockedNote" class="champ-picker-locked-note">
-      Champions are locked for this challenge. Reset the challenge below to change your pool.
+      Champions and roles are locked for this challenge. Reset the challenge below to change them.
     </p>
 
-    <div class="role-icon-picker" id="roleIconPicker">
-      <button type="button" class="role-icon-btn" data-role="TOP" title="Top">
-        <span class="role-icon-glyph">⚔️</span>
-        <span class="role-icon-label">Top</span>
-      </button>
-      <button type="button" class="role-icon-btn" data-role="JUNGLE" title="Jungle">
-        <span class="role-icon-glyph">🌲</span>
-        <span class="role-icon-label">Jungle</span>
-      </button>
-      <button type="button" class="role-icon-btn" data-role="MIDDLE" title="Mid">
-        <span class="role-icon-glyph">⚡</span>
-        <span class="role-icon-label">Mid</span>
-      </button>
-      <button type="button" class="role-icon-btn" data-role="BOTTOM" title="Bottom">
-        <span class="role-icon-glyph">🏹</span>
-        <span class="role-icon-label">Bottom</span>
-      </button>
-      <button type="button" class="role-icon-btn" data-role="UTILITY" title="Support">
-        <span class="role-icon-glyph">🛡️</span>
-        <span class="role-icon-label">Support</span>
-      </button>
+    <div class="role-picker-group">
+      <span class="role-picker-sublabel">Main Role</span>
+      <div class="role-icon-picker" id="roleIconPicker">
+        <button type="button" class="role-icon-btn" data-role="TOP" title="Top">
+          <span class="role-icon-glyph">⚔️</span>
+          <span class="role-icon-label">Top</span>
+        </button>
+        <button type="button" class="role-icon-btn" data-role="JUNGLE" title="Jungle">
+          <span class="role-icon-glyph">🌲</span>
+          <span class="role-icon-label">Jungle</span>
+        </button>
+        <button type="button" class="role-icon-btn" data-role="MIDDLE" title="Mid">
+          <span class="role-icon-glyph">⚡</span>
+          <span class="role-icon-label">Mid</span>
+        </button>
+        <button type="button" class="role-icon-btn" data-role="BOTTOM" title="Bottom">
+          <span class="role-icon-glyph">🏹</span>
+          <span class="role-icon-label">Bottom</span>
+        </button>
+        <button type="button" class="role-icon-btn" data-role="UTILITY" title="Support">
+          <span class="role-icon-glyph">🛡️</span>
+          <span class="role-icon-label">Support</span>
+        </button>
+      </div>
     </div>
 
-    <div style="position:relative; margin-bottom:8px;">
-      <input type="text" id="champSearchInput" placeholder="e.g. C for Caitlyn, Camille, …" autocomplete="off">
-      <div id="champSuggestions" class="suggestion-list" hidden></div>
+    <div class="role-picker-group">
+      <span class="role-picker-sublabel">Second Role</span>
+      <div class="role-icon-picker" id="secondRoleIconPicker">
+        <button type="button" class="role-icon-btn" data-role="TOP" title="Top">
+          <span class="role-icon-glyph">⚔️</span>
+          <span class="role-icon-label">Top</span>
+        </button>
+        <button type="button" class="role-icon-btn" data-role="JUNGLE" title="Jungle">
+          <span class="role-icon-glyph">🌲</span>
+          <span class="role-icon-label">Jungle</span>
+        </button>
+        <button type="button" class="role-icon-btn" data-role="MIDDLE" title="Mid">
+          <span class="role-icon-glyph">⚡</span>
+          <span class="role-icon-label">Mid</span>
+        </button>
+        <button type="button" class="role-icon-btn" data-role="BOTTOM" title="Bottom">
+          <span class="role-icon-glyph">🏹</span>
+          <span class="role-icon-label">Bottom</span>
+        </button>
+        <button type="button" class="role-icon-btn" data-role="UTILITY" title="Support">
+          <span class="role-icon-glyph">🛡️</span>
+          <span class="role-icon-label">Support</span>
+        </button>
+      </div>
     </div>
-
-    <p id="selectionError" class="error-msg"></p>
   </div>
 
   <div class="selection-list">
+    <label>Select Champion Pool</label>
+    <div style="position:relative; margin-bottom:4px;">
+      <input type="text" id="champSearchInput" placeholder="e.g. C for Caitlyn, Camille, …" autocomplete="off">
+      <div id="champSuggestions" class="suggestion-list" hidden></div>
+    </div>
+    <p id="selectionError" class="error-msg"></p>
     <div id="selectionCards"></div>
   </div>
 
@@ -687,6 +764,7 @@
     const STORAGE_KEY_LP_GOAL_DIVISION = 'ttp_lp_goal_division';
     const STORAGE_KEY_LP_GOAL_LP = 'ttp_lp_goal_lp';
     const STORAGE_KEY_POOL_ROLE = 'ttp_pool_role';
+    const STORAGE_KEY_POOL_SECOND_ROLE = 'ttp_pool_second_role';
     const APEX_TIERS = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
     const summonerInput = document.getElementById('summonerInput');
     const summonerSaveBtn = document.getElementById('summonerSaveBtn');
@@ -700,7 +778,9 @@
     const challengeRankRow = document.getElementById('challengeRankRow');
     const settingsGearBtn = document.getElementById('settingsGearBtn');
     const roleIconPicker = document.getElementById('roleIconPicker');
-    const roleIconButtons = Array.from(document.querySelectorAll('.role-icon-btn'));
+    const roleIconButtons = Array.from(roleIconPicker.querySelectorAll('.role-icon-btn'));
+    const secondRoleIconPicker = document.getElementById('secondRoleIconPicker');
+    const secondRoleIconButtons = Array.from(secondRoleIconPicker.querySelectorAll('.role-icon-btn'));
     const challengeLevelSelect = document.getElementById('challengeLevelSelect');
     const lpGoalTierSelect = document.getElementById('lpGoalTierSelect');
     const lpGoalDivisionSelect = document.getElementById('lpGoalDivisionSelect');
@@ -712,6 +792,7 @@
     const checklistSummoner = document.getElementById('checklistSummoner');
     const checklistChamps = document.getElementById('checklistChamps');
     const checklistRoles = document.getElementById('checklistRoles');
+    const checklistSecondRole = document.getElementById('checklistSecondRole');
     const checklistLevel = document.getElementById('checklistLevel');
     const checklistLpGoal = document.getElementById('checklistLpGoal');
     const champSuggestions = document.getElementById('champSuggestions');
@@ -720,6 +801,7 @@
     let allChampions = [];
     let championKeyById = {};
     let currentPoolRole = '';
+    let currentSecondPoolRole = '';
 
     async function loadChampionKeys() {
       try {
@@ -774,21 +856,25 @@
       const summonerOk = /^[^#]+#[^#]+$/.test(summonerInput.value.trim());
       const champsOk = selectedChamps.length >= 1 && selectedChamps.length <= MAX_CHAMPS;
       const rolesOk = selectedChamps.length > 0 && !!currentPoolRole;
+      const secondRoleOk = !!currentSecondPoolRole;
       const levelOk = !!challengeLevelSelect.value;
       const lpGoalOk = !!lpGoalTierSelect.value;
       setChecklistItem(checklistSummoner, summonerOk);
       setChecklistItem(checklistChamps, champsOk);
       setChecklistItem(checklistRoles, rolesOk);
+      setChecklistItem(checklistSecondRole, secondRoleOk);
       setChecklistItem(checklistLevel, levelOk);
       setChecklistItem(checklistLpGoal, lpGoalOk);
 
-      // Die Checkliste waere wirkungslos, wenn man auch ohne alle 5 Punkte
-      // starten koennte - deshalb bleibt Start Challenge gesperrt, bis
-      // Summoner, Champions, Rolle, Challenge Level UND LP-Ziel vollstaendig
-      // gesetzt sind. Nur relevant, solange noch keine Challenge laeuft
-      // (danach ist der Button ohnehin ausgeblendet).
+      // Die Checkliste waere wirkungslos, wenn man auch ohne alle Pflicht-
+      // punkte starten koennte - deshalb bleibt Start Challenge gesperrt, bis
+      // Summoner, Champions, Main Role, Second Role, Challenge Level UND
+      // LP-Ziel vollstaendig gesetzt sind (Second Role ist Pflicht, explizite
+      // Nutzeranfrage 2026-09-30 - urspruenglich als optional gebaut, direkt
+      // im selben Zug korrigiert). Nur relevant, solange noch keine Challenge
+      // laeuft (danach ist der Button ohnehin ausgeblendet).
       if (!isChallengeLocked()) {
-        startChallengeBtn.disabled = !(summonerOk && champsOk && rolesOk && levelOk && lpGoalOk);
+        startChallengeBtn.disabled = !(summonerOk && champsOk && rolesOk && secondRoleOk && levelOk && lpGoalOk);
       }
     }
 
@@ -863,6 +949,15 @@
     // man waehlt ja 3 Champions FUER dieselbe Rolle (OTP-Challenge), nicht 3
     // Champions mit je unterschiedlicher Rolle. Als 5 anklickbare Icons statt
     // Dropdown, damit man die Rolle auf einen Blick/Klick erkennt/setzt.
+    //
+    // Second Role (explizite Nutzeranfrage, 2026-09-30): es kommt ohnehin
+    // staendig zu Autofill/Off-Role-Spielen - eine vorab festgelegte
+    // "zweithaeufigste" Rolle erlaubt der Overview-Seite, spaeter zwischen
+    // "Main", "Second" und echtem "Fill" zu unterscheiden, statt alles
+    // Nicht-Main in einen Topf zu werfen. Pflichtfeld genau wie Main Role
+    // (siehe updateChecklist()) - urspruenglich als optional gebaut, noch in
+    // derselben Anfrage vom Nutzer korrigiert. Main und Second koennen nie
+    // identisch sein (siehe updateRoleButtonStates()).
     function savePoolRole() {
       try { localStorage.setItem(STORAGE_KEY_POOL_ROLE, currentPoolRole); } catch (e) {}
     }
@@ -871,16 +966,71 @@
       try { return localStorage.getItem(STORAGE_KEY_POOL_ROLE) || ''; } catch (e) { return ''; }
     }
 
+    function savePoolSecondRole() {
+      try { localStorage.setItem(STORAGE_KEY_POOL_SECOND_ROLE, currentSecondPoolRole); } catch (e) {}
+    }
+
+    function loadPoolSecondRole() {
+      try { return localStorage.getItem(STORAGE_KEY_POOL_SECOND_ROLE) || ''; } catch (e) { return ''; }
+    }
+
     function applyPoolRoleUI() {
       roleIconButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.role === currentPoolRole));
     }
 
+    function applySecondPoolRoleUI() {
+      secondRoleIconButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.role === currentSecondPoolRole));
+    }
+
+    // Verhindert, dass Main und Second Role auf dieselbe Rolle gesetzt werden
+    // (waere sonst sinnlos) - graut in JEDEM der beiden Picker den Button aus,
+    // der der jeweils ANDEREN Auswahl entspricht, statt nur eine Fehlermeldung
+    // nachtraeglich zu zeigen.
+    // Einzige Quelle der Wahrheit fuer "disabled" auf allen 10 Rollen-Buttons
+    // (Main + Second) - kombiniert Locked-Zustand UND Konflikt-Zustand statt
+    // sie in zwei getrennten Funktionen zu pflegen. Bugfix (2026-09-30): mit
+    // getrennter Pflege ueberschrieb updateChampionLockState() (das einfach
+    // btn.disabled = locked setzt) je nach Aufrufreihenfolge den Konflikt-
+    // Zustand wieder auf "aktiviert", UND die Konflikt-Sperre war bis dahin
+    // nur eine CSS-Klasse (pointer-events:none) statt des echten disabled-
+    // Attributs - das blockiert zwar Maus-Klicks, nicht aber eine per
+    // Tastatur (Tab+Enter) ausgeloeste Aktivierung des Buttons. Jetzt setzt
+    // JEDER Aufruf hier beides konsistent auf allen Buttons.
+    function updateRoleButtonStates() {
+      const locked = isChallengeLocked();
+      roleIconButtons.forEach(btn => {
+        const conflict = !!currentSecondPoolRole && btn.dataset.role === currentSecondPoolRole;
+        btn.classList.toggle('role-conflict', conflict);
+        btn.disabled = locked || conflict;
+      });
+      secondRoleIconButtons.forEach(btn => {
+        const conflict = !!currentPoolRole && btn.dataset.role === currentPoolRole;
+        btn.classList.toggle('role-conflict', conflict);
+        btn.disabled = locked || conflict;
+      });
+    }
+
     function setPoolRole(role) {
       currentPoolRole = role;
+      if (currentSecondPoolRole === role) {
+        currentSecondPoolRole = '';
+        applySecondPoolRoleUI();
+        savePoolSecondRole();
+      }
       applyPoolRoleUI();
+      updateRoleButtonStates();
       selectedChamps.forEach(c => { c.role = currentPoolRole; });
       saveSelection();
       savePoolRole();
+      updateChecklist();
+    }
+
+    function setSecondPoolRole(role) {
+      if (role === currentPoolRole) return; // kann nicht gleich der Main Role sein
+      currentSecondPoolRole = role;
+      applySecondPoolRoleUI();
+      updateRoleButtonStates();
+      savePoolSecondRole();
       updateChecklist();
     }
 
@@ -1024,7 +1174,7 @@
       const locked = isChallengeLocked();
       if (locked) hideError();
       champSearchInput.disabled = locked;
-      roleIconButtons.forEach(btn => { btn.disabled = locked; });
+      updateRoleButtonStates(); // haelt Locked- UND Konflikt-Zustand auf den Rollen-Buttons konsistent, siehe dort
       challengeLevelSelect.disabled = locked;
       lpGoalTierSelect.disabled = locked;
       lpGoalDivisionSelect.disabled = locked;
@@ -1067,7 +1217,12 @@
         return;
       }
       if (!currentPoolRole) {
-        challengeStartError.textContent = 'Select a role for this champion pool before starting the challenge.';
+        challengeStartError.textContent = 'Select a main role for this champion pool before starting the challenge.';
+        challengeStartError.classList.add('visible');
+        return;
+      }
+      if (!currentSecondPoolRole) {
+        challengeStartError.textContent = 'Select a second role for this champion pool before starting the challenge.';
         challengeStartError.classList.add('visible');
         return;
       }
@@ -1370,6 +1525,13 @@
       });
     });
 
+    secondRoleIconButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        setSecondPoolRole(btn.dataset.role);
+      });
+    });
+
     challengeLevelSelect.addEventListener('change', () => {
       saveChallengeLevel();
       updateChecklist();
@@ -1482,6 +1644,9 @@
 
     currentPoolRole = loadPoolRole();
     applyPoolRoleUI();
+    currentSecondPoolRole = loadPoolSecondRole();
+    applySecondPoolRoleUI();
+    updateRoleButtonStates();
 
     renderChallengeState();
 

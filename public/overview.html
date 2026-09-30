@@ -123,6 +123,48 @@
       font-family: Georgia, serif;
       font-size: 0.9rem;
     }
+    /* Kleines Kreisdiagramm (Main/Second/Fill-Verhaeltnis dieser Challenge) -
+       nutzt bewusst nur vorhandene Theme-Variablen als Farben (gold/green/
+       text-faint), keine eigene Palette, damit es automatisch zu jedem der 8
+       Farbthemes passt (explizite Nutzeranfrage: "nicht dass hier wilde
+       Farben kommen"). Die vollen Zahlen/Details leben auf einer eigenen
+       Seite (role.html), hier nur eine kompakte Vorschau + Link dorthin. */
+    .role-breakdown-chart-wrap {
+      flex-shrink: 0;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .role-breakdown-svg {
+      width: 34px;
+      height: 34px;
+    }
+    .role-breakdown-empty-dot {
+      display: block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+    }
+    /* Text-basierte Zusammenfassung ("62% Main · 23% 2nd · 15% Fill") statt
+       nur farbiger Segmente - Bedeutung ist damit nie auf Farberkennung
+       angewiesen, auch ohne die Detailseite zu besuchen. */
+    .role-breakdown-card .trophies-progress {
+      white-space: nowrap;
+    }
+    .role-breakdown-more {
+      flex-shrink: 0;
+      color: var(--text-faint);
+      font-family: Georgia, serif;
+      font-size: 0.78rem;
+      font-style: italic;
+      margin-left: 14px;
+    }
+    .role-breakdown-card:hover .role-breakdown-more {
+      color: var(--gold);
+    }
     .panel-sub {
       color: var(--text-dim);
       font-size: 0.9rem;
@@ -341,6 +383,24 @@
          Detail-Bereich) auf und ab. */
       min-height: 2.8em;
     }
+    /* Zeigt die EINE explizit gewaehlte (Haupt-)Rolle fuer den ganzen
+       Champion-Pool einmalig oberhalb der Kartenreihe, statt sie (redundant,
+       da fuer alle 3 Champions gleich) auf jeder einzelnen Karte zu
+       wiederholen - Platz dort wird stattdessen fuer WR/Spiele pro Champion
+       genutzt (siehe .otp-card-stats). */
+    .otp-role-heading {
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+      margin: 0 0 14px;
+      min-height: 1.3em;
+    }
+    .otp-role-heading strong {
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      letter-spacing: 0.5px;
+    }
     .otp-row-wrap {
       display: flex;
       align-items: center;
@@ -386,12 +446,17 @@
       letter-spacing: 0.5px;
       text-align: center;
     }
-    .otp-card .otp-role-label {
+    /* Ersetzt das frueher hier stehende (redundante, weil fuer alle 3
+       Champions ohnehin gleiche) Rollen-Label - siehe .otp-role-heading fuer
+       die einmalige Anzeige der Rolle. min-height reserviert den Platz schon
+       vor dem ersten Laden, damit die Karten nicht nachtraeglich wachsen. */
+    .otp-card .otp-card-stats {
       color: var(--text-faint);
       font-family: Georgia, serif;
       font-size: 0.65rem;
-      font-style: italic;
+      font-style: normal;
       letter-spacing: normal;
+      min-height: 1.1em;
     }
     .otp-card.active {
       border-color: var(--gold);
@@ -995,6 +1060,13 @@
       <span class="trophies-progress" id="trophiesProgress">0%</span>
     </a>
 
+    <a href="role.html" class="trophies-card role-breakdown-card" id="roleBreakdownCard">
+      <span class="role-breakdown-chart-wrap" id="roleBreakdownChartWrap"><span class="role-breakdown-empty-dot"></span></span>
+      <span class="trophies-label">Role Balance</span>
+      <span class="trophies-progress" id="roleBreakdownSummary">–</span>
+      <span class="role-breakdown-more" aria-hidden="true">More →</span>
+    </a>
+
     <h2 class="panel-heading">Opponent Analysis</h2>
     <p class="panel-sub">
       Choose an opposing champion to see how often and how successfully you've
@@ -1035,6 +1107,7 @@
 
   <div class="split-right">
   <div class="content">
+    <p class="otp-role-heading" id="otpRoleHeading"></p>
     <div class="otp-row-wrap">
       <div class="otp-row" id="otpRow"></div>
       <button type="button" id="loadBtn" class="primary-btn">Load</button>
@@ -1541,6 +1614,85 @@
       UTILITY: 'Support'
     };
 
+    // Kleines Donut-Diagramm: Main/Second/Fill-Verhaeltnis dieser Challenge
+    // (siehe roleBreakdown im /api/summary-batch-Ergebnis, server.js
+    // runSummaryBatch()). Reine SVG-Kreise mit stroke-dasharray statt einer
+    // Chart-Bibliothek - fuer 3 statische Segmente reicht das locker.
+    // Farben kommen ausschliesslich aus den Theme-Variablen (siehe CSS-
+    // Kommentar bei .role-breakdown-chart-wrap). Der Text daneben nennt
+    // Prozentzahlen ausdruecklich beim Namen, damit die Bedeutung nie an
+    // Farberkennung haengt.
+    function renderRoleBreakdownChart(breakdown) {
+      const wrap = document.getElementById('roleBreakdownChartWrap');
+      const summaryEl = document.getElementById('roleBreakdownSummary');
+      if (!wrap || !summaryEl) return;
+
+      if (!breakdown) {
+        // Gleicher neutraler Platzhalter-Ring wie der "noch keine Spiele"-Fall
+        // unten - NICHT leer lassen (Bugfix 2026-09-30: vor dem ersten Laden
+        // klaffte hier eine sichtbare Luecke, wo bei der Trophies-Karte
+        // daneben immer ein Icon steht).
+        wrap.innerHTML = '<span class="role-breakdown-empty-dot"></span>';
+        summaryEl.textContent = '–';
+        return;
+      }
+
+      const { main = 0, second = 0, fill = 0 } = breakdown;
+      const total = main + second + fill;
+      if (total === 0) {
+        wrap.innerHTML = '<span class="role-breakdown-empty-dot"></span>';
+        summaryEl.textContent = 'No games yet';
+        return;
+      }
+
+      const segments = [
+        { value: main, color: 'var(--gold)' },
+        { value: second, color: 'var(--green)' },
+        { value: fill, color: 'var(--text-faint)' }
+      ].filter(s => s.value > 0);
+
+      const R = 15;
+      const CIRC = 2 * Math.PI * R;
+      let offset = 0;
+      const circles = segments.map(s => {
+        const dash = (s.value / total) * CIRC;
+        const circle = `<circle cx="18" cy="18" r="${R}" fill="none" stroke="${s.color}" stroke-width="6" ` +
+          `stroke-dasharray="${dash.toFixed(2)} ${(CIRC - dash).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" ` +
+          `transform="rotate(-90 18 18)" />`;
+        offset += dash;
+        return circle;
+      }).join('');
+
+      wrap.innerHTML = `<svg viewBox="0 0 36 36" class="role-breakdown-svg">${circles}</svg>`;
+
+      const pct = n => Math.round((n / total) * 100);
+      summaryEl.textContent = `${pct(main)}% Main · ${pct(second)}% 2nd · ${pct(fill)}% Fill`;
+    }
+
+    // Die Rolle gilt fuer den GESAMTEN Pool (OTP-Challenge, alle 3 Champions
+    // teilen sie sich) - deshalb einmal oberhalb der Kartenreihe statt
+    // redundant auf jeder Karte (siehe renderOtpRow()).
+    function renderOtpRoleHeading() {
+      let role = '';
+      try { role = localStorage.getItem('ttp_pool_role') || ''; } catch (e) {}
+      otpRoleHeading.innerHTML = role
+        ? `Three-Trick-Pony <strong>${ROLE_LABELS[role] || role}</strong>-Challenge`
+        : '';
+    }
+
+    // Ersetzt das Rollen-Label (jetzt einmalig in renderOtpRoleHeading()) -
+    // zeigt stattdessen Winrate + Spielanzahl fuer genau diesen Champion,
+    // sobald die Daten geladen sind (summaryCache). "–" reserviert den Platz
+    // schon vor dem ersten Laden, siehe .otp-card-stats min-height.
+    function otpCardStatsText(champ) {
+      const summary = summaryCache[champ.id];
+      if (!summary) return '–';
+      const total = summary.wins + summary.losses;
+      if (total === 0) return '0 games';
+      const wr = Math.round((summary.wins / total) * 100);
+      return `${wr}% WR · ${total}G`;
+    }
+
     function renderOtpRow() {
       otpRow.innerHTML = '';
       if (selectedChamps.length === 0) {
@@ -1561,15 +1713,13 @@
         const name = document.createElement('span');
         name.textContent = champ.name;
 
+        const stats = document.createElement('span');
+        stats.className = 'otp-card-stats';
+        stats.textContent = otpCardStatsText(champ);
+
         card.appendChild(img);
         card.appendChild(name);
-
-        if (champ.role) {
-          const roleLabel = document.createElement('span');
-          roleLabel.className = 'otp-role-label';
-          roleLabel.textContent = ROLE_LABELS[champ.role] || champ.role;
-          card.appendChild(roleLabel);
-        }
+        card.appendChild(stats);
 
         card.addEventListener('click', () => selectActiveChamp(champ.id));
         otpRow.appendChild(card);
@@ -2068,13 +2218,22 @@
       showProgressBar(true);
 
       try {
+        let mainRole = '';
+        let secondRole = '';
+        try {
+          mainRole = localStorage.getItem('ttp_pool_role') || '';
+          secondRole = localStorage.getItem('ttp_pool_second_role') || '';
+        } catch (e) {}
+
         const startRes = await fetch('/api/summary-batch/start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             puuid: currentPuuid,
             champions: champsWithKeys.map(x => ({ key: x.key, role: x.champ.role || '' })),
-            since
+            since,
+            mainRole,
+            secondRole
           })
         });
         const startData = await parseApiResponse(startRes);
@@ -2090,9 +2249,11 @@
           ? `${skipped} champion(s) skipped (key unknown).`
           : '';
 
+        renderOtpRow(); // holt die frisch geladenen WR/Spiele-Werte pro Karte nach
         renderAccountOverview(data);
         loadLpGraph(currentPuuid, since, data.rank);
         loadTrophiesProgress(currentPuuid, since, champsWithKeys.map(x => ({ key: x.key, role: x.champ.role || '' })));
+        renderRoleBreakdownChart(data.roleBreakdown);
         hasLoadedOnce = true;
         updateLoadButtonLabel();
       } catch (e) {
@@ -2408,6 +2569,7 @@
       currentSummoner = loadSummonerName();
       renderCurrentContext();
       renderLpGoal();
+      renderOtpRoleHeading();
       await loadChampionKeys();
       populateEnemySelect();
       loadSelectedChamps();

@@ -336,7 +336,7 @@ async function buildRankOverview(puuid, sinceMs) {
 // Hintergrund-Job, damit das Frontend per Polling einen echten
 // Live-Fortschritt anzeigen kann, statt auf einen einzigen, potenziell
 // minutenlangen Request zu warten.
-async function runSummaryBatch(jobId, { puuid, champions, since, startTime }) {
+async function runSummaryBatch(jobId, { puuid, champions, since, startTime, mainRole, secondRole }) {
   try {
     const matchIds = await getAllMatchIds(
       puuid,
@@ -360,6 +360,13 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime }) {
     let overallWins = 0;
     let overallLosses = 0;
     const overallGames = []; // fuer Win/Loss-Streaks - {win, gameCreation}
+    // Main/Second/Fill-Aufschluesselung (explizite Nutzeranfrage, 2026-09-30):
+    // wie oft wurde tatsaechlich in der Hauptrolle, der festgelegten
+    // Zweitrolle, oder in einer ganz anderen ("Fill") Rolle gespielt - unab-
+    // haengig vom Champion. Ein Spieler kann natuerlich trotzdem eine andere
+    // Rolle picken als vereinbart - zaehlt dann bewusst als Fill, das ist
+    // sein eigenes Problem, wenn er die Challenge nicht ernst nimmt.
+    const roleBreakdown = { main: 0, second: 0, fill: 0 };
     const riotId = await resolveRiotId(puuid, config.apiKey);
 
     for (const matchId of matchIds) {
@@ -372,6 +379,10 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime }) {
 
       if (me.win) overallWins += 1; else overallLosses += 1;
       overallGames.push({ win: me.win, gameCreation: match.info.gameCreation });
+
+      if (mainRole && me.teamPosition === mainRole) roleBreakdown.main += 1;
+      else if (secondRole && me.teamPosition === secondRole) roleBreakdown.second += 1;
+      else roleBreakdown.fill += 1;
 
       const myKey = String(me.championId);
       const bucket = buckets[myKey];
@@ -425,6 +436,7 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime }) {
       totalMatchesScanned: matchIds.length,
       byChampion,
       streaks,
+      roleBreakdown,
       overall: {
         wins: overallWins,
         losses: overallLosses,
@@ -438,7 +450,7 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime }) {
 }
 
 app.post('/api/summary-batch/start', requireApiKey, (req, res) => {
-  const { puuid, champions, since } = req.body || {};
+  const { puuid, champions, since, mainRole, secondRole } = req.body || {};
   if (!puuid || !champions) {
     return res.status(400).json({ error: 'puuid and champions are required.' });
   }
@@ -468,7 +480,14 @@ app.post('/api/summary-batch/start', requireApiKey, (req, res) => {
   }
 
   const jobId = createJob();
-  runSummaryBatch(jobId, { puuid, champions: dedupedChampions, since, startTime });
+  runSummaryBatch(jobId, {
+    puuid,
+    champions: dedupedChampions,
+    since,
+    startTime,
+    mainRole: mainRole || '',
+    secondRole: secondRole || ''
+  });
   res.json({ jobId });
 });
 

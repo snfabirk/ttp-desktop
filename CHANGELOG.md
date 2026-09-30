@@ -1,5 +1,126 @@
 # Internal Changelog
 
+## 4.26.1 — 2026-09-30
+
+Comprehensive bug/visual audit of the Second Role + Role Balance work
+(explicit user request: "mach eine umfangreiche bug und test analyse").
+Two real bugs found and fixed:
+
+- `index.html` `updateRoleButtonStates()`/`updateChampionLockState()`: the
+  Main/Second role-conflict lock was ONLY a CSS class
+  (`pointer-events:none`), not the native `disabled` attribute - blocked
+  mouse clicks but not a keyboard-triggered (Tab+Enter/Space) activation,
+  and `updateChampionLockState()` separately set `btn.disabled = locked`
+  on the same buttons, which (depending on call order) could silently
+  re-enable a conflicting button. Consolidated into one function
+  (`updateRoleButtonStates()`) that is the single source of truth for both
+  locked-state and conflict-state `disabled`, called from both places.
+  Verified via `btn.disabled` checks in a live browser session.
+- `overview.html`: the new "Role Balance" card showed no icon at all
+  before the first data load (blank gap), unlike the Trophies card next to
+  it which always shows its 🏆 emoji regardless of load state. Now shows
+  the same neutral empty-ring placeholder used for the "no games yet"
+  state, both in the initial HTML and in `renderRoleBreakdownChart(null)`.
+
+Also verified: no console errors on index/overview/trophies/role/settings
+pages, no duplicate DOM ids introduced by the recent edits, all modified
+JS files pass `node --check`, no leftover debug artifacts
+(`console.log`/`debugger`/`TODO`) in the changed files.
+
+## 4.26.0 — 2026-09-30
+
+- `changelog.js` "What's New" panel rework (explicit user request):
+  - Added a `date` field to every entry (backfilled for all pre-existing
+    entries from real commit dates / `CHANGELOG.md` headers via
+    `git log --pretty=format:"%ad|%s" --date=short`), shown small next to
+    the version number (`formatChangelogDate()`).
+  - New tiered reveal: all entries newer than `ttp_changelog_last_seen_version`
+    (a "New since your last update" section, computed via `compareVersions()`
+    - a real numeric x.y.z compare, not string compare, so 4.9.0 doesn't
+    sort after 4.10.0) are always shown, plus 3 more older ("Earlier"
+    section), then a "Load 5 more ↓" button that reveals 5 more per click
+    until exhausted.
+  - `ttp_changelog_last_seen_version` is stamped with the current
+    `app.getVersion()` (new `get-app-version` IPC handler + preload
+    exposure) each time the drawer is opened, AFTER computing what counts
+    as "new" for that same open - so it doesn't self-clear instantly, but a
+    long stretch of un-opened updates all still show up cumulatively next
+    time.
+  - Verified live: fresh state (no last-seen) shows 0 "new" + top 3 default;
+    seeding `ttp_changelog_last_seen_version = '4.20.0'` correctly surfaced
+    all 6 versions above it as "new" (including 4.20.1 > 4.20.0, confirming
+    the numeric compare works) before falling through to "Earlier".
+
+## 4.25.0 — 2026-09-30
+
+- Champion Selection page: replaced the single pool-wide role picker with
+  two - Main Role and Second Role, both required to start a challenge (kept
+  optional for one message, then the user corrected it to mandatory in the
+  same request). Second Role can never equal Main Role - each picker greys
+  out the button matching the other's current selection
+  (`updateRoleButtonStates()`).
+- Layout swap on the same page: champion search + "Select Champion Pool"
+  label moved into the right column (`.selection-list`), directly above the
+  3 champion cards; role pickers now live in the left column
+  (`.champ-picker`, relabeled "Assign Roles"). Had to trim several
+  paddings/margins (grid gap 22px->16px, champ-card padding, checklist gap)
+  to keep the page scroll-free at the default 70%/80% window size after
+  adding the second role row + checklist item - verified via a live
+  browser test with `document.querySelector('.content').getBoundingClientRect()`
+  against the actual screen work area.
+- `server.js` `runSummaryBatch()`: new Main/Second/Fill role-breakdown
+  classification per game (`mainRole`/`secondRole` params, compared against
+  each match's `teamPosition`), returned as `roleBreakdown` in the
+  `/api/summary-batch` result.
+- Overview page: the OTP champion-pool row now shows a "Three-Trick-Pony
+  **Mid**-Challenge" heading once above the row (bold role) instead of
+  repeating the role on every card; cards show win rate + games played
+  instead. New "Role Balance" donut chart card (SVG, `stroke-dasharray`
+  segments) using only existing theme CSS variables (gold/green/text-faint)
+  for colors - explicit user request to never introduce a separate palette.
+  Links to a new `role.html` stub page (placeholder content only, real
+  design TBD in a follow-up).
+
+## 4.24.0 — 2026-09-30
+
+- `achievements.js` RATES: `duelist` and `assassin` targets raised 50% on
+  all 5 difficulty tiers (explicit user request). RULES_VERSION bumped to 3.
+
+## 4.23.0 — 2026-09-30
+
+- `trophies.html`: provisional (Ø-average) trophies now always render their
+  live current/target numbers in the progress label instead of a
+  placeholder sentence. Added a small hourglass badge (`position:absolute`,
+  zero layout footprint - verified via live browser test with worst-case
+  synthetic values) with a native `title` tooltip carrying the short
+  explanation that used to live in the label text.
+
+## 4.22.0 — 2026-09-30
+
+- Root cause of a multi-day user report ("15-minute background refresh
+  never updates the page"): the background job in `electron-main.js`
+  correctly refreshes the server-side cache/rank-history every 15 minutes
+  regardless of window state (confirmed via cache file mtimes exactly on
+  `:00/:15/:30/:45`), but neither `overview.html` nor `trophies.html` ever
+  re-rendered themselves afterward - they only loaded once on page open.
+  Added a page-local `scheduleNextPageAutoRefresh()` to both, aligned to
+  the same quarter-hour clock with a small buffer, that re-triggers
+  `performLoad()`/`loadAchievementProgress()` while the page is open.
+
+## 4.21.0 — 2026-09-30
+
+- `runAchievementsBatch()` in `server.js`: removed the champion-pool/role
+  match filter entirely - all 21 trophies now count every ranked solo game
+  since challenge start, account-wide, matching the "overall" numbers
+  already shown on the Overview page (explicit user request after noticing
+  Win Streak stuck at 4/3 despite a real 6-game streak elsewhere).
+
+## 4.20.1 — 2026-09-30
+
+- `trophies.html`: `.trophy-progress-label` is now bold and slightly larger
+  (0.6rem -> 0.68rem), using `--text` instead of `--text-dim`, for
+  readability (explicit user request).
+
 ## 4.20.0 — 2026-09-26
 
 - Challenges closed with `unlockedCount === 0` no longer get saved to
