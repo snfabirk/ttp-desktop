@@ -1,5 +1,21 @@
 # Internal Changelog
 
+## 4.28.9 — 2026-10-05
+
+- Fix: viewing a past challenge on trophies.html showed the role trophies
+  of the CURRENT role (user switched Mid -> Jungle; past Mid challenges
+  showed empty Jungle trophies, their Mid values had no slots). The grid
+  was built once for the current role and `applyAchievementProgress()`
+  only fills ids that exist. New `buildTrophyGrid(forRole)` /
+  `resetTrophyGrid(forRole)`; past entries are rendered with their own
+  role (`entry.role`, or inferred from the snapshot's role-trophy ids for
+  old entries), incl. Support variants of universal trophies and the
+  tooltip role tag. Role note says "the role this past challenge was
+  played in"; restored when going back. History data itself was always
+  complete (both Mid entries had all 5 Mid trophies stored).
+- Verified in dev Electron with a copy of the user's data (current role
+  Jungle, two past Mid challenges) using real mouse clicks.
+
 ## 4.28.8 — 2026-09-30
 
 - Roles & Picks placeholder skeleton (`TTPRoleChart.renderSkeleton`),

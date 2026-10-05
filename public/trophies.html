@@ -957,11 +957,11 @@
     // Bis dahin steht statt der Zahl ein Platzhalter-Strich da; das Roh-
     // Template wird im dataset gehalten, damit es jederzeit neu befuellt
     // werden kann (nicht nur einmalig per String-Replace am geladenen Text).
-    function renderTrophy(t, roleSpecific) {
+    function renderTrophy(t, roleSpecific, forRole = role) {
       const slot = document.createElement('div');
       slot.className = roleSpecific ? 'trophy-slot role-specific' : 'trophy-slot';
       slot.dataset.trophyId = t.id || '';
-      const roleTag = roleSpecific ? `<span class="trophy-tooltip-role">${ROLE_LABELS[role] || ''} trophy</span>` : '';
+      const roleTag = roleSpecific ? `<span class="trophy-tooltip-role">${ROLE_LABELS[forRole] || ''} trophy</span>` : '';
       slot.dataset.descTemplate = t.desc;
       slot.dataset.detailTemplate = t.detail || t.desc;
       slot.dataset.roleTag = roleTag;
@@ -983,24 +983,45 @@
 
     document.querySelector('.platinum-trophy .trophy-icon').innerHTML = iconSvg('trophyCup');
 
-    for (const t of UNIVERSAL_TROPHIES) {
-      const isSupport = role === 'UTILITY';
-      const variant = (isSupport && t.support) ? { id: t.id, ...t.support } : t;
-      trophyGrid.appendChild(renderTrophy(variant, false));
+    // Baut das Grid fuer eine bestimmte Rolle (5 Rollen-Trophies + Support-
+    // Varianten der allgemeinen Trophies). Wird nicht nur beim Laden fuer die
+    // aktuelle Rolle gebraucht, sondern auch beim Anzeigen einer vergangenen
+    // Challenge mit IHRER damaligen Rolle - sonst standen dort die Rollen-
+    // Trophies der aktuellen Rolle und die eigenen fehlten (Bugfix
+    // 2026-10-05: Mid-Challenges zeigten nach Wechsel auf Jungle Jungle-
+    // Trophies).
+    function buildTrophyGrid(forRole) {
+      trophyGrid.innerHTML = '';
+      for (const t of UNIVERSAL_TROPHIES) {
+        const variant = (forRole === 'UTILITY' && t.support) ? { id: t.id, ...t.support } : t;
+        trophyGrid.appendChild(renderTrophy(variant, false, forRole));
+      }
+      if (forRole && ROLE_TROPHIES[forRole]) {
+        for (const t of ROLE_TROPHIES[forRole]) trophyGrid.appendChild(renderTrophy(t, true, forRole));
+      } else {
+        for (const t of ROLE_TROPHIES.TOP) {
+          const slot = renderTrophy(t, true, forRole);
+          slot.style.opacity = '0.3';
+          trophyGrid.appendChild(slot);
+        }
+      }
     }
 
+    buildTrophyGrid(role);
     if (role && ROLE_TROPHIES[role]) {
       roleNote.innerHTML = `Showing role trophies for <strong>${ROLE_LABELS[role]}</strong> (dashed border) - pick a different role on the Champion Selection page to see a different set.`;
-      for (const t of ROLE_TROPHIES[role]) {
-        trophyGrid.appendChild(renderTrophy(t, true));
-      }
     } else {
       roleNote.textContent = 'Select a role on the Champion Selection page to unlock your 5 role-specific trophies.';
-      for (const t of ROLE_TROPHIES.TOP) {
-        const slot = renderTrophy(t, true);
-        slot.style.opacity = '0.3';
-        trophyGrid.appendChild(slot);
-      }
+    }
+    const liveRoleNoteHtml = roleNote.innerHTML;
+
+    // Rolle einer vergangenen Challenge: gespeichert im History-Eintrag; bei
+    // sehr alten Eintraegen ohne Rolle an den gespeicherten Rollen-Trophies
+    // abgelesen.
+    function roleOfEntry(entry) {
+      if (entry.role && ROLE_TROPHIES[entry.role]) return entry.role;
+      const ids = new Set((entry.trophies || []).map(t => t.id));
+      return Object.keys(ROLE_TROPHIES).find(r => ROLE_TROPHIES[r].some(t => ids.has(t.id))) || role;
     }
 
     // Consistency's Zielwert haengt vom gewaehlten Challenge Level ab (siehe
@@ -1307,8 +1328,9 @@
     // stehen (z.B. "Back to current challenge", bevor der Live-Scan fertig
     // war -> Grid zeigte weiter die alte Challenge).
     const pristineTrophyGridHtml = trophyGrid.innerHTML;
-    function resetTrophyGrid() {
-      trophyGrid.innerHTML = pristineTrophyGridHtml;
+    function resetTrophyGrid(forRole = role) {
+      if (forRole === role) trophyGrid.innerHTML = pristineTrophyGridHtml;
+      else buildTrophyGrid(forRole);
       document.getElementById('trophiesOverallPercent').textContent = '0%';
       document.getElementById('trophiesOverallCount').textContent = '0 / 21 unlocked';
       document.querySelector('.platinum-trophy').classList.remove('unlocked');
@@ -1567,8 +1589,12 @@
       // dazwischenliegenden Reload) - siehe .swap-flash CSS oben.
       flashTrophyGrid();
 
-      resetTrophyGrid();
+      const entryRole = roleOfEntry(entry);
+      resetTrophyGrid(entryRole);
       applyAchievementProgress(entry.trophies);
+      roleNote.innerHTML = entryRole && ROLE_TROPHIES[entryRole]
+        ? `Showing role trophies for <strong>${ROLE_LABELS[entryRole]}</strong> (dashed border) - the role this past challenge was played in.`
+        : liveRoleNoteHtml;
 
       const overallPercent = entry.totalCount > 0 ? Math.round((entry.unlockedCount / entry.totalCount) * 100) : 0;
       document.getElementById('trophiesOverallPercent').textContent = `${overallPercent}%`;
@@ -1607,6 +1633,7 @@
       document.getElementById('trophiesMain').classList.remove('historical-view');
       flashTrophyGrid();
       resetTrophyGrid();
+      roleNote.innerHTML = liveRoleNoteHtml;
       document.getElementById('achievementsStatus').textContent = lastLiveStatusText;
       if (lastLiveResult) {
         renderLiveResult(lastLiveResult);
