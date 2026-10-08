@@ -31,7 +31,6 @@ const XP_PER_TROPHY = 750;            // temporaere Trophaeen zaehlen nicht
 
 const PASS_TIERS = 30;
 const PASS_XP_PER_TIER = 1500;
-const DEMO_PASS_XP = 15 * 1500 + 900; // TEMPORAER: Demo-Ansicht, Pass halb durch (null = aus)
 
 // XP fuer Level n -> n+1: jedes Level etwas teurer.
 function xpForLevel(level) {
@@ -191,8 +190,7 @@ function getOverview(context) {
   const now = new Date();
   const state = readState();
   const difficulty = DIFFICULTY_MULTIPLIER[context.challengeLevel] || 1;
-  // TEMPORAERE DEMO (Nutzerwunsch): Pass halb durch anzeigen - wieder entfernen.
-  const passXp = DEMO_PASS_XP !== null ? DEMO_PASS_XP : state.passXp;
+  const passXp = state.passXp;
   const passTier = Math.min(PASS_TIERS, Math.floor(passXp / PASS_XP_PER_TIER));
   return {
     provisional: true,
@@ -208,8 +206,7 @@ function getOverview(context) {
       tiers: PASS_TIERS,
       xpPerTier: PASS_XP_PER_TIER,
       tier: passTier,
-      xpIntoTier: passTier >= PASS_TIERS ? PASS_XP_PER_TIER : passXp % PASS_XP_PER_TIER,
-      demo: DEMO_PASS_XP !== null
+      xpIntoTier: passTier >= PASS_TIERS ? PASS_XP_PER_TIER : passXp % PASS_XP_PER_TIER
     },
     multiplier: { difficulty },
     xpSources: {

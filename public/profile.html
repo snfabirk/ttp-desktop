@@ -1281,7 +1281,7 @@
     }
 
     function renderPass(pass) {
-      document.getElementById('passTierText').textContent = `Tier ${pass.tier} / ${pass.tiers}${pass.demo ? ' · DEMO' : ''}`;
+      document.getElementById('passTierText').textContent = `Tier ${pass.tier} / ${pass.tiers}`;
       document.getElementById('passXpText').textContent = `${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP`;
       document.getElementById('passXpFill').style.width = `${(pass.tier / pass.tiers) * 100}%`;
       let html = '';

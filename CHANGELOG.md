@@ -1,6 +1,15 @@
 # Internal Changelog
 
-## 5.0.2 — 2026-10-08
+## 5.0.3 — 2026-10-08
+
+- Removed the temporary pass demo again (`DEMO_PASS_XP` gone). The v5.0.2
+  GitHub release + tag were deleted on the user's request ("nicht update
+  worthy, nur fuer mich"), and 5.0.2 is gone from the in-app What's New.
+  The clearer unlocked/current tier styling from 5.0.2 stays (listed as a
+  refinement under 5.0.3). Version continues at 5.0.3 because the user's
+  own install already runs 5.0.2.
+
+## 5.0.2 — 2026-10-08 (release deleted)
 
 - TEMPORARY demo (user wants it removed again right after): `DEMO_PASS_XP`
   in server/lib/progression.js forces the pass to tier 15 + 900/1500 XP,
