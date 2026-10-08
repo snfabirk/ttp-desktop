@@ -24,6 +24,7 @@ const XP_PER_GAME = {
   secondRole: 250,      // Second-Rolle
   offRole: 50           // alles andere (Fill)
 };
+const XP_WIN_BONUS = 150;            // zusaetzlich bei Sieg, egal welche Kategorie
 const XP_PER_KILL_PARTICIPATION = 10; // pro Kill + Assist
 const FULL_XP_GAMES_PER_DAY = 5;      // ab dem 6. Spiel des Tages: alle XP halbiert
 const XP_PER_TROPHY = 750;            // temporaere Trophaeen zaehlen nicht
@@ -209,6 +210,7 @@ function getOverview(context) {
     multiplier: { difficulty },
     xpSources: {
       perGame: XP_PER_GAME,
+      winBonus: XP_WIN_BONUS,
       perKillParticipation: XP_PER_KILL_PARTICIPATION,
       perTrophy: XP_PER_TROPHY
     }

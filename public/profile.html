@@ -716,7 +716,7 @@
             <h3>How to Earn XP</h3>
           </div>
           <table class="xp-sources" id="xpSources"></table>
-          <div class="multiplier-line" title="Applies to all XP earned during this challenge">
+          <div class="multiplier-line" title="Applies to ALL XP earned during this challenge - games, win bonus, kills + assists, quests and trophies">
             <span id="multiplierText">Challenge multiplier</span>
             <strong id="multiplierValue">×1.00</strong>
           </div>
@@ -1280,12 +1280,12 @@
       try { locked = JSON.parse(ls('ttp_xp_multiplier') || 'null'); } catch (e) {}
       if (locked && locked.total) {
         valueEl.textContent = `×${locked.total.toFixed(2)}`;
-        textEl.textContent = `Challenge multiplier (difficulty ×${locked.difficulty.toFixed(2)} · LP distance ×${locked.lp.toFixed(2)})`;
+        textEl.textContent = `Multiplier on all XP (difficulty ×${locked.difficulty.toFixed(2)} · LP distance ×${locked.lp.toFixed(2)})`;
       } else {
         valueEl.textContent = `×${base.difficulty.toFixed(2)}`;
         textEl.textContent = ls('ttp_challenge_level')
-          ? 'Challenge multiplier (difficulty only - challenge started before v5.0)'
-          : 'Challenge multiplier (start a challenge first)';
+          ? 'Multiplier on all XP (difficulty only - challenge started before v5.0)'
+          : 'Multiplier on all XP (start a challenge first)';
       }
     }
 
@@ -1295,6 +1295,7 @@
         ['Game in your main role, other champion', src.perGame.sameRoleOther],
         ['Game in your second role', src.perGame.secondRole],
         ['Off-role game', src.perGame.offRole],
+        ['Win bonus (any game)', src.winBonus],
         ['Per kill + assist', src.perKillParticipation],
         ['Trophy unlocked (temporary ones excluded)', src.perTrophy],
         [`After ${fullXpGames} games a day`, '½ XP']

@@ -1,5 +1,11 @@
 # Internal Changelog
 
+## 5.0.1 — 2026-10-08
+
+- XP preview: win bonus added (user: "Sieg-Bonus ja"), placeholder +150 XP
+  on top of the per-game XP, any category. Multiplier confirmed to apply
+  to ALL XP; label now reads "Multiplier on all XP".
+
 ## 5.0.0 — 2026-10-08
 
 - XP system, PROVISIONAL UI preview only (no XP is awarded yet, all at 0).
