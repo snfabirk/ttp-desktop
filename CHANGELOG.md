@@ -1,5 +1,33 @@
 # Internal Changelog
 
+## 5.0.0 — 2026-10-08
+
+- XP system, PROVISIONAL UI preview only (no XP is awarded yet, all at 0).
+  `server/lib/progression.js`: placeholder numbers (per game 500/300/250/50
+  for pool champ / main role other champ / second role / off-role, 10 per
+  kill+assist, 750 per trophy, all XP halved after 5 games/day), level
+  curve 2000 + 250*(level-1), pass 30 tiers x 1500 XP, difficulty
+  multipliers (easy 1.0 .. majestic 1.5) x LP distance factor
+  (1 + min(0.5, (dist-200)/2000)). Daily quests: First Win + Champion of
+  the Day (seeded by date from the pool) + 1 role quest (1 reroll/day);
+  weeklies: 2 wins with each champ, 3-win streak (any champ), +75 LP.
+  Day boundary 06:00 local, week Monday 06:00. State in
+  userData/ttp-data/progression/progression.json.
+- API: GET /api/progression, POST /api/progression/reroll,
+  GET /api/progression/multiplier, POST /api/progression/reset.
+- profile.html: level badge + XP bar in the account card, Daily/Weekly
+  Quests (progress bars, XP values, games-today pips 1-5 then "5+ · ½ XP"
+  with hover explanation), Challenge Pass grid, "How to Earn XP" table and
+  the challenge multiplier.
+- index.html: "XP ×N" badge top-right in Summoner & Challenge (absolute,
+  no extra row - page 1 still fits without scrolling); preview from level +
+  LP distance, locked into localStorage `ttp_xp_multiplier` on start,
+  removed on reset.
+- settings.html: "Reset Account Progress" under the factory reset; window
+  height 725 -> 760 so it still doesn't scroll.
+- overview.html: "Lv N" pill on the compact profile card; "View profile"
+  hidden below 760px width so the name has room.
+
 ## 4.29.0 — 2026-10-08
 
 - Profile moved to its own page `public/profile.html` (full account card:

@@ -25,6 +25,17 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.0.0',
+      date: '2026-10-08',
+      notable: [
+        'Preview of the new XP system on your Profile: profile level, daily and weekly quests (with one free reroll a day), a 30-tier Challenge Pass and an overview of how to earn XP. Nothing awards XP yet - this version only shows the layout.',
+        'The Champion Selection page shows the XP multiplier for your challenge (difficulty x LP distance to your goal). It is locked in when you start a challenge.',
+        'Settings: new "Reset Account Progress" button - resets only level, XP, quests and pass, separate from the factory reset.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '4.29.0',
       date: '2026-10-08',
       notable: [

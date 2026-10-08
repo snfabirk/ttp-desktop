@@ -16,6 +16,7 @@ const {
   computeAllTrophyProgress
 } = require('./lib/achievements');
 const { loadFinalizedState, saveFinalizedState, clearFinalizedState } = require('./lib/achievementState');
+const progression = require('./lib/progression');
 const { startEntry: startHistoryEntry, updateEntry: updateHistoryEntry, listEntries: listHistoryEntries, deleteEntry: deleteHistoryEntry } = require('./lib/challengeHistory');
 
 const app = express();
@@ -669,6 +670,37 @@ app.post('/api/achievements/clear-state', (req, res) => {
     return res.status(400).json({ error: 'puuid is required.' });
   }
   clearFinalizedState(puuid);
+  res.json({ ok: true });
+});
+
+// ----- XP / Level / Quests (v5.0.0, provisorisch - siehe
+// server/lib/progression.js). Rein lokal, kein requireApiKey. -----
+
+function progressionContext(src) {
+  let champions = [];
+  try { champions = JSON.parse(src.champions || '[]'); } catch (e) {}
+  return { role: src.role || '', challengeLevel: src.challengeLevel || '', champions: Array.isArray(champions) ? champions : [] };
+}
+
+app.get('/api/progression', (req, res) => {
+  res.json(progression.getOverview(progressionContext(req.query)));
+});
+
+app.post('/api/progression/reroll', (req, res) => {
+  const result = progression.rerollDaily(progressionContext(req.body || {}));
+  res.status(result.ok ? 200 : 400).json(result);
+});
+
+app.get('/api/progression/multiplier', (req, res) => {
+  const difficulty = progression.DIFFICULTY_MULTIPLIER[req.query.challengeLevel] || 1;
+  const lp = progression.lpDistanceMultiplier(Number(req.query.distance) || 0);
+  res.json({ difficulty, lp, total: Math.round(difficulty * lp * 100) / 100 });
+});
+
+// "Reset Account Progress" in den Settings - NUR Level/XP/Quests/Pass,
+// alles andere (Challenge, Trophies, Verlauf) bleibt.
+app.post('/api/progression/reset', (req, res) => {
+  progression.resetState();
   res.json({ ok: true });
 });
 

@@ -199,6 +199,16 @@
       font-size: 1.15rem;
       letter-spacing: 1px;
     }
+    .profile-card-level {
+      flex-shrink: 0;
+      padding: 1px 8px;
+      border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent);
+      border-radius: 10px;
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
     .profile-card-wl {
       flex: 1;
       color: var(--text);
@@ -212,6 +222,10 @@
     .profile-card-wl .l { color: var(--red); }
     .profile-card:hover .profile-card-more {
       color: var(--gold);
+    }
+    /* Sehr schmales Fenster: Name hat Vorrang, die ganze Karte bleibt klickbar */
+    @media (max-width: 760px) {
+      .profile-card-more { display: none; }
     }
     .panel-sub {
       color: var(--text-dim);
@@ -873,6 +887,7 @@
     <a href="profile.html" class="trophies-card profile-card" id="profileCard" title="View profile">
       <span class="profile-card-icon-wrap"><img id="accountOverviewIcon" class="profile-card-icon" src="" alt=""></span>
       <span class="profile-card-name" id="accountOverviewName">No summoner loaded yet</span>
+      <span class="profile-card-level" id="profileCardLevel" title="Profile level">Lv 1</span>
       <span class="profile-card-wl" id="accountWL">–</span>
       <span class="role-breakdown-more profile-card-more" aria-hidden="true">View profile →</span>
     </a>
@@ -1963,7 +1978,17 @@
       }, delay);
     }
 
+    // Profil-Level auf der kompakten Karte (v5.0.0) - Details auf profile.html.
+    async function loadProfileLevel() {
+      try {
+        const res = await fetch('/api/progression');
+        const data = await parseApiResponse(res);
+        if (res.ok) document.getElementById('profileCardLevel').textContent = `Lv ${data.level.level}`;
+      } catch (e) {}
+    }
+
     (async function init() {
+      loadProfileLevel();
       currentSince = loadChallengeStart();
       currentSummoner = loadSummonerName();
       renderCurrentContext();
