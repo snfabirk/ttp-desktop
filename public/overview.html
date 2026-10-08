@@ -167,6 +167,52 @@
     .role-breakdown-card:hover .role-breakdown-more {
       color: var(--gold);
     }
+    /* Kompakte Profil-Karte (Icon, Name, W/L) - Klick oeffnet profile.html
+       mit der vollen Account-Karte. Gleicher Kartenstil wie Trophies. */
+    .profile-card-icon-wrap {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      border: 2px solid var(--gold);
+      background: rgba(200, 170, 110, 0.08);
+      overflow: hidden;
+    }
+    .profile-card-icon {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    .profile-card-icon.loaded {
+      opacity: 1;
+    }
+    .profile-card-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 1.15rem;
+      letter-spacing: 1px;
+    }
+    .profile-card-wl {
+      flex: 1;
+      color: var(--text);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 1.05rem;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      margin-left: 6px;
+    }
+    .profile-card-wl .w { color: var(--green); }
+    .profile-card-wl .l { color: var(--red); }
+    .profile-card:hover .profile-card-more {
+      color: var(--gold);
+    }
     .panel-sub {
       color: var(--text-dim);
       font-size: 0.9rem;
@@ -559,187 +605,6 @@
       letter-spacing: 1px;
       margin: 0 0 14px;
     }
-    .account-overview-wrap {
-      box-sizing: border-box;
-      padding: 0 0 24px;
-    }
-    .account-overview-card {
-      background: var(--panel-bg);
-      backdrop-filter: blur(12px) saturate(1.1);
-      -webkit-backdrop-filter: blur(12px) saturate(1.1);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 18px 24px;
-      box-sizing: border-box;
-      text-align: center;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
-    }
-    .account-overview-header {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      margin-bottom: 16px;
-    }
-    .account-overview-icon-wrap {
-      flex-shrink: 0;
-      width: 48px;
-      height: 48px;
-      border-radius: 6px;
-      border: 2px solid var(--gold);
-      background: rgba(200, 170, 110, 0.08);
-      overflow: hidden;
-    }
-    .account-overview-icon {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-    .account-overview-icon.loaded {
-      opacity: 1;
-    }
-    .account-overview-titles {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      text-align: left;
-    }
-    .account-overview-name {
-      display: block;
-      color: var(--gold);
-      font-family: 'Cinzel', Georgia, serif;
-      font-size: 1.4rem;
-      letter-spacing: 1px;
-      margin: 0;
-    }
-    .info-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      color: var(--text-dim);
-      font-size: 0.75rem;
-      line-height: 1;
-      cursor: help;
-      flex-shrink: 0;
-    }
-    .info-icon:hover, .info-icon:focus {
-      border-color: var(--gold);
-      color: var(--gold);
-      outline: none;
-    }
-    .account-overview-stats {
-      display: flex;
-      justify-content: center;
-      gap: 32px;
-      flex-wrap: wrap;
-      /* LP-Goal- und Challenge-Timer-Bloecke sind anfangs versteckt und
-         erscheinen erst, sobald feststeht ob ein LP-Ziel/eine laufende
-         Challenge existiert - kommen dann beide dazu, wickelt die Reihe auf
-         eine 2. Zeile um (bei den ueblichen Fensterbreiten). Reserviert
-         immer die 2-zeilige Hoehe, damit die Karte nicht sichtbar waechst,
-         sobald diese Daten geladen sind. */
-      min-height: 124px;
-      align-content: center;
-    }
-    .account-overview-stats .stat-block {
-      text-align: center;
-    }
-    .account-overview-stats .stat-block .value {
-      display: block;
-      color: var(--text);
-      font-family: 'Cinzel', Georgia, serif;
-      font-size: 1.3rem;
-      font-variant-numeric: tabular-nums;
-    }
-    .account-overview-stats .stat-block .value.positive { color: var(--green); }
-    .account-overview-stats .stat-block .value.negative { color: var(--red); }
-    .account-overview-stats .stat-block .value.estimate {
-      font-style: italic;
-      opacity: 0.85;
-      font-size: 1.05rem;
-      white-space: nowrap;
-    }
-    .account-overview-stats .stat-block .value .w { color: var(--green); }
-    .account-overview-stats .stat-block .value .l { color: var(--red); }
-    .rank-with-icon {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      vertical-align: middle;
-    }
-    .rank-emblem {
-      width: 20px;
-      height: 20px;
-      object-fit: contain;
-      flex-shrink: 0;
-    }
-    .account-overview-stats .stat-block .label {
-      display: block;
-      color: var(--text-faint);
-      font-size: 0.7rem;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      margin-top: 4px;
-    }
-    .account-overview-graph {
-      margin-top: 16px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border);
-      /* Startet leer (0 Inhalt) und wird erst nach dem Laden entweder mit
-         dem echten Graph (Labels+SVG sind fix 64px hoch, siehe unten, plus
-         optional eine Disclaimer-Zeile) oder einem "nicht genug Daten"-Text
-         gefuellt - ohne reservierten Platz wird die ganze Karte (und alles
-         darunter) beim Nachladen sichtbar groesser. Deckt den groesstmoeglichen
-         Fall (voller Graph + Disclaimer) ab, die anderen Faelle sind kuerzer
-         und passen locker mit rein. */
-      min-height: 93px;
-    }
-    .lp-graph-wrap {
-      display: flex;
-      align-items: stretch;
-      text-align: left;
-    }
-    .lp-graph-labels {
-      position: relative;
-      flex: 0 0 58px;
-      height: 64px;
-    }
-    .lp-graph-labels span {
-      position: absolute;
-      right: 8px;
-      transform: translateY(-50%);
-      font-size: 0.62rem;
-      color: var(--text-faint);
-      white-space: nowrap;
-    }
-    .lp-graph-plot {
-      flex: 1 1 auto;
-      min-width: 0;
-    }
-    .lp-graph-svg {
-      display: block;
-      width: 100%;
-      height: 64px;
-    }
-    .lp-graph-empty {
-      color: var(--text-dim);
-      font-size: 0.75rem;
-      font-style: italic;
-      margin: 0;
-    }
-    .lp-graph-disclaimer {
-      color: var(--text-faint);
-      font-size: 0.68rem;
-      font-style: italic;
-      margin: 6px 0 0;
-    }
     .matchups-header {
       display: flex;
       align-items: center;
@@ -1005,46 +870,12 @@
   <div class="split-layout">
   <div class="split-left">
   <div class="content">
-    <div class="account-overview-wrap">
-      <div class="account-overview-card" id="accountOverviewCard">
-        <div class="account-overview-header">
-          <div class="account-overview-icon-wrap">
-            <img id="accountOverviewIcon" class="account-overview-icon" src="" alt="">
-          </div>
-          <div class="account-overview-titles">
-            <span class="account-overview-name" id="accountOverviewName">No summoner loaded yet</span>
-            <span class="info-icon" id="accountOverviewNoteIcon" tabindex="0" hidden>ⓘ</span>
-          </div>
-        </div>
-        <div class="account-overview-stats">
-          <div class="stat-block">
-            <span class="value" id="accountWL">–</span>
-            <span class="label">Solo/Duo W / L</span>
-          </div>
-          <div class="stat-block">
-            <span class="value" id="accountRank">–</span>
-            <span class="label">Current Rank</span>
-          </div>
-          <div class="stat-block">
-            <span class="value" id="accountLpDelta">–</span>
-            <span class="label" id="accountLpDeltaLabel">LP since date</span>
-          </div>
-          <div class="stat-block">
-            <span class="value" id="accountStreak">–</span>
-            <span class="label" id="accountStreakLabel">Current Streak</span>
-          </div>
-          <div class="stat-block" id="accountLpGoalBlock" style="display:none;">
-            <span class="value" id="accountLpGoal">–</span>
-            <span class="label">LP Goal</span>
-          </div>
-          <div class="stat-block" id="overviewChallengeTimerBlock" style="display:none;">
-            <span class="value" id="overviewChallengeTimer">-</span>
-            <span class="label">Challenge Timer</span>
-          </div>
-        </div>
-        <div class="account-overview-graph" id="accountLpGraph"></div>
-      </div>
-    </div>
+    <a href="profile.html" class="trophies-card profile-card" id="profileCard" title="View profile">
+      <span class="profile-card-icon-wrap"><img id="accountOverviewIcon" class="profile-card-icon" src="" alt=""></span>
+      <span class="profile-card-name" id="accountOverviewName">No summoner loaded yet</span>
+      <span class="profile-card-wl" id="accountWL">–</span>
+      <span class="role-breakdown-more profile-card-more" aria-hidden="true">View profile →</span>
+    </a>
 
     <a href="trophies.html" class="trophies-card" id="trophiesCard">
       <span class="trophies-icon">🏆</span>
@@ -1200,15 +1031,8 @@
     const accountOverviewIcon = document.getElementById('accountOverviewIcon');
     const accountOverviewName = document.getElementById('accountOverviewName');
     const accountWLEl = document.getElementById('accountWL');
-    const accountRankEl = document.getElementById('accountRank');
-    const accountLpDeltaEl = document.getElementById('accountLpDelta');
-    const accountLpDeltaLabelEl = document.getElementById('accountLpDeltaLabel');
-    const accountStreakEl = document.getElementById('accountStreak');
-    const accountStreakLabelEl = document.getElementById('accountStreakLabel');
-    const accountLpGraphEl = document.getElementById('accountLpGraph');
     const trophiesProgressEl = document.getElementById('trophiesProgress');
     const trophiesCardEl = document.getElementById('trophiesCard');
-    const accountOverviewNoteIcon = document.getElementById('accountOverviewNoteIcon');
     const pageSubtitle = document.getElementById('pageSubtitle');
     const settingsGearBtn = document.getElementById('settingsGearBtn');
     settingsGearBtn.addEventListener('click', () => {
@@ -1222,9 +1046,6 @@
       if (!ok) return;
       if (window.ttpMain) window.ttpMain.quitApp();
     });
-
-    const overviewChallengeTimerBlock = document.getElementById('overviewChallengeTimerBlock');
-    const overviewChallengeTimer = document.getElementById('overviewChallengeTimer');
 
     let allChampions = [];
     let championKeyById = {};
@@ -1289,6 +1110,14 @@
       }
     }
 
+    // Kompakte Profil-Karte: nur W/L hier, Rang/LP/Streak/Graph leben auf
+    // profile.html.
+    function renderAccountWL(overall) {
+      accountWLEl.innerHTML = overall
+        ? `<span class="w">${overall.wins}W</span> / <span class="l">${overall.losses}L</span>`
+        : '–';
+    }
+
     // Challenge-Start (voller ISO-Zeitstempel) wird auf der Champion-
     // Auswahl-Seite gesetzt und hier nur noch gelesen (gemeinsames
     // localStorage). Leerer String bedeutet: noch keine Challenge gestartet.
@@ -1315,33 +1144,6 @@
       return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
 
-    // Derselbe Live-Timer wie auf der Champion-Auswahl-Seite (Tage/Std/Min/Sek
-    // seit Challenge-Start) - hier weitergefuehrt, weil man sich auf dieser
-    // Seite in der Regel deutlich laenger aufhaelt.
-    let overviewChallengeTimerId = null;
-
-    function startOverviewChallengeTimer(startIso) {
-      const startMs = new Date(startIso).getTime();
-      function tick() {
-        const totalSeconds = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
-        const days = Math.floor(totalSeconds / 86400);
-        const hours = Math.floor((totalSeconds % 86400) / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-        overviewChallengeTimer.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-      }
-      tick();
-      if (overviewChallengeTimerId) clearInterval(overviewChallengeTimerId);
-      overviewChallengeTimerId = setInterval(tick, 1000);
-    }
-
-    function stopOverviewChallengeTimer() {
-      if (overviewChallengeTimerId) {
-        clearInterval(overviewChallengeTimerId);
-        overviewChallengeTimerId = null;
-      }
-    }
-
     function renderCurrentContext() {
       const summonerText = currentSummoner ? currentSummoner : '(no summoner set)';
       const sinceText = currentSince
@@ -1350,14 +1152,6 @@
       currentContext.innerHTML =
         `Summoner: ${summonerText} · ${sinceText} — ` +
         `<a href="index.html">change on the Champion Selection page</a>`;
-
-      if (currentSince) {
-        overviewChallengeTimerBlock.style.display = '';
-        startOverviewChallengeTimer(currentSince);
-      } else {
-        overviewChallengeTimerBlock.style.display = 'none';
-        stopOverviewChallengeTimer();
-      }
     }
 
     // Liest eine fetch()-Antwort sicher als JSON. Kommt stattdessen z.B. eine
@@ -1742,358 +1536,6 @@
       }
     }
 
-    const TIER_LABELS = {
-      IRON: 'Iron', BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold',
-      PLATINUM: 'Platinum', EMERALD: 'Emerald', DIAMOND: 'Diamond',
-      MASTER: 'Master', GRANDMASTER: 'Grandmaster', CHALLENGER: 'Challenger'
-    };
-    const APEX_TIERS = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
-    const TIER_ORDER = [
-      'IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD',
-      'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'
-    ];
-    const RANK_VALUE = { I: 3, II: 2, III: 1, IV: 0 };
-
-    // Client-seitiges Gegenstueck zu toComparableLP() im Backend - fuer den
-    // synthetischen Graph-Endpunkt, wo wir den aktuellen LP-Stand ohne
-    // Server-Roundtrip in dieselbe Skala umrechnen muessen.
-    function comparableLP(tier, rank, leaguePoints) {
-      const tierIndex = TIER_ORDER.indexOf(tier);
-      if (tierIndex < 0) return leaguePoints || 0;
-      if (APEX_TIERS.has(tier)) return tierIndex * 400 + (leaguePoints || 0);
-      const rankValue = RANK_VALUE[rank] ?? 0;
-      return tierIndex * 400 + rankValue * 100 + (leaguePoints || 0);
-    }
-
-    // Kuerzt lange Tier-Namen fuer eine kompaktere Anzeige neben dem
-    // Rang-Emblem (z.B. "Plat" statt "Platinum") - kurze Namen bleiben
-    // unveraendert, das spart nur bei den langen wirklich Platz.
-    const TIER_ABBR = {
-      IRON: 'Iron', BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold',
-      PLATINUM: 'Plat', EMERALD: 'Emer', DIAMOND: 'Dia',
-      MASTER: 'Master', GRANDMASTER: 'GM', CHALLENGER: 'Chall'
-    };
-
-    // "Mini-crests" statt der vollen Emblem-Grafiken - die vollen Embleme sind
-    // fuer grosse Darstellung gemacht (viele feine Details) und wirken bei
-    // ~20px nur wie ein verschwommener Fleck. Emerald existiert dort nur als
-    // .svg, alle anderen als .png.
-    function rankEmblemUrl(tier) {
-      const t = tier.toLowerCase();
-      const ext = t === 'emerald' ? 'svg' : 'png';
-      return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${t}.${ext}`;
-    }
-
-    function rankIconHtml(tier, restText) {
-      const abbr = TIER_ABBR[tier] || tier;
-      return `<span class="rank-with-icon"><img class="rank-emblem" src="${rankEmblemUrl(tier)}" alt="${abbr}" loading="lazy">${abbr}${restText}</span>`;
-    }
-
-    function formatRank(current) {
-      if (!current) return 'Unranked';
-      const rest = APEX_TIERS.has(current.tier)
-        ? ` · ${current.leaguePoints} LP`
-        : ` ${current.rank} · ${current.leaguePoints} LP`;
-      return rankIconHtml(current.tier, rest);
-    }
-
-    // LP-Ziel wird auf der Champion-Auswahl-Seite gesetzt (gleiches
-    // localStorage) und hier nur angezeigt.
-    const accountLpGoalBlock = document.getElementById('accountLpGoalBlock');
-    const accountLpGoalEl = document.getElementById('accountLpGoal');
-
-    function renderLpGoal() {
-      let tier = '';
-      let division = '';
-      let lp = '';
-      try {
-        tier = localStorage.getItem('ttp_lp_goal_tier') || '';
-        division = localStorage.getItem('ttp_lp_goal_division') || '';
-        lp = localStorage.getItem('ttp_lp_goal_lp') || '';
-      } catch (e) {}
-
-      if (!tier) {
-        accountLpGoalBlock.style.display = 'none';
-        return;
-      }
-
-      const rest = APEX_TIERS.has(tier) ? '' : ` ${division}`;
-      accountLpGoalEl.innerHTML = rankIconHtml(tier, lp !== '' ? `${rest} · ${lp} LP` : rest);
-      accountLpGoalBlock.style.display = '';
-    }
-
-    function renderAccountOverview(data) {
-      const overall = data.overall;
-      const rank = data.rank;
-
-      accountLpDeltaLabelEl.textContent = data.since
-        ? `LP since ${formatDateTimeEU(data.since)}`
-        : 'LP change (start a challenge to track)';
-
-      if (overall) {
-        accountWLEl.innerHTML = `<span class="w">${overall.wins}W</span> / <span class="l">${overall.losses}L</span>`;
-      } else {
-        accountWLEl.textContent = '–';
-      }
-
-      accountRankEl.innerHTML = rank ? formatRank(rank.current) : '–';
-
-      if (rank && rank.isEstimate && rank.deltaLPRange) {
-        const { min, max } = rank.deltaLPRange;
-        const fmt = n => `${n > 0 ? '+' : ''}${n}`;
-        accountLpDeltaEl.textContent = `~ ${fmt(min)} to ${fmt(max)} LP`;
-        accountLpDeltaEl.className = 'value estimate' +
-          (min > 0 ? ' positive' : max < 0 ? ' negative' : '');
-      } else if (rank && rank.deltaLP !== null && rank.deltaLP !== undefined) {
-        const sign = rank.deltaLP > 0 ? '+' : '';
-        accountLpDeltaEl.textContent = `${sign}${rank.deltaLP} LP`;
-        accountLpDeltaEl.className = 'value' + (rank.deltaLP > 0 ? ' positive' : rank.deltaLP < 0 ? ' negative' : '');
-      } else {
-        accountLpDeltaEl.textContent = '–';
-        accountLpDeltaEl.className = 'value';
-      }
-
-      if (rank && rank.note) {
-        accountOverviewNoteIcon.title = rank.note;
-        accountOverviewNoteIcon.hidden = false;
-      } else {
-        accountOverviewNoteIcon.title = '';
-        accountOverviewNoteIcon.hidden = true;
-      }
-
-      renderStreaks(data.streaks);
-    }
-
-    // "bestWinStreak"/"worstLossStreak" sind nur innerhalb des gescannten
-    // Zeitraums bekannt (seit "since"), nicht Karriere-weit - dafuer muesste
-    // viel weiter zurueckgescannt werden als der Nutzer eingestellt hat.
-    function renderStreaks(streaks) {
-      if (!streaks || !streaks.current) {
-        accountStreakEl.textContent = '–';
-        accountStreakEl.className = 'value';
-        accountStreakLabelEl.textContent = 'Current Streak';
-        return;
-      }
-
-      const { current, bestWinStreak, worstLossStreak } = streaks;
-      accountStreakEl.textContent = `${current.count}${current.win ? 'W' : 'L'}`;
-      accountStreakEl.className = 'value' + (current.win ? ' positive' : ' negative');
-      accountStreakLabelEl.textContent = `Best ${bestWinStreak}W / Worst ${worstLossStreak}L this period`;
-    }
-
-    const DENSE_GAP_MS = 2 * 24 * 60 * 60 * 1000; // 2 Tage - darunter gilt eine echte Luecke als "dicht genug" fuer eine direkte, durchgezogene Verbindung
-    const SINCE_TOLERANCE_MS = 60 * 60 * 1000; // 1h Toleranz, um einen Snapshot als "praktisch am Since-Datum" zu behandeln
-
-    // Fuellt eine Luecke zwischen zwei bekannten Werten mit einem Random Walk,
-    // der von startValue nach endValue trendet (mit Rauschen proportional zur
-    // Groesse der Aenderung) - Start/Ende sind fix, nur der Zwischenverlauf
-    // ist erfunden. steps=6 ergibt 5 Zwischenpunkte.
-    function generateInteriorWalk(startMs, endMs, startValue, endValue, steps) {
-      const points = [];
-      const noiseScale = Math.abs(endValue - startValue) * 0.15 + 12;
-      // Auf die Spanne zwischen Start- und Endwert clampen - das Rauschen
-      // darf nicht ueber den bekannten Startpunkt (z.B. "ich habe bei Gold 2
-      // angefangen") hinaus nach unten oder oben ausschlagen, sonst zeigt
-      // die Divisions-Legende links faelschlich Raenge, die nie erreicht wurden.
-      const lo = Math.min(startValue, endValue);
-      const hi = Math.max(startValue, endValue);
-      for (let i = 1; i < steps; i++) {
-        const t = i / steps;
-        const base = startValue + (endValue - startValue) * t;
-        const val = base + (Math.random() - 0.5) * noiseScale;
-        points.push({
-          timestamp: startMs + t * (endMs - startMs),
-          comparableLP: Math.min(hi, Math.max(lo, val))
-        });
-      }
-      return points;
-    }
-
-    // Schaetzt den LP-Wert zum "Since"-Datum, wenn wir dafuer keinen echten
-    // Snapshot haben - nutzt den bereits bekannten Delta-Wert (exakt oder
-    // Schaetz-Spanne), damit zumindest die Gesamt-Steigung/das Gesamt-
-    // Gefaelle stimmt, statt einer beliebig kleinen Zufallsabweichung.
-    function estimateStartValue(nowValue, deltaLP, deltaLPRange) {
-      if (deltaLP !== null && deltaLP !== undefined) return nowValue - deltaLP;
-      if (deltaLPRange) return nowValue - (deltaLPRange.min + deltaLPRange.max) / 2;
-      return nowValue + (Math.random() * 40 - 20);
-    }
-
-    // Baut die volle Punktreihe seit "since": echte Snapshots bleiben echte
-    // Anker (durchgezogen verbunden, wenn sie zeitlich nah beieinander
-    // liegen), groessere Luecken - inklusive der Luecke vor dem ersten
-    // Snapshot bis "since" - werden mit einem erfundenen, aber an den echten
-    // Werten verankerten Verlauf gefuellt (gestrichelt markiert).
-    function buildLpSeries(realPoints, sinceMs, deltaLP, deltaLPRange) {
-      const real = realPoints.map(p => ({ ...p, synthetic: false }));
-      const nowValue = real[real.length - 1].comparableLP;
-      const series = [];
-
-      const first = real[0];
-      if (first.timestamp > sinceMs + SINCE_TOLERANCE_MS) {
-        const startValue = estimateStartValue(nowValue, deltaLP, deltaLPRange);
-        series.push({ timestamp: sinceMs, comparableLP: startValue, synthetic: true });
-        series.push(...generateInteriorWalk(sinceMs, first.timestamp, startValue, first.comparableLP, 6)
-          .map(p => ({ ...p, synthetic: true })));
-      }
-      series.push(first);
-
-      for (let i = 1; i < real.length; i++) {
-        const prev = real[i - 1];
-        const curr = real[i];
-        if (curr.timestamp - prev.timestamp > DENSE_GAP_MS) {
-          series.push(...generateInteriorWalk(prev.timestamp, curr.timestamp, prev.comparableLP, curr.comparableLP, 6)
-            .map(p => ({ ...p, synthetic: true })));
-        }
-        series.push(curr);
-      }
-
-      return series;
-    }
-
-    // Rueckrechnung von der comparableLP-Skala auf einen Tier/Division-Namen
-    // fuer die Achsenbeschriftung links - nur an vollen 100er-Grenzen
-    // (= Divisionsgrenzen) sinnvoll.
-    function labelForBoundary(boundary) {
-      const tierIndex = Math.floor(boundary / 400);
-      if (tierIndex < 0 || tierIndex >= TIER_ORDER.length) return null;
-      const tier = TIER_ORDER[tierIndex];
-      const tierLabel = TIER_LABELS[tier] || tier;
-      if (APEX_TIERS.has(tier)) return tierLabel;
-      const rankValue = Math.round((boundary - tierIndex * 400) / 100);
-      const rankNames = ['IV', 'III', 'II', 'I'];
-      return `${tierLabel} ${rankNames[Math.min(3, Math.max(0, rankValue))]}`;
-    }
-
-    function computeDivisionBoundaries(minY, maxY, maxLabels) {
-      const lower = Math.ceil(minY / 100) * 100;
-      const upper = Math.floor(maxY / 100) * 100;
-      const marks = [];
-      for (let b = lower; b <= upper; b += 100) marks.push(b);
-      if (marks.length <= maxLabels) return marks;
-      const step = Math.ceil(marks.length / maxLabels);
-      return marks.filter((_, i) => i % step === 0);
-    }
-
-    function renderLpGraph(realPoints, { sinceMs, rankCurrent, deltaLP, deltaLPRange } = {}) {
-      if ((!realPoints || realPoints.length === 0) && !rankCurrent) {
-        accountLpGraphEl.innerHTML = '<p class="lp-graph-empty">Not enough LP history yet for a graph - check back after a few more games.</p>';
-        return;
-      }
-      if (!realPoints || realPoints.length === 0) {
-        realPoints = [{
-          timestamp: Date.now(),
-          comparableLP: comparableLP(rankCurrent.tier, rankCurrent.rank, rankCurrent.leaguePoints),
-          tier: rankCurrent.tier,
-          rank: rankCurrent.rank,
-          leaguePoints: rankCurrent.leaguePoints,
-          manual: false
-        }];
-      }
-      if (!sinceMs) {
-        accountLpGraphEl.innerHTML = '<p class="lp-graph-empty">Not enough LP history yet for a graph - check back after a few more games.</p>';
-        return;
-      }
-
-      const points = buildLpSeries(realPoints, sinceMs, deltaLP, deltaLPRange);
-      const hasSynthetic = points.some(p => p.synthetic);
-      const disclaimer = hasSynthetic
-        ? 'Dashed sections are simulated for visualization only - Riot has no historical per-game LP data. Solid sections are real recorded snapshots; more of the graph becomes solid over time.'
-        : null;
-
-      const width = 600;
-      const height = 64;
-      const paddingLeft = 4;
-      const paddingRight = 8;
-      const paddingY = 6;
-
-      const xs = points.map(p => p.timestamp);
-      const ys = points.map(p => p.comparableLP);
-      const minX = Math.min(...xs);
-      const maxX = Math.max(...xs);
-      let minY = Math.min(...ys);
-      let maxY = Math.max(...ys);
-      // Direkt nach Challenge-Start (nur der aktuelle Rang als einziger
-      // Punkt) waere die Y-Spanne sonst quasi 0 - dann gaebe es auch keine
-      // Divisionsgrenzen/Labels zu sehen. Mit mindestens ~2 Divisionen (250
-      // LP) Puffer um den/die vorhandenen Punkt(e) herum sieht man von
-      // Anfang an, in welcher Division man aktuell steht.
-      const MIN_Y_SPAN = 250;
-      if (maxY - minY < MIN_Y_SPAN) {
-        const mid = (maxY + minY) / 2;
-        minY = mid - MIN_Y_SPAN / 2;
-        maxY = mid + MIN_Y_SPAN / 2;
-      }
-      const spanX = maxX - minX || 1;
-      const spanY = maxY - minY || 1;
-
-      const toX = t => paddingLeft + ((t - minX) / spanX) * (width - paddingLeft - paddingRight);
-      const toY = v => height - paddingY - ((v - minY) / spanY) * (height - paddingY * 2);
-      const toYPct = v => (toY(v) / height) * 100;
-
-      const coords = points.map(p => ({ x: toX(p.timestamp), y: toY(p.comparableLP), p }));
-
-      let segmentsSvg = '';
-      for (let i = 0; i < coords.length - 1; i++) {
-        const a = coords[i];
-        const b = coords[i + 1];
-        const dashed = a.p.synthetic || b.p.synthetic;
-        segmentsSvg += `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" ` +
-          `stroke="${dashed ? 'var(--text-faint)' : 'var(--gold)'}" stroke-width="2"${dashed ? ' stroke-dasharray="5 4"' : ''} />`;
-      }
-
-      const dots = coords.map(c => {
-        const date = new Date(c.p.timestamp).toLocaleDateString('en-GB');
-        if (c.p.synthetic) {
-          return `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="2" fill="var(--text-faint)"><title>${date} - simulated, not real data</title></circle>`;
-        }
-        const label = formatRank({ tier: c.p.tier, rank: c.p.rank, leaguePoints: c.p.leaguePoints });
-        const tag = c.p.manual ? ' (manually entered)' : '';
-        const color = c.p.manual ? 'var(--text-dim)' : 'var(--gold)';
-        return `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="3" fill="${color}"><title>${date} - ${label}${tag}</title></circle>`;
-      }).join('');
-
-      const boundaries = computeDivisionBoundaries(minY, maxY, 5);
-      const gridLines = boundaries.map(b =>
-        `<line x1="${paddingLeft}" y1="${toY(b).toFixed(1)}" x2="${width - paddingRight}" y2="${toY(b).toFixed(1)}" stroke="var(--border)" stroke-width="1" stroke-dasharray="2 3" />`
-      ).join('');
-      const labelHtml = boundaries.map(b => {
-        const label = labelForBoundary(b);
-        return label ? `<span style="top:${toYPct(b).toFixed(1)}%">${label}</span>` : '';
-      }).join('');
-
-      accountLpGraphEl.innerHTML = `
-        <div class="lp-graph-wrap">
-          <div class="lp-graph-labels">${labelHtml}</div>
-          <div class="lp-graph-plot">
-            <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="lp-graph-svg">
-              ${gridLines}
-              ${segmentsSvg}
-              ${dots}
-            </svg>
-          </div>
-        </div>
-        ${disclaimer ? `<p class="lp-graph-disclaimer">${disclaimer}</p>` : ''}
-      `;
-    }
-
-    async function loadLpGraph(puuid, since, rank) {
-      const sinceMs = since ? new Date(since).getTime() : null;
-      const rankCurrent = rank && rank.current;
-      const deltaLP = rank ? rank.deltaLP : null;
-      const deltaLPRange = rank ? rank.deltaLPRange : null;
-      try {
-        const params = new URLSearchParams({ puuid, since });
-        const res = await fetch(`/api/rank-history?${params}`);
-        const data = await parseApiResponse(res);
-        if (!res.ok) throw new Error(data.error || 'Unknown error');
-        renderLpGraph(data.points, { sinceMs, rankCurrent, deltaLP, deltaLPRange });
-      } catch (e) {
-        // Graph ist ein Bonus-Feature - Fehler hier sollen den restlichen Load nicht stoeren.
-        accountLpGraphEl.innerHTML = '';
-      }
-    }
-
     // Fuellt nur die kleine Prozentzahl auf der Trophies-Karte - die volle
     // Fortschrittsanzeige pro Trophy lebt in trophies.html selbst (gleicher
     // Endpoint, gleiche localStorage-Keys, siehe [[achievements-trophies-design]]).
@@ -2208,8 +1650,7 @@
           : '';
 
         renderOtpRow(); // holt die frisch geladenen WR/Spiele-Werte pro Karte nach
-        renderAccountOverview(data);
-        loadLpGraph(currentPuuid, since, data.rank);
+        renderAccountWL(data.overall);
         loadTrophiesProgress(currentPuuid, since, champsWithKeys.map(x => ({ key: x.key, role: x.champ.role || '' })));
         renderRoleBreakdownChart(data.roleStats);
         hasLoadedOnce = true;
@@ -2526,7 +1967,6 @@
       currentSince = loadChallengeStart();
       currentSummoner = loadSummonerName();
       renderCurrentContext();
-      renderLpGoal();
       renderPageSubtitle();
       await loadChampionKeys();
       populateEnemySelect();

@@ -1,5 +1,16 @@
 # Internal Changelog
 
+## 4.29.0 — 2026-10-08
+
+- Profile moved to its own page `public/profile.html` (full account card:
+  icon/name/rank-note, W/L, rank, LP since, streak, LP goal, challenge
+  timer, LP graph). Loads via /api/account + /api/summary-batch (cached
+  matches) + /api/rank-history, like role.html.
+- overview.html: account card replaced by a compact clickable card
+  (`#profileCard`, trophies-card style): icon, name, W/L right next to
+  it, "View profile →". Moved CSS/JS (rank helpers, LP graph, streaks,
+  LP goal, challenge timer) removed from overview.html.
+
 ## 4.28.9 — 2026-10-05
 
 - Fix: viewing a past challenge on trophies.html showed the role trophies

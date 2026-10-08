@@ -25,6 +25,15 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '4.29.0',
+      date: '2026-10-08',
+      notable: [
+        'New Profile page: the Overview now shows a compact card with your icon, name and W/L - click it ("View profile") for rank, LP change, streak, LP goal, challenge timer and the LP graph.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '4.28.9',
       date: '2026-10-05',
       notable: [],
