@@ -25,6 +25,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.0.2',
+      date: '2026-10-08',
+      notable: ['Temporary demo: the Challenge Pass on your Profile shows a half-finished pass (tier 15) so you can see what a running pass looks like.'],
+      refinements: 1,
+      bugfixes: 0
+    },
+    {
       version: '5.0.1',
       date: '2026-10-08',
       notable: [],

@@ -1,5 +1,14 @@
 # Internal Changelog
 
+## 5.0.2 — 2026-10-08
+
+- TEMPORARY demo (user wants it removed again right after): `DEMO_PASS_XP`
+  in server/lib/progression.js forces the pass to tier 15 + 900/1500 XP,
+  "· DEMO" next to the tier count. Set it to null to remove.
+- Pass grid styling: unlocked tiers stronger (30% gold fill, light text),
+  the tier being worked on gets a gold frame/glow + a mini progress bar
+  along the bottom (XP into that tier in the tooltip).
+
 ## 5.0.1 — 2026-10-08
 
 - XP preview: win bonus added (user: "Sieg-Bonus ja"), placeholder +150 XP

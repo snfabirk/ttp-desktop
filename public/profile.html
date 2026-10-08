@@ -551,8 +551,30 @@
     }
     .pass-tier.unlocked {
       border-color: var(--gold);
-      background: color-mix(in srgb, var(--gold) 14%, transparent);
+      background: color-mix(in srgb, var(--gold) 30%, transparent);
       color: var(--gold);
+    }
+    .pass-tier.unlocked .tier-num,
+    .pass-tier.unlocked .tier-reward {
+      color: var(--text);
+      opacity: 1;
+    }
+    /* Stufe, an der gerade gearbeitet wird: Rahmen + Mini-Fortschritt unten */
+    .pass-tier.current {
+      position: relative;
+      overflow: hidden;
+      border: 1.5px solid var(--gold);
+      box-shadow: 0 0 10px color-mix(in srgb, var(--gold) 35%, transparent);
+    }
+    .pass-tier.current .tier-num {
+      color: var(--gold);
+    }
+    .pass-tier .tier-progress {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      height: 3px;
+      background: var(--gold);
     }
     .pass-note {
       color: var(--text-faint);
@@ -1259,14 +1281,16 @@
     }
 
     function renderPass(pass) {
-      document.getElementById('passTierText').textContent = `Tier ${pass.tier} / ${pass.tiers}`;
+      document.getElementById('passTierText').textContent = `Tier ${pass.tier} / ${pass.tiers}${pass.demo ? ' · DEMO' : ''}`;
       document.getElementById('passXpText').textContent = `${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP`;
       document.getElementById('passXpFill').style.width = `${(pass.tier / pass.tiers) * 100}%`;
       let html = '';
       for (let t = 1; t <= pass.tiers; t++) {
         const milestone = t % 5 === 0;
-        html += `<div class="pass-tier${milestone ? ' milestone' : ''}${t <= pass.tier ? ' unlocked' : ''}" title="Tier ${t} - reward to be decided">` +
-          `<span class="tier-num">${t}</span><span class="tier-reward">${t <= pass.tier ? '✓' : milestone ? '★' : '🔒'}</span></div>`;
+        const current = t === pass.tier + 1;
+        const progress = current ? `<span class="tier-progress" style="width:${(pass.xpIntoTier / pass.xpPerTier) * 100}%"></span>` : '';
+        html += `<div class="pass-tier${milestone ? ' milestone' : ''}${t <= pass.tier ? ' unlocked' : ''}${current ? ' current' : ''}" title="Tier ${t} - reward to be decided${current ? ` (${pass.xpIntoTier} / ${pass.xpPerTier} XP)` : ''}">` +
+          `<span class="tier-num">${t}</span><span class="tier-reward">${t <= pass.tier ? '✓' : milestone ? '★' : '🔒'}</span>${progress}</div>`;
       }
       document.getElementById('passGrid').innerHTML = html;
     }
