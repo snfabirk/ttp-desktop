@@ -63,18 +63,49 @@ const rings = [...document.querySelectorAll('.obs')].map(el => {
   return { el, c, C, R, small, shards: [...inner, ...outer], burst: null };
 });
 
-function drawShard(c, s, x, y, ang, light, R, heat) {
+function drawShard(c, s, x, y, ang, light, R, heat, t) {
+  // Glas-Look: zwei Facetten (Licht/Schatten), innere lila Brechung, scharfe
+  // Kante mit Randlicht, Glanzstreifen, Funkeln wenn das Licht drueberwandert
+  const P = s.pts, k = Math.max(.6, R * .012);
+  const amb = .25 + .15 * Math.sin(t * 2 + s.bob);          // leises Grundschimmern
+  const L = Math.min(1, light + amb * .15);
   c.save(); c.translate(x, y); c.rotate(ang);
-  c.beginPath(); s.pts.forEach(([px, py], i) => i ? c.lineTo(px, py) : c.moveTo(px, py)); c.closePath();
-  // Vulkanglas: fast schwarz, Kante in Lila, Glanz wenn der Lichtstreifen trifft
-  const g = c.createLinearGradient(-R * .3, -R * .1, R * .3, R * .1);
-  g.addColorStop(0, `rgb(${12 + 40 * light}, ${8 + 30 * light}, ${20 + 60 * light})`);
-  g.addColorStop(.5, `rgb(${30 + 160 * light}, ${20 + 140 * light}, ${50 + 200 * light})`);
-  g.addColorStop(1, '#07050c');
-  c.fillStyle = g; c.fill();
-  c.strokeStyle = `rgba(${160 + 90 * light}, ${110 + 120 * light}, 255, ${.35 + .6 * light})`; c.lineWidth = Math.max(.6, R * .012); c.stroke();
-  // Magma-Ritze im Splitter
-  if (heat > .05) { c.strokeStyle = `rgba(255, ${90 + 80 * heat}, 40, ${heat})`; c.lineWidth = Math.max(.5, R * .01); c.beginPath(); c.moveTo(s.pts[2][0] * .5, s.pts[2][1] * .5); c.lineTo(s.pts[0][0] * .6, s.pts[0][1] * .2); c.stroke(); }
+  const path = new Path2D(); P.forEach(([px, py], i) => i ? path.lineTo(px, py) : path.moveTo(px, py)); path.closePath();
+  // Leuchten um den Splitter (lila Bloom)
+  if (L > .3) { c.save(); c.globalCompositeOperation = 'lighter'; c.shadowColor = `rgba(180, 100, 255, ${L})`; c.shadowBlur = R * .35 * L; c.fillStyle = `rgba(120, 60, 220, ${.25 * L})`; c.fill(path); c.restore(); }
+  // Grundkoerper: tiefes Lila-Schwarz
+  const base = c.createLinearGradient(P[3][0], P[3][1], P[0][0], P[0][1]);
+  base.addColorStop(0, '#030107'); base.addColorStop(.5, `rgb(${22 + 60 * L}, ${6 + 20 * L}, ${44 + 110 * L})`); base.addColorStop(1, '#08040f');
+  c.fillStyle = base; c.fill(path);
+  // Facette 1 (zum Licht gekippt): heller, lila
+  c.save(); c.clip(path);
+  c.beginPath(); c.moveTo(P[0][0], P[0][1]); c.lineTo(P[1][0], P[1][1]); c.lineTo(P[2][0], P[2][1]); c.lineTo(0, 0); c.closePath();
+  const f1 = c.createLinearGradient(P[1][0], P[1][1], 0, 0);
+  f1.addColorStop(0, `rgba(${120 + 110 * L}, ${40 + 120 * L}, 255, ${.18 + .6 * L})`); f1.addColorStop(1, `rgba(70, 20, 150, ${.05 + .25 * L})`);
+  c.fillStyle = f1; c.fill();
+  // Facette 2: dunkler, mit innerer Brechung (Magenta-Schimmer)
+  c.beginPath(); c.moveTo(0, 0); c.lineTo(P[2][0], P[2][1]); c.lineTo(P[3][0], P[3][1]); c.lineTo(P[4][0], P[4][1]); c.closePath();
+  const f2 = c.createRadialGradient(P[3][0] * .4, P[3][1] * .4, 0, 0, 0, R * .3);
+  f2.addColorStop(0, `rgba(220, 60, 255, ${.1 + .35 * L})`); f2.addColorStop(1, 'rgba(20, 8, 40, 0)');
+  c.fillStyle = f2; c.fill();
+  // Glanzstreifen quer ueber den Splitter (wandert mit der Drehung)
+  const gx = Math.sin(t * 1.3 + s.bob) * R * .12;
+  const gl = c.createLinearGradient(gx - R * .03, -R * .2, gx + R * .03, R * .2);
+  gl.addColorStop(0, 'rgba(255,255,255,0)'); gl.addColorStop(.45, 'rgba(255,255,255,0)'); gl.addColorStop(.5, `rgba(250, 225, 255, ${.08 + .7 * L})`); gl.addColorStop(.55, 'rgba(255,255,255,0)'); gl.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = gl; c.fillRect(-R * .5, -R * .5, R, R);
+  c.restore();
+  // Facettenkante + scharfes Randlicht
+  c.strokeStyle = `rgba(200, 150, 255, ${.15 + .55 * L})`; c.lineWidth = k * .8; c.beginPath(); c.moveTo(P[2][0], P[2][1]); c.lineTo(0, 0); c.lineTo(P[0][0], P[0][1]); c.stroke();
+  c.strokeStyle = `rgba(${150 + 100 * L}, ${70 + 150 * L}, 255, ${.45 + .55 * L})`; c.lineWidth = k; c.stroke(path);
+  // Magma-Ritze
+  if (heat > .05) { c.strokeStyle = `rgba(255, ${90 + 80 * heat}, 40, ${heat * .8})`; c.lineWidth = k * .8; c.beginPath(); c.moveTo(P[2][0] * .5, P[2][1] * .5); c.lineTo(P[0][0] * .6, P[0][1] * .2); c.stroke(); }
+  // Funkeln an der Spitze, wenn das Licht trifft
+  if (light > .55) {
+    const a = (light - .55) / .45, sx = P[0][0] * .9, sy = P[0][1] * .9, sz = R * .1 * a;
+    c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(255, 245, 255, ${a})`; c.lineWidth = k;
+    c.beginPath(); c.moveTo(sx - sz, sy); c.lineTo(sx + sz, sy); c.moveTo(sx, sy - sz); c.lineTo(sx, sy + sz); c.stroke();
+    c.fillStyle = `rgba(255, 255, 255, ${a})`; c.beginPath(); c.arc(sx, sy, k * 1.2, 0, 7); c.fill(); c.restore();
+  }
   c.restore();
 }
 
@@ -114,9 +145,9 @@ function drawRing(r, t, dt) {
       x += s.dx; y += s.dy;
     }
     const d = Math.abs(((a - sweep + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-    const light = Math.max(0, 1 - d / .55) + (b && b.t < .9 ? pull * .5 : 0);
+    const light = Math.max(0, 1 - d / .8) + (b && b.t < .9 ? pull * .5 : 0);
     s.rot += s.spin * dt * (b && b.blown && b.t < 2.2 ? 6 : 1);
-    drawShard(c, s, x, y, s.rot + a, Math.min(1, light), R, heat * .7);
+    drawShard(c, s, x, y, s.rot + a, Math.min(1, light), R, heat * .7, t);
   });
   // Schockwelle beim Zerspringen
   if (b && b.blown && b.t < 1.6) {
