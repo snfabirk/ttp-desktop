@@ -172,6 +172,10 @@
   .hint-pop th { color: var(--text-faint); font-weight: normal; }
   .hint-pop tr + tr td { border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent); }
   .hint-pop p { margin: 8px 0 0; font-size: 0.72rem; color: var(--text-faint); }
+  .hint-pop p b { color: var(--text-dim); font-weight: normal; }
+  .hint-pop .rates-intro { margin: -2px 0 6px; }
+  .hint-pop table.rates { margin-top: 2px; }
+  .hint-pop table.rates th:first-child { text-align: left; }
   .shop-note { color: var(--text-faint); font-size: 0.78rem; text-align: center; margin-top: 12px; font-style: italic; }
   /* (privat) - unsichtbar, Mauszeiger bleibt normal */
   .corner-spot { position: fixed; left: 0; bottom: 0; width: 64px; height: 64px; z-index: 50; cursor: default; background: transparent; }
@@ -282,13 +286,18 @@
       const R = ['basic', 'refined', 'fancy', 'animated'];
       const price = v => v ? fmtNum(v) : 'Free';
       const pct = (w, r) => { const sum = Object.values(w).reduce((a, b) => a + b, 0); return w[r] ? `${Math.round(w[r] / sum * 100)}%` : '–'; };
+      // Zwei klar getrennte Tabellen (Nutzer las die Rates-Spalten sonst als
+      // Frame/Theme): Spalten heissen ausdruecklich "Daily offer" / "Weekly highlight".
       document.getElementById('shopHelp').innerHTML =
         `<h4>Prices</h4><table><tr><th></th><th>Border</th><th>Frame</th><th>Theme</th></tr>` +
         R.map(r => `<tr><td class="rar rar-${r}">${RARITY_LABEL[r]}</td><td>${price(shop.prices[r].border)}</td><td>${price(shop.prices[r].frame)}</td><td>${price(shop.prices[r].theme)}</td></tr>`).join('') +
-        `</table><h4>Chances per offer</h4><table><tr><th></th><th>Daily</th><th>Weekly</th></tr>` +
+        `</table><h4>Rates</h4><p class="rates-intro">Chance for each single offer - borders, frames and themes alike.</p>` +
+        `<table class="rates"><tr><th>Rarity</th><th>Daily offer</th><th>Weekly highlight</th></tr>` +
         R.map(r => `<tr><td class="rar rar-${r}">${RARITY_LABEL[r]}</td><td>${pct(shop.odds.daily, r)}</td><td>${pct(shop.odds.weekly, r)}</td></tr>`).join('') +
-        `<tr><td>Earlier pass cosmetic</td><td>${Math.round(shop.odds.pastPass.daily * 100)}%</td><td>${Math.round(shop.odds.pastPass.weekly * 100)}%</td></tr></table>` +
-        `<p>Earlier pass cosmetics only show up while you are still missing some of them. Your shop never offers you something you already own.</p>`;
+        `</table><p>On top of that, each offer has its own chance to be a cosmetic from an <b>earlier monthly pass</b> (any type - border, frame or theme): ` +
+        `<b>${Math.round(shop.odds.pastPass.daily * 100)}%</b> per daily offer, <b>${Math.round(shop.odds.pastPass.weekly * 100)}%</b> per weekly highlight. ` +
+        `It costs the same as any other cosmetic of its rarity, and only shows up while you are still missing some.</p>` +
+        `<p>Your shop never offers you something you already own.</p>`;
     }
 
     function render() {

@@ -1,5 +1,11 @@
 # Internal Changelog
 
+## 5.17.1 — 2026-10-09
+
+- Shop "?": rates section renamed "Rates", columns "Daily offer" / "Weekly
+  highlight" + intro line (user read the old columns as Frame/Theme);
+  earlier-pass chance explained as a sentence (any type, priced by rarity).
+
 ## 5.17.0 — 2026-10-09
 
 - Quests live (XP only, no coins): runSummaryBatch stores per-game quest
