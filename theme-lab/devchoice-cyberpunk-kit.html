@@ -35,6 +35,7 @@
   .scan-out b { color: var(--yellow); font-weight: normal; }
   .scan-out i { color: var(--red); font-style: normal; }
   /* Rahmen */
+  .chip-hit { position: absolute; z-index: 5; pointer-events: auto; cursor: pointer; }
   canvas.hud { position: absolute; left: -60px; top: -60px; pointer-events: none; }
   .label { color: var(--dim); font-size: .8rem; letter-spacing: 2px; text-transform: uppercase; font-family: 'Share Tech Mono', monospace; }
   .hint { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); color: var(--dim); font-size: 14px; border: 1px solid rgba(255, 74, 74, .35); padding: 6px 14px; }
@@ -53,6 +54,7 @@
     <div class="w"><h4>Rank</h4><div class="big">Gold II</div><div class="muted">40 LP</div></div>
     <div class="w"><h4>Trophies</h4><div class="big">9 / 21</div><div class="muted">+2 this week</div></div>
     <canvas class="hud" id="hud"></canvas>
+    <div class="chip-hit" id="chipHit"></div>
   </div>
   <div class="label">Border: Optic Scan · Frame: Netrunner HUD</div>
 </div>
@@ -159,6 +161,7 @@ function drawHud(t, dt) {
   for (let k = 0; k < 4; k++) { hx.fillStyle = `rgba(${YEL}, .6)`; hx.fillRect(cxp - 19 + k * 7, cyp + 8, 2, 4); hx.fillRect(cxp - 19 + k * 7, cyp - 12, 2, 4); }
   hx.fillStyle = `rgba(${RED}, ${blink ? 1 : .25})`; hx.beginPath(); hx.arc(cxp, cyp, 3, 0, 7); hx.fill();
   chip = { x: cxp - 26, y: cyp - 14, w: 38, h: 28 };
+  Object.assign(chipHit.style, { left: `${chip.x - P}px`, top: `${chip.y - P}px`, width: `${chip.w}px`, height: `${chip.h}px` });
   // Easter Egg: Ueberlastung -> Warnung -> Neustart
   if (over) {
     over.t += dt; const o = over.t;
@@ -183,10 +186,8 @@ function drawHud(t, dt) {
   hx.restore();
 }
 let chip = null;
-document.addEventListener('click', e => {
-  if (over || !chip) return; const r = hc.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
-  if (x >= chip.x && x <= chip.x + chip.w && y >= chip.y && y <= chip.y + chip.h) over = { t: 0 };
-});
+const chipHit = document.getElementById('chipHit');
+chipHit.addEventListener('click', () => { if (!over) over = { t: 0 }; });
 
 let last = performance.now();
 function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; drawOptic(now / 1000, dt); drawHud(now / 1000, dt); requestAnimationFrame(frame); }
