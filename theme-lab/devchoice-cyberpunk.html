@@ -105,7 +105,20 @@ const rand = (a, b) => a + Math.random() * (b - a);
 function seeded(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const COL = { red: [255, 74, 74], cyan: [94, 240, 240], yellow: [242, 226, 74] };
 let layers = [], terminal = null, holo = null;
-let hacked = 0; // 0..1: Stadt nach dem Hack gelb
+let hacked = 0; // 0..1: Durchschnitt (Himmel)
+// Virus: frisst sich nach dem Hack von links nach rechts durchs Netz, alles
+// Erfasste springt flackernd auf Gelb; nach ein paar Sekunden erholt sich
+// die Stadt in derselben Richtung.
+let virus = null;
+function infection(x) {
+  if (!virus) return 0;
+  const t = virus.t, front = t / 2.6 * (W + 300) - 150;
+  let v = Math.max(0, Math.min(1, (front - x) / 90));
+  if (v > 0 && v < 1 && Math.random() < .35) v = Math.random(); // Flackern an der Front
+  const heal = t - 6.5;
+  if (heal > 0) { const back = heal / 2.6 * (W + 300) - 150; v *= Math.max(0, Math.min(1, (x - back) / 120)); }
+  return v;
+}
 
 function build() {
   const r = seeded(2077), ground = H * .9;
@@ -142,7 +155,7 @@ const rain = Array.from({ length: 220 }, () => ({ x: rand(0, W), y: rand(0, H), 
 const cars = [];
 let nextCar = 1, glitch = 0, nextGlitch = rand(8, 16);
 
-const rgba = (c, a) => { const [r, g, b] = hacked > .01 ? mix(COL[c], COL.yellow, hacked) : COL[c]; return `rgba(${r | 0}, ${g | 0}, ${b | 0}, ${a})`; };
+const rgba = (c, a, x) => { const h = x === undefined ? hacked : infection(x); const [r, g, b] = h > .01 ? mix(COL[c], COL.yellow, h) : COL[c]; return `rgba(${r | 0}, ${g | 0}, ${b | 0}, ${a})`; };
 const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
 
 function drawCity(t) {
@@ -156,13 +169,13 @@ function drawCity(t) {
       if (b.chamfer) { cx.moveTo(x, ground); cx.lineTo(x, top + 14); cx.lineTo(x + 14, top); cx.lineTo(x + b.w, top); cx.lineTo(x + b.w, ground); }
       else cx.rect(x, top, b.w, ground - top);
       cx.fill();
-      if (b.spire) { cx.fillRect(x + b.w * .5 - 1, top - 40, 2, 40); if (Math.sin(t * 2.5 + b.x) > .4) { cx.fillStyle = rgba('red', .9); cx.fillRect(x + b.w * .5 - 2, top - 42, 4, 3); } }
+      if (b.spire) { cx.fillRect(x + b.w * .5 - 1, top - 40, 2, 40); if (Math.sin(t * 2.5 + b.x) > .4) { cx.fillStyle = rgba('red', .9, x); cx.fillRect(x + b.w * .5 - 2, top - 42, 4, 3); } }
       const fade = li === 0 ? .35 : li === 1 ? .6 : 1;
-      b.wins.forEach(([wx, wy, c, ph]) => { const a = (.35 + .25 * Math.sin(t * .5 + ph)) * fade; cx.fillStyle = rgba(c, a); cx.fillRect(x + wx, top + wy, 4, 2); });
+      b.wins.forEach(([wx, wy, c, ph]) => { const a = (.35 + .25 * Math.sin(t * .5 + ph)) * fade; cx.fillStyle = rgba(c, a, x + wx); cx.fillRect(x + wx, top + wy, 4, 2); });
       b.strips.forEach(s => {
         const flick = Math.sin(t * 9 + s.ph) > .97 ? .2 : 1;
-        cx.fillStyle = rgba(s.col, .8 * fade * flick);
-        cx.shadowColor = rgba(s.col, 1); cx.shadowBlur = 12 * fade;
+        cx.fillStyle = rgba(s.col, .8 * fade * flick, x + s.x);
+        cx.shadowColor = rgba(s.col, 1, x + s.x); cx.shadowBlur = 12 * fade;
         cx.fillRect(x + s.x, top + 6, 3, (ground - top) * .8);
         cx.shadowBlur = 0;
       });
@@ -187,18 +200,18 @@ function drawCity(t) {
 
 function drawHolo(t) {
   // schwebendes Werbe-Hologramm: rotierendes Drahtgitter-Ikosaeder-artiges Objekt + Ringe
-  const { x, y, s } = holo, ox = (mouse.sx - .5) * -20;
+  const { x, y, s } = holo, ox = (mouse.sx - .5) * -20, hx = x;
   cx.save(); cx.translate(x + ox, y + Math.sin(t * .8) * 6); cx.globalCompositeOperation = 'lighter';
   const flick = Math.random() < .03 ? .3 : 1;
   const beam = cx.createLinearGradient(0, s * .2, 0, H * .5);
-  beam.addColorStop(0, rgba('cyan', .12 * flick)); beam.addColorStop(1, 'rgba(0,0,0,0)');
+  beam.addColorStop(0, rgba('cyan', .12 * flick, hx)); beam.addColorStop(1, 'rgba(0,0,0,0)');
   cx.fillStyle = beam; cx.beginPath(); cx.moveTo(-s * .4, s * .3); cx.lineTo(s * .4, s * .3); cx.lineTo(s * 1.4, H * .5); cx.lineTo(-s * 1.4, H * .5); cx.fill();
   const N = 8, a0 = t * .7;
   const pts = []; for (let k = 0; k < N; k++) { const a = a0 + k / N * Math.PI * 2; pts.push([Math.cos(a) * s * .55, Math.sin(a) * s * .18]); }
-  cx.strokeStyle = rgba('cyan', .7 * flick); cx.lineWidth = 1.2;
+  cx.strokeStyle = rgba('cyan', .7 * flick, hx); cx.lineWidth = 1.2;
   pts.forEach(([px, py]) => { cx.beginPath(); cx.moveTo(0, -s * .6); cx.lineTo(px, py); cx.lineTo(0, s * .3); cx.stroke(); });
   cx.beginPath(); pts.forEach(([px, py], i) => i ? cx.lineTo(px, py) : cx.moveTo(px, py)); cx.closePath(); cx.stroke();
-  cx.strokeStyle = rgba('red', .55 * flick); cx.beginPath(); cx.ellipse(0, s * .45, s * .8, s * .14, 0, 0, 7); cx.stroke();
+  cx.strokeStyle = rgba('red', .55 * flick, hx); cx.beginPath(); cx.ellipse(0, s * .45, s * .8, s * .14, 0, 0, 7); cx.stroke();
   cx.restore();
 }
 
@@ -210,10 +223,10 @@ function drawCars(t, dt) {
     if (c.x < -120 || c.x > W + 120) { cars.splice(i, 1); continue; }
     const len = 90 * c.z;
     const g = cx.createLinearGradient(c.x, 0, c.x - c.dir * len, 0);
-    g.addColorStop(0, rgba('red', .8 * c.z)); g.addColorStop(1, 'rgba(0,0,0,0)');
+    g.addColorStop(0, rgba('red', .8 * c.z, c.x)); g.addColorStop(1, 'rgba(0,0,0,0)');
     cx.strokeStyle = g; cx.lineWidth = 1.5 * c.z; cx.beginPath(); cx.moveTo(c.x, c.y); cx.lineTo(c.x - c.dir * len, c.y); cx.stroke();
     cx.fillStyle = '#0a0c12'; cx.fillRect(c.x - 9 * c.z, c.y - 3 * c.z, 18 * c.z, 5 * c.z);
-    cx.fillStyle = rgba('cyan', .9); cx.fillRect(c.x + c.dir * 8 * c.z - 1, c.y - 1, 2, 2);
+    cx.fillStyle = rgba('cyan', .9, c.x); cx.fillRect(c.x + c.dir * 8 * c.z - 1, c.y - 1, 2, 2);
   }
 }
 
@@ -250,7 +263,14 @@ function frame(now) {
   nextGlitch -= dt;
   if (nextGlitch <= 0 && glitch <= 0) { glitch = rand(.4, .8); nextGlitch = rand(10, 20); }
   if (glitch > 0) { drawGlitch(); glitch -= dt * 2.5; }
-  hacked = Math.max(0, hacked - dt * .12);
+  if (virus) {
+    virus.t += dt;
+    hacked = Math.min(1, virus.t / 2.6) * (virus.t > 6.5 ? Math.max(0, 1 - (virus.t - 6.5) / 2.6) : 1);
+    // Glitch-Streifen genau an der Virus-Front
+    const front = virus.t < 6.5 ? virus.t / 2.6 * (W + 300) - 150 : (virus.t - 6.5) / 2.6 * (W + 300) - 150;
+    if (front > -50 && front < W + 50) for (let k = 0; k < 6; k++) { const y = rand(0, H), h = rand(2, 10); cx.fillStyle = rgba('yellow', .25, -1e9); cx.fillRect(front + rand(-40, 20), y, rand(20, 80), h); }
+    if (virus.t > 9.4) { virus = null; hacked = 0; }
+  }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -301,7 +321,7 @@ function finish(win) {
   bp.active = false; render();
   const m = $('bpMsg'); m.className = 'msg ' + (win ? 'win' : 'fail');
   m.textContent = win ? 'UPLOAD SUCCESSFUL. Enjoy the show.' : 'BREACH FAILED. Try again later.';
-  setTimeout(() => { $('breach').classList.remove('on'); if (win) { hacked = 1; glitch = 1.2; } }, win ? 900 : 1400);
+  setTimeout(() => { $('breach').classList.remove('on'); if (win) { virus = { t: 0 }; glitch = 1; } }, win ? 900 : 1400);
 }
 setInterval(() => {
   if (!bp.active || !bp.running) return;
