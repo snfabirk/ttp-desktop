@@ -12,18 +12,20 @@
        Ueberlastung: Rahmen glitcht rot, Warnung, dann Neustart-Sequenz. -->
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-  :root { --red: #ff4a4a; --cyan: #5ef0f0; --yellow: #f2e24a; --text: #e8ecf2; --dim: #8c97a8; }
+  :root { --red: #ff4a4a; --cyan: #5ef0f0; --yellow: #e8d43a; --text: #e8ecf2; --dim: #8c97a8; }
   html, body { margin: 0; height: 100%; background: #07080c; color: var(--text); font-family: 'Rajdhani', sans-serif; overflow: hidden; }
   body { background: radial-gradient(ellipse at 50% 120%, rgba(255, 74, 74, .12), transparent 60%), #07080c; }
-  .stage { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; }
-  h1 { margin: 0; font-size: 1.6rem; letter-spacing: 6px; color: var(--red); text-transform: uppercase; }
+  .bgscene { position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; z-index: 0; }
+  .stage { position: relative; z-index: 1; pointer-events: none; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; }
+  h1 { margin: 0; font-size: 1.6rem; letter-spacing: 6px; color: var(--yellow); text-transform: uppercase; }
+  .board, .label { pointer-events: auto; }
   .board { position: relative; width: 760px; padding: 22px; box-sizing: border-box; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .w { background: rgba(10, 12, 18, .8); border: 1px solid rgba(94, 240, 240, .2); padding: 12px 14px; min-height: 84px; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%); }
-  .w h4 { margin: 0 0 6px; color: var(--red); letter-spacing: 2px; text-transform: uppercase; font-size: .85rem; }
+  .w { backdrop-filter: blur(6px); background: rgba(10, 12, 18, .72); border: 1px solid rgba(94, 240, 240, .2); padding: 12px 14px; min-height: 84px; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%); }
+  .w h4 { margin: 0 0 6px; color: var(--yellow); letter-spacing: 2px; text-transform: uppercase; font-size: .85rem; }
   .w .big { font-size: 1.6rem; font-weight: 700; }
   .w .muted { color: var(--dim); font-size: .85rem; font-family: 'Share Tech Mono', monospace; }
   .w.wide { grid-column: span 3; display: flex; align-items: center; gap: 30px; min-height: 0; padding: 18px 24px; }
-  .name { font-size: 1.6rem; font-weight: 700; letter-spacing: 2px; color: var(--red); }
+  .name { font-size: 1.6rem; font-weight: 700; letter-spacing: 2px; color: var(--yellow); }
   /* Border */
   .optic { position: relative; width: 96px; height: 96px; flex-shrink: 0; cursor: default; }
   .optic img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
@@ -39,6 +41,7 @@
 </style>
 </head>
 <body>
+<iframe class="bgscene" src="devchoice-cyberpunk.html?bg" title=""></iframe>
 <div class="stage">
   <h1>Neon Overdrive · Kit</h1>
   <div class="board" id="board">
@@ -57,7 +60,7 @@
 
 <script>
 const D = Math.min(2, devicePixelRatio || 1), rand = (a, b) => a + Math.random() * (b - a);
-const RED = '255, 74, 74', CYAN = '94, 240, 240', YEL = '242, 226, 74';
+const RED = '255, 74, 74', CYAN = '94, 240, 240', YEL = '232, 212, 58';
 
 // ===================== Border: Optic Scan =====================
 const optic = document.getElementById('optic'), oc = optic.querySelector('canvas'), ox = oc.getContext('2d');
@@ -68,11 +71,11 @@ function drawOptic(t, dt) {
   const lock = scan ? Math.min(1, scan.t / .8) : 0;
   // Grundring: dunkel mit rotem Rand
   ox.strokeStyle = '#0c0e14'; ox.lineWidth = R * .16; ox.beginPath(); ox.arc(0, 0, R * 1.08, 0, 7); ox.stroke();
-  ox.strokeStyle = `rgba(${RED}, .9)`; ox.lineWidth = 1.5; ox.beginPath(); ox.arc(0, 0, R * 1.0, 0, 7); ox.stroke();
+  ox.strokeStyle = `rgba(${YEL}, .9)`; ox.lineWidth = 1.5; ox.beginPath(); ox.arc(0, 0, R * 1.0, 0, 7); ox.stroke();
   // segmentierter Ring, dreht sich in Stufen (wie ein Objektiv, das fokussiert)
   const step = Math.floor(t * 1.5) * .35 + Math.min(1, (t * 1.5) % 1 * 4) * .35;
   ox.save(); ox.rotate(step + lock * 2);
-  for (let k = 0; k < 12; k++) { const a0 = k / 12 * 6.283 + .04, a1 = a0 + 6.283 / 12 - .14; ox.strokeStyle = k % 3 === 0 ? `rgba(${YEL}, .85)` : `rgba(${RED}, .75)`; ox.lineWidth = R * .07; ox.beginPath(); ox.arc(0, 0, R * 1.16, a0, a1); ox.stroke(); }
+  for (let k = 0; k < 12; k++) { const a0 = k / 12 * 6.283 + .04, a1 = a0 + 6.283 / 12 - .14; ox.strokeStyle = k % 3 === 0 ? `rgba(${RED}, .8)` : `rgba(${YEL}, .8)`; ox.lineWidth = R * .07; ox.beginPath(); ox.arc(0, 0, R * 1.16, a0, a1); ox.stroke(); }
   ox.restore();
   // feine Skala aussen, gegenlaeufig
   ox.save(); ox.rotate(-t * .25);
@@ -125,7 +128,7 @@ function drawHud(t, dt) {
   const W2 = BW + P * 2, H2 = BH + P * 2, x0 = P, y0 = P, x1 = P + BW, y1 = P + BH;
   hx.clearRect(0, 0, W2, H2);
   const ov = over ? over.t : -1, alarm = ov >= 0 && ov < 2.2, reboot = ov >= 2.2;
-  const main = alarm ? RED : RED, acc = alarm ? RED : CYAN;
+  const main = alarm ? RED : YEL, acc = alarm ? RED : CYAN;
   const jit = alarm ? rand(-4, 4) : 0;
   hx.save(); hx.translate(jit, 0);
   // abgeschraegte Hauptkontur (oben rechts + unten links Fasen)
@@ -138,7 +141,7 @@ function drawHud(t, dt) {
   hx.strokeStyle = `rgba(${acc}, .9)`; hx.lineWidth = 3;
   [[x0 - 8, y0 - 8, 1, 1], [x1 + 8, y1 + 8, -1, -1]].forEach(([x, y, sx, sy]) => { hx.beginPath(); hx.moveTo(x, y + sy * 34); hx.lineTo(x, y); hx.lineTo(x + sx * 34, y); hx.stroke(); });
   // gelbe Akzentlinie oben links (wie die Karten)
-  hx.fillStyle = `rgba(${YEL}, .9)`; hx.fillRect(x0 + 40, y0 - 4, 70, 2);
+  hx.fillStyle = `rgba(${RED}, .9)`; hx.fillRect(x0 + 40, y0 - 4, 70, 2);
   // Pulse laufen die obere und untere Kante entlang
   for (let k = 0; k < 2; k++) { const u = ((t * .35 + k * .5) % 1); const px = x0 + u * (BW - cut); const g = hx.createLinearGradient(px - 80, 0, px, 0); g.addColorStop(0, `rgba(${acc}, 0)`); g.addColorStop(1, `rgba(${acc}, .9)`); hx.fillStyle = g; hx.fillRect(px - 80, k ? y1 - 1 : y0 - 1, 80, 2); }
   // Datenstrom links ausserhalb (Hex-Codes scrollen nach oben)
