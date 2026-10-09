@@ -1,5 +1,13 @@
 # Internal Changelog
 
+## 5.4.1 — 2026-10-09
+
+- Challenge tab filled (user: looked bare): Goal Progress bar (start snapshot
+  from /api/rank-history points[0] -> current -> LP goal), 3 pony cards with
+  splash art (byChampion: W/L, KDA, CS/min, lane WR), Roles split (main /
+  second / fill from roleBreakdown), Trophies mini card (closest 3 from
+  ttp_last_trophy_snapshot, excluding provisional >=100% avg trophies).
+
 ## 5.4.0 — 2026-10-09
 
 - challenge.html: tabs "Challenge" (account card + LP graph) / "Pass &

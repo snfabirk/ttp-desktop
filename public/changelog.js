@@ -25,6 +25,15 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.4.1',
+      date: '2026-10-09',
+      notable: [
+        'The Challenge tab now shows your goal progress (start rank to LP goal), a card per pool champion with W/L, KDA, CS/min and lane win rate, your role split and the trophies you are closest to.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.4.0',
       date: '2026-10-09',
       notable: [

@@ -366,6 +366,173 @@
       padding-top: 10px;
       border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
     }
+    /* ----- Challenge-Tab: Ziel, Ponys, Rollen, Trophaeen ----- */
+    .goal-track {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .goal-end {
+      flex-shrink: 0;
+      min-width: 130px;
+      color: var(--text);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.95rem;
+      white-space: nowrap;
+    }
+    .goal-end-right { text-align: right; }
+    .goal-bar {
+      position: relative;
+      flex: 1;
+      height: 12px;
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--text-faint) 18%, transparent);
+      border: 1px solid var(--border);
+    }
+    .goal-bar-fill {
+      height: 100%;
+      width: 0;
+      border-radius: 6px;
+      background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, transparent), var(--gold));
+      transition: width 0.4s ease;
+    }
+    .goal-marker {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--gold);
+      background: var(--bg);
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 8px color-mix(in srgb, var(--gold) 50%, transparent);
+    }
+    .goal-sub {
+      margin-top: 8px;
+      text-align: center;
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.8rem;
+      min-height: 1.2em;
+    }
+    .goal-sub .pos { color: var(--green); }
+    .goal-sub .neg { color: var(--red); }
+
+    .pony-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .pony-card {
+      position: relative;
+      min-height: 118px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background-size: cover;
+      background-position: center 20%;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+    }
+    .pony-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(var(--bg-rgb), 0.95) 0%, rgba(var(--bg-rgb), 0.75) 55%, rgba(var(--bg-rgb), 0.35) 100%);
+    }
+    .pony-body {
+      position: relative;
+      padding: 12px 16px;
+      font-family: Georgia, serif;
+    }
+    .pony-name {
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 1.05rem;
+      letter-spacing: 0.5px;
+    }
+    .pony-wl {
+      margin: 2px 0 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+    .pony-wl .w { color: var(--green); }
+    .pony-wl .l { color: var(--red); }
+    .pony-wl .wr { color: var(--text-dim); margin-left: 6px; }
+    .pony-stats {
+      display: flex;
+      gap: 14px;
+      color: var(--text-dim);
+      font-size: 0.75rem;
+    }
+    .pony-stats strong {
+      display: block;
+      color: var(--text);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.9rem;
+    }
+
+    .ch-split {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+    .ch-split .prog-card { margin-bottom: 0; }
+    .role-split-bar {
+      display: flex;
+      height: 12px;
+      border-radius: 6px;
+      overflow: hidden;
+      background: color-mix(in srgb, var(--text-faint) 18%, transparent);
+      border: 1px solid var(--border);
+    }
+    .role-split-bar span { height: 100%; }
+    .role-split-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 16px;
+      margin-top: 8px;
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.8rem;
+    }
+    .role-split-legend i {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 2px;
+      margin-right: 5px;
+    }
+    .trophy-mini {
+      display: block;
+      text-decoration: none;
+      transition: border-color 0.15s ease;
+    }
+    .trophy-mini:hover { border-color: var(--gold); }
+    .trophy-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.8rem;
+    }
+    .trophy-row .t-name { width: 38%; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .trophy-row .xp-bar { flex: 1; height: 7px; }
+    .trophy-row .t-num { width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+    .ch-empty {
+      margin: 0;
+      color: var(--text-faint);
+      font-family: Georgia, serif;
+      font-size: 0.8rem;
+      font-style: italic;
+    }
+    @media (max-width: 900px) {
+      .pony-row, .ch-split { grid-template-columns: minmax(0, 1fr); }
+    }
+
     .progression-grid {
       display: grid;
       grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
@@ -889,6 +1056,34 @@
       </div>
       <p class="profile-status" id="profileStatus"></p>
     </div>
+
+    <!-- Challenge-Zusammenfassung (Nutzerwunsch: Tab wirkte zu kahl) -->
+    <div class="prog-card goal-card" id="goalCard">
+      <div class="prog-card-head">
+        <h3>Goal Progress</h3>
+        <span class="reset-in" id="goalPct"></span>
+      </div>
+      <div class="goal-track">
+        <span class="goal-end" id="goalStart">–</span>
+        <div class="goal-bar"><div class="goal-bar-fill" id="goalFill"></div><span class="goal-marker" id="goalMarker"></span></div>
+        <span class="goal-end goal-end-right" id="goalEnd">–</span>
+      </div>
+      <div class="goal-sub" id="goalSub"></div>
+    </div>
+
+    <div class="pony-row" id="ponyRow"></div>
+
+    <div class="ch-split">
+      <div class="prog-card">
+        <div class="prog-card-head"><h3>Roles</h3><span class="reset-in" id="rolesTotal"></span></div>
+        <div class="role-split-bar" id="roleSplitBar"></div>
+        <div class="role-split-legend" id="roleSplitLegend"></div>
+      </div>
+      <a class="prog-card trophy-mini" href="trophies.html" title="Open Trophies">
+        <div class="prog-card-head"><h3>Trophies</h3><span class="reset-in" id="trophyCount"></span></div>
+        <div id="trophyClosest"><p class="ch-empty">Open the Trophies page once to load your progress.</p></div>
+      </a>
+    </div>
     </div>
 
     <div class="tab-panel" data-panel="pass">
@@ -1349,6 +1544,102 @@
       `;
     }
 
+    // ----- Challenge-Tab -----
+    const ROLE_NAMES = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'Bot', UTILITY: 'Support' };
+
+    function rankLabelHtml(tier, division, lp) {
+      if (!tier) return '–';
+      const rest = APEX_TIERS.has(tier) ? ` · ${lp} LP` : ` ${division} · ${lp} LP`;
+      return rankIconHtml(tier, rest);
+    }
+
+    // Start (Snapshot beim Challenge-Start) -> aktueller Rang -> LP-Ziel.
+    function renderGoalProgress(startPoint, current) {
+      const goalTier = ls('ttp_lp_goal_tier');
+      const goalDiv = ls('ttp_lp_goal_division');
+      const goalLp = Number(ls('ttp_lp_goal_lp')) || 0;
+      const startEl = document.getElementById('goalStart');
+      const endEl = document.getElementById('goalEnd');
+      const subEl = document.getElementById('goalSub');
+      startEl.innerHTML = startPoint ? rankLabelHtml(startPoint.tier, startPoint.rank, startPoint.leaguePoints) : '–';
+      endEl.innerHTML = goalTier ? rankLabelHtml(goalTier, goalDiv, goalLp) : 'No goal set';
+      if (!goalTier || !startPoint || !current) {
+        subEl.textContent = goalTier ? '' : 'Set an LP goal on the Champion Selection page.';
+        return;
+      }
+      const start = comparableLP(startPoint.tier, startPoint.rank, startPoint.leaguePoints);
+      const now = comparableLP(current.tier, current.rank, current.leaguePoints);
+      const goal = comparableLP(goalTier, goalDiv, goalLp);
+      const span = Math.max(1, goal - start);
+      const pct = Math.max(0, Math.min(1, (now - start) / span));
+      document.getElementById('goalFill').style.width = `${pct * 100}%`;
+      document.getElementById('goalMarker').style.left = `${pct * 100}%`;
+      document.getElementById('goalPct').textContent = now >= goal ? 'Goal reached ✓' : `${Math.round(pct * 100)}% of the way`;
+      const gained = now - start;
+      subEl.innerHTML = `Now ${formatRank(current)} · <span class="${gained >= 0 ? 'pos' : 'neg'}">${gained >= 0 ? '+' : ''}${gained} LP</span> since start` +
+        (now < goal ? ` · ${goal - now} LP to go` : '');
+    }
+
+    function renderPonies(byChampion) {
+      let champs = [];
+      try { champs = JSON.parse(ls('ttp_selected_champs') || '[]'); } catch (e) {}
+      champs = champs.filter(c => c && c.key);
+      document.getElementById('ponyRow').innerHTML = champs.map(c => {
+        const st = (byChampion && byChampion[c.key]) || {};
+        const games = (st.wins || 0) + (st.losses || 0);
+        const wr = games ? Math.round((st.wins / games) * 100) : null;
+        return `<div class="pony-card" style="background-image:url('https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${c.id}_0.jpg')">
+          <div class="pony-body">
+            <div class="pony-name">${c.name}</div>
+            <div class="pony-wl">${games
+              ? `<span class="w">${st.wins}W</span> / <span class="l">${st.losses}L</span><span class="wr">${wr}% WR</span>`
+              : '<span class="wr" style="margin:0">No games yet</span>'}</div>
+            <div class="pony-stats">
+              <span><strong>${games ? st.kda : '–'}</strong>KDA</span>
+              <span><strong>${games ? st.csPerMin : '–'}</strong>CS/min</span>
+              <span><strong>${st.laneWinrate !== null && st.laneWinrate !== undefined ? `${Math.round(st.laneWinrate)}%` : '–'}</strong>Lane WR</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderRoleSplit(rb) {
+      const total = rb ? rb.main + rb.second + rb.fill : 0;
+      const parts = [
+        { label: `${ROLE_NAMES[ls('ttp_pool_role')] || 'Main'} (main)`, n: rb ? rb.main : 0, color: 'var(--gold)' },
+        { label: `${ROLE_NAMES[ls('ttp_pool_second_role')] || 'Second'} (second)`, n: rb ? rb.second : 0, color: 'color-mix(in srgb, var(--gold) 45%, var(--text-faint))' },
+        { label: 'Fill', n: rb ? rb.fill : 0, color: 'var(--text-faint)' }
+      ];
+      document.getElementById('rolesTotal').textContent = `${total} ${total === 1 ? 'game' : 'games'}`;
+      document.getElementById('roleSplitBar').innerHTML = total
+        ? parts.filter(p => p.n).map(p => `<span style="width:${(p.n / total) * 100}%;background:${p.color}" title="${p.label}: ${p.n}"></span>`).join('')
+        : '';
+      document.getElementById('roleSplitLegend').innerHTML = parts
+        .map(p => `<span><i style="background:${p.color}"></i>${p.label} ${total ? Math.round((p.n / total) * 100) : 0}%</span>`).join('');
+    }
+
+    // Trophy-Stand aus dem letzten Besuch der Trophies-Seite (gleiche Challenge).
+    function renderTrophyMini(since) {
+      let snap = null;
+      try { snap = JSON.parse(ls('ttp_last_trophy_snapshot') || 'null'); } catch (e) {}
+      if (!snap || snap.since !== since || !Array.isArray(snap.trophies)) return;
+      document.getElementById('trophyCount').textContent = `${snap.unlockedCount} / ${snap.totalCount} unlocked`;
+      const closest = snap.trophies
+        // >= 100% ohne "unlocked" = Ø-Trophy, die aktuell erfuellt ist, aber
+        // erst final wird - gehoert nicht zu "als Naechstes".
+        .filter(t => !t.unlocked && typeof t.percent === 'number' && t.percent < 100)
+        .sort((a, b) => b.percent - a.percent)
+        .slice(0, 3);
+      document.getElementById('trophyClosest').innerHTML = closest.length
+        ? '<div class="sub-head" style="margin:0">Closest next</div>' + closest.map(t => `<div class="trophy-row">
+            <span class="t-name">${t.name}</span>
+            <div class="xp-bar"><div class="xp-bar-fill" style="width:${Math.min(100, t.percent)}%"></div></div>
+            <span class="t-num">${t.current} / ${t.target}</span>
+          </div>`).join('')
+        : '<p class="ch-empty">All trophies unlocked!</p>';
+    }
+
     async function loadLpGraph(puuid, since, rank) {
       const sinceMs = since ? new Date(since).getTime() : null;
       const rankCurrent = rank && rank.current;
@@ -1360,6 +1651,7 @@
         const data = await parseApiResponse(res);
         if (!res.ok) throw new Error(data.error || 'Unknown error');
         renderLpGraph(data.points, { sinceMs, rankCurrent, deltaLP, deltaLPRange });
+        renderGoalProgress(data.points[0] || null, rankCurrent);
       } catch (e) {
         // Graph ist ein Bonus-Feature - Fehler hier sollen den restlichen Load nicht stoeren.
         accountLpGraphEl.innerHTML = '';
@@ -1417,6 +1709,9 @@
 
         statusEl.textContent = '';
         renderAccountOverview(result);
+        renderPonies(result.byChampion);
+        renderRoleSplit(result.roleBreakdown);
+        renderTrophyMini(since);
         // Der Scan hat eventuell neue Spiele gutgeschrieben -> XP neu laden.
         loadProgression();
         loadLpGraph(account.puuid, since, result.rank);
