@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Storm Crown - Animated shop border (Theme Lab)</title>
+<!-- Theme Lab (nicht im Installationspaket): Shop-Border "Storm Crown"
+     (Animated). Dunkler Stahlring, um den staendig kleine Blitzboegen
+     kriechen, ab und zu eine helle Entladung. Easter Egg: 5x aufs
+     Profilbild klicken -> ein Blitz schlaegt von oben ins Bild ein, der Ring
+     ist kurz ueberladen und spruehrt Funken. Gezeigt in drei Groessen. -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #0a1428; color: #f0e6d2; font-family: Georgia, serif; overflow: hidden; }
+  #sky { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 5; }
+  .stage { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px; }
+  h1 { margin: 0; font-family: 'Cinzel', serif; color: #c8aa6e; letter-spacing: 3px; }
+  .row { display: flex; align-items: center; gap: 70px; }
+  .card { display: flex; align-items: center; gap: 26px; padding: 24px 34px; border: 1px solid #785a28; border-radius: 12px; background: rgba(10, 20, 40, .6); }
+  .name { font-family: 'Cinzel', serif; font-size: 1.6rem; color: #c8aa6e; }
+  .muted { color: #a09b8c; }
+  /* Border: Bild + Canvas, der ueber das Bild hinausragt */
+  .storm { position: relative; flex-shrink: 0; cursor: default; }
+  .storm img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .storm canvas { position: absolute; left: -35%; top: -35%; width: 170%; height: 170%; pointer-events: none; }
+  .label { text-align: center; color: #6f6a5e; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-top: 8px; }
+  .hint { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); color: #6f6a5e; font-size: 13px; border: 1px solid #3a3020; border-radius: 14px; padding: 6px 14px; }
+</style>
+</head>
+<body>
+<canvas id="sky"></canvas>
+<div class="stage">
+  <h1>Storm Crown</h1>
+  <div class="card">
+    <div class="storm" id="big" style="width:120px;height:120px"><img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" onerror="this.src='https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Evelynn.png'" alt=""><canvas></canvas></div>
+    <div><div class="name">LUCKSHOT#796</div><div class="muted">Pony since 09.10.2026 · Level 17</div></div>
+  </div>
+  <div class="row">
+    <div><div class="storm" style="width:86px;height:86px"><img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><canvas></canvas></div><div class="label">Profile</div></div>
+    <div><div class="storm" style="width:40px;height:40px"><img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><canvas></canvas></div><div class="label">Overview card</div></div>
+    <div><div class="storm" style="width:22px;height:22px"><img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><canvas></canvas></div><div class="label">Pass tile</div></div>
+  </div>
+</div>
+<div class="hint">psst... click the big picture a few times</div>
+
+<script>
+const rand = (a, b) => a + Math.random() * (b - a);
+// ----- Ring je Groesse: Canvas 170 % des Bildes, Bildradius = 1/1.7 des halben Canvas -----
+const rings = [...document.querySelectorAll('.storm')].map(el => {
+  const cv = el.querySelector('canvas'), size = el.offsetWidth;
+  const dpr = Math.min(2, devicePixelRatio || 1), C = size * 1.7;
+  cv.width = C * dpr; cv.height = C * dpr;
+  const cx = cv.getContext('2d'); cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { el, cx, C, R: size / 2, arcs: [], nextArc: 0, flash: 0, charge: 0, small: size < 50 };
+});
+
+// Blitzbogen entlang des Rings: zackige Linie zwischen zwei Winkeln, radial verrauscht
+function makeArc(r, big) {
+  const a0 = rand(0, Math.PI * 2), span = rand(.35, big ? 1.6 : .9) * (Math.random() < .5 ? 1 : -1);
+  const steps = Math.max(6, Math.round(Math.abs(span) * 14));
+  const pts = [];
+  for (let i = 0; i <= steps; i++) {
+    const a = a0 + span * i / steps;
+    const jitter = (i === 0 || i === steps) ? 0 : rand(-1, 1) * r.R * (big ? .16 : .1);
+    const rr = r.R * 1.1 + jitter;
+    pts.push([Math.cos(a) * rr, Math.sin(a) * rr]);
+  }
+  // gelegentlich ein Ast nach aussen
+  const branch = Math.random() < .35 ? (() => { const k = Math.floor(rand(2, pts.length - 2)); const [x, y] = pts[k]; const ang = Math.atan2(y, x); const len = r.R * rand(.2, .45); return [[x, y], [x + Math.cos(ang + rand(-.5, .5)) * len * .5, y + Math.sin(ang + rand(-.5, .5)) * len * .5], [x + Math.cos(ang) * len, y + Math.sin(ang) * len]]; })() : null;
+  return { pts, branch, life: 1, decay: rand(2.8, 5) };
+}
+
+function drawPoly(cx, pts, w, color, blur) {
+  cx.strokeStyle = color; cx.lineWidth = w; cx.shadowColor = '#7fd4ff'; cx.shadowBlur = blur;
+  cx.beginPath(); pts.forEach(([x, y], i) => i ? cx.lineTo(x, y) : cx.moveTo(x, y)); cx.stroke();
+}
+
+function drawRing(r, t, dt) {
+  const { cx, C, R } = r;
+  cx.clearRect(0, 0, C, C);
+  cx.save(); cx.translate(C / 2, C / 2);
+  r.charge = Math.max(0, r.charge - dt * .45);
+  const over = r.charge;                                    // Ueberladung beim Easter Egg
+  // Halo
+  const halo = cx.createRadialGradient(0, 0, R * .9, 0, 0, R * 1.6);
+  halo.addColorStop(0, `rgba(80, 170, 255, ${.18 + .3 * over + .25 * r.flash})`); halo.addColorStop(1, 'rgba(80, 170, 255, 0)');
+  cx.fillStyle = halo; cx.beginPath(); cx.arc(0, 0, R * 1.6, 0, 7); cx.fill();
+  // Stahlring mit kaltem Glanz
+  const steel = cx.createLinearGradient(-R, -R, R, R);
+  steel.addColorStop(0, '#2b3a52'); steel.addColorStop(.45, '#8aa4c8'); steel.addColorStop(.55, '#1a2436'); steel.addColorStop(1, '#4d6a90');
+  cx.strokeStyle = steel; cx.lineWidth = Math.max(2, R * .12);
+  cx.beginPath(); cx.arc(0, 0, R * 1.04, 0, 7); cx.stroke();
+  cx.strokeStyle = `rgba(150, 220, 255, ${.5 + .4 * over})`; cx.lineWidth = Math.max(1, R * .025);
+  cx.beginPath(); cx.arc(0, 0, R * 1.1, 0, 7); cx.stroke();
+  // Krone: fuenf Stahlzacken oben auf dem Ring, zwischen deren Spitzen es knistert
+  const prongs = [-2, -1, 0, 1, 2].map(k => { const a = -Math.PI / 2 + k * .36, len = R * (k === 0 ? .42 : Math.abs(k) === 1 ? .32 : .24); return { a, len, tip: [Math.cos(a) * (R * 1.08 + len), Math.sin(a) * (R * 1.08 + len)] }; });
+  prongs.forEach(pg => {
+    const w = R * .09, bx = Math.cos(pg.a) * R * 1.06, by = Math.sin(pg.a) * R * 1.06, nx = -Math.sin(pg.a), ny = Math.cos(pg.a);
+    const g = cx.createLinearGradient(bx, by, pg.tip[0], pg.tip[1]);
+    g.addColorStop(0, '#3a4d6c'); g.addColorStop(.6, '#9fb8da'); g.addColorStop(1, '#e8f4ff');
+    cx.fillStyle = g; cx.beginPath(); cx.moveTo(bx + nx * w, by + ny * w); cx.lineTo(pg.tip[0], pg.tip[1]); cx.lineTo(bx - nx * w, by - ny * w); cx.closePath(); cx.fill();
+    // leuchtende Spitze
+    const gl = cx.createRadialGradient(pg.tip[0], pg.tip[1], 0, pg.tip[0], pg.tip[1], R * .14);
+    gl.addColorStop(0, `rgba(200, 240, 255, ${.7 + .3 * over})`); gl.addColorStop(1, 'rgba(120, 200, 255, 0)');
+    cx.fillStyle = gl; cx.beginPath(); cx.arc(pg.tip[0], pg.tip[1], R * .14, 0, 7); cx.fill();
+  });
+  r.prongs = prongs;
+  // Blitzboegen
+  r.nextArc -= dt;
+  if (r.nextArc <= 0 && r.prongs && Math.random() < .35) {
+    const k = Math.floor(rand(0, 4)), [x0, y0] = r.prongs[k].tip, [x1, y1] = r.prongs[k + 1].tip, pts = [[x0, y0]];
+    for (let i = 1; i < 6; i++) { const u = i / 6; pts.push([x0 + (x1 - x0) * u + rand(-1, 1) * R * .05, y0 + (y1 - y0) * u - Math.sin(u * Math.PI) * R * .12 + rand(-1, 1) * R * .05]); }
+    pts.push([x1, y1]); r.arcs.push({ pts, branch: null, life: 1, decay: rand(4, 7) });
+  }
+  if (r.nextArc <= 0) { r.arcs.push(makeArc(r, !r.small)); r.nextArc = over > .1 ? rand(.02, .06) : rand(.05, .2); }
+  if (Math.random() < dt * .25) { r.flash = 1; for (let k = 0; k < 3; k++) r.arcs.push(makeArc(r, true)); }   // gelegentliche Entladung
+  r.flash = Math.max(0, r.flash - dt * 4);
+  cx.globalCompositeOperation = 'lighter';
+  for (let i = r.arcs.length - 1; i >= 0; i--) {
+    const a = r.arcs[i]; a.life -= dt * a.decay;
+    if (a.life <= 0) { r.arcs.splice(i, 1); continue; }
+    const al = a.life * (Math.random() < .2 ? .4 : 1);       // zitterndes Flackern
+    drawPoly(cx, a.pts, Math.max(1.2, R * .03), `rgba(120, 200, 255, ${.55 * al})`, R * .25);
+    drawPoly(cx, a.pts, Math.max(.6, R * .012), `rgba(235, 248, 255, ${.95 * al})`, 0);
+    if (a.branch) drawPoly(cx, a.branch, Math.max(.6, R * .012), `rgba(200, 235, 255, ${.7 * al})`, R * .15);
+  }
+  // Funken bei Ueberladung
+  if (over > .05) {
+    r.sparks = r.sparks || [];
+    if (Math.random() < over) { const ang = rand(0, 7); r.sparks.push({ x: Math.cos(ang) * R * 1.1, y: Math.sin(ang) * R * 1.1, vx: Math.cos(ang) * rand(30, 90), vy: Math.sin(ang) * rand(30, 90) - 20, life: 1 }); }
+  }
+  (r.sparks || []).forEach(s => { s.life -= dt * 2; s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 120 * dt; });
+  r.sparks = (r.sparks || []).filter(s => s.life > 0);
+  r.sparks.forEach(s => { cx.fillStyle = `rgba(220, 240, 255, ${s.life})`; cx.beginPath(); cx.arc(s.x, s.y, Math.max(.8, R * .02), 0, 7); cx.fill(); });
+  cx.restore();
+  // Bild kurz aufhellen bei Entladung
+  r.el.querySelector('img').style.filter = `brightness(${1 + .35 * r.flash + .25 * over}) saturate(${1 - .3 * over})`;
+}
+
+// ----- Easter Egg: Blitzeinschlag von oben ins grosse Profilbild -----
+const sky = document.getElementById('sky'), sx = sky.getContext('2d');
+function resizeSky() { const d = Math.min(2, devicePixelRatio || 1); sky.width = innerWidth * d; sky.height = innerHeight * d; sx.setTransform(d, 0, 0, d, 0, 0); }
+addEventListener('resize', resizeSky); resizeSky();
+let strike = null, clicks = 0, clickReset = null;
+document.getElementById('big').addEventListener('click', () => {
+  if (strike) return;
+  clicks++; clearTimeout(clickReset); clickReset = setTimeout(() => { clicks = 0; }, 3000);
+  if (clicks < 5) return;
+  clicks = 0;
+  const b = document.getElementById('big').getBoundingClientRect();
+  const tx = b.left + b.width / 2, ty = b.top + b.height / 2;
+  const bolt = (x0, y0, x1, y1, rough) => { const pts = [[x0, y0]]; const n = 18; for (let i = 1; i < n; i++) { const u = i / n; pts.push([x0 + (x1 - x0) * u + rand(-1, 1) * rough * (1 - Math.abs(u - .5)), y0 + (y1 - y0) * u]); } pts.push([x1, y1]); return pts; };
+  const main = bolt(tx + rand(-120, 120), -20, tx, ty - b.height * .45, 60);
+  const forks = [3, 7, 11].map(k => { const [x, y] = main[k]; return bolt(x, y, x + rand(-140, 140), y + rand(60, 160), 25); });
+  strike = { t: 0, main, forks, tx, ty };
+});
+
+function drawStrike(dt) {
+  sx.clearRect(0, 0, innerWidth, innerHeight);
+  if (!strike) return;
+  strike.t += dt;
+  const t = strike.t;
+  // Himmel blitzt kurz auf (zweimal, wie echte Blitze)
+  const flash = t < .08 ? 1 : t < .16 ? .2 : t < .24 ? .8 : Math.max(0, .8 - (t - .24) * 3);
+  sx.fillStyle = `rgba(200, 225, 255, ${.22 * flash})`; sx.fillRect(0, 0, innerWidth, innerHeight);
+  const vis = t < .5 ? (Math.random() < .85 ? 1 : .3) : Math.max(0, 1 - (t - .5) * 3);
+  if (vis > 0) {
+    sx.save(); sx.globalCompositeOperation = 'lighter'; sx.lineJoin = 'round';
+    const line = (pts, w, c, blur) => { sx.strokeStyle = c; sx.lineWidth = w; sx.shadowColor = '#8fd8ff'; sx.shadowBlur = blur; sx.beginPath(); pts.forEach(([x, y], i) => i ? sx.lineTo(x, y) : sx.moveTo(x, y)); sx.stroke(); };
+    line(strike.main, 7, `rgba(120, 190, 255, ${.5 * vis})`, 40);
+    line(strike.main, 2.5, `rgba(250, 252, 255, ${vis})`, 10);
+    strike.forks.forEach(f => { line(f, 3, `rgba(120, 190, 255, ${.35 * vis})`, 20); line(f, 1.2, `rgba(240, 248, 255, ${.8 * vis})`, 0); });
+    sx.restore();
+  }
+  if (t < .1) rings[0].charge = 1, rings[0].flash = 1;
+  if (t > 1.2) strike = null;
+}
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  rings.forEach(r => drawRing(r, now / 1000, dt));
+  drawStrike(dt);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
