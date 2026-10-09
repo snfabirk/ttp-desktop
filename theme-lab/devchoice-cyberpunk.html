@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Neon Overdrive - Developer's Choice (Theme Lab)</title>
+<!-- Theme Lab (nicht im Installationspaket): Developer's Choice #1 - Hommage
+     an Cyberpunk 2077 (Lieblingsspiel des Entwicklers). Keine Original-Logos/
+     Namen/Figuren: Stimmung, Farben, Motive. Farbwelt wie das Spiel-HUD (Rot +
+     Cyan auf Schwarz), Gelb nur als feiner Akzent ("kein Flashbang").
+     Szene: Megagebaeude mit Neonstreifen, fliegende Autos mit Lichtspur,
+     schwebendes Hologramm, feiner Regen, Scanlines, seltene Glitches.
+     Easter Egg: das blinkende Terminal an einem Gebaeude anklicken -> Netzwerk-
+     Hack-Minispiel (Codes im Wechsel Zeile/Spalte waehlen). Geschafft = die
+     Stadt wird kurz gehackt (alle Lichter gelb, Glitch-Welle). -->
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #07080c; --panel: rgba(10, 12, 18, .66); --red: #ff4a4a; --cyan: #5ef0f0; --yellow: #f2e24a; --text: #e8ecf2; --dim: #8c97a8; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #050609; color: var(--text); font-family: 'Rajdhani', sans-serif; }
+  #city { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+  .scan { position: fixed; inset: 0; pointer-events: none; z-index: 1; background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px); mix-blend-mode: multiply; }
+  .stage { position: relative; z-index: 2; pointer-events: none; }
+  .stage > * { pointer-events: auto; }
+  .nav { position: fixed; top: 18px; left: 24px; display: flex; gap: 2px; padding: 3px; border: 1px solid rgba(255, 74, 74, .5); background: var(--panel); z-index: 3; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); }
+  .nav span { padding: 4px 12px; font-weight: 700; font-size: .85rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); }
+  .nav span.on { background: var(--red); color: #050609; }
+  header { text-align: center; padding-top: 30px; }
+  h1 { margin: 0; font-weight: 700; font-size: 3.2rem; letter-spacing: 6px; text-transform: uppercase; color: var(--red); text-shadow: 2px 0 rgba(94, 240, 240, .55), -2px 0 rgba(255, 74, 74, .3), 0 0 22px rgba(255, 74, 74, .35); }
+  .subtitle { margin: 2px 0 0; color: var(--cyan); letter-spacing: 8px; text-transform: uppercase; font-size: .9rem; font-family: 'Share Tech Mono', monospace; }
+  .subtitle::before, .subtitle::after { content: ''; display: inline-block; width: 40px; height: 2px; background: var(--yellow); vertical-align: middle; margin: 0 14px; }
+  .wrap { max-width: 1000px; margin: 34px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 26px; padding: 0 30px; }
+  .card { position: relative; background: var(--panel); backdrop-filter: blur(8px); border: 1px solid rgba(94, 240, 240, .28); padding: 14px 18px; clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%); }
+  .card::before { content: ''; position: absolute; left: 0; top: 0; width: 40px; height: 2px; background: var(--yellow); }
+  .card h3 { margin: 0 0 8px; color: var(--red); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; font-size: 1.05rem; }
+  .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(94, 240, 240, .12); font-size: 1rem; }
+  .row:last-child { border-bottom: none; }
+  .xp { color: var(--cyan); font-family: 'Share Tech Mono', monospace; }
+  .muted { color: var(--dim); }
+  .tag { display: inline-block; margin-bottom: 8px; padding: 1px 8px; border: 1px dashed rgba(242, 226, 74, .5); color: rgba(242, 226, 74, .8); font-size: .72rem; letter-spacing: 2px; text-transform: uppercase; font-family: 'Share Tech Mono', monospace; }
+  .hint { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 3; color: var(--dim); font-size: 14px; background: rgba(5, 6, 9, .75); padding: 6px 14px; border: 1px solid rgba(255, 74, 74, .35); }
+
+  /* ----- Easter Egg: Netzwerk-Hack ----- */
+  .breach { position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center; background: rgba(2, 3, 6, .78); backdrop-filter: blur(2px); font-family: 'Share Tech Mono', monospace; }
+  .breach.on { display: flex; }
+  .bp { position: relative; display: grid; grid-template-columns: auto 230px; gap: 26px; padding: 22px 26px; border: 1px solid rgba(255, 74, 74, .6); background: rgba(8, 10, 14, .95); box-shadow: 0 0 40px rgba(255, 74, 74, .15); clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px)); }
+  .bp h4 { grid-column: 1 / -1; margin: 0; color: var(--red); font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; letter-spacing: 4px; display: flex; justify-content: space-between; }
+  .bp h4 span { color: var(--yellow); font-family: 'Share Tech Mono', monospace; font-size: 1rem; letter-spacing: 1px; }
+  .grid { display: grid; grid-template-columns: repeat(5, 48px); gap: 4px; padding: 10px; border: 1px solid rgba(94, 240, 240, .25); }
+  .grid b { display: flex; align-items: center; justify-content: center; height: 40px; color: rgba(232, 236, 242, .35); font-weight: normal; font-size: 1.05rem; cursor: default; transition: background .1s; }
+  .grid b.live { color: var(--cyan); cursor: pointer; background: rgba(94, 240, 240, .07); }
+  .grid b.live:hover { background: rgba(94, 240, 240, .25); color: #fff; }
+  .grid b.used { color: rgba(255, 255, 255, .12); }
+  .side { display: flex; flex-direction: column; gap: 14px; font-size: .9rem; }
+  .side small { color: var(--dim); letter-spacing: 2px; }
+  .buf, .seq { display: flex; gap: 6px; }
+  .buf i, .seq i { font-style: normal; width: 34px; height: 30px; display: flex; align-items: center; justify-content: center; border: 1px dashed rgba(242, 226, 74, .45); color: var(--yellow); }
+  .seq i { border-style: solid; border-color: rgba(255, 74, 74, .5); color: var(--text); }
+  .seq i.ok { background: rgba(94, 240, 240, .2); border-color: var(--cyan); color: var(--cyan); }
+  .bp .msg { color: var(--dim); min-height: 1.2em; }
+  .bp .msg.win { color: var(--cyan); }
+  .bp .msg.fail { color: var(--red); }
+  .bp .x { position: absolute; bottom: 10px; right: 26px; color: var(--dim); cursor: pointer; font-family: 'Rajdhani'; }
+</style>
+</head>
+<body>
+<canvas id="city"></canvas>
+<div class="scan"></div>
+<div class="nav"><span class="on">Overview</span><span>Profile</span><span>Challenge</span><span>Pass</span><span>Trophies</span><span>Shop</span></div>
+<div class="stage">
+  <header><h1>League of Legends</h1><p class="subtitle">Three-Trick-Pony</p></header>
+  <div class="wrap">
+    <div>
+      <span class="tag">Developer's Choice · Animated</span>
+      <div class="card"><h3>Today</h3>
+        <div class="row"><span>First Win of the Day</span><span class="xp">+400 XP</span></div>
+        <div class="row"><span>Champion of the Day</span><span class="xp">+500 XP</span></div>
+        <div class="row"><span>In the Thick of It</span><span class="xp">+300 XP</span></div>
+      </div>
+    </div>
+    <div>
+      <span class="tag">Readability check</span>
+      <div class="card"><h3>Last game</h3>
+        <div class="row"><span>Ekko · Jungle</span><span class="xp">Victory</span></div>
+        <div class="row"><span>KDA</span><span>8 / 2 / 11</span></div>
+        <div class="muted" style="margin-top:8px">+725 XP · LP Bank 64 / 100</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="hint">psst... some terminals in this city aren't as secure as they look</div>
+<div class="breach" id="breach"><div class="bp">
+  <h4>NETWORK BREACH <span id="bpTime">00:15</span></h4>
+  <div class="grid" id="bpGrid"></div>
+  <div class="side">
+    <div><small>BUFFER</small><div class="buf" id="bpBuf"></div></div>
+    <div><small>UPLOAD SEQUENCE</small><div class="seq" id="bpSeq"></div></div>
+    <div class="msg" id="bpMsg">Pick from the highlighted row. Then column, then row...</div>
+  </div>
+  <span class="x" id="bpX">ESC</span>
+</div></div>
+
+<script>
+const cv = document.getElementById('city'), cx = cv.getContext('2d');
+let W = 0, H = 0;
+const rand = (a, b) => a + Math.random() * (b - a);
+function seeded(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const COL = { red: [255, 74, 74], cyan: [94, 240, 240], yellow: [242, 226, 74] };
+let layers = [], terminal = null, holo = null;
+let hacked = 0; // 0..1: Stadt nach dem Hack gelb
+
+function build() {
+  const r = seeded(2077), ground = H * .9;
+  layers = [
+    { depth: .2, fill: '#0b0d14', minH: .45, maxH: .8, minW: 50, maxW: 110, strip: .25, b: [] },
+    { depth: .5, fill: '#090a10', minH: .35, maxH: .7, minW: 70, maxW: 150, strip: .4, b: [] },
+    { depth: 1, fill: '#050609', minH: .25, maxH: .55, minW: 100, maxW: 200, strip: .55, b: [] }
+  ];
+  layers.forEach((L, li) => {
+    let x = -80;
+    while (x < W + 80) {
+      const w = L.minW + r() * (L.maxW - L.minW), h = H * (L.minH + r() * (L.maxH - L.minH));
+      const strips = [];
+      if (r() < L.strip) strips.push({ x: r() < .5 ? 4 : w - 7, col: r() < .6 ? 'red' : 'cyan', ph: r() * 6 });
+      if (r() < L.strip * .4) strips.push({ x: w * (.3 + r() * .4), col: r() < .85 ? 'cyan' : 'yellow', ph: r() * 6 });
+      const wins = [];
+      for (let wy = 18; wy < h - 10; wy += 10) for (let wx = 8; wx < w - 8; wx += 9) if (r() < .07) wins.push([wx, wy, r() < .7 ? 'cyan' : r() < .7 ? 'red' : 'yellow', r() * 6]);
+      L.b.push({ x, w, h, top: ground - h, strips, wins, spire: r() < .25, chamfer: r() < .4 });
+      x += w + 2 + r() * 8;
+    }
+  });
+  // Terminal fuer das Easter Egg: an einem vorderen Gebaeude, gut sichtbar
+  const near = layers[2].b.filter(b => b.x > W * .55 && b.x + b.w < W * .9 && b.h > H * .3);
+  const host = near[0] || layers[2].b[Math.floor(layers[2].b.length * .7)];
+  terminal = { b: host, x: host.x + host.w * .5, y: ground - host.h * .45 };
+  holo = { x: W * .2, y: H * .5, s: Math.min(W, H) * .1 };
+}
+function resize() { const d = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; cx.setTransform(d, 0, 0, d, 0, 0); build(); }
+addEventListener('resize', resize); resize();
+
+const mouse = { x: .5, sx: .5 };
+addEventListener('mousemove', e => { mouse.x = e.clientX / W; });
+const rain = Array.from({ length: 220 }, () => ({ x: rand(0, W), y: rand(0, H), l: rand(8, 18), v: rand(600, 900) }));
+const cars = [];
+let nextCar = 1, glitch = 0, nextGlitch = rand(8, 16);
+
+const rgba = (c, a) => { const [r, g, b] = hacked > .01 ? mix(COL[c], COL.yellow, hacked) : COL[c]; return `rgba(${r | 0}, ${g | 0}, ${b | 0}, ${a})`; };
+const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+
+function drawCity(t) {
+  const ground = H * .9;
+  layers.forEach((L, li) => {
+    const ox = (mouse.sx - .5) * -36 * L.depth;
+    L.b.forEach(b => {
+      const x = b.x + ox, top = b.top;
+      cx.fillStyle = L.fill;
+      cx.beginPath();
+      if (b.chamfer) { cx.moveTo(x, ground); cx.lineTo(x, top + 14); cx.lineTo(x + 14, top); cx.lineTo(x + b.w, top); cx.lineTo(x + b.w, ground); }
+      else cx.rect(x, top, b.w, ground - top);
+      cx.fill();
+      if (b.spire) { cx.fillRect(x + b.w * .5 - 1, top - 40, 2, 40); if (Math.sin(t * 2.5 + b.x) > .4) { cx.fillStyle = rgba('red', .9); cx.fillRect(x + b.w * .5 - 2, top - 42, 4, 3); } }
+      const fade = li === 0 ? .35 : li === 1 ? .6 : 1;
+      b.wins.forEach(([wx, wy, c, ph]) => { const a = (.35 + .25 * Math.sin(t * .5 + ph)) * fade; cx.fillStyle = rgba(c, a); cx.fillRect(x + wx, top + wy, 4, 2); });
+      b.strips.forEach(s => {
+        const flick = Math.sin(t * 9 + s.ph) > .97 ? .2 : 1;
+        cx.fillStyle = rgba(s.col, .8 * fade * flick);
+        cx.shadowColor = rgba(s.col, 1); cx.shadowBlur = 12 * fade;
+        cx.fillRect(x + s.x, top + 6, 3, (ground - top) * .8);
+        cx.shadowBlur = 0;
+      });
+    });
+  });
+  // Terminal (Easter Egg): kleines blinkendes Panel
+  if (terminal) {
+    const ox = (mouse.sx - .5) * -36, x = terminal.x + ox, y = terminal.y;
+    cx.fillStyle = '#0d1016'; cx.fillRect(x - 10, y - 13, 20, 26);
+    cx.strokeStyle = rgba('yellow', .7); cx.lineWidth = 1; cx.strokeRect(x - 10, y - 13, 20, 26);
+    const blink = Math.sin(t * 4) > 0;
+    cx.fillStyle = rgba('cyan', blink ? .95 : .3); cx.fillRect(x - 6, y - 9, 12, 7);
+    for (let k = 0; k < 3; k++) { cx.fillStyle = rgba('red', .6); cx.fillRect(x - 6 + k * 5, y + 2, 3, 3); }
+    terminal.hit = { x: x - 14, y: y - 17, w: 28, h: 34 };
+  }
+  // Strasse + Nassspiegelung
+  cx.fillStyle = '#040508'; cx.fillRect(0, ground, W, H - ground);
+  const refl = cx.createLinearGradient(0, ground, 0, H);
+  refl.addColorStop(0, rgba('red', .12)); refl.addColorStop(1, 'rgba(0,0,0,0)');
+  cx.fillStyle = refl; cx.fillRect(0, ground, W, H - ground);
+}
+
+function drawHolo(t) {
+  // schwebendes Werbe-Hologramm: rotierendes Drahtgitter-Ikosaeder-artiges Objekt + Ringe
+  const { x, y, s } = holo, ox = (mouse.sx - .5) * -20;
+  cx.save(); cx.translate(x + ox, y + Math.sin(t * .8) * 6); cx.globalCompositeOperation = 'lighter';
+  const flick = Math.random() < .03 ? .3 : 1;
+  const beam = cx.createLinearGradient(0, s * .2, 0, H * .5);
+  beam.addColorStop(0, rgba('cyan', .12 * flick)); beam.addColorStop(1, 'rgba(0,0,0,0)');
+  cx.fillStyle = beam; cx.beginPath(); cx.moveTo(-s * .4, s * .3); cx.lineTo(s * .4, s * .3); cx.lineTo(s * 1.4, H * .5); cx.lineTo(-s * 1.4, H * .5); cx.fill();
+  const N = 8, a0 = t * .7;
+  const pts = []; for (let k = 0; k < N; k++) { const a = a0 + k / N * Math.PI * 2; pts.push([Math.cos(a) * s * .55, Math.sin(a) * s * .18]); }
+  cx.strokeStyle = rgba('cyan', .7 * flick); cx.lineWidth = 1.2;
+  pts.forEach(([px, py]) => { cx.beginPath(); cx.moveTo(0, -s * .6); cx.lineTo(px, py); cx.lineTo(0, s * .3); cx.stroke(); });
+  cx.beginPath(); pts.forEach(([px, py], i) => i ? cx.lineTo(px, py) : cx.moveTo(px, py)); cx.closePath(); cx.stroke();
+  cx.strokeStyle = rgba('red', .55 * flick); cx.beginPath(); cx.ellipse(0, s * .45, s * .8, s * .14, 0, 0, 7); cx.stroke();
+  cx.restore();
+}
+
+function drawCars(t, dt) {
+  nextCar -= dt;
+  if (nextCar <= 0) { const dir = Math.random() < .5 ? 1 : -1; cars.push({ dir, x: dir > 0 ? -60 : W + 60, y: rand(H * .12, H * .5), v: rand(160, 320) * dir, z: rand(.5, 1) }); nextCar = rand(1.2, 3.5); }
+  for (let i = cars.length - 1; i >= 0; i--) {
+    const c = cars[i]; c.x += c.v * dt;
+    if (c.x < -120 || c.x > W + 120) { cars.splice(i, 1); continue; }
+    const len = 90 * c.z;
+    const g = cx.createLinearGradient(c.x, 0, c.x - c.dir * len, 0);
+    g.addColorStop(0, rgba('red', .8 * c.z)); g.addColorStop(1, 'rgba(0,0,0,0)');
+    cx.strokeStyle = g; cx.lineWidth = 1.5 * c.z; cx.beginPath(); cx.moveTo(c.x, c.y); cx.lineTo(c.x - c.dir * len, c.y); cx.stroke();
+    cx.fillStyle = '#0a0c12'; cx.fillRect(c.x - 9 * c.z, c.y - 3 * c.z, 18 * c.z, 5 * c.z);
+    cx.fillStyle = rgba('cyan', .9); cx.fillRect(c.x + c.dir * 8 * c.z - 1, c.y - 1, 2, 2);
+  }
+}
+
+function drawGlitch() {
+  // ein paar horizontale Streifen versetzt, mit Rot/Cyan-Verschiebung - kurz und selten
+  const n = 4 + Math.floor(glitch * 6);
+  for (let k = 0; k < n; k++) {
+    const y = rand(0, H), h = rand(2, 14), dx = rand(-30, 30) * glitch;
+    cx.drawImage(cv, 0, y * (cv.width / W), cv.width, h * (cv.width / W), dx, y, W, h);
+    cx.fillStyle = Math.random() < .5 ? rgba('cyan', .15 * glitch) : rgba('red', .15 * glitch);
+    cx.fillRect(0, y, W, h);
+  }
+}
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now; const t = now / 1000;
+  mouse.sx += (mouse.x - mouse.sx) * Math.min(1, dt * 3);
+  cx.clearRect(0, 0, W, H);
+  const sky = cx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#05060a'); sky.addColorStop(.6, '#0b0b14'); sky.addColorStop(1, hacked > .01 ? `rgba(60, 54, 10, ${.6 * hacked + .2})` : '#1a0b10');
+  cx.fillStyle = sky; cx.fillRect(0, 0, W, H);
+  // Smog-Gluehen am Horizont
+  const smog = cx.createRadialGradient(W * .5, H * .95, 0, W * .5, H * .95, W * .7);
+  smog.addColorStop(0, rgba('red', .14)); smog.addColorStop(1, 'rgba(0,0,0,0)');
+  cx.fillStyle = smog; cx.fillRect(0, 0, W, H);
+  drawCars(t, dt);
+  drawCity(t);
+  drawHolo(t); // vor der Stadt, sonst verdecken es die Gebaeude
+  // Regen (fein, nicht hell)
+  cx.strokeStyle = 'rgba(170, 190, 220, .16)'; cx.lineWidth = 1; cx.beginPath();
+  rain.forEach(d => { d.y += d.v * dt; d.x -= d.v * .12 * dt; if (d.y > H) { d.y = rand(-30, 0); d.x = rand(0, W + 60); } cx.moveTo(d.x, d.y); cx.lineTo(d.x + d.l * .12, d.y - d.l); });
+  cx.stroke();
+  nextGlitch -= dt;
+  if (nextGlitch <= 0 && glitch <= 0) { glitch = rand(.4, .8); nextGlitch = rand(10, 20); }
+  if (glitch > 0) { drawGlitch(); glitch -= dt * 2.5; }
+  hacked = Math.max(0, hacked - dt * .12);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ===================== Easter Egg: Netzwerk-Hack =====================
+const CODES = ['1C', 'BD', '55', 'E9', '7A', 'FF'];
+const bp = { grid: [], seq: [], buf: [], mode: 'row', idx: 0, timer: 0, active: false, running: false };
+const $ = id => document.getElementById(id);
+function newPuzzle() {
+  const N = 5, grid = Array.from({ length: N }, () => Array.from({ length: N }, () => CODES[Math.floor(Math.random() * CODES.length)]));
+  // loesbaren Pfad legen: Zeile 0 -> Spalte -> Zeile -> Spalte
+  let row = 0, col = -1; const seq = [], used = new Set();
+  for (let k = 0; k < 3; k++) {
+    if (k % 2 === 0) { let c; do { c = Math.floor(Math.random() * N); } while (used.has(row + ',' + c)); col = c; }
+    else { let r; do { r = Math.floor(Math.random() * N); } while (used.has(r + ',' + col)); row = r; }
+    used.add(row + ',' + col); seq.push(grid[row][col]);
+  }
+  Object.assign(bp, { grid, seq, buf: [], mode: 'row', idx: 0, timer: 15, active: true, running: false, used: new Set() });
+  render();
+}
+function render() {
+  const g = $('bpGrid'); g.innerHTML = '';
+  bp.grid.forEach((r, ri) => r.forEach((code, ci) => {
+    const b = document.createElement('b'); b.textContent = code;
+    const used = bp.used.has(ri + ',' + ci);
+    const live = bp.active && !used && (bp.mode === 'row' ? ri === bp.idx : ci === bp.idx);
+    if (used) b.className = 'used'; else if (live) b.className = 'live';
+    if (live) b.onclick = () => pick(ri, ci);
+    g.appendChild(b);
+  }));
+  $('bpBuf').innerHTML = Array.from({ length: 4 }, (_, i) => `<i>${bp.buf[i] || ''}</i>`).join('');
+  const done = matched();
+  $('bpSeq').innerHTML = bp.seq.map((c, i) => `<i class="${i < done ? 'ok' : ''}">${c}</i>`).join('');
+}
+function matched() { // laengster Anfang der Sequenz, der als zusammenhaengender Teil im Puffer endet
+  for (let n = bp.seq.length; n > 0; n--) { const tail = bp.buf.slice(-n).join(' '); if (tail === bp.seq.slice(0, n).join(' ')) return n; }
+  return 0;
+}
+function pick(ri, ci) {
+  bp.running = true;
+  bp.used.add(ri + ',' + ci); bp.buf.push(bp.grid[ri][ci]);
+  if (bp.mode === 'row') { bp.mode = 'col'; bp.idx = ci; } else { bp.mode = 'row'; bp.idx = ri; }
+  if (bp.buf.join(' ').includes(bp.seq.join(' '))) return finish(true);
+  if (bp.buf.length >= 4) return finish(false);
+  render();
+}
+function finish(win) {
+  bp.active = false; render();
+  const m = $('bpMsg'); m.className = 'msg ' + (win ? 'win' : 'fail');
+  m.textContent = win ? 'UPLOAD SUCCESSFUL. Enjoy the show.' : 'BREACH FAILED. Try again later.';
+  setTimeout(() => { $('breach').classList.remove('on'); if (win) { hacked = 1; glitch = 1.2; } }, win ? 900 : 1400);
+}
+setInterval(() => {
+  if (!bp.active || !bp.running) return;
+  bp.timer -= .1; $('bpTime').textContent = `00:${String(Math.max(0, Math.ceil(bp.timer))).padStart(2, '0')}`;
+  if (bp.timer <= 0) finish(false);
+}, 100);
+addEventListener('click', e => {
+  if ($('breach').classList.contains('on') || !terminal || !terminal.hit) return;
+  if (e.target.closest('.card, .nav, .hint')) return;
+  const h = terminal.hit;
+  if (e.clientX < h.x || e.clientX > h.x + h.w || e.clientY < h.y || e.clientY > h.y + h.h) return;
+  $('bpMsg').className = 'msg'; $('bpMsg').textContent = 'Pick from the highlighted row. Then column, then row...';
+  $('bpTime').textContent = '00:15';
+  newPuzzle(); glitch = .6; $('breach').classList.add('on');
+});
+$('bpX').onclick = () => $('breach').classList.remove('on');
+addEventListener('keydown', e => { if (e.key === 'Escape') $('breach').classList.remove('on'); });
+</script>
+</body>
+</html>
