@@ -435,6 +435,17 @@
     .inv-item:hover { border-color: var(--border-hover); color: var(--text); }
     .inv-item.equipped { border-color: var(--gold); color: var(--gold); background: color-mix(in srgb, var(--gold) 12%, transparent); }
     .inv-item .cos-border { width: 40px; height: 40px; }
+    /* Noch nicht gesammelt: ausgegraut, Schloss, nicht anklickbar */
+    .inv-item { position: relative; }
+    .inv-item.locked { cursor: not-allowed; opacity: 0.5; filter: grayscale(1); }
+    .inv-item.locked:hover { border-color: color-mix(in srgb, var(--border) 70%, transparent); color: var(--text-dim); }
+    .inv-item.locked::after { content: '🔒'; position: absolute; top: 4px; right: 5px; font-size: 0.7rem; filter: grayscale(1); }
+    .inv-count { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--text-dim); font-size: 0.72rem; }
+    .inv-count b { color: var(--gold); font-weight: normal; }
+    .inv-count .bar { flex: 1; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--text-faint) 25%, transparent); overflow: hidden; }
+    .inv-count .bar i { display: block; height: 100%; background: var(--gold); }
+    .inv-tab small { margin-left: 4px; color: var(--text-faint); font-size: 0.62rem; }
+    .inv-tab.active small { color: inherit; }
     .inv-toggle {
       display: flex;
       align-items: center;
@@ -1170,36 +1181,56 @@
           </div>`).join('');
       }).join('');
 
-      document.getElementById('invTabs').innerHTML = INV_TABS
-        .map(t => `<button type="button" class="inv-tab${t.id === invTab ? ' active' : ''}" data-invtab="${t.id}">${t.label}</button>`).join('');
+      // Sammelansicht (Nutzerwunsch, "als Completionist"): ALLE Cosmetics,
+      // fehlende ausgegraut mit Schloss und nicht anklickbar, pro Reiter
+      // "x / y gesammelt". Standard-Border/kein Rahmen zaehlen nicht mit,
+      // die 8 Grund-Themes schon (die hat jeder).
       const owned = S() ? S().owned : [];
+      const ownedIds = new Set(owned.map(c => c.id));
+      const catalog = (S() && S().catalog) || owned;
+      const ofType = type => catalog.filter(c => c.type === type);
+      const counts = {
+        theme: [BASE_THEMES.length + ofType('theme').filter(c => ownedIds.has(c.id)).length, BASE_THEMES.length + ofType('theme').length],
+        border: [ofType('border').filter(c => ownedIds.has(c.id)).length, ofType('border').length],
+        frame: [ofType('frame').filter(c => ownedIds.has(c.id)).length, ofType('frame').length]
+      };
+      document.getElementById('invTabs').innerHTML = INV_TABS
+        .map(t => `<button type="button" class="inv-tab${t.id === invTab ? ' active' : ''}" data-invtab="${t.id}">${t.label}${counts[t.id] ? `<small>${counts[t.id][0]}/${counts[t.id][1]}</small>` : ''}</button>`).join('');
       const list = document.getElementById('invList');
+      const countLine = ([have, all]) => `<div class="inv-count"><span>Collected <b>${have} / ${all}</b></span><span class="bar"><i style="width:${all ? have / all * 100 : 0}%"></i></span></div>`;
+      const lockAttr = c => `class="inv-item locked" title="Locked - ${esc(c.source || 'not collected yet')}" aria-disabled="true"`;
       if (invTab === 'border') {
-        const items = [{ id: null, name: 'Default' }, ...owned.filter(c => c.type === 'border')];
-        list.innerHTML = `<div class="inv-grid">${items.map(c => `
-          <div class="inv-item${(c.id || 'none') === editState.border ? ' equipped' : ''}" data-equip="${c.id || 'none'}">
+        const items = [{ id: null, name: 'Default' }, ...ofType('border')];
+        list.innerHTML = countLine(counts.border) + `<div class="inv-grid">${items.map(c => {
+          const has = !c.id || ownedIds.has(c.id);
+          return `<div ${has ? `class="inv-item${(c.id || 'none') === editState.border ? ' equipped' : ''}" data-equip="${c.id || 'none'}"` : lockAttr(c)}>
             <span class="cos-border cos-${c.id || 'none'}"><span class="cos-fill"></span></span>${esc(c.name)}
-          </div>`).join('')}</div>`;
+          </div>`;
+        }).join('')}</div>`;
       } else if (invTab === 'frame') {
-        const items = [{ id: null, name: 'No frame' }, ...owned.filter(c => c.type === 'frame')];
+        const items = [{ id: null, name: 'No frame' }, ...ofType('frame')];
         const sel = owned.find(c => c.id === editState.frame);
-        list.innerHTML = `<div class="inv-grid">${items.map(c => `
-          <div class="inv-item${(c.id || 'none') === editState.frame ? ' equipped' : ''}" data-frame="${c.id || 'none'}">
+        list.innerHTML = countLine(counts.frame) + `<div class="inv-grid">${items.map(c => {
+          const has = !c.id || ownedIds.has(c.id);
+          return `<div ${has ? `class="inv-item${(c.id || 'none') === editState.frame ? ' equipped' : ''}" data-frame="${c.id || 'none'}"` : lockAttr(c)}>
             ${c.id ? `<span class="mini-frame mini-frame-${c.id}"></span>` : '<span class="mini-frame mini-none"></span>'}${esc(c.name)}
-          </div>`).join('')}</div>` +
+          </div>`;
+        }).join('')}</div>` +
           (sel && sel.hasBackground
             ? `<label class="inv-toggle"><input type="checkbox" id="frameBgToggle"${editState.frameBg ? ' checked' : ''}> Show profile background</label>`
             : '');
       } else if (invTab === 'theme') {
         // Themes sind persoenlich (nur die eigene App), daher sofort aktiv
         // und nicht Teil von Speichern/Abbrechen.
-        const passThemes = owned.filter(c => c.type === 'theme');
+        const passThemes = ofType('theme');
         const active = currentThemeKey();
-        const item = c => `
-          <div class="inv-item${c.themeKey === active ? ' equipped' : ''}" data-theme-key="${c.themeKey}">
+        const item = c => {
+          const has = !c.id || ownedIds.has(c.id);
+          return `<div ${has ? `class="inv-item${c.themeKey === active ? ' equipped' : ''}" data-theme-key="${c.themeKey}"` : lockAttr(c)}>
             ${c.c ? `<span class="mini-theme" style="background:conic-gradient(${c.c[0]} 0 50%, ${c.c[1]} 50% 75%, ${c.c[2]} 75%);border:1px solid ${c.c[1]}"></span>` : `<span class="mini-theme mini-theme-${c.themeKey}"></span>`}${esc(c.name)}${c.animated ? '<small class="inv-anim">✦ animated</small>' : ''}
           </div>`;
-        list.innerHTML =
+        };
+        list.innerHTML = countLine(counts.theme) +
           (passThemes.length ? `<div class="inv-sub">Monthly Pass</div><div class="inv-grid">${passThemes.map(item).join('')}</div>` : '') +
           `<div class="inv-sub">Basic</div><div class="inv-grid">${BASE_THEMES.map(item).join('')}</div>` +
           '<p class="inv-note">Only you see your theme.</p>';

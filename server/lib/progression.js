@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { dataSubdir } = require('./dataPaths');
-const { getCosmetic, passCosmetic } = require('./cosmetics');
+const { COSMETICS, getCosmetic, passCosmetic } = require('./cosmetics');
 
 // XP-/Level-System (v5.0.0, PROVISORISCH): Profil-Level (laeuft fuer immer,
 // jedes Level etwas teurer), Monats-Pass (seit v5.3.0: ein Pass pro
@@ -489,6 +489,9 @@ function getLifetimeStats() {
     coins: state.coins,
     equipped: state.equipped,
     owned: state.inventory.map(getCosmetic).filter(Boolean),
+    // Alle Cosmetics, die es gibt (Sammelansicht im Profil-Editor: fehlende
+    // ausgegraut mit Schloss + "x / y gesammelt", Nutzerwunsch v5.15.0)
+    catalog: COSMETICS.map(c => ({ ...c, source: c.passMonth ? `${monthLabel(c.passMonth)} Pass · tier ${c.tier}` : 'Shop' })),
     profileLayout: state.profileLayout,
     // Fuer weitere Profil-Widgets (v5.6.0)
     pass: (({ label, tier, tiers, xpIntoTier, xpPerTier }) => ({ label, tier, tiers, xpIntoTier, xpPerTier }))(getPassOverview(state, new Date())),

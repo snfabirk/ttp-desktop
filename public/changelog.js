@@ -25,6 +25,15 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.15.0',
+      date: '2026-10-09',
+      notable: [
+        'Profile editor: see every theme, border and frame that exists - the ones you are still missing are locked, with a collected counter per tab.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.14.0',
       date: '2026-10-09',
       notable: [

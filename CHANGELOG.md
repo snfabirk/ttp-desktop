@@ -1,5 +1,14 @@
 # Internal Changelog
 
+## 5.15.0 — 2026-10-09
+
+- Collection view (user is a completionist): /api/profile-stats returns the
+  full `catalog` (with source text, e.g. "October 2026 Pass · tier 20");
+  the editor lists all cosmetics, missing ones greyed out with a lock, not
+  clickable (no data-* attribute), tooltip with the source; "Collected x / y"
+  bar per tab + x/y in the tab labels (base themes count as owned; default
+  border / no frame don't count).
+
 ## 5.14.0 — 2026-10-09
 
 - Economy (user decisions): pass 30+ steps grow by 500 XP each
