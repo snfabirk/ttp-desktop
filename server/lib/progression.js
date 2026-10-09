@@ -4,9 +4,15 @@ const { dataSubdir } = require('./dataPaths');
 
 // XP-/Level-System (v5.0.0, PROVISORISCH): Profil-Level (laeuft fuer immer,
 // jedes Level etwas teurer), Challenge-Pass (30 Stufen, pro Challenge neu),
-// Daily/Weekly Quests. Seit v5.1.0 bringen gespielte Spiele echte XP
-// (creditMatches, aufgerufen vom Match-Scan in runSummaryBatch); Quests und
-// Trophies vergeben noch nichts. Alle Zahlen hier sind Platzhalter.
+// Daily/Weekly Quests. Seit v5.1.0 bringen gespielte Spiele (creditMatches)
+// und gewonnene LP (creditLp, "LP-Konto") echte XP - beides aufgerufen vom
+// Match-Scan in runSummaryBatch; Quests und Trophies vergeben noch nichts.
+// Alle Zahlen hier sind Platzhalter.
+//
+// Bewusst KEIN Multiplikator (Schwierigkeit/LP-Abstand) mehr: der war beim
+// Start frei waehlbar und haette jedes Spiel aufgewertet, ohne dass man das
+// Ziel je erreichen muss - Majestic + riesiges Ziel = Pass doppelt so
+// schnell (Nutzerentscheidung 2026-10-09).
 //
 // Gespeichert in userData/ttp-data/progression (update-fest, siehe
 // dataPaths.js). Factory Reset loescht es mit, "Reset Account Progress" in
@@ -30,6 +36,13 @@ const XP_PER_ASSIST = 5;
 const FULL_XP_GAMES_PER_DAY = 5;      // ab dem 6. Spiel des Tages: alle XP halbiert
 const XP_PER_TROPHY = 750;            // temporaere Trophaeen zaehlen nicht
 
+// LP-Konto (Nutzeridee 2026-10-09): jeder LP-GEWINN wandert auf ein Konto
+// 0-100, LP-Verluste werden ignoriert. Ist es voll, gibt es XP (Level + Pass)
+// und es beginnt von vorn - ueberschuessige LP werden mitgenommen. So
+// bekommen auch Spieler XP, die kaum netto climben (hardstuck).
+const LP_BANK_SIZE = 100;
+const XP_PER_LP_BANK = 1000;
+
 const PASS_TIERS = 30;
 const PASS_XP_PER_TIER = 1500;
 
@@ -46,14 +59,6 @@ function levelFromXp(totalXp) {
     level++;
   }
   return { level, xpIntoLevel: rest, xpForNextLevel: xpForLevel(level) };
-}
-
-// Multiplikator = Schwierigkeit x LP-Abstand zum Ziel (ein 200-LP-Ziel ist
-// viel schneller geschafft als ein 1000-LP-Ziel).
-const DIFFICULTY_MULTIPLIER = { easy: 1.0, normal: 1.1, hard: 1.2, very_hard: 1.35, majestic: 1.5 };
-function lpDistanceMultiplier(distance) {
-  const d = Math.max(0, distance || 0);
-  return 1 + Math.min(0.5, Math.max(0, d - 200) / 2000);
 }
 
 // ----- Quests -----
@@ -155,7 +160,12 @@ function filePath() {
 }
 
 function emptyState() {
-  return { version: 1, totalXp: 0, ledger: [], rerolls: {}, passXp: 0, passChallengeStart: null };
+  return {
+    version: 1, totalXp: 0, ledger: [], rerolls: {}, passXp: 0, passChallengeStart: null,
+    // lastLP: zuletzt gesehener LP-Stand (vergleichbar ueber Tiers hinweg,
+    // siehe rankHistory.toComparableLP), progress: 0-99 auf dem Konto.
+    lpBank: { puuid: null, lastLP: null, progress: 0, fills: 0, events: [] }
+  };
 }
 
 function readState() {
@@ -181,13 +191,16 @@ function resetState() {
 // Challenge bringt fuer dasselbe Spiel nichts zweimal. Der Pass zaehlt nur
 // XP, die waehrend der aktuellen Challenge (challengeStart) gutgeschrieben
 // wurden.
-function creditMatches(games, { challengeStart, multiplier }) {
-  const state = readState();
+function syncPassChallenge(state, challengeStart) {
   if (challengeStart && state.passChallengeStart !== challengeStart) {
     state.passChallengeStart = challengeStart;
     state.passXp = 0;
   }
-  const mult = Number(multiplier) > 0 ? Number(multiplier) : 1;
+}
+
+function creditMatches(games, { challengeStart }) {
+  const state = readState();
+  syncPassChallenge(state, challengeStart);
   const credited = new Set(state.ledger.map(e => e.matchId));
   const gamesPerDay = {};
   state.ledger.forEach(e => { gamesPerDay[e.day] = (gamesPerDay[e.day] || 0) + 1; });
@@ -208,11 +221,11 @@ function creditMatches(games, { challengeStart, multiplier }) {
         assists: (g.assists || 0) * XP_PER_ASSIST
       };
       const raw = base.game + base.win + base.kills + base.assists;
-      const xp = Math.round(raw * mult * (halved ? 0.5 : 1));
+      const xp = Math.round(raw * (halved ? 0.5 : 1));
       const entry = {
         matchId: g.matchId, gameCreation: g.gameCreation, day, gameOfDay,
         category: g.category, win: !!g.win, kills: g.kills || 0, deaths: g.deaths || 0, assists: g.assists || 0,
-        champId: g.champId || '', base, multiplier: mult, halved, xp
+        champId: g.champId || '', base, halved, xp
       };
       state.ledger.push(entry);
       state.totalXp += xp;
@@ -222,6 +235,47 @@ function creditMatches(games, { challengeStart, multiplier }) {
 
   writeState(state);
   return added;
+}
+
+// LP-Konto fuellen. currentLP = aktueller Stand (vergleichbar), baselineLP =
+// Stand beim Challenge-Start - nur beim allerersten Mal genutzt, damit LP seit
+// dem Start nicht verloren gehen. Danach zaehlt jeder Scan die Differenz zum
+// zuletzt gesehenen Stand; nur positive Differenzen kommen aufs Konto. Da
+// alle 15 Minuten gescannt wird, liegt meist hoechstens ein Spiel dazwischen
+// - lief die App mehrere Spiele lang nicht, wird nur der Netto-Gewinn dieser
+// Spiele gezaehlt. Account-Wechsel: neuer Ausgangspunkt, nichts gutgeschrieben.
+function creditLp({ puuid, currentLP, baselineLP, challengeStart }) {
+  if (!puuid || typeof currentLP !== 'number' || Number.isNaN(currentLP)) return null;
+  const state = readState();
+  syncPassChallenge(state, challengeStart);
+  const bank = state.lpBank;
+
+  if (bank.puuid !== puuid || bank.lastLP === null) {
+    const isFirstEver = bank.lastLP === null;
+    bank.puuid = puuid;
+    bank.lastLP = isFirstEver && typeof baselineLP === 'number' ? baselineLP : currentLP;
+  }
+
+  const gained = currentLP - bank.lastLP;
+  bank.lastLP = currentLP;
+  let event = null;
+  if (gained > 0) {
+    bank.progress += gained;
+    let filled = 0;
+    while (bank.progress >= LP_BANK_SIZE) {
+      bank.progress -= LP_BANK_SIZE;
+      filled++;
+    }
+    const xp = filled * XP_PER_LP_BANK;
+    bank.fills += filled;
+    state.totalXp += xp;
+    state.passXp += xp;
+    event = { at: Date.now(), gained, filled, xp };
+    bank.events.push(event);
+    if (bank.events.length > 50) bank.events.splice(0, bank.events.length - 50);
+  }
+  writeState(state);
+  return event;
 }
 
 function rerollDaily(context) {
@@ -240,7 +294,6 @@ function rerollDaily(context) {
 function getOverview(context) {
   const now = new Date();
   const state = readState();
-  const difficulty = DIFFICULTY_MULTIPLIER[context.challengeLevel] || 1;
   const passXp = state.passXp;
   const passTier = Math.min(PASS_TIERS, Math.floor(passXp / PASS_XP_PER_TIER));
   return {
@@ -260,22 +313,29 @@ function getOverview(context) {
       tier: passTier,
       xpIntoTier: passTier >= PASS_TIERS ? PASS_XP_PER_TIER : passXp % PASS_XP_PER_TIER
     },
-    multiplier: { difficulty },
+    lpBank: {
+      size: LP_BANK_SIZE,
+      progress: state.lpBank.progress,
+      fills: state.lpBank.fills,
+      xpPerFill: XP_PER_LP_BANK,
+      recent: [...state.lpBank.events].reverse().slice(0, 3)
+    },
     xpSources: {
       perGame: XP_PER_GAME,
       winBonus: XP_WIN_BONUS,
       perKill: XP_PER_KILL,
       perAssist: XP_PER_ASSIST,
+      perLpBank: XP_PER_LP_BANK,
+      lpBankSize: LP_BANK_SIZE,
       perTrophy: XP_PER_TROPHY
     }
   };
 }
 
 module.exports = {
-  DIFFICULTY_MULTIPLIER,
-  lpDistanceMultiplier,
   getOverview,
   creditMatches,
+  creditLp,
   rerollDaily,
   resetState
 };

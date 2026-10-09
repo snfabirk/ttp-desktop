@@ -132,33 +132,6 @@
       position: relative;
       z-index: 5;
     }
-    /* XP-Multiplikator (v5.0.0): kleines Abzeichen oben rechts in der Box,
-       absolut positioniert - keine zusaetzliche Zeile, Seite 1 muss ohne
-       Scrollen passen. */
-    #summonerDateBox {
-      position: relative;
-    }
-    .xp-mult-badge {
-      position: absolute;
-      top: 18px;
-      right: 20px;
-      padding: 2px 10px;
-      border: 1px solid var(--border);
-      border-radius: 11px;
-      color: var(--text-faint);
-      font-family: Georgia, serif;
-      font-size: 0.78rem;
-      white-space: nowrap;
-      cursor: help;
-      transition: color 0.15s ease, border-color 0.15s ease;
-    }
-    .xp-mult-badge.set {
-      border-color: color-mix(in srgb, var(--gold) 60%, transparent);
-      color: var(--gold);
-    }
-    .xp-mult-badge strong {
-      font-family: 'Cinzel', Georgia, serif;
-    }
     .setup-box label {
       display: block;
       color: var(--gold);
@@ -664,7 +637,6 @@
   <div class="content">
   <div class="setup-box" id="summonerDateBox">
     <label>Summoner &amp; Challenge</label>
-    <span class="xp-mult-badge" id="xpMultBadge" title="XP multiplier - choose a challenge level and LP goal">XP <strong>×–</strong></span>
     <div class="summoner-input-row">
       <input type="text" id="summonerInput" placeholder="ShacoHater#EUW">
       <button type="button" id="summonerSaveBtn" title="Resolve summoner now">Save</button>
@@ -1170,56 +1142,8 @@
     // Vom letzten erfolgreichen Rang-Abruf (Save-Button oder Auto-Refresh) -
     // Grundlage fuer den LP-Ziel-Mindestabstand-Hinweis unten.
     let lastKnownMinGoal = null;
-    let lastKnownCurrentRank = null;
-
-    const DIFFICULTY_LABELS = { easy: 'Easy', normal: 'Normal', hard: 'Hard', very_hard: 'Very Hard', majestic: 'Majestic' };
-    const xpMultBadge = document.getElementById('xpMultBadge');
-
-    function showXpMultiplier(m, sourceText) {
-      xpMultBadge.innerHTML = `XP <strong>×${m.total.toFixed(2)}</strong>`;
-      xpMultBadge.classList.add('set');
-      xpMultBadge.title = `XP multiplier for this challenge${sourceText}\n` +
-        `Difficulty (${DIFFICULTY_LABELS[m.level] || m.level}): ×${m.difficulty.toFixed(2)}\n` +
-        `LP distance (${m.distance} LP to goal): ×${m.lp.toFixed(2)}\n` +
-        'Applies to all XP earned during the challenge.';
-    }
-
-    function lpDistanceToGoal(current) {
-      if (!current || !lpGoalTierSelect.value) return null;
-      const goal = toComparableLPClient(lpGoalTierSelect.value, lpGoalDivisionSelect.value, Number(lpGoalLpInput.value) || 0);
-      return Math.max(0, goal - toComparableLPClient(current.tier, current.rank, current.leaguePoints));
-    }
-
-    async function fetchXpMultiplier(level, distance) {
-      const res = await fetch(`/api/progression/multiplier?${new URLSearchParams({ challengeLevel: level, distance })}`);
-      const data = await parseApiResponse(res);
-      return { ...data, level, distance };
-    }
-
-    // Vor dem Start: Vorschau aus Schwierigkeit + LP-Abstand. Waehrend einer
-    // laufenden Challenge: der beim Start festgeschriebene Wert.
-    async function updateXpMultiplier() {
-      let locked = null;
-      try { locked = JSON.parse(localStorage.getItem('ttp_xp_multiplier') || 'null'); } catch (e) {}
-      if (loadChallengeStart() && locked) {
-        showXpMultiplier(locked, ' (locked at challenge start)');
-        return;
-      }
-      const level = challengeLevelSelect.value;
-      const distance = lpDistanceToGoal(lastKnownCurrentRank);
-      if (!level || distance === null) {
-        xpMultBadge.innerHTML = 'XP <strong>×–</strong>';
-        xpMultBadge.classList.remove('set');
-        xpMultBadge.title = 'XP multiplier - choose a challenge level and LP goal';
-        return;
-      }
-      try {
-        showXpMultiplier(await fetchXpMultiplier(level, distance), ' (preview)');
-      } catch (e) {}
-    }
 
     function updateLpGoalHint() {
-      updateXpMultiplier();
       const hintEl = document.getElementById('lpGoalHint');
       if (!lastKnownMinGoal || !lpGoalTierSelect.value) {
         hintEl.textContent = '';
@@ -1246,7 +1170,6 @@
         const data = await parseApiResponse(res);
         if (!res.ok) throw new Error(data.error || 'Unknown error');
         challengeRankRow.textContent = formatRankText(data.current);
-        lastKnownCurrentRank = data.current || null;
         lastKnownMinGoal = data.minGoal || null;
         updateLpGoalHint();
       } catch (e) {
@@ -1372,11 +1295,6 @@
         const data = await parseApiResponse(res);
         if (!res.ok) throw new Error(data.error || 'Unknown error');
         const startIso = new Date(data.timestamp).toISOString();
-        try {
-          const distance = lpDistanceToGoal(data.current) ?? 0;
-          const mult = await fetchXpMultiplier(challengeLevelSelect.value, distance);
-          localStorage.setItem('ttp_xp_multiplier', JSON.stringify(mult));
-        } catch (e) {}
         saveChallengeStart(startIso);
         renderChallengeState();
 
@@ -1455,9 +1373,7 @@
       if (window.ttpMain) window.ttpMain.restoreFocus();
       if (!ok) return;
       saveChallengeStart(null);
-      try { localStorage.removeItem('ttp_xp_multiplier'); } catch (e) {}
       renderChallengeState();
-      updateXpMultiplier();
       // Schliesst den Challenge-History-Eintrag final ab (until = jetzt).
       // Der Server rechnet die Trophies dabei frisch aus den Matches nach
       // (siehe /api/challenge-history/close) und raeumt danach den
@@ -1632,7 +1548,6 @@
     challengeLevelSelect.addEventListener('change', () => {
       saveChallengeLevel();
       updateChecklist();
-      updateXpMultiplier();
     });
 
     lpGoalTierSelect.addEventListener('change', () => {

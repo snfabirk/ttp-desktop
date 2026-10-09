@@ -28,8 +28,10 @@
       version: '5.1.0',
       date: '2026-10-09',
       notable: [
-        'Your ranked games now earn XP: based on champion/role, +150 for a win, +10 per kill and +5 per assist, times your challenge multiplier. Games since your challenge start are credited retroactively.',
-        'New "Recent XP" box on your profile shows what each game gave you (hover for the breakdown).'
+        'Your ranked games now earn XP: based on champion/role, +150 for a win, +10 per kill and +5 per assist. Games since your challenge start are credited retroactively.',
+        'New LP Bank: every LP you gain fills a 0-100 bar (losses are ignored). Each time it is full you get +1,000 XP and it starts over, extra LP carry over.',
+        'The XP multiplier is gone - difficulty and LP goal no longer change how much XP you earn, so nobody can speed up the pass by picking an extreme goal.',
+        'New "Recent XP" box on your profile shows what each game gave you. "How to earn XP" is now a hover popup there.'
       ],
       refinements: 0,
       bugfixes: 0

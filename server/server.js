@@ -337,7 +337,7 @@ async function buildRankOverview(puuid, sinceMs) {
 // Hintergrund-Job, damit das Frontend per Polling einen echten
 // Live-Fortschritt anzeigen kann, statt auf einen einzigen, potenziell
 // minutenlangen Request zu warten.
-async function runSummaryBatch(jobId, { puuid, champions, since, startTime, mainRole, secondRole, xpMultiplier }) {
+async function runSummaryBatch(jobId, { puuid, champions, since, startTime, mainRole, secondRole }) {
   try {
     const matchIds = await getAllMatchIds(
       puuid,
@@ -471,7 +471,16 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
     // einmal (Ledger in progression.js), egal wie oft gescannt wird.
     let xpCredited = [];
     try {
-      xpCredited = progression.creditMatches(xpGames, { challengeStart: since, multiplier: xpMultiplier });
+      xpCredited = progression.creditMatches(xpGames, { challengeStart: since });
+      if (rank.current) {
+        const startSnapshot = findSnapshotAtOrBefore(readHistory(puuid), startTime * 1000);
+        progression.creditLp({
+          puuid,
+          currentLP: toComparableLP(rank.current.tier, rank.current.rank, rank.current.leaguePoints),
+          baselineLP: startSnapshot ? toComparableLP(startSnapshot.tier, startSnapshot.rank, startSnapshot.leaguePoints) : null,
+          challengeStart: since
+        });
+      }
     } catch (e) {
       console.error('XP credit failed:', e.message);
     }
@@ -505,7 +514,7 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
 }
 
 app.post('/api/summary-batch/start', requireApiKey, (req, res) => {
-  const { puuid, champions, since, mainRole, secondRole, xpMultiplier, challengeLevel } = req.body || {};
+  const { puuid, champions, since, mainRole, secondRole } = req.body || {};
   if (!puuid || !champions) {
     return res.status(400).json({ error: 'puuid and champions are required.' });
   }
@@ -541,10 +550,7 @@ app.post('/api/summary-batch/start', requireApiKey, (req, res) => {
     since,
     startTime,
     mainRole: mainRole || '',
-    secondRole: secondRole || '',
-    // Beim Challenge-Start festgeschriebener Multiplikator; Challenges von
-    // vor v5.0 haben keinen -> nur die Schwierigkeit (wie auf profile.html).
-    xpMultiplier: Number(xpMultiplier) || progression.DIFFICULTY_MULTIPLIER[challengeLevel] || 1
+    secondRole: secondRole || ''
   });
   res.json({ jobId });
 });
@@ -714,12 +720,6 @@ app.get('/api/progression', (req, res) => {
 app.post('/api/progression/reroll', (req, res) => {
   const result = progression.rerollDaily(progressionContext(req.body || {}));
   res.status(result.ok ? 200 : 400).json(result);
-});
-
-app.get('/api/progression/multiplier', (req, res) => {
-  const difficulty = progression.DIFFICULTY_MULTIPLIER[req.query.challengeLevel] || 1;
-  const lp = progression.lpDistanceMultiplier(Number(req.query.distance) || 0);
-  res.json({ difficulty, lp, total: Math.round(difficulty * lp * 100) / 100 });
 });
 
 // "Reset Account Progress" in den Settings - NUR Level/XP/Quests/Pass,

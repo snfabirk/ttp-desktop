@@ -606,22 +606,41 @@
     .xp-sources tr:last-child td {
       border-bottom: none;
     }
-    .multiplier-line {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 10px;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid var(--border);
+    /* "How to earn XP" als Hover-Popup statt eigener Box (Nutzerwunsch,
+       zu viel Platz). Oeffnet bei Hover oder Tastaturfokus. */
+    .xp-help {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-faint);
       font-family: Georgia, serif;
-      font-size: 0.8rem;
-      color: var(--text-dim);
+      font-size: 0.75rem;
+      font-style: italic;
+      cursor: help;
+      outline: none;
     }
-    .multiplier-line strong {
-      color: var(--gold);
-      font-family: 'Cinzel', Georgia, serif;
-      font-size: 1.05rem;
+    .xp-help:hover, .xp-help:focus-within { color: var(--gold); }
+    .xp-help:hover .info-icon, .xp-help:focus-within .info-icon { border-color: var(--gold); color: var(--gold); }
+    .xp-help-pop {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      z-index: 20;
+      width: 330px;
+      padding: 10px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      font-style: normal;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.12s ease;
+    }
+    .xp-help:hover .xp-help-pop, .xp-help:focus-within .xp-help-pop {
+      opacity: 1;
+      visibility: visible;
     }
     .recent-xp-row {
       display: flex;
@@ -785,30 +804,30 @@
         </div>
         <div class="prog-card">
           <div class="prog-card-head">
-            <h3>Recent XP</h3>
-            <span class="reset-in">last 5 games</span>
+            <h3>LP Bank</h3>
+            <span class="reset-in" id="lpBankFills"></span>
           </div>
-          <div class="recent-xp" id="recentXp"></div>
+          <div class="xp-bar lp-bank-bar"><div class="xp-bar-fill" id="lpBankFill"></div></div>
+          <div class="pass-summary">
+            <span id="lpBankText">0 / 100 LP</span>
+            <span id="lpBankReward">+1,000 XP when full</span>
+          </div>
+          <p class="pass-note" id="lpBankNote">Every LP you gain goes into the bank, LP losses are ignored. When it hits 100 you get XP and it starts over - extra LP carry over.</p>
         </div>
         <div class="prog-card">
           <div class="prog-card-head">
-            <h3>How to Earn XP</h3>
+            <h3>Recent XP</h3>
+            <span class="xp-help" tabindex="0">How to earn XP <span class="info-icon">?</span>
+              <span class="xp-help-pop"><table class="xp-sources" id="xpSources"></table></span>
+            </span>
           </div>
-          <table class="xp-sources" id="xpSources"></table>
-          <div class="multiplier-line" title="Applies to ALL XP earned during this challenge - games, win bonus, kills + assists, quests and trophies">
-            <span id="multiplierText">Challenge multiplier</span>
-            <strong id="multiplierValue">×1.00</strong>
-          </div>
+          <div class="recent-xp" id="recentXp"></div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    function lockedXpMultiplier() {
-      try { return (JSON.parse(localStorage.getItem('ttp_xp_multiplier') || 'null') || {}).total || null; } catch (e) { return null; }
-    }
-
     const DDRAGON_VERSION = '16.17.1';
     const statusEl = document.getElementById('profileStatus');
     const accountOverviewIcon = document.getElementById('accountOverviewIcon');
@@ -1258,11 +1277,7 @@
             champions: keyed.map(c => ({ key: c.key, role: c.role || '' })),
             since,
             mainRole: ls('ttp_pool_role'),
-            secondRole: ls('ttp_pool_second_role'),
-            // XP-Gutschrift (server/lib/progression.js): beim Start
-            // festgeschriebener Multiplikator, sonst nur die Schwierigkeit.
-            xpMultiplier: lockedXpMultiplier(),
-            challengeLevel: (() => { try { return localStorage.getItem('ttp_challenge_level') || ''; } catch (e) { return ''; } })()
+            secondRole: ls('ttp_pool_second_role')
           })
         });
         const startData = await parseApiResponse(startRes);
@@ -1362,21 +1377,20 @@
       document.getElementById('passGrid').innerHTML = html;
     }
 
-    // Der Multiplikator wird beim Challenge-Start festgeschrieben
-    // (ttp_xp_multiplier, siehe index.html).
-    function renderMultiplier(base) {
-      const textEl = document.getElementById('multiplierText');
-      const valueEl = document.getElementById('multiplierValue');
-      let locked = null;
-      try { locked = JSON.parse(ls('ttp_xp_multiplier') || 'null'); } catch (e) {}
-      if (locked && locked.total) {
-        valueEl.textContent = `×${locked.total.toFixed(2)}`;
-        textEl.textContent = `Multiplier on all XP (difficulty ×${locked.difficulty.toFixed(2)} · LP distance ×${locked.lp.toFixed(2)})`;
-      } else {
-        valueEl.textContent = `×${base.difficulty.toFixed(2)}`;
-        textEl.textContent = ls('ttp_challenge_level')
-          ? 'Multiplier on all XP (difficulty only - challenge started before v5.0)'
-          : 'Multiplier on all XP (start a challenge first)';
+    // LP-Konto (server/lib/progression.js creditLp): Gewinne fuellen 0-100,
+    // Verluste zaehlen nicht, Ueberschuss wird mitgenommen.
+    function renderLpBank(bank) {
+      document.getElementById('lpBankFill').style.width = `${(bank.progress / bank.size) * 100}%`;
+      document.getElementById('lpBankText').textContent = `${bank.progress} / ${bank.size} LP`;
+      document.getElementById('lpBankReward').textContent = `+${fmtNum(bank.xpPerFill)} XP when full`;
+      document.getElementById('lpBankFills').textContent = bank.fills
+        ? `filled ${bank.fills}× · +${fmtNum(bank.fills * bank.xpPerFill)} XP`
+        : 'not filled yet';
+      if (bank.recent.length) {
+        const last = bank.recent[0];
+        const when = new Date(last.at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+        document.getElementById('lpBankNote').textContent =
+          `Last gain: +${last.gained} LP (${when})${last.filled ? ` - bank filled, +${fmtNum(last.xp)} XP` : ''}. LP losses are ignored, extra LP carry over.`;
       }
     }
 
@@ -1401,7 +1415,6 @@
           b.win ? `Win bonus: +${b.win}` : null,
           `${g.kills} kills: +${b.kills}`,
           `${g.assists} assists: +${b.assists}`,
-          `Multiplier: ×${g.multiplier.toFixed(2)}`,
           g.halved ? `Game ${g.gameOfDay} of the day: ½ XP` : null
         ].filter(Boolean).join('&#10;');
         const icon = g.champId
@@ -1414,7 +1427,7 @@
             <span class="recent-xp-title"><span class="${g.win ? 'win' : 'loss'}">${g.win ? 'Win' : 'Loss'}</span> · ${CATEGORY_LABELS[g.category] || g.category}</span>
             <span class="recent-xp-desc">${g.kills} / ${g.deaths} / ${g.assists} · ${when}</span>
           </span>
-          <span class="recent-xp-tags">${g.multiplier !== 1 ? `<span class="xp-tag">×${g.multiplier.toFixed(2)}</span>` : ''}${g.halved ? '<span class="xp-tag">½</span>' : ''}</span>
+          <span class="recent-xp-tags">${g.halved ? '<span class="xp-tag">½</span>' : ''}</span>
           <span class="recent-xp-amount">+${fmtNum(g.xp)} XP</span>
         </div>`;
       }).join('');
@@ -1429,6 +1442,7 @@
         ['Win bonus (any game)', src.winBonus],
         ['Per kill', src.perKill],
         ['Per assist', src.perAssist],
+        [`Every ${src.lpBankSize} LP gained (LP Bank)`, src.perLpBank],
         ['Trophy unlocked (temporary ones excluded)', src.perTrophy],
         [`After ${fullXpGames} games a day`, '½ XP']
       ];
@@ -1459,7 +1473,7 @@
         renderPass(data.pass);
         renderRecentXp(data.recentGames || []);
         renderXpSources(data.xpSources, data.fullXpGamesPerDay);
-        renderMultiplier(data.multiplier);
+        renderLpBank(data.lpBank);
       } catch (e) {
         document.getElementById('dailyQuests').textContent = `Could not load quests: ${e.message}`;
       }

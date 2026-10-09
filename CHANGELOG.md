@@ -6,13 +6,22 @@
   is called at the end of every `runSummaryBatch` scan (Overview/Profile/Role
   page + 15-min background refresh) with every non-remake ranked game since
   challenge start. Per game: category XP (pool 500 / main other 300 / second
-  250 / off 50) + win 150 + 10 per kill + 5 per assist, x locked challenge
-  multiplier (fallback: difficulty only), halved from game 6 of the quest
-  day (06:00 reset). Each matchId credited once ever (ledger), so the user's
+  250 / off 50) + win 150 + 10 per kill + 5 per assist, halved from game 6
+  of the quest day (06:00 reset). Each matchId credited once ever (ledger), so the user's
   pre-existing games since challenge start get their XP retroactively.
 - Pass XP resets when the challenge start changes; level XP never does.
+- XP multiplier (difficulty x LP distance, v5.0.0) removed completely: it was
+  freely chosen at start and boosted every game without having to reach the
+  goal (user: abusable). index.html badge, /api/progression/multiplier and
+  ttp_xp_multiplier are gone.
+- LP Bank (`progression.creditLp`): each scan compares the current comparable
+  LP with the last seen value; only gains go into a 0-100 bank, overflow
+  carries over, +1000 XP (level + pass) per fill. First run seeds from the
+  challenge-start snapshot; account switch = new baseline, no credit. If
+  several games happen between scans only their net gain counts.
 - Profile: new "Recent XP" card (last 5 credited games, breakdown in tooltip),
-  "games today" pips now real, kill/assist rows split in "How to Earn XP".
+  "games today" pips now real, kill/assist rows split. "How to Earn XP" card
+  replaced by a hover popup in the Recent XP header; new LP Bank card.
   Quests and trophies still don't award XP.
 
 ## 5.0.3 — 2026-10-08
