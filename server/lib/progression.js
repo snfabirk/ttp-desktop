@@ -458,6 +458,14 @@ function getLifetimeStats() {
     equipped: state.equipped,
     owned: state.inventory.map(getCosmetic).filter(Boolean),
     profileLayout: state.profileLayout,
+    // Fuer weitere Profil-Widgets (v5.6.0)
+    pass: (({ label, tier, tiers, xpIntoTier, xpPerTier }) => ({ label, tier, tiers, xpIntoTier, xpPerTier }))(getPassOverview(state, new Date())),
+    lpBank: { progress: state.lpBank.progress, size: LP_BANK_SIZE },
+    recentGames: [...games].sort((a, b) => b.gameCreation - a.gameCreation).slice(0, 5)
+      .map(g => ({ champId: g.champId, champName: g.champName, win: g.win, kills: g.kills, deaths: g.deaths, assists: g.assists, xp: g.xp, gameCreation: g.gameCreation })),
+    bestWinStreak: [...games].sort((a, b) => a.gameCreation - b.gameCreation)
+      .reduce((acc, g) => { acc.cur = g.win ? acc.cur + 1 : 0; acc.best = Math.max(acc.best, acc.cur); return acc; }, { cur: 0, best: 0 }).best,
+    poolGames: games.filter(g => g.category === 'poolChamp').length,
     trackedSince: games.length ? Math.min(...games.map(g => g.gameCreation)) : null
   };
 }

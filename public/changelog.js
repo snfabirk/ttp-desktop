@@ -25,6 +25,17 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.6.0',
+      date: '2026-10-09',
+      notable: [
+        'New navigation bar at the top: Setup, Overview, Challenge, Pass and Profile are always one click away (the back arrows are gone).',
+        'Challenge and Pass are now separate pages with their own tiles on the Overview. Roles & Picks opens from the Challenge page.',
+        'Profile editor: 21 widgets, drag them from the side bar onto your profile, many more sizes per widget, and resizing previews what appears or disappears before you let go.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.5.0',
       date: '2026-10-09',
       notable: [

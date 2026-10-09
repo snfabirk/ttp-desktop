@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="cosmetics.css">
   <script src="theme.js"></script>
+  <script src="nav.js"></script>
   <script src="update-indicator.js"></script>
   <script src="changelog.js"></script>
   <script src="role-chart.js"></script>
@@ -926,7 +927,6 @@
   </style>
 </head>
 <body>
-  <a class="back-btn" href="index.html" title="Back to Champion Selection" aria-label="Back to Champion Selection">←</a>
   <button type="button" class="settings-gear-btn" id="settingsGearBtn" title="Settings" aria-label="Settings">⚙</button>
   <button type="button" class="quit-btn" id="quitBtn" title="Quit completely" aria-label="Quit completely">⏻</button>
   <header class="site-header">
@@ -945,27 +945,24 @@
       <span class="role-breakdown-more profile-card-more" aria-hidden="true">View profile →</span>
     </a>
 
-    <!-- 2x2-Raster unter der Profilkarte (Nutzerwunsch 2026-10-09): Challenge &
-         Pass, Trophies, Roles & Picks, Shop. -->
+    <!-- 2x2-Raster unter der Profilkarte (Nutzerwunsch 2026-10-09): Challenge,
+         Pass, Trophies, Shop. Roles & Picks ist ueber die Challenge-Seite
+         erreichbar. -->
     <div class="tile-grid">
-      <a href="challenge.html" class="trophies-card challenge-pass-card" id="challengePassCard" title="Challenge details, quests and Challenge Pass">
-        <span class="trophies-icon">🎖️</span>
-        <span class="trophies-label">Challenge &amp; Pass</span>
-        <span class="trophies-progress" id="challengePassSummary">–</span>
-        <span class="role-breakdown-more" aria-hidden="true">More →</span>
+      <a href="challenge.html" class="trophies-card challenge-pass-card" id="challengeCard" title="Your current challenge">
+        <span class="trophies-icon">⚔️</span>
+        <span class="trophies-label">Challenge</span>
+        <span class="trophies-progress" id="challengeSummary">–</span>
       </a>
-
+      <a href="challenge.html?view=pass" class="trophies-card challenge-pass-card" id="challengePassCard" title="Monthly pass, quests and XP">
+        <span class="trophies-icon">🎖️</span>
+        <span class="trophies-label">Pass</span>
+        <span class="trophies-progress" id="challengePassSummary">–</span>
+      </a>
       <a href="trophies.html" class="trophies-card" id="trophiesCard">
         <span class="trophies-icon">🏆</span>
         <span class="trophies-label">Trophies</span>
         <span class="trophies-progress" id="trophiesProgress">0%</span>
-      </a>
-
-      <a href="role.html" class="trophies-card role-breakdown-card" id="roleBreakdownCard">
-        <span class="role-breakdown-chart-wrap" id="roleBreakdownChartWrap"><svg viewBox="0 0 33 34" class="role-breakdown-svg" aria-hidden="true"><rect x="0" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/><rect x="9" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/><rect x="18" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/><rect x="27" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/></svg></span>
-        <span class="trophies-label">Roles &amp; Picks</span>
-        <span class="trophies-progress" id="roleBreakdownSummary">–</span>
-        <span class="role-breakdown-more" aria-hidden="true">More →</span>
       </a>
       <div class="trophies-card shop-card" id="shopCard" title="Spend your pass coins on cosmetics - coming soon">
         <span class="trophies-icon">🛒</span>
@@ -1020,7 +1017,7 @@
     </div>
     <p class="current-context" id="currentContext"></p>
     <p class="empty-hint" id="emptyHint" style="display:none;">
-      No champions selected yet. Choose up to 3 on the <a href="index.html">Champion Selection</a> page.
+      No champions selected yet. Choose up to 3 on the <a href="index.html">Setup</a> page.
     </p>
 
     <p class="status-msg" id="statusMsg"></p>
@@ -1235,7 +1232,7 @@
         : 'No challenge started yet';
       currentContext.innerHTML =
         `Summoner: ${summonerText} · ${sinceText} — ` +
-        `<a href="index.html">change on the Champion Selection page</a>`;
+        `<a href="index.html">change on the Setup page</a>`;
     }
 
     // Liest eine fetch()-Antwort sicher als JSON. Kommt stattdessen z.B. eine
@@ -2049,6 +2046,18 @@
 
     // Profil-Level auf der kompakten Karte (Details auf profile.html) und
     // Pass-Stand auf der Challenge-&-Pass-Karte (Details auf challenge.html).
+    const NAV_ROLE_NAMES = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'Bot', UTILITY: 'Support' };
+    function renderChallengeSummary() {
+      const el = document.getElementById('challengeSummary');
+      const since = loadChallengeStart();
+      if (!since) { el.textContent = 'Not started'; return; }
+      const day = Math.floor((Date.now() - new Date(since).getTime()) / 86400000) + 1;
+      let role = '';
+      try { role = localStorage.getItem('ttp_pool_role') || ''; } catch (e) {}
+      el.innerHTML = `<span class="cp-seg">Day ${day}</span>` +
+        (role ? `<span class="cp-sep" aria-hidden="true"></span><span class="cp-seg">${NAV_ROLE_NAMES[role] || role}</span>` : '');
+    }
+
     async function loadProfileLevel() {
       try {
         const res = await fetch('/api/progression');
@@ -2065,6 +2074,7 @@
     }
 
     (async function init() {
+      renderChallengeSummary();
       loadProfileLevel();
       currentSince = loadChallengeStart();
       currentSummoner = loadSummonerName();

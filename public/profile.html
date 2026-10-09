@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="cosmetics.css">
   <script src="theme.js"></script>
+  <script src="nav.js"></script>
   <script src="update-indicator.js"></script>
   <script src="changelog.js"></script>
   <style>
@@ -299,7 +300,9 @@
       position: absolute;
       z-index: 3;
     }
-    body.editing .w-remove, body.editing .w-resize, body.editing .w-size { display: flex; }
+    body.editing .w-remove, body.editing .w-resize { display: flex; }
+    /* Groessen-Schild nur bei Hover/Ziehen, sonst verdeckt es Inhalt. */
+    body.editing .widget:hover .w-size, body.editing .widget.dragging .w-size { display: flex; }
     .w-remove {
       top: 6px;
       right: 6px;
@@ -367,31 +370,6 @@
       letter-spacing: 1px;
     }
     .panel-scroll { flex: 1; overflow-y: auto; margin: 0 -6px; padding: 0 6px; }
-    .panel-hint {
-      margin: 0 0 10px;
-      color: var(--text-faint);
-      font-size: 0.75rem;
-      line-height: 1.4;
-    }
-    .add-item {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      margin-bottom: 6px;
-      padding: 8px 10px;
-      text-align: left;
-      border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-      border-radius: 8px;
-      background: color-mix(in srgb, var(--bg) 50%, transparent);
-      color: var(--text);
-      font-family: Georgia, serif;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-    .add-item:hover { border-color: var(--gold); }
-    .add-item small { color: var(--text-faint); font-size: 0.7rem; margin-top: 2px; }
-    .add-item:disabled { opacity: 0.4; cursor: default; }
-    .add-item:disabled:hover { border-color: color-mix(in srgb, var(--border) 70%, transparent); }
     .panel-actions { display: flex; gap: 8px; margin-top: 12px; }
     .panel-actions button {
       flex: 1;
@@ -455,10 +433,162 @@
       min-height: 1.2em;
       margin-top: 8px;
     }
+    /* ----- v5.6.0: mehr Widgets, Ziehen aus der Seitenleiste ----- */
+    .w-stats.grid2 { display: grid; grid-template-columns: 1fr 1fr; }
+    .identity.col {
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      gap: 8px;
+    }
+    .identity.col .id-frame { width: calc(var(--cell) * 0.95); height: calc(var(--cell) * 0.95); max-width: 130px; max-height: 130px; }
+    .identity.col .id-main { width: 100%; }
+    .identity.col .id-top { justify-content: center; }
+    .identity.col .id-since { margin: 0 0 6px; }
+    .col-coins { display: inline-block; margin-top: 8px; }
+    .emblem-box.huge { width: 55%; aspect-ratio: 1; }
+    .portrait-row { display: flex; gap: 8px; justify-content: space-around; }
+    .portrait { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 0.7rem; color: var(--text-dim); min-width: 0; }
+    .portrait img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--border); }
+    .portrait.game.won img { border-color: var(--green); }
+    .portrait.game.lost img { border-color: var(--red); }
+    .portrait span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; }
+    .pool-strips { display: flex; height: 100%; }
+    .pool-strips .strip {
+      position: relative;
+      flex: 1;
+      background-size: cover;
+      background-position: center 20%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .pool-strips .strip::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg, rgba(var(--bg-rgb), 0.9), transparent 55%);
+    }
+    .pool-strips .strip span {
+      position: relative;
+      z-index: 1;
+      margin-bottom: 10px;
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.85rem;
+    }
+    .fav-select {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      margin-top: 6px;
+      background: var(--input-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: Georgia, serif;
+      font-size: 0.78rem;
+      padding: 3px 4px;
+    }
+
+    .widget.ghost {
+      opacity: 0.8;
+      border: 1.5px dashed var(--gold);
+      pointer-events: none;
+      z-index: 6;
+    }
+    .widget.ghost.invalid { border-color: var(--red); }
+    .drag-chip {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      padding: 4px 10px;
+      border: 1px solid var(--gold);
+      border-radius: 12px;
+      background: var(--input-bg);
+      color: var(--gold);
+      font-family: Georgia, serif;
+      font-size: 0.78rem;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .add-group {
+      margin: 10px 0 6px;
+      color: var(--text-faint);
+      font-size: 0.68rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .add-group:first-child { margin-top: 0; }
+    .add-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+      padding: 7px 10px;
+      border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--bg) 50%, transparent);
+      color: var(--text);
+      font-family: Georgia, serif;
+      font-size: 0.84rem;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+    .add-item:hover { border-color: var(--gold); }
+    .add-item.disabled { opacity: 0.4; cursor: default; }
+    .add-item.disabled:hover { border-color: color-mix(in srgb, var(--border) 70%, transparent); }
+    .add-text { display: flex; flex-direction: column; min-width: 0; }
+    .add-text small { color: var(--text-faint); font-size: 0.68rem; margin-top: 1px; }
+    .mini-grid {
+      flex-shrink: 0;
+      display: grid;
+      gap: 2px;
+      width: 46px;
+      justify-content: center;
+    }
+    .mini-grid i { background: color-mix(in srgb, var(--gold) 55%, transparent); border-radius: 2px; }
+    .side-panel h3 .hint { vertical-align: 1px; }
+
+    /* "?"-Hinweis */
+    .info-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 0.7rem;
+      line-height: 1;
+      font-style: normal;
+    }
+    .hint { position: relative; display: inline-flex; margin-left: 4px; cursor: help; outline: none; font-family: Georgia, serif; font-size: 0.75rem; letter-spacing: 0; font-weight: normal; }
+    .hint:hover .info-icon, .hint:focus-within .info-icon { border-color: var(--gold); color: var(--gold); }
+    .hint-pop {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: -10px;
+      z-index: 40;
+      width: 220px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      color: var(--text-dim);
+      line-height: 1.45;
+      text-transform: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.12s ease;
+    }
+    .hint:hover .hint-pop, .hint:focus-within .hint-pop { opacity: 1; visibility: visible; }
   </style>
 </head>
 <body>
-  <a class="back-btn" href="overview.html" title="Back to Overview" aria-label="Back to Overview">←</a>
   <button type="button" class="settings-gear-btn" id="settingsGearBtn" title="Settings" aria-label="Settings">⚙</button>
   <button type="button" class="quit-btn" id="quitBtn" title="Quit completely" aria-label="Quit completely">⏻</button>
   <header class="site-header">
@@ -473,8 +603,7 @@
   </div>
 
   <aside class="side-panel left" id="toolPanel" aria-label="Profile tools">
-    <h3>Widgets</h3>
-    <p class="panel-hint">Drag widgets to move them, pull the corner to resize (only sizes that make sense for that widget), × removes. Empty spaces are fine.</p>
+    <h3>Widgets <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Drag a widget from this list onto your profile. On the profile: drag to move, pull the corner to resize (each widget has its own sizes - bigger shows more), × removes. Empty spaces are fine.</span></span></h3>
     <div class="panel-scroll" id="addList"></div>
     <div class="panel-actions">
       <button type="button" class="btn-cancel" id="cancelBtn">Cancel</button>
@@ -505,137 +634,278 @@
     }
 
     // ===== Daten =====
-    const data = { account: null, stats: null, rank: null };
+    const data = { account: null, stats: null, rank: null, champions: [] };
 
-    // ===== Widget-Katalog =====
-    // sizes: erlaubte [Breite, Hoehe] in Rasterzellen, erste = Standard.
+    // ===== Bausteine =====
     const RANK_ABBR = { IRON: 'Iron', BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold', PLATINUM: 'Plat', EMERALD: 'Emerald', DIAMOND: 'Diamond', MASTER: 'Master', GRANDMASTER: 'GM', CHALLENGER: 'Challenger' };
     const APEX = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
-    function emblemUrl(tier) {
-      return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-${tier.toLowerCase()}.png`;
-    }
+    const ROLE_NAMES = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'Bot', UTILITY: 'Support' };
+    const emblemUrl = tier => `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-${tier.toLowerCase()}.png`;
+    const champIcon = id => `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${id}.png`;
+    const champSplash = id => `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${id}_0.jpg`;
+    const tone = pct => (pct === null ? '' : pct >= 50 ? 'pos' : 'neg');
     const stat = (v, l, cls = '') => `<div class="w-stat"><span class="v ${cls}">${v}</span><span class="l">${l}</span></div>`;
     const big = (v, l, cls = '') => `<div class="w-body w-center"><div class="w-big ${cls}">${v}</div><div class="w-label">${l}</div></div>`;
+    const title = t => `<div class="w-title">${t}</div>`;
+    const bar = (pct, text) => `<div class="level-line"><div class="xp-bar"><div class="xp-bar-fill" style="width:${Math.max(0, Math.min(100, pct))}%"></div></div>${text ? `<span class="xp-text">${text}</span>` : ''}</div>`;
+    const S = () => data.stats;
+    const winrate = () => (S() && S().games ? Math.round((S().wins / S().games) * 100) : null);
+    // Anzahl Stat-Kacheln je Groesse fuer die Listen-Widgets
+    const statCount = w => (w.w >= 6 ? 5 : w.w >= 4 ? 4 : w.w);
+    function statsWidget(name, all, w) {
+      if (w.w === 1 && w.h === 1) return big(all[0].v, all[0].l, all[0].cls || '');
+      const n = w.h >= 2 ? Math.min(4, all.length) : statCount(w);
+      return `<div class="w-body">${title(name)}<div class="w-stats${w.h >= 2 ? ' grid2' : ''}">${all.slice(0, n).map(s => stat(s.v, s.l, s.cls || '')).join('')}</div></div>`;
+    }
+    function pool() {
+      try { return JSON.parse(ls('ttp_selected_champs') || '[]').filter(c => c && c.id); } catch (e) { return []; }
+    }
 
+    // ===== Widget-Katalog =====
+    // sizes: erlaubte [Breite, Hoehe] in Rasterzellen, erste = Standard beim
+    // Hinzufuegen. Je groesser, desto mehr Infos (Nutzerdesign: wie iPhone-
+    // Widgets, aber nur Groessen, die fuer das Widget Sinn ergeben).
     const WIDGETS = {
       identity: {
-        name: 'Name & Level', desc: 'Always on your profile', fixed: true, sizes: [[6, 1]],
-        render() {
-          const s = data.stats;
+        group: 'Basics', name: 'Name & Level', desc: 'Always on your profile', fixed: true, sizes: [[6, 1], [4, 1], [3, 2]],
+        render(w) {
+          const s = S();
           const a = data.account;
           const lvl = s ? s.level : { level: 1, xpIntoLevel: 0, xpForNextLevel: 2000 };
           const border = (editState ? editState.border : (s && s.equipped && s.equipped.border)) || 'none';
           const icon = a && a.profileIconId != null ? `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${a.profileIconId}.png` : '';
-          return `<div class="w-body identity">
+          const col = w.h >= 2;
+          return `<div class="w-body identity${col ? ' col' : ''}">
             <span class="cos-border id-frame cos-${border}"><img src="${icon}" alt="" onload="this.classList.add('loaded')"></span>
             <div class="id-main">
               <div class="id-top">
                 <div class="id-name">${a ? esc(`${a.gameName}#${a.tagLine}`) : 'No summoner loaded yet'}</div>
-                <span class="coin-pill" title="Coins from the monthly pass">🪙 ${fmtNum(s ? s.coins : 0)}</span>
+                ${col ? '' : `<span class="coin-pill" title="Coins from the monthly pass">🪙 ${fmtNum(s ? s.coins : 0)}</span>`}
               </div>
-              <div class="id-since">${s && s.challenges.firstStarted ? `Challenger since ${fmtDate(s.challenges.firstStarted)}` : ''}</div>
+              ${w.w >= 6 || col ? `<div class="id-since">${s && s.challenges.firstStarted ? `Challenger since ${fmtDate(s.challenges.firstStarted)}` : ''}</div>` : ''}
               <div class="level-line" title="Profile level - keeps growing across all challenges">
                 <span class="level-pill">Level ${lvl.level}</span>
                 <div class="xp-bar"><div class="xp-bar-fill" style="width:${(lvl.xpIntoLevel / lvl.xpForNextLevel) * 100}%"></div></div>
-                <span class="xp-text">${fmtNum(lvl.xpIntoLevel)} / ${fmtNum(lvl.xpForNextLevel)} XP</span>
+                ${col ? '' : `<span class="xp-text">${fmtNum(lvl.xpIntoLevel)} / ${fmtNum(lvl.xpForNextLevel)} XP</span>`}
               </div>
+              ${col ? `<span class="coin-pill col-coins">🪙 ${fmtNum(s ? s.coins : 0)}</span>` : ''}
             </div>
           </div>`;
         }
       },
+
+      // ----- Stats -----
       challenges: {
-        name: 'Challenges', desc: 'Started, goals, trophies', sizes: [[3, 1], [2, 1], [6, 1]],
+        group: 'Stats', name: 'Challenges', desc: 'Started, goals, trophies', sizes: [[3, 1], [1, 1], [2, 1], [4, 1], [6, 1], [2, 2]],
         render(w) {
-          const c = data.stats ? data.stats.challenges : null;
-          const all = [
-            stat(c ? c.started : '–', 'Started'),
-            stat(c ? c.goalsReached : '–', 'Goals'),
-            stat(c ? c.trophies : '–', 'Trophies'),
-            stat(c && c.started ? `${c.bestTrophies} 🏆` : '–', 'Best'),
-            stat(c ? c.platinum : '–', 'Platinum')
-          ];
-          const n = w.w >= 6 ? 5 : w.w >= 3 ? 3 : 2;
-          return `<div class="w-body"><div class="w-title">Challenges</div><div class="w-stats">${all.slice(0, n).join('')}</div></div>`;
+          const c = S() ? S().challenges : null;
+          return statsWidget('Challenges', [
+            { v: c ? c.started : '–', l: 'Started' },
+            { v: c ? c.goalsReached : '–', l: 'Goals' },
+            { v: c ? c.trophies : '–', l: 'Trophies' },
+            { v: c && c.started ? `${c.bestTrophies} 🏆` : '–', l: 'Best' },
+            { v: c ? c.platinum : '–', l: 'Platinum' }
+          ], w);
         }
       },
       games: {
-        name: 'Games', desc: 'Games, win rate, KDA, LP', sizes: [[3, 1], [2, 1], [6, 1]],
+        group: 'Stats', name: 'Games', desc: 'Games, win rate, KDA, LP', sizes: [[3, 1], [1, 1], [2, 1], [4, 1], [6, 1], [2, 2]],
         render(w) {
-          const d = data.stats;
+          const d = S();
           const g = d ? d.games : 0;
-          const wr = g ? Math.round((d.wins / g) * 100) : null;
-          const all = [
-            stat(d ? g : '–', 'Games'),
-            stat(wr === null ? '–' : `${wr}%`, 'Win rate', wr === null ? '' : wr >= 50 ? 'pos' : 'neg'),
-            stat(g ? [d.kills, d.deaths, d.assists].map(n => (n / g).toFixed(1)).join('/') : '–', 'Avg KDA'),
-            stat(d ? `+${fmtNum(d.lpGained)}` : '–', 'LP gained'),
-            stat(d ? `${d.lpBankFills}×` : '–', 'LP Bank')
-          ];
-          const n = w.w >= 6 ? 5 : w.w >= 3 ? 3 : 2;
-          return `<div class="w-body"><div class="w-title">Games</div><div class="w-stats">${all.slice(0, n).join('')}</div></div>`;
-        }
-      },
-      mostPlayed: {
-        name: 'Most Played', desc: 'Your top champions', sizes: [[2, 2], [1, 1], [2, 1], [3, 2]],
-        render(w) {
-          const top = data.stats ? data.stats.topChamps : [];
-          if (!top.length) return `<div class="w-body w-center"><div class="w-title">Most Played</div><div class="w-label">No games yet</div></div>`;
-          const t = top[0];
-          const wrOf = c => Math.round((c.wins / c.games) * 100);
-          if (w.h === 1 || (w.w === 2 && w.h === 2 && top.length === 1)) {
-            return `<div class="champ-splash" style="background-image:url('https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${t.champId}_0.jpg')"></div>
-              <div class="w-body"><div class="champ-over"><div class="n">${esc(t.name)}</div>${w.w > 1 || w.h > 1 ? `<div class="s">${t.games} ${t.games === 1 ? 'game' : 'games'} · ${wrOf(t)}% WR</div>` : ''}</div></div>`;
-          }
-          return `<div class="w-body" style="justify-content:flex-start"><div class="w-title">Most Played</div>${top.map(c => `<div class="champ-row">
-            <img src="https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${c.champId}.png" alt="">
-            <span class="name">${esc(c.name)}</span>
-            <span class="g">${c.games}G · <span class="${wrOf(c) >= 50 ? 'pos' : 'neg'}">${wrOf(c)}%</span></span>
-          </div>`).join('')}</div>`;
-        }
-      },
-      rank: {
-        name: 'Current Rank', desc: 'Solo/Duo rank', sizes: [[2, 1], [1, 1]],
-        render(w) {
-          const r = data.rank;
-          if (!r) return big('–', 'Unranked');
-          const text = APEX.has(r.tier) ? `${RANK_ABBR[r.tier]} · ${r.leaguePoints} LP` : `${RANK_ABBR[r.tier] || r.tier} ${r.rank} · ${r.leaguePoints} LP`;
-          if (w.w === 1) return `<div class="w-body w-center" title="${text}"><span class="emblem-box big"><img src="${emblemUrl(r.tier)}" alt=""></span><div class="w-label">${RANK_ABBR[r.tier] || r.tier} ${APEX.has(r.tier) ? '' : r.rank}</div></div>`;
-          return `<div class="w-body"><div class="rank-row"><span class="emblem-box small"><img src="${emblemUrl(r.tier)}" alt=""></span><div><div class="rank-text">${text}</div><div class="w-label">Solo / Duo</div></div></div></div>`;
+          const wr = winrate();
+          return statsWidget('Games', [
+            { v: d ? g : '–', l: 'Games' },
+            { v: wr === null ? '–' : `${wr}%`, l: 'Win rate', cls: tone(wr) },
+            { v: g ? [d.kills, d.deaths, d.assists].map(n => (n / g).toFixed(1)).join('/') : '–', l: 'Avg KDA' },
+            { v: d ? `+${fmtNum(d.lpGained)}` : '–', l: 'LP gained' },
+            { v: d ? `${d.lpBankFills}×` : '–', l: 'LP Bank' }
+          ], w);
         }
       },
       winrate: {
-        name: 'Win Rate', desc: 'One big number', sizes: [[1, 1]],
-        render() {
-          const d = data.stats;
-          const wr = d && d.games ? Math.round((d.wins / d.games) * 100) : null;
-          return big(wr === null ? '–' : `${wr}%`, 'Win rate', wr === null ? '' : wr >= 50 ? 'pos' : 'neg');
+        group: 'Stats', name: 'Win Rate', desc: 'One big number', sizes: [[1, 1], [2, 1]],
+        render(w) {
+          const wr = winrate();
+          if (w.w === 1) return big(wr === null ? '–' : `${wr}%`, 'Win rate', tone(wr));
+          const d = S();
+          return `<div class="w-body w-center"><div class="w-big ${tone(wr)}">${wr === null ? '–' : `${wr}%`}</div><div class="w-label">${d ? `${d.wins}W / ${d.games - d.wins}L` : ''} · Win rate</div></div>`;
         }
       },
-      level: {
-        name: 'Level', desc: 'Your level, big', sizes: [[1, 1]],
-        render() {
-          return big(data.stats ? data.stats.level.level : 1, 'Level');
+      kda: {
+        group: 'Stats', name: 'KDA', desc: 'Your KDA ratio', sizes: [[1, 1], [2, 1], [3, 1]],
+        render(w) {
+          const d = S();
+          const g = d ? d.games : 0;
+          const ratio = g ? ((d.kills + d.assists) / Math.max(1, d.deaths)).toFixed(2) : '–';
+          if (w.w === 1) return big(ratio, 'KDA');
+          const avg = n => (g ? (n / g).toFixed(1) : '–');
+          if (w.w === 2) return `<div class="w-body w-center"><div class="w-big">${ratio}</div><div class="w-label">KDA · ${g ? `${avg(d.kills)} / ${avg(d.deaths)} / ${avg(d.assists)}` : 'no games'}</div></div>`;
+          return `<div class="w-body">${title('KDA')}<div class="w-stats">${stat(ratio, 'Ratio')}${stat(avg(d ? d.kills : 0), 'Kills')}${stat(avg(d ? d.deaths : 0), 'Deaths')}${stat(avg(d ? d.assists : 0), 'Assists')}</div></div>`;
         }
+      },
+      kills: {
+        group: 'Stats', name: 'Total Kills', desc: 'Kills (and assists)', sizes: [[1, 1], [2, 1]],
+        render(w) {
+          const d = S();
+          if (w.w === 1) return big(d ? fmtNum(d.kills) : '–', 'Kills');
+          return `<div class="w-body">${title('Takedowns')}<div class="w-stats">${stat(d ? fmtNum(d.kills) : '–', 'Kills')}${stat(d ? fmtNum(d.assists) : '–', 'Assists')}</div></div>`;
+        }
+      },
+      streak: {
+        group: 'Stats', name: 'Best Win Streak', desc: 'Your longest streak', sizes: [[1, 1]],
+        render() { return big(S() ? `${S().bestWinStreak}🔥` : '–', 'Best streak'); }
+      },
+      onPlan: {
+        group: 'Stats', name: 'On Plan', desc: 'Games on your pool', sizes: [[1, 1], [2, 1]],
+        render(w) {
+          const d = S();
+          const pct = d && d.games ? Math.round((d.poolGames / d.games) * 100) : null;
+          if (w.w === 1) return big(pct === null ? '–' : `${pct}%`, 'On plan');
+          return `<div class="w-body">${title('On Plan')}${bar(pct || 0, pct === null ? 'no games' : `${pct}% pool games`)}</div>`;
+        }
+      },
+      rank: {
+        group: 'Stats', name: 'Current Rank', desc: 'Solo/Duo rank', sizes: [[2, 1], [1, 1], [2, 2]],
+        render(w) {
+          const r = data.rank;
+          if (!r) return big('–', 'Unranked');
+          const name = RANK_ABBR[r.tier] || r.tier;
+          const text = APEX.has(r.tier) ? `${name} · ${r.leaguePoints} LP` : `${name} ${r.rank} · ${r.leaguePoints} LP`;
+          if (w.w === 1) return `<div class="w-body w-center" title="${text}"><span class="emblem-box big"><img src="${emblemUrl(r.tier)}" alt=""></span><div class="w-label">${name} ${APEX.has(r.tier) ? '' : r.rank}</div></div>`;
+          if (w.h >= 2) return `<div class="w-body w-center"><span class="emblem-box huge"><img src="${emblemUrl(r.tier)}" alt=""></span><div class="rank-text">${text}</div><div class="w-label">Solo / Duo</div></div>`;
+          return `<div class="w-body"><div class="rank-row"><span class="emblem-box small"><img src="${emblemUrl(r.tier)}" alt=""></span><div><div class="rank-text">${text}</div><div class="w-label">Solo / Duo</div></div></div></div>`;
+        }
+      },
+
+      // ----- Champions -----
+      mostPlayed: {
+        group: 'Champions', name: 'Most Played', desc: 'Your top champions', sizes: [[2, 2], [1, 1], [2, 1], [3, 1], [3, 2]],
+        render(w) {
+          const top = S() ? S().topChamps : [];
+          if (!top.length) return `<div class="w-body w-center">${title('Most Played')}<div class="w-label">No games yet</div></div>`;
+          const wrOf = c => Math.round((c.wins / c.games) * 100);
+          const t = top[0];
+          if (w.h === 1 && w.w >= 3) {
+            return `<div class="w-body">${title('Most Played')}<div class="portrait-row">${top.map(c => `<div class="portrait"><img src="${champIcon(c.champId)}" alt=""><span class="${tone(wrOf(c))}">${wrOf(c)}%</span></div>`).join('')}</div></div>`;
+          }
+          if (w.h === 1 || top.length === 1) {
+            return `<div class="champ-splash" style="background-image:url('${champSplash(t.champId)}')"></div>
+              <div class="w-body"><div class="champ-over"><div class="n">${esc(t.name)}</div>${w.w > 1 || w.h > 1 ? `<div class="s">${t.games} ${t.games === 1 ? 'game' : 'games'} · ${wrOf(t)}% WR</div>` : ''}</div></div>`;
+          }
+          return `<div class="w-body" style="justify-content:flex-start">${title('Most Played')}${top.map(c => `<div class="champ-row">
+            <img src="${champIcon(c.champId)}" alt=""><span class="name">${esc(c.name)}</span>
+            <span class="g">${c.games}G · <span class="${tone(wrOf(c))}">${wrOf(c)}%</span></span></div>`).join('')}</div>`;
+        }
+      },
+      pool: {
+        group: 'Champions', name: 'Current Pool', desc: 'Your 3 ponies + role', sizes: [[3, 1], [1, 1], [2, 1], [3, 2]],
+        render(w) {
+          const champs = pool();
+          const role = ROLE_NAMES[ls('ttp_pool_role')] || '';
+          if (!champs.length) return big('–', 'No pool');
+          if (w.w === 1) return big(role || '–', 'Main role');
+          if (w.h >= 2) {
+            return `<div class="pool-strips">${champs.map(c => `<div class="strip" style="background-image:url('${champSplash(c.id)}')"><span>${esc(c.name)}</span></div>`).join('')}</div>`;
+          }
+          return `<div class="w-body">${title(`Current Pool${role ? ` · ${role}` : ''}`)}<div class="portrait-row">${champs.map(c => `<div class="portrait"><img src="${champIcon(c.id)}" alt="">${w.w >= 3 ? `<span>${esc(c.name)}</span>` : ''}</div>`).join('')}</div></div>`;
+        }
+      },
+      favChamp: {
+        group: 'Champions', name: 'Favorite Champion', desc: 'Show off any champion', sizes: [[2, 2], [1, 1], [2, 1], [3, 2]],
+        render(w) {
+          const id = w.config && w.config.champId;
+          const champ = data.champions.find(c => c.id === id);
+          const picker = editState
+            ? `<select class="fav-select" data-fav="${w.id}"><option value="">Pick a champion…</option>${data.champions.map(c => `<option value="${c.id}"${c.id === id ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select>`
+            : '';
+          if (!champ) return `<div class="w-body w-center">${title('Favorite')}<div class="w-label">${editState ? '' : 'Not chosen yet'}</div>${picker}</div>`;
+          return `<div class="champ-splash" style="background-image:url('${champSplash(champ.id)}')"></div>
+            <div class="w-body"><div class="champ-over">${w.w > 1 || w.h > 1 ? '<div class="s">Favorite</div>' : ''}<div class="n">${esc(champ.name)}</div>${picker}</div></div>`;
+        }
+      },
+      recentGames: {
+        group: 'Champions', name: 'Recent Games', desc: 'Your last games', sizes: [[2, 2], [2, 1], [3, 1], [3, 2], [6, 1]],
+        render(w) {
+          const games = S() ? S().recentGames : [];
+          if (!games.length) return `<div class="w-body w-center">${title('Recent Games')}<div class="w-label">No games yet</div></div>`;
+          if (w.h === 1) {
+            const n = w.w >= 6 ? 5 : w.w >= 3 ? 4 : 3;
+            return `<div class="w-body">${title('Recent Games')}<div class="portrait-row">${games.slice(0, n).map(g => `<div class="portrait game ${g.win ? 'won' : 'lost'}" title="${esc(g.champName)} ${g.kills}/${g.deaths}/${g.assists}"><img src="${champIcon(g.champId)}" alt="">${w.w >= 6 ? `<span>${g.kills}/${g.deaths}/${g.assists}</span>` : ''}</div>`).join('')}</div></div>`;
+          }
+          return `<div class="w-body" style="justify-content:flex-start">${title('Recent Games')}${games.slice(0, 4).map(g => `<div class="champ-row">
+            <img src="${champIcon(g.champId)}" alt=""><span class="name"><span class="${g.win ? 'pos' : 'neg'}">${g.win ? 'W' : 'L'}</span> ${esc(g.champName)}</span>
+            <span class="g">${g.kills}/${g.deaths}/${g.assists}</span></div>`).join('')}</div>`;
+        }
+      },
+
+      // ----- Progress -----
+      level: {
+        group: 'Progress', name: 'Level', desc: 'Your level', sizes: [[1, 1], [2, 1], [3, 1]],
+        render(w) {
+          const lvl = S() ? S().level : { level: 1, xpIntoLevel: 0, xpForNextLevel: 2000 };
+          if (w.w === 1) return big(lvl.level, 'Level');
+          return `<div class="w-body">${title(`Level ${lvl.level}`)}${bar((lvl.xpIntoLevel / lvl.xpForNextLevel) * 100, w.w >= 3 ? `${fmtNum(lvl.xpIntoLevel)} / ${fmtNum(lvl.xpForNextLevel)} XP` : '')}</div>`;
+        }
+      },
+      totalXp: {
+        group: 'Progress', name: 'Total XP', desc: 'All XP ever earned', sizes: [[1, 1], [2, 1]],
+        render(w) {
+          const xp = S() ? S().totalXp : 0;
+          return big(w.w === 1 && xp >= 10000 ? `${Math.round(xp / 1000)}k` : fmtNum(xp), 'Total XP');
+        }
+      },
+      pass: {
+        group: 'Progress', name: 'Monthly Pass', desc: 'Your pass tier', sizes: [[1, 1], [2, 1], [3, 1]],
+        render(w) {
+          const p = S() ? S().pass : null;
+          if (!p) return big('–', 'Pass');
+          if (w.w === 1) return big(`${p.tier}`, `Tier / ${p.tiers}`);
+          return `<div class="w-body">${title(`${p.label.split(' ')[0]} Pass · Tier ${p.tier}`)}${bar((p.tier / p.tiers) * 100, w.w >= 3 ? `${p.tier} / ${p.tiers}` : '')}</div>`;
+        }
+      },
+      lpBank: {
+        group: 'Progress', name: 'LP Bank', desc: 'LP towards the next fill', sizes: [[1, 1], [2, 1], [3, 1]],
+        render(w) {
+          const b = S() ? S().lpBank : { progress: 0, size: 100 };
+          if (w.w === 1) return big(b.progress, `/ ${b.size} LP`);
+          return `<div class="w-body">${title('LP Bank')}${bar((b.progress / b.size) * 100, `${b.progress} / ${b.size} LP`)}</div>`;
+        }
+      },
+      coins: {
+        group: 'Progress', name: 'Coins', desc: 'Your coin balance', sizes: [[1, 1]],
+        render() { return big(S() ? fmtNum(S().coins) : '–', 'Coins 🪙'); }
       },
       trophies: {
-        name: 'Trophies', desc: 'Trophies earned', sizes: [[1, 1], [2, 1]],
+        group: 'Progress', name: 'Trophies', desc: 'Trophies earned', sizes: [[1, 1], [2, 1], [3, 1]],
         render(w) {
-          const c = data.stats ? data.stats.challenges : null;
+          const c = S() ? S().challenges : null;
           if (w.w === 1) return big(c ? `${c.trophies}` : '–', 'Trophies 🏆');
-          return `<div class="w-body"><div class="w-title">Trophies</div><div class="w-stats">${stat(c ? c.trophies : '–', 'Earned')}${stat(c ? c.platinum : '–', 'Platinum')}</div></div>`;
+          return `<div class="w-body">${title('Trophies')}<div class="w-stats">${stat(c ? c.trophies : '–', 'Earned')}${stat(c ? c.platinum : '–', 'Platinum')}${w.w >= 3 ? stat(c && c.started ? c.bestTrophies : '–', 'Best') : ''}</div></div>`;
         }
       },
+      days: {
+        group: 'Progress', name: 'Days as Challenger', desc: 'Since your first challenge', sizes: [[1, 1]],
+        render() {
+          const first = S() && S().challenges.firstStarted;
+          const days = first ? Math.floor((Date.now() - new Date(first).getTime()) / 86400000) + 1 : null;
+          return big(days === null ? '–' : days, days === 1 ? 'Day' : 'Days');
+        }
+      },
+
+      // ----- Personal -----
       bio: {
-        name: 'About me', desc: 'A short text', sizes: [[3, 1], [2, 1], [6, 1], [3, 2]],
+        group: 'Personal', name: 'About me', desc: 'A short text', sizes: [[3, 1], [1, 1], [2, 1], [6, 1], [2, 2], [3, 2]],
         render(w) {
           const text = (w.config && w.config.text) || '';
           if (editState) {
-            return `<div class="w-body" style="justify-content:flex-start"><div class="w-title">About me</div><textarea class="bio-edit" maxlength="280" data-bio="${w.id}" placeholder="Write something…">${esc(text)}</textarea></div>`;
+            return `<div class="w-body" style="justify-content:flex-start">${w.w > 1 ? title('About me') : ''}<textarea class="bio-edit" maxlength="280" data-bio="${w.id}" placeholder="Write something…">${esc(text)}</textarea></div>`;
           }
-          return `<div class="w-body" style="justify-content:flex-start"><div class="w-title">About me</div><div class="bio-text${text ? '' : ' empty'}">${text ? esc(text) : 'Nothing here yet.'}</div></div>`;
+          return `<div class="w-body" style="justify-content:flex-start">${w.w > 1 ? title('About me') : ''}<div class="bio-text${text ? '' : ' empty'}">${text ? esc(text) : 'Nothing here yet.'}</div></div>`;
         }
       }
     };
+    const GROUPS = ['Basics', 'Stats', 'Champions', 'Progress', 'Personal'];
 
     const DEFAULT_LAYOUT = [
       { id: 'identity', type: 'identity', x: 0, y: 0, w: 6, h: 1 },
@@ -649,7 +919,7 @@
     ];
 
     let layout = DEFAULT_LAYOUT.map(w => ({ ...w }));
-    // editState: null = Ansicht; sonst { layout-Kopie fuer Abbrechen, border }
+    // editState: null = Ansicht; sonst { snapshot (fuer Abbrechen), border }
     let editState = null;
 
     // ===== Raster-Logik =====
@@ -660,17 +930,20 @@
       if (rect.x < 0 || rect.y < 0 || rect.x + rect.w > COLS) return false;
       return layout.every(o => o.id === ignoreId || !overlaps(rect, o));
     }
-    function firstFreeSpot(w, h) {
-      for (let y = 0; y < 60; y++) {
-        for (let x = 0; x + w <= COLS; x++) {
-          if (fits({ x, y, w, h }, null)) return { x, y };
-        }
-      }
-      return null;
-    }
     function rowCount() {
       const bottom = layout.reduce((m, w) => Math.max(m, w.y + w.h), 1);
       return editState ? bottom + 2 : bottom;
+    }
+    function setRows(min = 0) {
+      canvas.style.gridTemplateRows = `repeat(${Math.max(rowCount(), min)}, var(--cell))`;
+    }
+
+    function widgetInner(w) {
+      const def = WIDGETS[w.type];
+      return `${def.render(w)}
+        ${def.fixed ? '' : '<button type="button" class="w-remove" title="Remove widget" data-remove>×</button>'}
+        ${def.sizes.length > 1 ? '<span class="w-resize" title="Drag to resize" data-resize></span>' : ''}
+        <span class="w-size">${w.w}×${w.h}</span>`;
     }
 
     function render() {
@@ -682,43 +955,35 @@
         }
       }
       layout.forEach(w => {
-        const def = WIDGETS[w.type];
-        if (!def) return;
-        html += `<div class="widget" data-id="${w.id}" style="grid-column:${w.x + 1} / span ${w.w};grid-row:${w.y + 1} / span ${w.h}">
-          ${def.render(w)}
-          ${def.fixed ? '' : '<button type="button" class="w-remove" title="Remove widget" data-remove>×</button>'}
-          ${def.sizes.length > 1 ? '<span class="w-resize" title="Drag to resize" data-resize></span>' : ''}
-          <span class="w-size">${w.w}×${w.h}</span>
-        </div>`;
+        if (!WIDGETS[w.type]) return;
+        html += `<div class="widget" data-id="${w.id}" style="grid-column:${w.x + 1} / span ${w.w};grid-row:${w.y + 1} / span ${w.h}">${widgetInner(w)}</div>`;
       });
-      canvas.style.gridTemplateRows = `repeat(${rows}, var(--cell))`;
+      setRows();
       canvas.innerHTML = html;
       if (editState) renderPanels();
     }
 
-    // ===== Ziehen / Groesse aendern =====
-    function cellMetrics() {
+    function cellStep() {
       const rect = canvas.getBoundingClientRect();
-      const gap = 12;
-      const cell = (rect.width - gap * (COLS - 1)) / COLS;
-      return { rect, step: cell + gap };
+      return { rect, step: (rect.width - 12 * (COLS - 1)) / COLS + 12 };
     }
 
+    // ===== Verschieben / Groesse aendern (vorhandene Widgets) =====
     let drag = null;
     canvas.addEventListener('pointerdown', e => {
       if (!editState) return;
       const el = e.target.closest('.widget');
-      if (!el || e.target.closest('[data-remove]') || e.target.closest('textarea')) return;
+      if (!el || el.classList.contains('ghost') || e.target.closest('[data-remove], textarea, select')) return;
       const w = layout.find(x => x.id === el.dataset.id);
       if (!w) return;
       e.preventDefault();
-      drag = { w, el, mode: e.target.closest('[data-resize]') ? 'resize' : 'move', startX: e.clientX, startY: e.clientY, orig: { x: w.x, y: w.y, w: w.w, h: w.h }, ok: true };
+      drag = { mode: e.target.closest('[data-resize]') ? 'resize' : 'move', w, el, startX: e.clientX, startY: e.clientY, orig: { x: w.x, y: w.y, w: w.w, h: w.h }, ok: true };
       el.classList.add('dragging');
       el.setPointerCapture(e.pointerId);
     });
     canvas.addEventListener('pointermove', e => {
-      if (!drag) return;
-      const { step } = cellMetrics();
+      if (!drag || drag.mode === 'new') return;
+      const { step } = cellStep();
       const o = drag.orig;
       let next;
       if (drag.mode === 'move') {
@@ -726,34 +991,90 @@
         next.x = Math.max(0, Math.min(COLS - o.w, next.x));
         next.y = Math.max(0, next.y);
       } else {
-        // Naechste erlaubte Groesse zur Mauszeiger-Position
+        // Naechste erlaubte Groesse zum Mauszeiger
         const wantW = o.w + (e.clientX - drag.startX) / step;
         const wantH = o.h + (e.clientY - drag.startY) / step;
-        const sizes = WIDGETS[drag.w.type].sizes;
-        const best = sizes.reduce((b, s) => {
+        const best = WIDGETS[drag.w.type].sizes.reduce((b, s) => {
           const d = Math.hypot(s[0] - wantW, s[1] - wantH);
           return !b || d < b.d ? { s, d } : b;
         }, null).s;
         next = { ...o, w: best[0], h: best[1] };
         if (next.x + next.w > COLS) next.x = COLS - next.w;
+        // Live-Vorschau: Inhalt sofort in der neuen Groesse zeigen, damit man
+        // sieht, was dazukommt bzw. wegfaellt (nicht erst nach dem Loslassen).
+        const key = `${next.w}x${next.h}`;
+        if (drag.sizeKey !== key) {
+          drag.sizeKey = key;
+          drag.el.innerHTML = widgetInner({ ...drag.w, ...next });
+        }
       }
       drag.ok = fits(next, drag.w.id);
       drag.next = next;
       drag.el.style.gridColumn = `${next.x + 1} / span ${next.w}`;
       drag.el.style.gridRow = `${next.y + 1} / span ${next.h}`;
       drag.el.classList.toggle('invalid', !drag.ok);
-      const rows = Math.max(rowCount(), next.y + next.h + 1);
-      canvas.style.gridTemplateRows = `repeat(${rows}, var(--cell))`;
+      setRows(next.y + next.h + 1);
     });
     function endDrag() {
-      if (!drag) return;
-      const { w, next, ok } = drag;
-      if (next && ok) Object.assign(w, { x: next.x, y: next.y, w: next.w, h: next.h });
+      if (!drag || drag.mode === 'new') return;
+      if (drag.next && drag.ok) Object.assign(drag.w, { x: drag.next.x, y: drag.next.y, w: drag.next.w, h: drag.next.h });
       drag = null;
       render();
     }
     canvas.addEventListener('pointerup', endDrag);
     canvas.addEventListener('pointercancel', endDrag);
+
+    // ===== Neues Widget aus der Seitenleiste ziehen =====
+    const chip = document.createElement('div');
+    chip.className = 'drag-chip';
+    document.body.appendChild(chip);
+
+    document.getElementById('addList').addEventListener('pointerdown', e => {
+      const item = e.target.closest('[data-add]');
+      if (!item || item.classList.contains('disabled')) return;
+      e.preventDefault();
+      const type = item.dataset.add;
+      const [w, h] = WIDGETS[type].sizes[0];
+      const ghost = document.createElement('div');
+      ghost.className = 'widget ghost';
+      ghost.innerHTML = WIDGETS[type].render({ id: '_ghost', type, w, h, config: {} });
+      drag = { mode: 'new', type, w, h, ghost, ok: false, next: null };
+      chip.textContent = `${WIDGETS[type].name} · ${w}×${h}`;
+      chip.style.display = 'block';
+      moveNew(e);
+    });
+    function moveNew(e) {
+      chip.style.left = `${e.clientX + 14}px`;
+      chip.style.top = `${e.clientY + 14}px`;
+      const { rect, step } = cellStep();
+      const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top - step / 2 && e.clientY <= rect.bottom + step;
+      if (!inside) {
+        drag.ghost.remove();
+        drag.ok = false;
+        return;
+      }
+      const x = Math.max(0, Math.min(COLS - drag.w, Math.round((e.clientX - rect.left) / step - drag.w / 2)));
+      const y = Math.max(0, Math.round((e.clientY - rect.top) / step - drag.h / 2));
+      drag.next = { x, y, w: drag.w, h: drag.h };
+      drag.ok = fits(drag.next, null);
+      drag.ghost.style.gridColumn = `${x + 1} / span ${drag.w}`;
+      drag.ghost.style.gridRow = `${y + 1} / span ${drag.h}`;
+      drag.ghost.classList.toggle('invalid', !drag.ok);
+      if (!drag.ghost.isConnected) canvas.appendChild(drag.ghost);
+      setRows(y + drag.h + 1);
+    }
+    document.addEventListener('pointermove', e => { if (drag && drag.mode === 'new') moveNew(e); });
+    document.addEventListener('pointerup', () => {
+      if (!drag || drag.mode !== 'new') return;
+      const { type, next, ok } = drag;
+      drag.ghost.remove();
+      chip.style.display = 'none';
+      drag = null;
+      if (ok && next) {
+        layout.push({ id: type, type, ...next, config: type === 'bio' ? { text: '' } : {} });
+      }
+      render();
+    });
 
     canvas.addEventListener('click', e => {
       if (!editState || !e.target.closest('[data-remove]')) return;
@@ -767,6 +1088,13 @@
       const w = layout.find(x => x.id === ta.dataset.bio);
       if (w) w.config = { ...(w.config || {}), text: ta.value };
     });
+    canvas.addEventListener('change', e => {
+      const sel = e.target.closest('[data-fav]');
+      if (!sel) return;
+      const w = layout.find(x => x.id === sel.dataset.fav);
+      if (w) w.config = { ...(w.config || {}), champId: sel.value };
+      render();
+    });
 
     // ===== Panels =====
     let invTab = 'border';
@@ -777,17 +1105,25 @@
       { id: 'theme', label: 'Themes' }
     ];
 
+    function miniGrid([w, h]) {
+      return `<span class="mini-grid" style="grid-template-columns:repeat(${w}, 9px);grid-template-rows:repeat(${h}, 9px)">${'<i></i>'.repeat(w * h)}</span>`;
+    }
+
     function renderPanels() {
       const present = new Set(layout.map(w => w.type));
-      document.getElementById('addList').innerHTML = Object.entries(WIDGETS)
-        .filter(([, def]) => !def.fixed)
-        .map(([type, def]) => `<button type="button" class="add-item" data-add="${type}"${present.has(type) ? ' disabled' : ''}>
-          ${def.name}<small>${present.has(type) ? 'Already on your profile' : `${def.desc} · ${def.sizes.map(s => s.join('×')).join(', ')}`}</small>
-        </button>`).join('');
+      document.getElementById('addList').innerHTML = GROUPS.map(group => {
+        const items = Object.entries(WIDGETS).filter(([, def]) => def.group === group && !def.fixed);
+        if (!items.length) return '';
+        return `<div class="add-group">${group}</div>` + items.map(([type, def]) => `
+          <div class="add-item${present.has(type) ? ' disabled' : ''}" data-add="${type}" title="${present.has(type) ? 'Already on your profile' : `Drag onto your profile · sizes ${def.sizes.map(s => s.join('×')).join(', ')}`}">
+            ${miniGrid(def.sizes[0])}
+            <span class="add-text">${def.name}<small>${present.has(type) ? 'On your profile' : def.desc}</small></span>
+          </div>`).join('');
+      }).join('');
 
       document.getElementById('invTabs').innerHTML = INV_TABS
         .map(t => `<button type="button" class="inv-tab${t.id === invTab ? ' active' : ''}" data-invtab="${t.id}">${t.label}</button>`).join('');
-      const owned = data.stats ? data.stats.owned : [];
+      const owned = S() ? S().owned : [];
       const list = document.getElementById('invList');
       if (invTab === 'border') {
         const items = [{ id: null, name: 'Default' }, ...owned.filter(c => c.type === 'border')];
@@ -800,16 +1136,6 @@
       }
     }
 
-    document.getElementById('addList').addEventListener('click', e => {
-      const btn = e.target.closest('[data-add]');
-      if (!btn || btn.disabled) return;
-      const type = btn.dataset.add;
-      const [w, h] = WIDGETS[type].sizes[0];
-      const spot = firstFreeSpot(w, h);
-      if (!spot) return;
-      layout.push({ id: type, type, x: spot.x, y: spot.y, w, h, config: type === 'bio' ? { text: '' } : undefined });
-      render();
-    });
     document.getElementById('invTabs').addEventListener('click', e => {
       const t = e.target.closest('[data-invtab]');
       if (!t) return;
@@ -824,13 +1150,24 @@
     });
 
     // ===== Modus wechseln / Speichern =====
-    function enterEdit() {
+    async function loadChampionList() {
+      if (data.champions.length) return;
+      try {
+        const res = await fetch('data/champions.json');
+        const list = await res.json();
+        data.champions = list.map(c => ({ id: c.id, name: c.name })).sort((a, b) => a.name.localeCompare(b.name));
+      } catch (e) {}
+    }
+
+    async function enterEdit() {
       editState = {
         snapshot: JSON.parse(JSON.stringify(layout)),
-        border: (data.stats && data.stats.equipped && data.stats.equipped.border) || 'none'
+        border: (S() && S().equipped && S().equipped.border) || 'none'
       };
       document.body.classList.add('editing');
       render();
+      await loadChampionList();
+      if (editState && !drag) render();
     }
     function leaveEdit() {
       editState = null;
@@ -860,7 +1197,7 @@
         const out = await parseApiResponse(res);
         if (!res.ok) throw new Error(out.error || 'Unknown error');
         const newBorder = editState.border === 'none' ? null : editState.border;
-        const oldBorder = (data.stats && data.stats.equipped && data.stats.equipped.border) || null;
+        const oldBorder = (S() && S().equipped && S().equipped.border) || null;
         if (newBorder !== oldBorder) {
           const r2 = await fetch('/api/cosmetics/equip', {
             method: 'POST',
@@ -896,7 +1233,7 @@
           statusEl.textContent = `Could not load summoner: ${e.message}`;
         }
       } else {
-        statusEl.textContent = 'No valid summoner set - please set one on the Champion Selection page.';
+        statusEl.textContent = 'No valid summoner set - please set one on the Setup page.';
       }
 
       try {
@@ -908,6 +1245,7 @@
           layout = stats.profileLayout.filter(w => WIDGETS[w.type]);
           if (!layout.some(w => w.type === 'identity')) layout.unshift({ ...DEFAULT_LAYOUT[0] });
         }
+        if (layout.some(w => w.type === 'favChamp')) await loadChampionList();
       } catch (e) {
         statusEl.textContent = `Could not load profile stats: ${e.message}`;
       }

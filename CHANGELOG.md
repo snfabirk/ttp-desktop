@@ -1,5 +1,22 @@
 # Internal Changelog
 
+## 5.6.0 — 2026-10-09
+
+- `public/nav.js` + `.top-nav` (style.css): fixed main nav top-left on all
+  pages (Setup/Overview/Challenge/Pass/Profile; trophies+role count as
+  Challenge). All back-arrow buttons removed. Static below 1150px width.
+- challenge.html tabs replaced by views: `challenge.html` (Challenge) and
+  `challenge.html?view=pass` (Pass & Quests). Overview grid now Challenge
+  (Day N | role), Pass, Trophies, Shop; Roles & Picks card removed, the
+  Roles card on the Challenge page links to role.html.
+- Profile editor: 21 widgets in 5 groups (Stats, Champions, Progress,
+  Personal + identity), many more sizes per widget (identity 6x1/4x1/3x2,
+  bio 1x1..6x1/2x2/3x2, ...), live content preview while resizing, new
+  widgets are dragged from the left panel (mini grid preview of the
+  default size, ghost preview on the board, red if blocked). Size badge
+  only on hover. New lifetime stats for widgets: pass, lpBank,
+  recentGames, bestWinStreak, poolGames.
+
 ## 5.5.0 — 2026-10-09
 
 - profile.html rebuilt as a widget board: 6-column grid (square cells via

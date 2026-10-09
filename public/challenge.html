@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="cosmetics.css">
   <script src="theme.js"></script>
+  <script src="nav.js"></script>
   <script src="update-indicator.js"></script>
   <script src="changelog.js"></script>
   <style>
@@ -319,30 +320,6 @@
 
     /* Tabs (Nutzerwunsch: Seite war ueberladen) - "Challenge" = Account-Karte,
        "Pass & Quests" = Quests, XP, Pass. Gemerkter Tab nur als Komfort. */
-    .page-tabs {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      margin: 0 0 14px;
-    }
-    .page-tab {
-      padding: 6px 18px;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background: transparent;
-      color: var(--text-dim);
-      font-family: 'Cinzel', Georgia, serif;
-      font-size: 0.85rem;
-      letter-spacing: 0.5px;
-      cursor: pointer;
-      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
-    }
-    .page-tab:hover { border-color: var(--border-hover); color: var(--text); }
-    .page-tab.active {
-      border-color: var(--gold);
-      color: var(--gold);
-      background: color-mix(in srgb, var(--gold) 12%, transparent);
-    }
     .tab-panel[hidden] { display: none; }
     .sub-head {
       display: flex;
@@ -1000,7 +977,6 @@
   </style>
 </head>
 <body>
-  <a class="back-btn" href="overview.html" title="Back to Overview" aria-label="Back to Overview">←</a>
   <button type="button" class="settings-gear-btn" id="settingsGearBtn" title="Settings" aria-label="Settings">⚙</button>
   <button type="button" class="quit-btn" id="quitBtn" title="Quit completely" aria-label="Quit completely">⏻</button>
   <header class="site-header">
@@ -1009,11 +985,7 @@
   </header>
 
   <div class="content">
-    <h2 class="panel-heading profile-heading">Challenge &amp; Pass</h2>
-    <div class="page-tabs" role="tablist">
-      <button type="button" class="page-tab" role="tab" data-tab="challenge">Challenge</button>
-      <button type="button" class="page-tab" role="tab" data-tab="pass">Pass &amp; Quests</button>
-    </div>
+    <h2 class="panel-heading profile-heading" id="pageHeading">Challenge</h2>
     <div class="tab-panel" data-panel="challenge">
     <div class="account-overview-wrap">
       <div class="account-overview-card" id="accountOverviewCard">
@@ -1074,11 +1046,11 @@
     <div class="pony-row" id="ponyRow"></div>
 
     <div class="ch-split">
-      <div class="prog-card">
-        <div class="prog-card-head"><h3>Roles</h3><span class="reset-in" id="rolesTotal"></span></div>
+      <a class="prog-card trophy-mini" href="role.html" title="Open Roles &amp; Picks">
+        <div class="prog-card-head"><h3>Roles &amp; Picks</h3><span class="reset-in" id="rolesTotal"></span></div>
         <div class="role-split-bar" id="roleSplitBar"></div>
         <div class="role-split-legend" id="roleSplitLegend"></div>
-      </div>
+      </a>
       <a class="prog-card trophy-mini" href="trophies.html" title="Open Trophies">
         <div class="prog-card-head"><h3>Trophies</h3><span class="reset-in" id="trophyCount"></span></div>
         <div id="trophyClosest"><p class="ch-empty">Open the Trophies page once to load your progress.</p></div>
@@ -1721,17 +1693,14 @@
     }
     loadProfile();
 
-    // Tabs
-    const TAB_KEY = 'ttp_challenge_tab';
-    function showTab(name) {
-      document.querySelectorAll('.page-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-      document.querySelectorAll('.tab-panel').forEach(p => { p.hidden = p.dataset.panel !== name; });
-      try { localStorage.setItem(TAB_KEY, name); } catch (e) {}
-    }
-    document.querySelectorAll('.page-tab').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
-    let initialTab = 'challenge';
-    try { if (localStorage.getItem(TAB_KEY) === 'pass') initialTab = 'pass'; } catch (e) {}
-    showTab(initialTab);
+    // Zwei Ansichten derselben Seite (v5.6.0, vorher Tabs): challenge.html =
+    // Challenge, challenge.html?view=pass = Pass & Quests - beide eigene
+    // Eintraege in der Hauptleiste (nav.js) und eigene Kacheln auf der
+    // Overview. Der Match-Scan laeuft in beiden, damit XP aktuell sind.
+    const PAGE_VIEW = new URLSearchParams(location.search).get('view') === 'pass' ? 'pass' : 'challenge';
+    document.querySelectorAll('.tab-panel').forEach(p => { p.hidden = p.dataset.panel !== PAGE_VIEW; });
+    document.getElementById('pageHeading').textContent = PAGE_VIEW === 'pass' ? 'Pass & Quests' : 'Challenge';
+    document.title = `${PAGE_VIEW === 'pass' ? 'Pass & Quests' : 'Challenge'} – Three-Trick-Pony`;
 
     // ===== XP / Level / Quests / Challenge Pass (v5.0.0, provisorisch) =====
     const fmtNum = n => Number(n).toLocaleString('en-US');
