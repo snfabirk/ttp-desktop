@@ -751,7 +751,8 @@ function refreshShop(state, now) {
   return changed;
 }
 
-// Gluecksrad - Felder und Gewichte sind Platzhalter (Nutzer legt sie fest)
+// Gluecksrad - vom Nutzer so abgenommen (2026-10-09): Schnitt ~25 Coins pro
+// Tag. Die Chancen werden bewusst NICHT angezeigt (Ueberraschungsmoment).
 const WHEEL_SEGMENTS = [
   { label: '10', coins: 10, weight: 30 },
   { label: '25', coins: 25, weight: 24 },
