@@ -257,11 +257,11 @@
       await wait(500);
       fires.forEach(f => { f.classList.remove('relit'); f.classList.add('out'); });  // Lichter gehen aus
       dim.classList.add('on');
-      await wait(1100);                                             // Stille ...
+      await wait(500);                                              // Stille ...
       evil.forEach(f => f.classList.add('on'));                     // ... dann grinsen die Kuerbisse boese
-      await wait(2500);
+      await wait(1250);
       evil.forEach(f => f.classList.remove('on'));
-      await wait(500);
+      await wait(300);
       dim.classList.remove('on');
       cat.classList.remove('red');
       fires.forEach(f => { f.classList.remove('out'); f.classList.add('relit'); });  // flackert wieder an
