@@ -1,5 +1,11 @@
 # Internal Changelog
 
+## 5.8.1 — 2026-10-09
+
+- Nav pill: when no item is active (Setup page), the pill no longer grows
+  from the left edge (left 0 / width 0) to the target - it is placed at the
+  target and pops in (opacity + scale 0.7 -> 1). Tab-to-tab still slides.
+
 ## 5.8.0 — 2026-10-09
 
 - Nav items now Overview (home: icon + gold ring always) / Profile /

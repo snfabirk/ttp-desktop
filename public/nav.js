@@ -63,8 +63,23 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => placePill(current()));
     window.addEventListener('resize', () => placePill(current()));
     nav.slidePillTo = el => {
+      const from = current();
       nav.querySelectorAll('.top-nav-link.active').forEach(a => a.classList.remove('active'));
       el.classList.add('active');
+      if (!from) {
+        // Kein aktiver Eintrag (z.B. von der Setup-Seite aus): nicht vom
+        // linken Rand aus "wachsen", sondern direkt am Ziel einblenden.
+        nav.classList.remove('pill-ready');
+        pill.style.opacity = '0';
+        pill.style.left = `${el.offsetLeft}px`;
+        pill.style.width = `${el.offsetWidth}px`;
+        pill.classList.add('pop');
+        void pill.offsetWidth; // Startzustand festschreiben, bevor die Animation laeuft
+        nav.classList.add('pill-ready');
+        pill.style.opacity = '1';
+        pill.classList.remove('pop');
+        return;
+      }
       placePill(el);
     };
 

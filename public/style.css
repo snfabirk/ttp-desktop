@@ -656,8 +656,10 @@ html, body {
   z-index: 0;
 }
 .top-nav.pill-ready .nav-pill {
-  transition: left 0.18s ease, width 0.18s ease, opacity 0.15s ease;
+  transition: left 0.18s ease, width 0.18s ease, opacity 0.15s ease, transform 0.15s ease;
 }
+/* Startzustand beim Einblenden ohne vorherigen aktiven Eintrag */
+.nav-pill.pop { transform: scale(0.7); }
 .top-nav.pill-ready .top-nav-link {
   transition: color 0.18s ease, background 0.15s ease;
 }
