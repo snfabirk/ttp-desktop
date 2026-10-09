@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 5.17.2 — 2026-10-09
+
+- Shop: the "?" now reads "Prices & rates ?" (like "How to earn XP ?" on the pass page), right-aligned in the Weekly Highlights header.
+
 ## 5.17.1 — 2026-10-09
 
 - Shop "?": rates section renamed "Rates", columns "Daily offer" / "Weekly

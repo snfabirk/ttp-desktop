@@ -153,10 +153,11 @@
 
   /* "?" mit Preisen und Wahrscheinlichkeiten */
   .info-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--border); color: var(--text-dim); font-size: 0.75rem; line-height: 1; flex-shrink: 0; }
-  .hint { position: relative; display: inline-flex; align-items: center; margin-left: 8px; vertical-align: 3px; color: var(--text-faint); font-family: Georgia, serif; font-size: 0.75rem; font-weight: normal; letter-spacing: 0; text-transform: none; cursor: help; outline: none; }
+  .hint { position: relative; display: inline-flex; align-items: center; gap: 6px; margin-left: auto; margin-right: 14px; color: var(--text-faint); font-family: Georgia, serif; font-size: 0.8rem; font-style: italic; font-weight: normal; letter-spacing: 0; text-transform: none; cursor: help; outline: none; }
+  .hint:hover, .hint:focus-within { color: var(--gold); }
   .hint:hover .info-icon, .hint:focus-within .info-icon { border-color: var(--gold); color: var(--gold); }
   .hint-pop {
-    position: absolute; top: calc(100% + 8px); left: -10px; z-index: 30; width: 360px;
+    position: absolute; top: calc(100% + 8px); right: -10px; z-index: 30; width: 360px; font-style: normal;
     padding: 12px 16px; color: var(--text-dim); line-height: 1.45; text-align: left;
     background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
@@ -198,7 +199,7 @@
   <div class="shop">
     <div>
       <section class="shop-card">
-        <div class="sc-head"><h3>Weekly Highlights<span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop" id="shopHelp"></span></span></h3><span class="sc-reset" id="weeklyReset"></span></div>
+        <div class="sc-head"><h3>Weekly Highlights</h3><span class="hint" tabindex="0">Prices &amp; rates <span class="info-icon">?</span><span class="hint-pop" id="shopHelp"></span></span><span class="sc-reset" id="weeklyReset"></span></div>
         <div class="offers weekly" id="weeklyOffers"></div>
       </section>
       <section class="shop-card">
