@@ -1,5 +1,12 @@
 # Internal Changelog
 
+## 5.7.2 — 2026-10-09
+
+- nav.js global click guard (capture phase): links to the current page do
+  nothing (active nav item also gets cursor:default), and once a navigation
+  started, further internal link clicks are ignored (reset on pageshow).
+  Tested: 4x Pass on Pass = 0 reloads, 4x Overview = 1 navigation.
+
 ## 5.7.1 — 2026-10-09
 
 - Activity feed: player name (gameName without #tag, ready for friends) +

@@ -50,4 +50,25 @@
 
   if (document.body) build();
   else document.addEventListener('DOMContentLoaded', build);
+
+  // Mehrfachklicks abfangen (Nutzerwunsch): ein Link auf die Seite, auf der
+  // man schon ist, tut nichts, und sobald eine Navigation laeuft, werden
+  // weitere Link-Klicks ignoriert - sonst laedt z.B. 4x "Pass" die Seite
+  // 4x neu. Gilt fuer ALLE internen Links (Leiste, Kacheln, Karten, Zurueck).
+  let navigating = false;
+  window.addEventListener('pageshow', () => { navigating = false; }); // Zurueck-Taste/bfcache
+  document.addEventListener('click', e => {
+    const a = e.target.closest && e.target.closest('a[href]');
+    if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || a.target) return;
+    let url;
+    try { url = new URL(a.getAttribute('href'), location.href); } catch (err) { return; }
+    if (url.origin !== location.origin) return;
+    const samePage = url.pathname === location.pathname && url.search === location.search;
+    if (samePage && url.hash) return; // Sprungmarken auf derselben Seite erlauben
+    if (samePage || navigating) {
+      e.preventDefault();
+      return;
+    }
+    navigating = true;
+  }, true);
 })();
