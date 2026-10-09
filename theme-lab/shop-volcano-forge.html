@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Volcano Forge - Animated shop theme (Theme Lab)</title>
+<!-- Theme Lab (nicht im Installationspaket): Shop-Theme "Volcano Forge"
+     (Animated). Schmiede im Inneren eines Vulkans: Basaltwaende, Lavastroeme
+     mit langsam treibender Kruste, aufsteigende Glut, Hitzeflimmern, ein
+     gluehender Amboss mit Werkstueck. Easter Egg: 5x auf den Amboss ->
+     ein Hammer schlaegt dreimal zu, jeder Schlag mit Funkenregen ueber den
+     ganzen Bildschirm, beim dritten bebt die Hoehle und die Lava schiesst hoch. -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root { --panel-bg: rgba(20, 10, 6, .62); --border: #5a2a14; --gold: #ff8a3a; --text: #f6e8dc; --text-dim: #c4a894; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0d0604; color: var(--text); font-family: Georgia, serif; }
+  #forge { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+  .stage { position: relative; z-index: 2; pointer-events: none; }
+  .stage > * { pointer-events: auto; }
+  .nav { position: fixed; top: 18px; left: 24px; display: flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel-bg); backdrop-filter: blur(10px); z-index: 3; }
+  .nav span { padding: 5px 11px; border-radius: 14px; font-family: 'Cinzel', serif; font-size: .78rem; color: var(--text-dim); }
+  .nav span.on { background: var(--gold); color: #1a0a04; }
+  header { text-align: center; padding-top: 34px; }
+  h1 { margin: 0; font-family: 'Cinzel', serif; font-weight: 900; font-size: 3rem; letter-spacing: 3px; color: var(--gold); text-shadow: 0 0 20px rgba(255, 110, 30, .55), 0 2px 0 #4a1a08; }
+  .subtitle { margin: 6px 0 0; color: var(--text-dim); font-style: italic; letter-spacing: 6px; text-transform: uppercase; }
+  .wrap { max-width: 1000px; margin: 34px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 26px; padding: 0 30px; }
+  .card { background: var(--panel-bg); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+  .card h3 { margin: 0 0 8px; color: var(--gold); font-family: 'Cinzel', serif; font-size: 1rem; letter-spacing: 1px; }
+  .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(90, 42, 20, .6); font-size: .9rem; }
+  .row:last-child { border-bottom: none; }
+  .xp { color: var(--gold); }
+  .muted { color: var(--text-dim); font-size: .9rem; }
+  .tag { display: inline-block; margin-bottom: 8px; padding: 1px 8px; border: 1px dashed #8a5a3a; border-radius: 9px; color: #8a5a3a; font-size: .7rem; letter-spacing: 1px; text-transform: uppercase; }
+  .hint { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 3; color: #8a6a54; font-size: 13px; background: rgba(13, 6, 4, .7); padding: 6px 14px; border-radius: 14px; border: 1px solid var(--border); }
+  body.quake .stage, body.quake .nav { animation: quake .5s ease-out; }
+  @keyframes quake { 10% { transform: translate(-6px, 3px); } 25% { transform: translate(5px, -4px); } 40% { transform: translate(-4px, 2px); } 60% { transform: translate(3px, -1px); } 80% { transform: translate(-1px, 1px); } }
+</style>
+</head>
+<body>
+<canvas id="forge"></canvas>
+<div class="nav"><span class="on">⌂ Overview</span><span>Profile</span><span>Challenge</span><span>Pass</span><span>Trophies</span><span>Shop</span></div>
+<div class="stage">
+  <header><h1>League of Legends</h1><p class="subtitle">Three-Trick-Pony</p></header>
+  <div class="wrap">
+    <div><span class="tag">Shop theme · Animated</span>
+      <div class="card"><h3>Today</h3>
+        <div class="row"><span>First Win of the Day</span><span class="xp">+400 XP</span></div>
+        <div class="row"><span>Champion of the Day</span><span class="xp">+500 XP</span></div>
+        <div class="row"><span>In the Thick of It</span><span class="xp">+300 XP</span></div>
+      </div></div>
+    <div><span class="tag">Readability check</span>
+      <div class="card"><h3>Last game</h3>
+        <div class="row"><span>Ekko · Jungle</span><span class="xp">Victory</span></div>
+        <div class="row"><span>KDA</span><span>8 / 2 / 11</span></div>
+        <div class="muted" style="margin-top:8px">+725 XP · LP Bank 64 / 100</div>
+      </div></div>
+  </div>
+</div>
+<div class="hint">psst... that anvil hasn't been used in a while</div>
+
+<script>
+const cv = document.getElementById('forge'), cx = cv.getContext('2d');
+let W = 0, H = 0, D = 1;
+const rand = (a, b) => a + Math.random() * (b - a);
+function seeded(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+let rocks = [], anvil = null, crust = [];
+function build() {
+  const r = seeded(9);
+  // Hoehlenwaende links/rechts + Decke als unregelmaessige Basaltkanten
+  rocks = [];
+  const edge = (x0, side) => { const pts = []; for (let y = -20; y <= H + 20; y += 30) pts.push([x0 + side * (r() * W * .06 + Math.sin(y * .01) * W * .03), y]); return pts; };
+  rocks.push({ side: -1, pts: edge(W * .12, 1) }, { side: 1, pts: edge(W * .88, -1) });
+  anvil = { x: W * .76, y: H * .8, s: Math.min(W, H) * .11 };
+  crust = Array.from({ length: 40 }, () => ({ x: r() * W, w: 20 + r() * 70, y: r(), v: 8 + r() * 14 }));
+}
+function resize() { D = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * D; cv.height = H * D; cx.setTransform(D, 0, 0, D, 0, 0); build(); }
+addEventListener('resize', resize); resize();
+
+const embers = [], sparks = [];
+let lavaBoost = 0;
+
+function lavaY(x, t) { return H * .86 + Math.sin(x * .008 + t * .6) * 6 + Math.sin(x * .02 - t * 1.1) * 3 - lavaBoost * H * .06 * (.6 + .4 * Math.sin(x * .03 + t * 8)); }
+
+function drawScene(t, dt) {
+  // Hintergrund: dunkle Hoehle, von unten rot angestrahlt
+  const g = cx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#0a0403'); g.addColorStop(.55, '#1e0b05'); g.addColorStop(.85, '#5a1a06'); g.addColorStop(1, '#a8300a');
+  cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+  // Lichtschacht oben (Krateroeffnung) mit Rauch
+  const shaft = cx.createRadialGradient(W * .5, -H * .1, 0, W * .5, -H * .1, H * .7);
+  shaft.addColorStop(0, 'rgba(255, 160, 90, .14)'); shaft.addColorStop(1, 'rgba(255, 160, 90, 0)');
+  cx.fillStyle = shaft; cx.fillRect(0, 0, W, H);
+  for (let k = 0; k < 4; k++) { const x = W * .5 + Math.sin(t * .2 + k * 1.7) * W * .12, y = ((t * 12 + k * 90) % (H * .5)); const sm = cx.createRadialGradient(x, H * .45 - y, 0, x, H * .45 - y, 120); sm.addColorStop(0, 'rgba(60, 40, 36, .18)'); sm.addColorStop(1, 'rgba(60, 40, 36, 0)'); cx.fillStyle = sm; cx.beginPath(); cx.arc(x, H * .45 - y, 120, 0, 7); cx.fill(); }
+  // Basaltwaende mit Lava-Rissen
+  rocks.forEach(rk => {
+    cx.fillStyle = '#120806';
+    cx.beginPath(); cx.moveTo(rk.side < 0 ? 0 : W, -20); rk.pts.forEach(([x, y]) => cx.lineTo(rk.side < 0 ? x : x, y)); cx.lineTo(rk.side < 0 ? 0 : W, H + 20); cx.fill();
+    cx.strokeStyle = `rgba(255, 90, 20, ${.35 + .2 * Math.sin(t * 1.5)})`; cx.lineWidth = 1.5;
+    rk.pts.forEach(([x, y], i) => { if (i % 3) return; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(x - rk.side * -1 * 0 + (rk.side < 0 ? -30 : 30), y + 18); cx.stroke(); });
+  });
+  // Lavastrom unten
+  cx.beginPath(); cx.moveTo(0, H);
+  for (let x = 0; x <= W; x += 8) cx.lineTo(x, lavaY(x, t));
+  cx.lineTo(W, H); cx.closePath();
+  const lg = cx.createLinearGradient(0, H * .82, 0, H);
+  lg.addColorStop(0, '#ffd27a'); lg.addColorStop(.2, '#ff7a1a'); lg.addColorStop(.6, '#c02a06'); lg.addColorStop(1, '#5a0e02');
+  cx.fillStyle = lg; cx.shadowColor = '#ff6a1a'; cx.shadowBlur = 40; cx.fill(); cx.shadowBlur = 0;
+  // treibende dunkle Kruste auf der Lava
+  cx.fillStyle = 'rgba(40, 10, 4, .75)';
+  crust.forEach(c => { c.x += c.v * dt; if (c.x > W + 80) c.x = -80; const y = lavaY(c.x, t) + 8 + c.y * H * .1; cx.beginPath(); cx.ellipse(c.x, y, c.w * .5, 3 + c.y * 4, 0, 0, 7); cx.fill(); });
+  // Amboss auf einem Felssockel
+  const { x, y, s } = anvil;
+  cx.fillStyle = '#160a06'; cx.beginPath(); cx.moveTo(x - s * 1.1, H); cx.lineTo(x - s * .8, y + s * .35); cx.lineTo(x + s * .9, y + s * .3); cx.lineTo(x + s * 1.2, H); cx.fill();
+  const steel = cx.createLinearGradient(x, y - s * .3, x, y + s * .3); steel.addColorStop(0, '#5a4a48'); steel.addColorStop(.3, '#2a2220'); steel.addColorStop(1, '#0e0a0a');
+  cx.fillStyle = steel; cx.beginPath();
+  cx.moveTo(x - s * .9, y - s * .2); cx.quadraticCurveTo(x - s * 1.2, y - s * .25, x - s * 1.3, y - s * .1); cx.lineTo(x - s * .75, y - s * .02); // Horn
+  cx.lineTo(x - s * .45, y + s * .05); cx.lineTo(x - s * .55, y + s * .32); cx.lineTo(x + s * .55, y + s * .32); cx.lineTo(x + s * .45, y + s * .05); cx.lineTo(x + s * .7, y - s * .2); cx.closePath(); cx.fill();
+  cx.strokeStyle = 'rgba(255, 140, 60, .5)'; cx.lineWidth = 1.5; cx.beginPath(); cx.moveTo(x - s * .9, y - s * .2); cx.lineTo(x + s * .7, y - s * .2); cx.stroke();
+  // gluehendes Werkstueck (Klinge) auf dem Amboss
+  const glow = .7 + .3 * Math.sin(t * 2.2) + (forge ? forge.heat : 0);
+  const bl = cx.createLinearGradient(x - s * .5, 0, x + s * .5, 0); bl.addColorStop(0, `rgba(255, 220, 140, ${glow})`); bl.addColorStop(1, `rgba(255, 90, 20, ${glow * .8})`);
+  cx.fillStyle = bl; cx.shadowColor = '#ff8a2a'; cx.shadowBlur = 18 * glow; cx.beginPath(); cx.moveTo(x - s * .55, y - s * .22); cx.lineTo(x + s * .45, y - s * .26); cx.lineTo(x + s * .6, y - s * .21); cx.lineTo(x - s * .55, y - s * .18); cx.fill(); cx.shadowBlur = 0;
+  anvil.hit = { x: x - s * 1.3, y: y - s * .4, w: s * 2, h: s * .8 };
+}
+
+function frame(now) {
+  const dt = Math.min(.05, (now - (frame.last || now)) / 1000); frame.last = now; const t = now / 1000;
+  lavaBoost = Math.max(0, lavaBoost - dt * .8);
+  drawScene(t, dt);
+  // aufsteigende Glut + Hitzeflimmern (leichtes Wabern der Glut)
+  if (Math.random() < dt * 30) embers.push({ x: rand(0, W), y: H * .9, vx: rand(-10, 10), vy: rand(-70, -30), life: 1, r: rand(.8, 2.2) });
+  cx.save(); cx.globalCompositeOperation = 'lighter';
+  for (let i = embers.length - 1; i >= 0; i--) { const e = embers[i]; e.life -= dt * .3; if (e.life <= 0) { embers.splice(i, 1); continue; } e.x += (e.vx + Math.sin(t * 2 + i) * 14) * dt; e.y += e.vy * dt; cx.fillStyle = `rgba(255, ${140 + 90 * e.life}, 60, ${e.life})`; cx.beginPath(); cx.arc(e.x, e.y, e.r, 0, 7); cx.fill(); }
+  // Funken (Easter Egg)
+  for (let i = sparks.length - 1; i >= 0; i--) { const s = sparks[i]; s.life -= dt * .9; if (s.life <= 0) { sparks.splice(i, 1); continue; } s.vy += 600 * dt; s.x += s.vx * dt; s.y += s.vy * dt; cx.strokeStyle = `rgba(255, ${200 + 55 * s.life}, ${120 * s.life}, ${s.life})`; cx.lineWidth = 1.6; cx.beginPath(); cx.moveTo(s.x, s.y); cx.lineTo(s.x - s.vx * .02, s.y - s.vy * .02); cx.stroke(); }
+  cx.restore();
+  drawHammer(dt);
+  requestAnimationFrame(frame);
+}
+
+// ===================== Easter Egg: der Hammer =====================
+let forge = null, clicks = 0, reset = null;
+addEventListener('click', e => {
+  if (forge || !anvil.hit || e.target.closest('.card, .nav, .hint')) return;
+  const h = anvil.hit; if (e.clientX < h.x || e.clientX > h.x + h.w || e.clientY < h.y || e.clientY > h.y + h.h) return;
+  clicks++; clearTimeout(reset); reset = setTimeout(() => { clicks = 0; }, 3000);
+  if (clicks >= 5) { clicks = 0; forge = { t: 0, hits: 0, heat: 0 }; }
+});
+function strike(power) {
+  const { x, y, s } = anvil;
+  const n = power > 1 ? 260 : 90;
+  for (let k = 0; k < n; k++) { const a = -Math.PI / 2 + rand(-1.3, 1.3); const v = rand(200, power > 1 ? 1100 : 650); sparks.push({ x: x + rand(-s * .3, s * .3), y: y - s * .24, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: rand(.7, 1.2) }); }
+  forge.heat = 1;
+  if (power > 1) { lavaBoost = 1; document.body.classList.remove('quake'); void document.body.offsetWidth; document.body.classList.add('quake'); }
+}
+function drawHammer(dt) {
+  if (!forge) return;
+  forge.t += dt; forge.heat = Math.max(0, forge.heat - dt * 1.5);
+  const { x, y, s } = anvil, t = forge.t, cyc = .9;
+  const k = Math.floor(t / cyc), u = (t % cyc) / cyc;
+  if (k >= 3) { if (t > 3 * cyc + .8) forge = null; return; }
+  // Ausholen (langsam hoch) und Zuschlagen (schnell runter)
+  const ang = u < .7 ? -1.6 * Math.sin(u / .7 * Math.PI / 2) : -1.6 * (1 - (u - .7) / .3) ** 2;
+  if (u >= .97 && forge.hits === k) { forge.hits++; strike(k === 2 ? 2 : 1); }
+  const px = x + s * 1.5, py = y - s * .5;
+  const a = Math.min(1, t * 4) * (t > 3 * cyc ? Math.max(0, 1 - (t - 3 * cyc) * 2) : 1);
+  cx.save(); cx.globalAlpha = a; cx.translate(px, py); cx.rotate(ang);
+  // Stiel + Kopf (Hammer schwingt um den Griff rechts)
+  cx.fillStyle = '#3a2214'; cx.fillRect(-s * 1.15, -s * .05, s * 1.2, s * .1);
+  const hg = cx.createLinearGradient(-s * 1.35, -s * .2, -s * 1.05, s * .2); hg.addColorStop(0, '#6a5a58'); hg.addColorStop(.5, '#2a2220'); hg.addColorStop(1, '#4a3a38');
+  cx.fillStyle = hg; cx.fillRect(-s * 1.4, -s * .22, s * .32, s * .44);
+  cx.restore();
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
