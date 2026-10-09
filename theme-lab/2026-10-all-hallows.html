@@ -52,20 +52,23 @@
   .dim { position: fixed; inset: 0; background: rgba(0, 0, 0, 0); pointer-events: none; transition: background .6s ease; z-index: 8; }
   .dim.on { background: rgba(0, 0, 0, .45); }
   .shadow-cat { position: fixed; z-index: 9; pointer-events: none; height: 42vh; aspect-ratio: 1 / 1.05; transform-origin: 50% 100%; opacity: 0; }
-  .shadow-cat.go { animation: loom 3.2s cubic-bezier(.3,.7,.3,1) forwards; }
+  /* Waechst gleichmaessig immer weiter auf dich zu (komplett schwarz), macht auf
+     Endgroesse einen letzten Satz und schnappt zu, dann zieht er sich zurueck. */
+  .shadow-cat.go { animation: loom 3.8s linear forwards; }
   @keyframes loom {
-    0% { opacity: 0; transform: translateX(-50%) scale(.15); }
-    28% { opacity: .92; transform: translateX(-50%) scale(1); }
-    48% { transform: translateX(-50%) scale(1); }
-    58% { transform: translateX(-50%) scale(1.16) translateY(-2%); }   /* schnappt zu */
-    78% { opacity: .92; transform: translateX(-50%) scale(1.08); }
-    100% { opacity: 0; transform: translateX(-50%) scale(.15); }
+    0% { opacity: 0; transform: translateX(-50%) scale(.12); animation-timing-function: ease-out; }
+    6% { opacity: 1; transform: translateX(-50%) scale(.2); animation-timing-function: cubic-bezier(.45,0,.9,.6); }
+    70% { opacity: 1; transform: translateX(-50%) scale(1.06); animation-timing-function: ease-out; }
+    77% { opacity: 1; transform: translateX(-50%) scale(1.2) translateY(-3%); }   /* Satz nach vorne */
+    84% { opacity: 1; transform: translateX(-50%) scale(1.16); animation-timing-function: ease-in; }
+    100% { opacity: 0; transform: translateX(-50%) scale(.12); }
   }
   .shadow-cat .jaw { transform-box: fill-box; transform-origin: 50% 0%; transform: scaleY(.15); }
-  .shadow-cat.go .jaw { animation: jaw 3.2s ease forwards; }
-  @keyframes jaw { 0%, 45% { transform: scaleY(.15); } 56%, 76% { transform: scaleY(1); } 90%, 100% { transform: scaleY(.15); } }
+  .shadow-cat.go .jaw { animation: jaw 3.8s linear forwards; }
+  /* Maul geht langsam immer weiter auf, beim Satz schnappt es zu */
+  @keyframes jaw { 0%, 10% { transform: scaleY(.15); } 72% { transform: scaleY(1); } 77% { transform: scaleY(1.1); } 81%, 100% { transform: scaleY(.08); } }
   .shadow-cat .slit { transform-box: fill-box; transform-origin: center; }
-  .shadow-cat.go .slit { animation: slit 3.2s ease forwards; }
+  .shadow-cat.go .slit { animation: slit 3.8s ease forwards; }
   @keyframes slit { 0%, 40% { transform: scaleX(1); } 55%, 80% { transform: scaleX(.35); } 100% { transform: scaleX(1); } }
   .web { position: fixed; width: 150px; height: 150px; pointer-events: none; opacity: .35; }
   .web.tl { top: 0; left: 0; } .web.br { bottom: 0; right: 0; transform: rotate(180deg); }
@@ -188,7 +191,7 @@
   <defs>
     <radialGradient id="eyeG"><stop offset="0" stop-color="#fff3a0"/><stop offset=".5" stop-color="#f5d041"/><stop offset="1" stop-color="#f5a623" stop-opacity="0"/></radialGradient>
   </defs>
-  <g fill="rgba(3,2,5,.92)">
+  <g fill="#000">
     <path d="M20 210 Q4 120 40 78 L30 4 L78 52 Q100 44 122 52 L170 4 L160 78 Q196 120 180 210 Z"/>
   </g>
   <!-- gluehende Schlitzaugen -->
@@ -244,8 +247,8 @@
       sc.style.top = `${r.bottom - innerHeight * .42}px`;
       dim.classList.add('on');
       sc.classList.remove('go'); void sc.getBoundingClientRect(); sc.classList.add('go');
-      setTimeout(() => dim.classList.remove('on'), 2500);
-      setTimeout(() => { sc.classList.remove('go'); busy = false; }, 3300);
+      setTimeout(() => dim.classList.remove('on'), 3100);
+      setTimeout(() => { sc.classList.remove('go'); busy = false; }, 3900);
     });
   })();
 
