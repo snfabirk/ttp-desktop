@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 5.8.2 — 2026-10-09
+
+- Challenge page Roles & Picks legend: "Fill" -> "Off role / Fill".
+
 ## 5.8.1 — 2026-10-09
 
 - Nav pill: when no item is active (Setup page), the pill no longer grows

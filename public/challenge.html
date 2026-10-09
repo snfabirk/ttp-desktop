@@ -1585,7 +1585,7 @@
       const parts = [
         { label: `${ROLE_NAMES[ls('ttp_pool_role')] || 'Main'} (main)`, n: rb ? rb.main : 0, color: 'var(--gold)' },
         { label: `${ROLE_NAMES[ls('ttp_pool_second_role')] || 'Second'} (second)`, n: rb ? rb.second : 0, color: 'color-mix(in srgb, var(--gold) 45%, var(--text-faint))' },
-        { label: 'Fill', n: rb ? rb.fill : 0, color: 'var(--text-faint)' }
+        { label: 'Off role / Fill', n: rb ? rb.fill : 0, color: 'var(--text-faint)' }
       ];
       document.getElementById('rolesTotal').textContent = `${total} ${total === 1 ? 'game' : 'games'}`;
       document.getElementById('roleSplitBar').innerHTML = total
