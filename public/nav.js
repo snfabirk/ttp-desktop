@@ -101,8 +101,66 @@
     }
   }
 
-  if (document.body) build();
-  else document.addEventListener('DOMContentLoaded', build);
+  // Willkommens-Popup beim allerersten Start bzw. nach einem Werksreset
+  // (Nutzerwunsch: "damit man nicht lost ist"). Nur wenn noch nichts
+  // eingerichtet ist - bestehende Nutzer sehen es nach einem Update nicht.
+  const WELCOME_KEY = 'ttp_welcome_seen';
+  function maybeWelcome() {
+    let show = false;
+    try {
+      show = !localStorage.getItem(WELCOME_KEY) &&
+        !localStorage.getItem('ttp_summoner_name') &&
+        !localStorage.getItem('ttp_challenge_start');
+    } catch (e) {}
+    if (!show) return;
+    const onSetup = file === 'index.html';
+    const setupBtn = document.querySelector('.setup-btn');
+    if (setupBtn) setupBtn.classList.add('glow');
+
+    const overlay = document.createElement('div');
+    overlay.className = 'welcome-overlay';
+    overlay.innerHTML = `
+      <div class="welcome-card" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+        <h2 id="welcomeTitle">Welcome to Three-Trick-Pony!</h2>
+        <p>Pick three champions, stick to them and climb. Everything starts in <strong>Setup</strong>:</p>
+        <ol>
+          <li>Enter your summoner name (Name#Tag)</li>
+          <li>Choose up to 3 champions and your roles</li>
+          <li>Set a challenge level and an LP goal</li>
+          <li>Hit <strong>Start Challenge</strong></li>
+        </ol>
+        <button type="button" class="welcome-go">${onSetup ? "Let's go" : 'Go to Setup'}</button>
+      </div>
+      <div class="welcome-hint">Setup is always up here <span aria-hidden="true">↗</span></div>`;
+    document.body.appendChild(overlay);
+
+    // Sprechblase genau unter den Setup-Knopf setzen
+    const hint = overlay.querySelector('.welcome-hint');
+    if (setupBtn) {
+      const r = setupBtn.getBoundingClientRect();
+      hint.style.top = `${r.bottom + 12}px`;
+      hint.style.right = `${Math.max(12, window.innerWidth - r.right)}px`;
+    } else {
+      hint.remove();
+    }
+
+    const close = () => {
+      try { localStorage.setItem(WELCOME_KEY, '1'); } catch (e) {}
+      overlay.remove();
+      if (setupBtn) setupBtn.classList.remove('glow');
+      if (!onSetup) location.href = 'index.html';
+    };
+    overlay.querySelector('.welcome-go').addEventListener('click', close);
+    overlay.querySelector('.welcome-go').focus();
+  }
+
+  function init() {
+    build();
+    maybeWelcome();
+  }
+
+  if (document.body) init();
+  else document.addEventListener('DOMContentLoaded', init);
 
   // Mehrfachklicks abfangen (Nutzerwunsch): ein Link auf die Seite, auf der
   // man schon ist, tut nichts, und sobald eine Navigation laeuft, werden

@@ -25,6 +25,15 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.9.0',
+      date: '2026-10-09',
+      notable: [
+        'First start (or after a factory reset): a short welcome popup shows how to get going and points to the Setup button.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.8.2',
       date: '2026-10-09',
       notable: [],

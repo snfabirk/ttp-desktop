@@ -1,5 +1,14 @@
 # Internal Changelog
 
+## 5.9.0 — 2026-10-09
+
+- Welcome popup (nav.js `maybeWelcome`): only if `ttp_welcome_seen`,
+  `ttp_summoner_name` and `ttp_challenge_start` are all missing (fresh
+  install / factory reset clears localStorage; existing users never see
+  it). 4 short steps, Setup button glows above the dim overlay with a
+  "Setup is always up here" bubble; button "Let's go" (on Setup) or "Go to
+  Setup" (elsewhere) sets the flag.
+
 ## 5.8.2 — 2026-10-09
 
 - Challenge page Roles & Picks legend: "Fill" -> "Off role / Fill".

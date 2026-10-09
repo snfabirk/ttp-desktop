@@ -755,3 +755,87 @@ html, body {
 }
 .setup-btn:hover { color: var(--gold); border-color: var(--gold); transform: translateY(-1px); }
 .setup-btn.active { color: var(--bg); background: var(--gold); border-color: var(--gold); cursor: default; transform: none; }
+
+/* Willkommens-Popup (nav.js, nur beim ersten Start / nach Werksreset) */
+.welcome-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  animation: welcome-fade 0.2s ease;
+}
+@keyframes welcome-fade { from { opacity: 0; } }
+.welcome-card {
+  width: min(440px, calc(100vw - 40px));
+  box-sizing: border-box;
+  padding: 24px 28px 22px;
+  background: var(--input-bg);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  font-family: Georgia, serif;
+  color: var(--text);
+}
+.welcome-card h2 {
+  margin: 0 0 10px;
+  color: var(--gold);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 1.25rem;
+  letter-spacing: 1px;
+}
+.welcome-card p { margin: 0 0 10px; color: var(--text-dim); line-height: 1.45; }
+.welcome-card ol { margin: 0 0 18px; padding-left: 20px; color: var(--text); line-height: 1.7; }
+.welcome-card strong { color: var(--gold); font-weight: normal; }
+.welcome-go {
+  display: block;
+  width: 100%;
+  padding: 10px 0;
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  background: var(--gold);
+  color: var(--bg);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+.welcome-go:hover { filter: brightness(1.08); }
+.welcome-hint {
+  position: fixed;
+  padding: 7px 12px;
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--gold);
+  font-family: Georgia, serif;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.welcome-hint::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  right: 22px;
+  width: 12px;
+  height: 12px;
+  background: var(--input-bg);
+  border-left: 1px solid var(--gold);
+  border-top: 1px solid var(--gold);
+  transform: rotate(45deg);
+}
+/* Setup-Knopf leuchtet ueber dem abgedunkelten Hintergrund */
+.setup-btn.glow {
+  z-index: 201;
+  color: var(--bg);
+  background: var(--gold);
+  border-color: var(--gold);
+  animation: setup-glow 1.4s ease-in-out infinite;
+}
+@keyframes setup-glow {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 60%, transparent); }
+  50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--gold) 0%, transparent); }
+}

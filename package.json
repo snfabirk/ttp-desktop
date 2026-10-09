@@ -1,6 +1,6 @@
 {
   "name": "three-trick-pony-desktop",
-  "version": "5.8.2",
+  "version": "5.9.0",
   "private": true,
   "description": "Desktop-App fuer die Three-Trick-Pony OTP-Uebersicht (Electron-Wrapper um den lokalen Server)",
   "author": "Fabian",
