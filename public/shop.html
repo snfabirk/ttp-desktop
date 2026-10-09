@@ -69,7 +69,14 @@
     font-size: 0.62rem; letter-spacing: 1px; text-transform: uppercase;
     color: var(--text-faint); border: 1px solid var(--border);
   }
-  .offer-tag.excl { color: var(--gold); border-color: var(--gold); }
+  .offer-tag.rar-basic { border-color: var(--rar-basic); }
+  .offer-tag.rar-refined { border-color: var(--rar-refined); }
+  .offer-tag.rar-fancy { border-color: var(--rar-fancy); }
+  .offer-tag.rar-animated { border-color: var(--rar-animated); }
+  .offer.rar-fancy { border-color: color-mix(in srgb, var(--rar-fancy) 45%, var(--border)); }
+  .offer.rar-animated { border-color: color-mix(in srgb, var(--rar-animated) 55%, var(--border)); box-shadow: 0 0 18px color-mix(in srgb, var(--rar-animated) 18%, transparent); }
+  .offer-from { color: var(--text-faint); font-size: 0.68rem; font-style: italic; }
+  .offers-empty { grid-column: 1 / -1; color: var(--text-faint); font-style: italic; text-align: center; padding: 18px 0; }
   .offer-name { font-family: 'Cinzel', Georgia, serif; color: var(--text); font-size: 0.95rem; letter-spacing: 0.5px; }
   .offer-type { color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
   .offer-buy {
@@ -91,6 +98,7 @@
   .weekly .pv-border, .weekly .pv-theme { width: 84px; height: 84px; }
   .weekly .pv-frame { width: 108px; height: 78px; }
   .pv.fancy, .pv.animated { box-shadow: 0 0 16px color-mix(in srgb, var(--a) 55%, transparent); }
+  .weekly .offer .cos-border { width: 84px !important; height: 84px !important; }
 
   /* ----- Gluecksrad ----- */
   .wheel-card { text-align: center; }
@@ -188,6 +196,7 @@
     const fmtNum = n => Number(n || 0).toLocaleString('en-US');
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const TYPE_LABEL = { border: 'Border', frame: 'Profile frame', theme: 'Theme' };
+    const RARITY_LABEL = { basic: 'Basic', refined: 'Refined', fancy: 'Fancy', animated: 'Animated' };
     let shop = null;
 
     function until(iso) {
@@ -196,18 +205,28 @@
       return d ? `${d}d ${h}h` : `${h}h ${m}m`;
     }
 
-    function offerHtml(o, weekly) {
+    // Vorschau: Pass-Cosmetics zeigen ihr echtes Aussehen, Platzhalter einen Farbverlauf
+    function previewHtml(o) {
+      if (!o.c) {
+        if (o.type === 'border') return `<span class="cos-border cos-${o.id}" style="width:64px;height:64px"><span class="cos-fill"></span></span>`;
+        if (o.type === 'frame') return `<span class="mini-frame mini-frame-${o.id}" style="width:82px;height:60px"></span>`;
+        return `<span class="mini-theme mini-theme-${o.themeKey}" style="width:64px;height:64px"></span>`;
+      }
       const kind = o.type === 'theme' ? 'pv-theme' : o.type === 'frame' ? 'pv-frame' : 'pv-border';
-      const extra = o.animated ? ' · animated' : o.fancy ? ' · fancy' : '';
-      return `<div class="offer">
-        <span class="offer-tag${weekly ? ' excl' : ''}">${weekly ? 'Shop exclusive' : 'Daily'}</span>
-        <span class="pv ${kind}${o.fancy ? ' fancy' : ''}${o.animated ? ' animated' : ''}" style="--a:${o.c[1]};--b:${o.c[0]}"></span>
+      return `<span class="pv ${kind} ${o.rarity}" style="--a:${o.c[1]};--b:${o.c[0]}"></span>`;
+    }
+    function offerHtml(o) {
+      return `<div class="offer rar-${o.rarity}">
+        <span class="offer-tag rar rar-${o.rarity}">${RARITY_LABEL[o.rarity] || o.rarity}</span>
+        ${previewHtml(o)}
         <span class="offer-name">${esc(o.name)}</span>
-        <span class="offer-type">${TYPE_LABEL[o.type] || o.type}${extra}</span>
-        <button type="button" class="offer-buy" disabled>🪙 <b>${fmtNum(o.price)}</b></button>
+        <span class="offer-type">${TYPE_LABEL[o.type] || o.type}</span>
+        ${o.fromPass ? `<span class="offer-from">from the ${esc(o.fromPass)}</span>` : ''}
+        <button type="button" class="offer-buy" disabled>${o.price ? `🪙 <b>${fmtNum(o.price)}</b>` : '<b>Free</b>'}</button>
         <span class="offer-soon">Coming soon</span>
       </div>`;
     }
+    const offersHtml = list => list.length ? list.map(offerHtml).join('') : '<div class="offers-empty">You already own everything that could show up here.</div>';
 
     // ----- Gluecksrad (SVG) -----
     function wheelSvg(segments) {
@@ -238,8 +257,8 @@
 
     function render() {
       document.getElementById('coinBalance').textContent = `🪙 ${fmtNum(shop.coins)}`;
-      document.getElementById('weeklyOffers').innerHTML = shop.weekly.map(o => offerHtml(o, true)).join('');
-      document.getElementById('dailyOffers').innerHTML = shop.daily.map(o => offerHtml(o, false)).join('');
+      document.getElementById('weeklyOffers').innerHTML = offersHtml(shop.weekly);
+      document.getElementById('dailyOffers').innerHTML = offersHtml(shop.daily);
       document.getElementById('weeklyReset').textContent = `new in ${until(shop.weeklyResetAt)}`;
       document.getElementById('dailyReset').textContent = `new in ${until(shop.dailyResetAt)}`;
       renderWheelSmall();

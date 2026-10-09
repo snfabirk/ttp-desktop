@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.16.0',
+      date: '2026-10-09',
+      notable: [
+        'Rarities: every cosmetic is now Basic, Refined, Fancy or Animated - shown in your collection and in the shop.',
+        'The shop is now personal: your own daily offers and weekly highlights, and it never offers you something you already own.'
+      ],
+      refinements: 1,
+      bugfixes: 0
+    },
+    {
       version: '5.15.0',
       date: '2026-10-09',
       notable: [

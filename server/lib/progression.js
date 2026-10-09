@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { dataSubdir } = require('./dataPaths');
-const { COSMETICS, getCosmetic, passCosmetic } = require('./cosmetics');
+const { COSMETICS, priceOf, getCosmetic, passCosmetic } = require('./cosmetics');
 
 // XP-/Level-System (v5.0.0, PROVISORISCH): Profil-Level (laeuft fuer immer,
 // jedes Level etwas teurer), Monats-Pass (seit v5.3.0: ein Pass pro
@@ -333,7 +333,9 @@ function emptyState() {
     // siehe rankHistory.toComparableLP), progress: 0-99 auf dem Konto.
     lpBank: { puuid: null, lastLP: null, progress: 0, fills: 0, events: [] },
     // Gluecksrad im Shop: einmal pro Tag (Tageswechsel wie die Quests)
-    wheel: { lastSpinDay: null, spins: 0 }
+    wheel: { lastSpinDay: null, spins: 0 },
+    // Persoenlicher Shop: Angebote werden pro Tag/Woche einmal ausgewuerfelt
+    shop: { dayKey: null, daily: [], weekKey: null, weekly: [], pityDaily: 0, pityWeekly: 0 }
   };
 }
 
@@ -518,28 +520,134 @@ function rerollDaily(context) {
   return { ok: true };
 }
 
-// ----- Shop (v5.13.0, PROVISORISCH) -----
-// Rotierende Angebote: taeglich 3 (Wechsel wie die Daily Quests, 06:00) und
-// woechentlich 2 Highlights (Montag 06:00). Die Artikel sind Platzhalter fuer
-// spaetere Shop-exklusive Cosmetics - noch nicht kaufbar. Preise sind
-// Platzhalter, die Preisstaffel nach Typ legt der Nutzer noch fest.
-const SHOP_DAILY_POOL = [
-  { id: 'shop-ember-ring', type: 'border', name: 'Ember Ring', price: 500, c: ['#ff7a18', '#5a1a08'] },
-  { id: 'shop-frost-rim', type: 'border', name: 'Frost Rim', price: 500, c: ['#9fd8ff', '#1c3a5a'] },
-  { id: 'shop-moonlit-ring', type: 'border', name: 'Moonlit Ring', price: 500, c: ['#e9dcc0', '#2a2440'] },
-  { id: 'shop-thorn-ring', type: 'border', name: 'Thorn Ring', price: 500, c: ['#6fbf73', '#1a2a14'] },
-  { id: 'shop-iron-frame', type: 'frame', name: 'Iron Frame', price: 650, c: ['#9a9aa3', '#202024'] },
-  { id: 'shop-ivy-frame', type: 'frame', name: 'Ivy Frame', price: 650, c: ['#4caf7d', '#10241a'] },
-  { id: 'shop-rune-frame', type: 'frame', name: 'Rune Frame', price: 650, c: ['#b088ff', '#1e1436'] },
-  { id: 'shop-gilded-frame', type: 'frame', name: 'Gilded Frame', price: 650, c: ['#c8aa6e', '#2a2010'] }
+// ----- Shop (v5.16.0, persoenlich, noch PROVISORISCH) -----
+// Jeder Spieler hat seinen eigenen Shop: taeglich 3 Angebote (Wechsel 06:00
+// wie die Daily Quests), woechentlich 2 Highlights (Montag 06:00), einmal
+// ausgewuerfelt und gespeichert. Was man schon besitzt, wird NIE angeboten.
+// Die Shop-Artikel unten sind Platzhalter fuer spaetere Shop-Cosmetics -
+// noch nicht kaufbar (Basic-Artikel waeren gratis).
+//
+// INTERN - bewusst nirgends in der App/den Patch Notes beschrieben
+// (Nutzerwunsch: "der Shop ist fuer Aussenstehende ein Mysterium"):
+//  - Gewichte pro Platz nach Seltenheit (Tag: Basic 30 / Refined 50 /
+//    Fancy 18 / Animated 2; Woche: Fancy 70 / Animated 30)
+//  - die Animated-Chance steigt mit jeder Rotation ohne Animated
+//    (Tag +1 Punkt, Woche +20 Punkte) und faellt zurueck, sobald einer kommt
+//  - Tagesangebote und Wochen-Highlights zeigen nie denselben Artikel
+//  - alte Pass-Cosmetics (nicht der laufende Monat) haben eine eigene
+//    Chance pro Platz (Tag 8 %, Woche 20 %), solange man nicht alle hat
+const SHOP_ITEMS = [
+  { id: 'shop-plain-ring', type: 'border', rarity: 'basic', name: 'Plain Ring', c: ['#9aa0a6', '#2a2c30'] },
+  { id: 'shop-ash-ring', type: 'border', rarity: 'basic', name: 'Ash Ring', c: ['#7d7470', '#221e1c'] },
+  { id: 'shop-slate-frame', type: 'frame', rarity: 'basic', name: 'Slate Frame', c: ['#6e7480', '#16181c'] },
+  { id: 'shop-oak-frame', type: 'frame', rarity: 'basic', name: 'Oak Frame', c: ['#8a6a44', '#1e160e'] },
+  { id: 'shop-ember-ring', type: 'border', rarity: 'refined', name: 'Ember Ring', c: ['#ff7a18', '#5a1a08'] },
+  { id: 'shop-frost-rim', type: 'border', rarity: 'refined', name: 'Frost Rim', c: ['#9fd8ff', '#1c3a5a'] },
+  { id: 'shop-moonlit-ring', type: 'border', rarity: 'refined', name: 'Moonlit Ring', c: ['#e9dcc0', '#2a2440'] },
+  { id: 'shop-thorn-ring', type: 'border', rarity: 'refined', name: 'Thorn Ring', c: ['#6fbf73', '#1a2a14'] },
+  { id: 'shop-iron-frame', type: 'frame', rarity: 'refined', name: 'Iron Frame', c: ['#9a9aa3', '#202024'] },
+  { id: 'shop-ivy-frame', type: 'frame', rarity: 'refined', name: 'Ivy Frame', c: ['#4caf7d', '#10241a'] },
+  { id: 'shop-rune-frame', type: 'frame', rarity: 'refined', name: 'Rune Frame', c: ['#b088ff', '#1e1436'] },
+  { id: 'shop-gilded-frame', type: 'frame', rarity: 'refined', name: 'Gilded Frame', c: ['#c8aa6e', '#2a2010'] },
+  { id: 'shop-deep-sea', type: 'theme', rarity: 'refined', name: 'Deep Sea', c: ['#04161f', '#3fd0c9'] },
+  { id: 'shop-dragonfire', type: 'border', rarity: 'fancy', name: 'Dragonfire Ring', c: ['#ff4d1a', '#3a0a04'] },
+  { id: 'shop-void-rift', type: 'frame', rarity: 'fancy', name: 'Void Rift', c: ['#7a3cff', '#0c0618'] },
+  { id: 'shop-starfall', type: 'theme', rarity: 'fancy', name: 'Starfall', c: ['#0a0f2a', '#ffd86b'] },
+  { id: 'shop-storm-crown', type: 'border', rarity: 'animated', name: 'Storm Crown', c: ['#7fd4ff', '#0a1426'] },
+  { id: 'shop-sakura', type: 'theme', rarity: 'animated', name: 'Sakura Garden', c: ['#2a0f1c', '#ff8fb1'] }
 ];
-const SHOP_WEEKLY_POOL = [
-  { id: 'shop-starfall', type: 'theme', name: 'Starfall', price: 900, c: ['#0a0f2a', '#ffd86b'] },
-  { id: 'shop-sakura', type: 'theme', name: 'Sakura Garden', price: 2000, c: ['#2a0f1c', '#ff8fb1'], animated: true },
-  { id: 'shop-dragonfire', type: 'border', name: 'Dragonfire Ring', price: 1000, c: ['#ff4d1a', '#3a0a04'], fancy: true },
-  { id: 'shop-void-rift', type: 'frame', name: 'Void Rift', price: 1300, c: ['#7a3cff', '#0c0618'], fancy: true },
-  { id: 'shop-deep-sea', type: 'theme', name: 'Deep Sea', price: 900, c: ['#04161f', '#3fd0c9'] }
-];
+const SHOP_RARITY_ORDER = ['basic', 'refined', 'fancy', 'animated'];
+const SHOP_DAILY_WEIGHTS = { basic: 30, refined: 50, fancy: 18, animated: 2 };
+const SHOP_WEEKLY_WEIGHTS = { fancy: 70, animated: 30 };
+const PITY_DAILY_STEP = 1;
+const PITY_WEEKLY_STEP = 20;
+const PAST_PASS_CHANCE = { daily: 0.08, weekly: 0.2 };
+
+function shopItemById(id) {
+  return SHOP_ITEMS.find(i => i.id === id) || getCosmetic(id);
+}
+
+// Gewichte inkl. steigender Animated-Chance: der Zuwachs wird den anderen
+// Seltenheiten anteilig abgezogen, Summe bleibt 100.
+function shopWeights(base, pity, step) {
+  const anim = Math.min(100, base.animated + pity * step);
+  const restBase = Object.entries(base).filter(([r]) => r !== 'animated');
+  const restSum = restBase.reduce((a, [, w]) => a + w, 0);
+  const w = { animated: anim };
+  restBase.forEach(([r, v]) => { w[r] = restSum ? v / restSum * (100 - anim) : 0; });
+  return w;
+}
+
+function rollRarity(weights) {
+  const entries = Object.entries(weights).filter(([, v]) => v > 0);
+  let roll = Math.random() * entries.reduce((a, [, v]) => a + v, 0);
+  for (const [r, v] of entries) { if (roll < v) return r; roll -= v; }
+  return entries[entries.length - 1][0];
+}
+
+function rollOffers(state, count, weights, kind, exclude = []) {
+  const owned = new Set(state.inventory);
+  const taken = new Set(exclude);
+  const current = monthKey(new Date());
+  const allowed = new Set(Object.keys(weights));
+  const pastPass = COSMETICS.filter(c => c.passMonth && c.passMonth < current && allowed.has(c.rarity));
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    const free = list => list.filter(c => !owned.has(c.id) && !taken.has(c.id));
+    let pick = null;
+    const past = free(pastPass);
+    if (past.length && Math.random() < PAST_PASS_CHANCE[kind]) pick = past[Math.floor(Math.random() * past.length)];
+    if (!pick) {
+      // gewuerfelte Seltenheit; ist dort nichts mehr frei, erst hoeher, dann tiefer
+      const want = rollRarity(weights);
+      const idx = SHOP_RARITY_ORDER.indexOf(want);
+      const order = [...SHOP_RARITY_ORDER.slice(idx), ...SHOP_RARITY_ORDER.slice(0, idx).reverse()].filter(r => allowed.has(r));
+      for (const r of order) {
+        const pool = free(SHOP_ITEMS.filter(it => it.rarity === r));
+        if (pool.length) { pick = pool[Math.floor(Math.random() * pool.length)]; break; }
+      }
+    }
+    if (!pick) break; // alles gesammelt
+    taken.add(pick.id);
+    out.push(pick.id);
+  }
+  return out;
+}
+
+function offerView(id, owned) {
+  const c = shopItemById(id);
+  if (!c) return null;
+  return {
+    id: c.id, type: c.type, name: c.name, rarity: c.rarity || 'refined', price: priceOf(c), c: c.c || null,
+    themeKey: c.themeKey || null,
+    fromPass: c.passMonth ? `${monthLabel(c.passMonth)} Pass` : null,
+    owned: owned.has(c.id)
+  };
+}
+
+// Wuerfelt neue Angebote, wenn ein neuer Tag / eine neue Woche begonnen hat.
+function refreshShop(state, now) {
+  const shop = { ...emptyState().shop, ...(state.shop || {}) };
+  const today = dayKey(now), week = weekKey(now);
+  let changed = false;
+  if (shop.weekKey !== week) {
+    shop.weekly = rollOffers(state, 2, shopWeights(SHOP_WEEKLY_WEIGHTS, shop.pityWeekly, PITY_WEEKLY_STEP), 'weekly');
+    const hit = shop.weekly.some(id => (shopItemById(id) || {}).rarity === 'animated');
+    shop.pityWeekly = hit ? 0 : shop.pityWeekly + 1;
+    shop.weekKey = week;
+    changed = true;
+  }
+  if (shop.dayKey !== today) {
+    shop.daily = rollOffers(state, 3, shopWeights(SHOP_DAILY_WEIGHTS, shop.pityDaily, PITY_DAILY_STEP), 'daily', shop.weekly);
+    const hit = shop.daily.some(id => (shopItemById(id) || {}).rarity === 'animated');
+    shop.pityDaily = hit ? 0 : shop.pityDaily + 1;
+    shop.dayKey = today;
+    changed = true;
+  }
+  state.shop = shop;
+  return changed;
+}
+
 // Gluecksrad - Felder und Gewichte sind Platzhalter (Nutzer legt sie fest)
 const WHEEL_SEGMENTS = [
   { label: '10', coins: 10, weight: 30 },
@@ -557,22 +665,17 @@ function weekKey(now) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function pickRotation(pool, count, seed) {
-  const left = pool.slice();
-  const out = [];
-  for (let i = 0; i < count && left.length; i++) out.push(left.splice(seededIndex(`${seed}:${i}`, left.length), 1)[0]);
-  return out;
-}
-
 function getShopState() {
   const now = new Date();
   const state = readState();
   const today = dayKey(now);
+  if (refreshShop(state, now)) writeState(state);
+  const owned = new Set(state.inventory);
   return {
     provisional: true,
     coins: state.coins,
-    daily: pickRotation(SHOP_DAILY_POOL, 3, `shop:${today}`),
-    weekly: pickRotation(SHOP_WEEKLY_POOL, 2, `shopw:${weekKey(now)}`),
+    daily: state.shop.daily.map(id => offerView(id, owned)).filter(Boolean),
+    weekly: state.shop.weekly.map(id => offerView(id, owned)).filter(Boolean),
     dailyResetAt: nextDailyReset(now).toISOString(),
     weeklyResetAt: nextWeeklyReset(now).toISOString(),
     wheel: {

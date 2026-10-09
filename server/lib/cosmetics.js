@@ -19,14 +19,26 @@
 //   Stufe 15 / 30 = App-Theme (theme) - simpel mit Akzenten / fancy mit
 //                   Animation (Einstellung: Aus / Nur bei Benutzung / Immer)
 // Rahmen sieht jeder auf dem Profil, das Theme ist rein persoenlich.
+// Seltenheiten (Nutzerdesign 2026-10-09): Basic (gratis, z.B. die Grund-
+// Themes) -> Refined -> Fancy -> Animated. Pass: Stufe 5/10/15 Refined,
+// 20/25 Fancy, 30 Animated. Shop-Preise nach Seltenheit x Typ.
+const RARITIES = ['basic', 'refined', 'fancy', 'animated'];
+const PRICES = {
+  basic: { border: 0, frame: 0, theme: 0 },
+  refined: { border: 500, frame: 650, theme: 900 },
+  fancy: { border: 1000, frame: 1300, theme: 1600 },
+  animated: { border: 1600, frame: 1900, theme: 2400 }
+};
+const priceOf = c => (PRICES[c.rarity] || PRICES.refined)[c.type] || 0;
+
 const COSMETICS = [
   // ----- Oktober 2026: Halloween (schwarz / grau / orange) -----
-  { id: 'border-2026-10-pumpkin', type: 'border', name: 'Pumpkin Ring', passMonth: '2026-10', tier: 5 },
-  { id: 'frame-2026-10-cobweb', type: 'frame', name: 'Cobweb', passMonth: '2026-10', tier: 10 },
-  { id: 'theme-2026-10-hallows', type: 'theme', name: 'All Hallows', passMonth: '2026-10', tier: 15, themeKey: 'hallows' },
-  { id: 'border-2026-10-haunted', type: 'border', name: "Widow's Nest", passMonth: '2026-10', tier: 20 },
-  { id: 'frame-2026-10-manor', type: 'frame', name: 'Ectoplasm Manor', passMonth: '2026-10', tier: 25, hasBackground: true },
-  { id: 'theme-2026-10-haunted', type: 'theme', name: 'Haunted Night', passMonth: '2026-10', tier: 30, themeKey: 'haunted', animated: true }
+  { id: 'border-2026-10-pumpkin', type: 'border', name: 'Pumpkin Ring', rarity: 'refined', passMonth: '2026-10', tier: 5 },
+  { id: 'frame-2026-10-cobweb', type: 'frame', name: 'Cobweb', rarity: 'refined', passMonth: '2026-10', tier: 10 },
+  { id: 'theme-2026-10-hallows', type: 'theme', name: 'All Hallows', rarity: 'refined', passMonth: '2026-10', tier: 15, themeKey: 'hallows' },
+  { id: 'border-2026-10-haunted', type: 'border', name: "Widow's Nest", rarity: 'fancy', passMonth: '2026-10', tier: 20 },
+  { id: 'frame-2026-10-manor', type: 'frame', name: 'Ectoplasm Manor', rarity: 'fancy', passMonth: '2026-10', tier: 25, hasBackground: true },
+  { id: 'theme-2026-10-haunted', type: 'theme', name: 'Haunted Night', rarity: 'animated', passMonth: '2026-10', tier: 30, themeKey: 'haunted', animated: true }
 ];
 
 const byId = new Map(COSMETICS.map(c => [c.id, c]));
@@ -39,4 +51,4 @@ function passCosmetic(month, tier) {
   return COSMETICS.find(c => c.passMonth === month && c.tier === tier) || null;
 }
 
-module.exports = { COSMETICS, getCosmetic, passCosmetic };
+module.exports = { COSMETICS, RARITIES, PRICES, priceOf, getCosmetic, passCosmetic };

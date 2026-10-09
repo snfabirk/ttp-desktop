@@ -465,6 +465,7 @@
     .inv-sub:first-child { margin-top: 0; }
     .inv-note { margin: 10px 0 0; color: var(--text-faint); font-size: 0.72rem; font-style: italic; }
     .inv-anim { display: block; color: var(--gold); font-size: 0.62rem; }
+    .inv-item .rar { display: block; margin-top: -3px; }
     .inv-item .mini-frame { width: 40px; height: 30px; }
     .inv-item .mini-theme { width: 34px; height: 34px; }
     .mini-frame.mini-none { border: 1px dashed var(--text-faint); }
@@ -1198,13 +1199,15 @@
         .map(t => `<button type="button" class="inv-tab${t.id === invTab ? ' active' : ''}" data-invtab="${t.id}">${t.label}${counts[t.id] ? `<small>${counts[t.id][0]}/${counts[t.id][1]}</small>` : ''}</button>`).join('');
       const list = document.getElementById('invList');
       const countLine = ([have, all]) => `<div class="inv-count"><span>Collected <b>${have} / ${all}</b></span><span class="bar"><i style="width:${all ? have / all * 100 : 0}%"></i></span></div>`;
+      const RAR = { basic: 'Basic', refined: 'Refined', fancy: 'Fancy', animated: 'Animated' };
+      const rarTag = c => c.id && c.rarity ? `<small class="rar rar-${c.rarity}">${RAR[c.rarity]}</small>` : '';
       const lockAttr = c => `class="inv-item locked" title="Locked - ${esc(c.source || 'not collected yet')}" aria-disabled="true"`;
       if (invTab === 'border') {
         const items = [{ id: null, name: 'Default' }, ...ofType('border')];
         list.innerHTML = countLine(counts.border) + `<div class="inv-grid">${items.map(c => {
           const has = !c.id || ownedIds.has(c.id);
           return `<div ${has ? `class="inv-item${(c.id || 'none') === editState.border ? ' equipped' : ''}" data-equip="${c.id || 'none'}"` : lockAttr(c)}>
-            <span class="cos-border cos-${c.id || 'none'}"><span class="cos-fill"></span></span>${esc(c.name)}
+            <span class="cos-border cos-${c.id || 'none'}"><span class="cos-fill"></span></span>${esc(c.name)}${rarTag(c)}
           </div>`;
         }).join('')}</div>`;
       } else if (invTab === 'frame') {
@@ -1213,7 +1216,7 @@
         list.innerHTML = countLine(counts.frame) + `<div class="inv-grid">${items.map(c => {
           const has = !c.id || ownedIds.has(c.id);
           return `<div ${has ? `class="inv-item${(c.id || 'none') === editState.frame ? ' equipped' : ''}" data-frame="${c.id || 'none'}"` : lockAttr(c)}>
-            ${c.id ? `<span class="mini-frame mini-frame-${c.id}"></span>` : '<span class="mini-frame mini-none"></span>'}${esc(c.name)}
+            ${c.id ? `<span class="mini-frame mini-frame-${c.id}"></span>` : '<span class="mini-frame mini-none"></span>'}${esc(c.name)}${rarTag(c)}
           </div>`;
         }).join('')}</div>` +
           (sel && sel.hasBackground
@@ -1227,7 +1230,7 @@
         const item = c => {
           const has = !c.id || ownedIds.has(c.id);
           return `<div ${has ? `class="inv-item${c.themeKey === active ? ' equipped' : ''}" data-theme-key="${c.themeKey}"` : lockAttr(c)}>
-            ${c.c ? `<span class="mini-theme" style="background:conic-gradient(${c.c[0]} 0 50%, ${c.c[1]} 50% 75%, ${c.c[2]} 75%);border:1px solid ${c.c[1]}"></span>` : `<span class="mini-theme mini-theme-${c.themeKey}"></span>`}${esc(c.name)}${c.animated ? '<small class="inv-anim">✦ animated</small>' : ''}
+            ${c.c ? `<span class="mini-theme" style="background:conic-gradient(${c.c[0]} 0 50%, ${c.c[1]} 50% 75%, ${c.c[2]} 75%);border:1px solid ${c.c[1]}"></span>` : `<span class="mini-theme mini-theme-${c.themeKey}"></span>`}${esc(c.name)}${rarTag(c.id ? c : { id: 'base', rarity: 'basic' })}
           </div>`;
         };
         list.innerHTML = countLine(counts.theme) +

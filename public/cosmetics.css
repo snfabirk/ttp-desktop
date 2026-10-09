@@ -44,6 +44,19 @@
   background: var(--gold);
 }
 
+/* Seltenheiten (v5.16.0): Basic -> Refined -> Fancy -> Animated */
+:root {
+  --rar-basic: #9aa0a6;
+  --rar-refined: #4fa3ff;
+  --rar-fancy: #b26bff;
+  --rar-animated: #ff9a2a;
+}
+.rar { font-size: 0.6rem; letter-spacing: 1px; text-transform: uppercase; }
+.rar-basic { color: var(--rar-basic); }
+.rar-refined { color: var(--rar-refined); }
+.rar-fancy { color: var(--rar-fancy); }
+.rar-animated { color: var(--rar-animated); text-shadow: 0 0 8px color-mix(in srgb, var(--rar-animated) 55%, transparent); }
+
 /* Kein Cosmetic ausgeruestet: schlichter Gold-Rand wie bisher. */
 .cos-none::before { background: var(--gold); }
 

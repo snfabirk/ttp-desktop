@@ -1,5 +1,17 @@
 # Internal Changelog
 
+## 5.16.0 — 2026-10-09
+
+- Rarities Basic / Refined / Fancy / Animated (cosmetics.js `rarity`,
+  `PRICES`, `priceOf`): border 0/500/1,000/1,600, frame 0/650/1,300/1,900,
+  theme 0/900/1,600/2,400. October pass: t5/10/15 refined, t20/25 fancy,
+  t30 animated. Colours as --rar-* in cosmetics.css; tags in the editor
+  collection and on shop offers.
+- Personal shop: offers rolled once per day/week and stored in
+  progression state (`shop`), owned items never offered, daily and weekly
+  never show the same item; rotation rules are intentionally not
+  described anywhere user-facing (see the comment in progression.js).
+
 ## 5.15.0 — 2026-10-09
 
 - Collection view (user is a completionist): /api/profile-stats returns the
