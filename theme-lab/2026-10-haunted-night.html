@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Haunted Night - FX Showcase (Demo)</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #050409; font-family: Georgia, serif; color: #efe9f5; }
+  #gl, #fx { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+  #gl { z-index: 0; }
+  #fx { z-index: 1; pointer-events: none; }
+  .stage { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 34px; }
+
+  /* ---------- Titel: Kerzenflackern + atmender Glanz ---------- */
+  .title {
+    font-family: 'Cinzel', serif; font-weight: 900; font-size: 64px; letter-spacing: 6px; margin: 0;
+    background: linear-gradient(180deg, #ffe2b0 0%, #ff8a2a 45%, #b44dff 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 14px rgba(255, 138, 42, .35)) drop-shadow(0 0 30px rgba(122, 60, 255, .25));
+    animation: candle 3.6s steps(1, end) infinite;
+  }
+  @keyframes candle {
+    0% { filter: drop-shadow(0 0 18px rgba(255,138,42,.45)) drop-shadow(0 0 40px rgba(122,60,255,.35)); }
+    11% { filter: drop-shadow(0 0 26px rgba(255,160,60,.7)) drop-shadow(0 0 50px rgba(122,60,255,.4)); }
+    19% { filter: drop-shadow(0 0 12px rgba(255,120,30,.35)) drop-shadow(0 0 34px rgba(122,60,255,.3)); }
+    54% { filter: drop-shadow(0 0 22px rgba(255,150,50,.6)) drop-shadow(0 0 46px rgba(122,60,255,.4)); }
+    72% { filter: drop-shadow(0 0 10px rgba(255,110,20,.3)) drop-shadow(0 0 30px rgba(122,60,255,.3)); }
+  }
+  .row { display: flex; gap: 60px; align-items: center; }
+
+  /* ---------- Profilbild-Rahmen "Widow's Nest": Spinnen + Netz ---------- */
+  .avatar-wrap { position: relative; width: 220px; height: 220px; }
+  .avatar-wrap img { position: absolute; z-index: 1; inset: 38px; width: 144px; height: 144px; border-radius: 50%; object-fit: cover; filter: saturate(.85) brightness(.92); }
+  .avatar-wrap svg.ring { position: absolute; inset: -30px; width: 280px; height: 280px; overflow: visible; pointer-events: none; z-index: 2; }
+  .halo { transform-origin: 140px 140px; animation: halo 3.4s ease-in-out infinite; }
+  @keyframes halo { 0%, 100% { opacity: .7; transform: scale(.97); } 50% { opacity: 1; transform: scale(1.03); } }
+  /* Netz deutlich sichtbar: hellere, kraeftigere Faeden mit leichtem Schimmer */
+  .web { stroke: #ece6f6; stroke-opacity: .75; stroke-width: .9; fill: none; filter: drop-shadow(0 0 2px rgba(236, 230, 246, .55)); }
+  .dew { fill: #ffd9a8; filter: drop-shadow(0 0 3px #ff8a2a); animation: dew 3s ease-in-out infinite; }
+  .dew.b { animation-delay: -1s; } .dew.c { animation-delay: -2s; }
+  @keyframes dew { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+  .dangle { position: absolute; left: 50%; top: 18px; width: 0; height: 0; z-index: 3; pointer-events: none; transform-origin: 0 0; }
+  .dangle .thread { position: absolute; left: -0.5px; top: 0; width: 1px; height: 0; background: linear-gradient(#ddd0, #e6e0f0cc); }
+  .dangle svg { position: absolute; left: -20px; width: 40px; height: 40px; overflow: visible; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+  .leg { stroke: #0a0710; stroke-width: 1.6; fill: none; stroke-linecap: round; transform-box: view-box; transform-origin: 14px 14px; }
+  .wiggle .leg:nth-child(odd) { animation: leg .18s ease-in-out infinite alternate; }
+  .wiggle .leg:nth-child(even) { animation: leg .18s ease-in-out infinite alternate-reverse; }
+  @keyframes leg { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+  .label { text-align: center; color: #a99fb8; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; margin-top: 10px; }
+  .label b { display: block; color: #ffb36b; font-family: 'Cinzel', serif; font-size: 18px; letter-spacing: 1px; text-transform: none; }
+
+  /* ---------- Profil-Rahmen "Ectoplasm Manor" (3D-Neigung) ---------- */
+  .tilt { perspective: 1000px; }
+  .card {
+    position: relative; width: 460px; height: 270px; border-radius: 18px;
+    transform-style: preserve-3d; transition: transform .12s ease-out;
+    background: linear-gradient(160deg, rgba(30, 18, 44, .72), rgba(12, 8, 18, .82));
+    backdrop-filter: blur(10px); box-shadow: 0 30px 60px rgba(0,0,0,.55);
+  }
+  .card .sheen { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; mix-blend-mode: screen;
+    background: radial-gradient(circle at var(--mx, 50%) var(--my, 30%), rgba(255, 190, 120, .22), transparent 45%); }
+  .card svg.edge { position: absolute; inset: -22px; width: calc(100% + 44px); height: calc(100% + 44px); overflow: visible; pointer-events: none; }
+  .card .content { position: absolute; inset: 0; padding: 34px 38px; transform: translateZ(40px); display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+  .card .name { font-family: 'Cinzel', serif; font-size: 30px; color: #ffb36b; letter-spacing: 2px; text-shadow: 0 0 14px rgba(255,138,42,.5); }
+  .card .sub { color: #a99fb8; font-style: italic; }
+  .bar { height: 10px; border-radius: 5px; background: rgba(255,255,255,.08); overflow: hidden; border: 1px solid rgba(255,138,42,.35); }
+  .bar i { display: block; height: 100%; width: 68%; background: linear-gradient(90deg, #7a3cff, #ff8a2a); box-shadow: 0 0 12px #ff8a2a; animation: barglow 2.4s ease-in-out infinite; }
+  @keyframes barglow { 50% { filter: brightness(1.35); } }
+  /* Ranken nur solange die Maus drauf ist - Transitions statt Keyframes,
+     damit sie mitten in der Bewegung umdrehen (hin <-> weg) statt neu zu starten. */
+  .vine { fill: none; stroke: #6a3399; stroke-width: 4.5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset .9s ease-in-out; filter: drop-shadow(0 0 4px rgba(160, 70, 230, .6)); }
+  .vine.thin { stroke-width: 2.6; stroke: #8e57c9; transition-duration: .6s; }
+  .card:hover .vine { stroke-dashoffset: 0; transition-duration: 1.3s; }
+  .card:hover .vine.thin { transition-delay: .5s; }
+  .bloom { transform-box: fill-box; transform-origin: center; transform: scale(0); transition: transform .3s ease-in; filter: drop-shadow(0 0 6px #ff8a2a); }
+  .card:hover .bloom { transform: scale(1); transition: transform .5s cubic-bezier(.3,1.6,.5,1) 1s; }
+
+  .ghost-count { position: fixed; right: 22px; bottom: 18px; z-index: 6; font-size: 22px; letter-spacing: 4px; color: #8d84a0; opacity: 0; transition: opacity .3s; background: rgba(5,4,9,.6); padding: 4px 12px; border-radius: 14px; border: 1px solid #2a2035; }
+  .ghost-count.show { opacity: 1; }
+  .hint { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 3; color: #8d84a0; font-size: 13px; letter-spacing: 1px; background: rgba(5,4,9,.6); padding: 6px 14px; border-radius: 14px; border: 1px solid #2a2035; }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<canvas id="fx"></canvas>
+
+<div class="stage">
+  <h1 class="title">HAUNTED NIGHT</h1>
+  <div class="row">
+    <div>
+      <div class="avatar-wrap" id="avatar">
+        <svg class="ring" viewBox="0 0 280 280">
+          <defs>
+            <filter id="ectoRing" x="-20%" y="-20%" width="140%" height="140%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.03 0.05" numOctaves="2" seed="4" result="n">
+                <animate attributeName="baseFrequency" dur="7s" values="0.03 0.05;0.04 0.07;0.03 0.05" repeatCount="indefinite"/>
+              </feTurbulence>
+              <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="B" result="w"/>
+              <feGaussianBlur in="w" stdDeviation="2.2" result="g"/>
+              <feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="w"/></feMerge>
+            </filter>
+            <linearGradient id="ectoG" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+              <stop offset="0" stop-color="#ff8a2a"/><stop offset=".5" stop-color="#b44dff"/><stop offset="1" stop-color="#ff8a2a"/>
+              <animateTransform attributeName="gradientTransform" type="rotate" from="0 .5 .5" to="360 .5 .5" dur="9s" repeatCount="indefinite"/>
+            </linearGradient>
+            <radialGradient id="haloG"><stop offset=".62" stop-color="#ff8a2a" stop-opacity="0"/><stop offset=".72" stop-color="#ff8a2a" stop-opacity=".22"/><stop offset=".86" stop-color="#7a3cff" stop-opacity=".12"/><stop offset="1" stop-color="#7a3cff" stop-opacity="0"/></radialGradient>
+            <linearGradient id="rimG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff8a2a" stop-opacity=".55"/><stop offset=".5" stop-color="#ff8a2a" stop-opacity=".08"/><stop offset="1" stop-color="#7a3cff" stop-opacity=".45"/></linearGradient>
+          </defs>
+          <circle cx="140" cy="140" r="130" fill="url(#haloG)" class="halo"/>
+          <circle cx="140" cy="140" r="84" fill="none" stroke="#120e17" stroke-width="16"/>
+          <circle cx="140" cy="140" r="92" fill="none" stroke="url(#ectoG)" stroke-width="3.5" filter="url(#ectoRing)"/>
+          <circle cx="140" cy="140" r="91.5" fill="none" stroke="url(#rimG)" stroke-width="1.5"/>
+          <circle cx="140" cy="140" r="76.5" fill="none" stroke="url(#rimG)" stroke-width="1"/>
+          <!-- Spinnennetz oben links, ragt ein Stueck uebers Bild -->
+          <g class="web">
+            <!-- Dachboden-Spinnweben: feine, unregelmaessige, durchhaengende Faeden zwischen
+                 Ring und Bildrand, oben links dichter (berechnet, fester Seed) -->
+            <path d="M51.6 101.6 Q71.0 105.8 86.9 98.6" stroke-opacity="0.48" stroke-width="0.65"/><path d="M89.0 65.8 Q85.9 93.1 87.9 103.0" stroke-opacity="0.47" stroke-width="0.54"/><path d="M53.3 90.2 Q59.7 129.3 64.6 146.5" stroke-opacity="0.19" stroke-width="0.58"/><path d="M82.6 58.7 Q84.4 90.8 82.5 112.5" stroke-opacity="0.23" stroke-width="0.82"/><path d="M80.7 67.8 Q88.0 81.9 100.8 85.0" stroke-opacity="0.50" stroke-width="0.54"/><path d="M125.0 41.4 Q113.4 66.1 98.7 70.8" stroke-opacity="0.39" stroke-width="0.74"/><path d="M47.4 107.2 Q68.2 126.1 84.3 122.2" stroke-opacity="0.33" stroke-width="0.60"/><path d="M76.3 63.0 Q81.7 84.3 92.0 97.1" stroke-opacity="0.45" stroke-width="0.85"/><path d="M84.7 62.1 Q90.7 76.1 95.3 78.6" stroke-opacity="0.39" stroke-width="0.70"/><path d="M55.3 100.5 Q57.4 127.1 58.3 140.1" stroke-opacity="0.29" stroke-width="0.49"/><path d="M45.2 116.1 Q68.4 117.8 89.6 100.6" stroke-opacity="0.51" stroke-width="0.83"/><path d="M71.1 68.0 Q101.5 79.9 131.9 69.6" stroke-opacity="0.32" stroke-width="0.55"/><path d="M140.6 49.3 Q123.6 69.7 106.8 69.7" stroke-opacity="0.49" stroke-width="0.47"/><path d="M60.3 89.7 Q71.6 111.4 84.8 123.9" stroke-opacity="0.51" stroke-width="0.84"/><path d="M120.9 49.5 Q122.2 62.7 120.7 59.6" stroke-opacity="0.19" stroke-width="0.53"/><path d="M134.5 41.3 Q149.5 64.4 163.5 72.7" stroke-opacity="0.49" stroke-width="0.57"/><path d="M88.6 57.0 Q97.3 90.7 100.6 105.5" stroke-opacity="0.19" stroke-width="0.69"/><path d="M104.9 50.8 Q128.0 72.7 145.5 80.0" stroke-opacity="0.52" stroke-width="0.50"/><path d="M53.7 113.7 Q66.9 140.0 75.7 156.0" stroke-opacity="0.42" stroke-width="0.50"/><path d="M90.6 58.9 Q92.6 83.8 98.5 98.1" stroke-opacity="0.32" stroke-width="0.73"/><path d="M91.0 56.2 Q81.1 91.2 67.7 105.9" stroke-opacity="0.18" stroke-width="0.64"/><path d="M51.0 117.9 Q65.7 114.0 78.0 98.2" stroke-opacity="0.30" stroke-width="0.47"/><path d="M69.4 70.5 Q78.4 97.9 86.8 109.2" stroke-opacity="0.53" stroke-width="0.49"/><path d="M98.1 52.1 Q102.8 64.9 105.1 64.7" stroke-opacity="0.37" stroke-width="0.67"/><path d="M43.2 115.9 Q69.6 115.0 90.0 101.1" stroke-opacity="0.22" stroke-width="0.48"/><path d="M45.7 114.9 Q64.1 115.7 88.3 98.4" stroke-opacity="0.42" stroke-width="0.63"/><path d="M79.9 71.4 Q93.2 67.7 106.4 57.6" stroke-opacity="0.40" stroke-width=".6"/><path d="M55.1 93.9 Q68.1 82.8 81.1 61.2" stroke-opacity="0.33" stroke-width=".6"/><path d="M66.7 80.8 Q78.6 71.6 90.5 55.5" stroke-opacity="0.42" stroke-width=".6"/><path d="M73.3 68.8 Q91.1 63.1 108.8 45.2" stroke-opacity="0.52" stroke-width=".6"/><path d="M92.6 57.6 Q114.2 54.8 135.9 43.5" stroke-opacity="0.57" stroke-width=".6"/><path d="M64.8 79.2 Q78.8 73.2 92.9 51.3" stroke-opacity="0.25" stroke-width=".6"/><path d="M64.0 89.8 Q74.3 86.3 84.5 71.4" stroke-opacity="0.28" stroke-width=".6"/><path d="M59.5 88.3 Q77.1 75.7 94.8 56.1" stroke-opacity="0.58" stroke-width=".6"/><path d="M98.7 59.6 Q110.2 61.4 121.8 50.3" stroke-opacity="0.34" stroke-width=".6"/><path d="M80.3 71.1 Q93.9 75.1 107.4 69.6" stroke-opacity="0.16" stroke-width=".5"/><path d="M68.4 84.2 Q83.5 82.2 98.6 72.7" stroke-opacity="0.23" stroke-width=".5"/><path d="M61.5 96.5 Q77.3 99.2 93.2 90.2" stroke-opacity="0.13" stroke-width=".5"/><path d="M66.1 76.6 Q89.3 81.4 112.5 81.9" stroke-opacity="0.23" stroke-width=".5"/><path d="M75.6 76.6 Q88.3 80.9 101.0 78.6" stroke-opacity="0.20" stroke-width=".5"/><path d="M79.5 71.1 Q96.8 73.6 114.1 67.8" stroke-opacity="0.13" stroke-width=".5"/><path d="M56.4 101.5 Q76.6 100.1 96.8 88.0" stroke-opacity="0.29" stroke-width=".5"/><path d="M76.5 78.8 Q97.5 83.6 118.5 78.4" stroke-opacity="0.26" stroke-width=".5"/><path d="M57.9 106.6 Q74.5 99.6 91.1 84.8" stroke-opacity="0.26" stroke-width=".5"/><path d="M62.2 93.4 Q80.3 94.9 98.4 85.3" stroke-opacity="0.13" stroke-width=".5"/><path d="M52.6 108.0 Q71.2 104.0 89.9 95.5" stroke-opacity="0.13" stroke-width=".5"/><path d="M59.9 89.3 Q79.4 94.2 99.0 87.6" stroke-opacity="0.22" stroke-width=".5"/>
+          </g>
+          <circle class="dew" cx="70.4" cy="93.0" r="1.5"/><circle class="dew b" cx="104.0" cy="77.6" r="1.3"/><circle class="dew c" cx="121.3" cy="52.0" r="1.1"/>
+          <!-- Spinne, die ab und zu einmal um den Ring krabbelt -->
+          <g id="crawler" opacity="0"><g transform="translate(126 42) scale(.8)" class="wiggle"><g><path class="leg" d="M12 12 Q4 6 1 10"/><path class="leg" d="M12 14 Q3 13 0 17"/><path class="leg" d="M12 16 Q4 19 2 24"/><path class="leg" d="M13 17 Q8 23 7 27"/><path class="leg" d="M16 12 Q24 6 27 10"/><path class="leg" d="M16 14 Q25 13 28 17"/><path class="leg" d="M16 16 Q24 19 26 24"/><path class="leg" d="M15 17 Q20 23 21 27"/><ellipse cx="14" cy="18" rx="5" ry="6" fill="#0d0912"/><path d="M12 16 l2 3 l2 -3" stroke="#ff6a1a" stroke-width=".9" fill="none" opacity=".8"/><circle cx="14" cy="11" r="3.2" fill="#140e1b"/><circle cx="12.9" cy="10.4" r=".85" fill="#ff7a2a" style="filter:drop-shadow(0 0 1.5px #ff7a2a)"/><circle cx="15.1" cy="10.4" r=".85" fill="#ff7a2a" style="filter:drop-shadow(0 0 1.5px #ff7a2a)"/></g></g></g>
+        </svg>
+        <div class="dangle" id="dangle"><div class="thread" id="thread"></div><svg id="spider" viewBox="0 0 28 28" class="wiggle"><g><path class="leg" d="M12 12 Q4 6 1 10"/><path class="leg" d="M12 14 Q3 13 0 17"/><path class="leg" d="M12 16 Q4 19 2 24"/><path class="leg" d="M13 17 Q8 23 7 27"/><path class="leg" d="M16 12 Q24 6 27 10"/><path class="leg" d="M16 14 Q25 13 28 17"/><path class="leg" d="M16 16 Q24 19 26 24"/><path class="leg" d="M15 17 Q20 23 21 27"/><ellipse cx="14" cy="18" rx="5" ry="6" fill="#0d0912"/><path d="M12 16 l2 3 l2 -3" stroke="#ff6a1a" stroke-width=".9" fill="none" opacity=".8"/><circle cx="14" cy="11" r="3.2" fill="#140e1b"/><circle cx="12.9" cy="10.4" r=".85" fill="#ff7a2a" style="filter:drop-shadow(0 0 1.5px #ff7a2a)"/><circle cx="15.1" cy="10.4" r=".85" fill="#ff7a2a" style="filter:drop-shadow(0 0 1.5px #ff7a2a)"/></g></svg></div>
+        <img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" onerror="this.src='https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Evelynn.png'" alt="">
+      </div>
+      <div class="label"><b>Widow's Nest</b>profile picture border</div>
+    </div>
+
+    <div>
+      <div class="tilt"><div class="card" id="card">
+        <svg class="edge" id="edge" preserveAspectRatio="none">
+          <defs>
+            <filter id="ecto" x="-10%" y="-10%" width="120%" height="120%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="2" seed="2" result="n">
+                <animate attributeName="baseFrequency" dur="9s" values="0.012 0.02;0.018 0.028;0.012 0.02" repeatCount="indefinite"/>
+              </feTurbulence>
+              <feDisplacementMap in="SourceGraphic" in2="n" scale="12" xChannelSelector="R" yChannelSelector="B" result="w"/>
+              <feGaussianBlur in="w" stdDeviation="2.4" result="g"/>
+              <feMerge><feMergeNode in="g"/><feMergeNode in="w"/></feMerge>
+            </filter>
+            <linearGradient id="edgeG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff8a2a"/><stop offset=".5" stop-color="#b44dff"/><stop offset="1" stop-color="#ff8a2a"/></linearGradient>
+          </defs>
+          <rect id="edgeRect" x="22" y="22" rx="18" fill="none" stroke="url(#edgeG)" stroke-width="4" filter="url(#ecto)"/>
+          <g id="vines"></g>
+        </svg>
+        <div class="sheen"></div>
+        <div class="content">
+          <div class="name">LUCKSHOT</div>
+          <div class="sub">Challenger since 26.09.2026 · Level 17</div>
+          <div class="bar"><i></i></div>
+          <div class="sub" style="font-style:normal;color:#ffb36b">🪙 2,400 · October Pass complete</div>
+        </div>
+      </div></div>
+      <div class="label"><b>Ectoplasm Manor</b>profile frame · hover me</div>
+    </div>
+  </div>
+</div>
+<div class="hint">Move your mouse: your lantern lights the way and ghosts flee from it · leave the window and the light goes out · psst... try clicking ghosts</div>
+
+<script>
+// ===================== WebGL: Nebel, Mond, Sterne, Laternenwaerme =====================
+const gl = document.getElementById('gl').getContext('webgl');
+const FS = `precision mediump float;
+uniform vec2 r; uniform float t; uniform vec2 m; uniform float flash;
+float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<6;i++){v+=a*n(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return v;}
+void main(){
+  vec2 uv=gl_FragCoord.xy/r; float asp=r.x/r.y; vec2 p=uv*vec2(asp,1.)*2.6;
+  float q=fbm(p+vec2(t*.04,t*.015));
+  float f=fbm(p+q*2.2+vec2(-t*.07,t*.025));
+  vec3 col=mix(vec3(.012,.01,.022),vec3(.05,.025,.09),uv.y);
+  vec3 fogC=mix(vec3(.26,.14,.42),vec3(.78,.34,.10),smoothstep(.58,.95,f)*(1.-uv.y*.8));
+  col+=fogC*f*f*.6*(1.22-uv.y);
+  // Sterne
+  vec2 sp=uv*vec2(asp,1.)*90.; vec2 sg=floor(sp); vec2 sf=fract(sp)-.5; float s=h(sg);
+  vec2 off=vec2(h(sg+3.1),h(sg+7.7))-.5; float sd=length(sf-off*.6);
+  float star=step(.985,s)*smoothstep(.09,.0,sd)*(.55+.45*sin(t*(1.5+s*3.)+s*90.));
+  col+=vec3(.95,.92,1.)*star*smoothstep(.3,.85,uv.y);
+  // Mond + Hof
+  float d=length((uv-vec2(.83,.78))*vec2(asp,1.));
+  float disc=smoothstep(.066,.061,d);
+  float crater=fbm((uv-vec2(.83,.78))*vec2(asp,1.)*38.);
+  col=mix(col,vec3(1.,.96,.86)*(.78+.3*crater),disc);
+  col+=vec3(1.,.8,.55)*(.35*exp(-d*7.)+.12*exp(-d*2.2))*(1.-disc);
+  // Blitz (gedaempft - kein Flashbang)
+  col+=vec3(.35,.35,.55)*flash*(.15+f*.5);
+  gl_FragColor=vec4(col,1.);
+}`;
+const VS = 'attribute vec2 a;void main(){gl_Position=vec4(a,0,1);}';
+function sh(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; }
+const prog = gl.createProgram();
+gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog); gl.useProgram(prog);
+gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+const aLoc = gl.getAttribLocation(prog, 'a'); gl.enableVertexAttribArray(aLoc); gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
+const U = n => gl.getUniformLocation(prog, n);
+
+// ===================== 2D-Effekte =====================
+const fx = document.getElementById('fx').getContext('2d');
+let W = 0, H = 0;
+function resize() {
+  W = innerWidth; H = innerHeight;
+  const g = document.getElementById('gl'); g.width = W * .75; g.height = H * .75; gl.viewport(0, 0, g.width, g.height);
+  const c = document.getElementById('fx'); const dpr = Math.min(2, devicePixelRatio || 1); c.width = W * dpr; c.height = H * dpr; fx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+addEventListener('resize', resize); resize();
+
+const mouse = { x: W * .5, y: H * .55, sx: W * .5, sy: H * .55, light: 0, lightTarget: 1 };
+addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.lightTarget = 1; });
+document.addEventListener('mouseleave', () => { mouse.lightTarget = 0; });
+document.addEventListener('mouseenter', () => { mouse.lightTarget = 1; });
+addEventListener('blur', () => { mouse.lightTarget = 0; });
+const rand = (a, b) => a + Math.random() * (b - a);
+
+// Gemaechliches Umherwandern: neue Wunschrichtung alle 4-9s
+const newHome = g => { const a = rand(0, Math.PI * 2), v = rand(8, 18); g.wx = Math.cos(a) * v; g.wy = Math.sin(a) * v; g.homeT = rand(4, 9); };
+const ghosts = Array.from({ length: 9 }, () => ({ x: rand(0, W), y: rand(0, H), vx: rand(-15, 15), vy: rand(-12, 4), s: rand(26, 52), ph: rand(0, 6.28), a: rand(.25, .45) }));
+const embers = [];
+let flash = 0, nextBolt = 3, bolt = null;
+
+function drawGhost(g, t) {
+  const s = g.s, x = g.x + Math.sin(t * .7 + g.ph) * 10, y = g.y + Math.sin(t * 1.4 + g.ph) * 5;
+  fx.save(); fx.translate(x, y); fx.rotate(g.vx * .004);
+  const grad = fx.createLinearGradient(0, -s * .5, 0, s * .8);
+  grad.addColorStop(0, `rgba(240,236,255,${g.a})`); grad.addColorStop(1, 'rgba(200,190,255,0)');
+  fx.fillStyle = grad; fx.shadowColor = 'rgba(190,170,255,.6)'; fx.shadowBlur = s * .6;
+  fx.beginPath(); fx.arc(0, 0, s * .5, Math.PI, 0); const b = s * .85;
+  fx.lineTo(s * .5, b);
+  for (let i = 0; i < 5; i++) { const x1 = s * .5 - (i + .5) * (s / 5), x2 = s * .5 - (i + 1) * (s / 5); fx.quadraticCurveTo(x1, b - s * .22 + Math.sin(t * 5 + g.ph + i) * s * .08, x2, b); }
+  fx.closePath(); fx.fill(); fx.shadowBlur = 0;
+  // gluehende Augen
+  const eye = (ex) => { const eg = fx.createRadialGradient(ex, -s * .06, 0, ex, -s * .06, s * .14); eg.addColorStop(0, `rgba(255,170,80,${g.a * 2})`); eg.addColorStop(1, 'rgba(255,120,40,0)'); fx.fillStyle = eg; fx.beginPath(); fx.arc(ex, -s * .06, s * .14, 0, 7); fx.fill(); };
+  eye(-s * .17); eye(s * .17);
+  fx.restore();
+}
+
+function makeBolt() {
+  const pts = []; let x = rand(W * .15, W * .85), y = 0;
+  while (y < H * .6) { pts.push([x, y]); x += rand(-38, 38); y += rand(18, 42); }
+  return pts;
+}
+function drawManor() {
+  // prozedurale Spukhaus-Silhouette, nur im Blitzlicht sichtbar
+  const bx = W * .62, by = H, s = Math.min(W, H) / 900;
+  fx.save(); fx.translate(bx, by); fx.scale(s, s); fx.fillStyle = `rgba(4,3,8,${Math.min(1, flash * 1.6)})`;
+  fx.beginPath();
+  fx.moveTo(-420, 0); fx.lineTo(-420, -180); fx.lineTo(-340, -260); fx.lineTo(-260, -180); fx.lineTo(-260, -230); fx.lineTo(-180, -330);
+  fx.lineTo(-170, -420); fx.lineTo(-150, -330); fx.lineTo(-60, -250); fx.lineTo(-60, -300); fx.lineTo(40, -390); fx.lineTo(140, -300);
+  fx.lineTo(140, -220); fx.lineTo(260, -300); fx.lineTo(380, -200); fx.lineTo(380, 0); fx.closePath(); fx.fill();
+  fx.fillStyle = `rgba(255,170,60,${flash * .9})`;
+  [[-330, -150], [-200, -200], [20, -240], [60, -240], [250, -170], [300, -170]].forEach(([wx, wy]) => fx.fillRect(wx, wy, 18, 26));
+  fx.restore();
+}
+
+const avatar = document.getElementById('avatar');
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now; const t = now / 1000;
+  mouse.sx += (mouse.x - mouse.sx) * Math.min(1, dt * 6); mouse.sy += (mouse.y - mouse.sy) * Math.min(1, dt * 6);
+  mouse.light += (mouse.lightTarget - mouse.light) * Math.min(1, dt * 2.5);
+  const L = mouse.light;
+
+  // Blitz
+  nextBolt -= dt;
+  if (nextBolt <= 0) { flash = 1; bolt = makeBolt(); nextBolt = rand(7, 13); }
+  flash = Math.max(0, flash - dt * 1.6);
+  if (flash < .2) bolt = null;
+
+  gl.uniform2f(U('r'), gl.canvas.width, gl.canvas.height); gl.uniform1f(U('t'), t);
+  gl.uniform2f(U('m'), mouse.sx / W, 1 - mouse.sy / H); gl.uniform1f(U('flash'), flash);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+  fx.clearRect(0, 0, W, H);
+  // Dunkelheit mit Laternen-Loch
+  const dark = fx.createRadialGradient(mouse.sx, mouse.sy, 30, mouse.sx, mouse.sy, 380);
+  const far = .66 - flash * .12;
+  dark.addColorStop(0, `rgba(2,1,6,${far * (1 - L)})`); dark.addColorStop(.35, `rgba(2,1,6,${.36 * L + far * (1 - L) - flash * .06})`); dark.addColorStop(1, `rgba(2,1,6,${far})`);
+  fx.fillStyle = dark; fx.fillRect(0, 0, W, H);
+  // Mond bleibt leuchtend (Loch in der Dunkelheit)
+  fx.save(); fx.globalCompositeOperation = 'destination-out';
+  const mx = W * .83, my = H * .22, mr = Math.min(W, H) * .2;
+  const mg = fx.createRadialGradient(mx, my, 0, mx, my, mr); mg.addColorStop(0, 'rgba(0,0,0,1)'); mg.addColorStop(1, 'rgba(0,0,0,0)');
+  fx.fillStyle = mg; fx.beginPath(); fx.arc(mx, my, mr, 0, 7); fx.fill(); fx.restore();
+
+  // Sichtbarer warmer Lichtkegel der Laterne (deshalb fliehen die Geister)
+  if (L > .01) {
+    fx.save(); fx.globalCompositeOperation = 'lighter';
+    const flick = .92 + Math.sin(t * 11) * .03 + Math.sin(t * 23) * .02;
+    const lg = fx.createRadialGradient(mouse.sx, mouse.sy, 0, mouse.sx, mouse.sy, 180);
+    lg.addColorStop(0, `rgba(255,238,195,${.40 * L * flick})`);
+    lg.addColorStop(.16, `rgba(255,208,145,${.22 * L * flick})`);
+    lg.addColorStop(.5, `rgba(255,165,85,${.07 * L})`);
+    lg.addColorStop(1, 'rgba(255,140,60,0)');
+    fx.fillStyle = lg; fx.beginPath(); fx.arc(mouse.sx, mouse.sy, 180, 0, 7); fx.fill();
+    fx.restore();
+  }
+  if (flash > 0) drawManor();
+  if (bolt) {
+    fx.save(); fx.strokeStyle = `rgba(230,225,255,${flash})`; fx.lineWidth = 2.5; fx.shadowColor = '#b9a8ff'; fx.shadowBlur = 24;
+    fx.beginPath(); bolt.forEach(([x, y], i) => i ? fx.lineTo(x, y) : fx.moveTo(x, y)); fx.stroke(); fx.restore();
+  }
+
+  // Geister fliehen vor dem Licht
+  ghosts.forEach(g => {
+    if (g.hidden) return;
+    const dx = g.x - mouse.sx, dy = g.y - mouse.sy, d = Math.hypot(dx, dy) || 1;
+    if (d < 260) { const f = (260 - d) / 260 * 420 * L; g.vx += dx / d * f * dt; g.vy += dy / d * f * dt; }
+    if (boss && boss.t > 2.2 && boss.t < 2.6) { const bx = g.x - W / 2, by = g.y - H; const bd = Math.hypot(bx, by) || 1; g.vx += bx / bd * 900 * dt; g.vy += by / bd * 900 * dt; }
+    // frei umherwandern, nur in der Randzone (aeussere ~8%) sanft nach innen
+    if (g.wx === undefined) newHome(g);
+    g.homeT -= dt; if (g.homeT <= 0) newHome(g);
+    g.vx += (g.wx - g.vx) * .6 * dt; g.vy += (g.wy - g.vy) * .6 * dt;
+    const mx = W * .1, my = H * .1;
+    if (g.x < mx) g.vx += (mx - g.x) * 2.2 * dt;
+    if (g.x > W - mx) g.vx -= (g.x - (W - mx)) * 2.2 * dt;
+    if (g.y < my) g.vy += (my - g.y) * 2.2 * dt;
+    if (g.y > H - my) g.vy -= (g.y - (H - my)) * 2.2 * dt;
+    g.vx *= .99; g.vy *= .99;
+    g.x += g.vx * dt; g.y += g.vy * dt;
+    if (g.y < -90) { g.y = H + 80; g.x = rand(0, W); }
+    if (g.y > H + 100) g.y = -80;
+    if (g.x < -90) g.x = W + 80; if (g.x > W + 90) g.x = -80;
+    drawGhost(g, t);
+  });
+
+  drawPoofsAndBoss(dt, t);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ===================== Spinnen am Profilbild =====================
+const dangle = document.getElementById('dangle'), thread = document.getElementById('thread'), spiderEl = document.getElementById('spider');
+const crawler = document.getElementById('crawler');
+let sp = { phase: 'wait', t: 0, wait: 2.5, len: 0, target: 0 };
+let cr = { t: -1, next: 9 };
+let lastS = performance.now();
+function spiders(now) {
+  const dt = Math.min(.05, (now - lastS) / 1000); lastS = now; sp.t += dt;
+  const ease = x => x < .5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+  if (sp.phase === 'wait' && sp.t > sp.wait) { sp.phase = 'down'; sp.t = 0; sp.target = 70 + Math.random() * 40; }
+  if (sp.phase === 'down') { sp.len = sp.target * ease(Math.min(1, sp.t / 1.8)); if (sp.t > 1.8) { sp.phase = 'hang'; sp.t = 0; } }
+  if (sp.phase === 'hang') { sp.len = sp.target + Math.sin(sp.t * 3) * 3; if (sp.t > 2.6) { sp.phase = 'up'; sp.t = 0; } }
+  if (sp.phase === 'up') { sp.len = sp.target * (1 - ease(Math.min(1, sp.t / 1.4))); if (sp.t > 1.4) { sp.phase = 'wait'; sp.t = 0; sp.wait = 5 + Math.random() * 5; sp.len = 0; } }
+  const sway = sp.phase === 'hang' ? Math.sin(sp.t * 1.6) * 7 : sp.phase === 'down' ? Math.sin(sp.t * 2) * 3 : 0;
+  dangle.style.transform = `rotate(${sway}deg)`;
+  thread.style.height = `${sp.len}px`;
+  spiderEl.style.top = `${sp.len - 9}px`;
+  spiderEl.style.opacity = sp.len > 2 ? 1 : 0;
+  spiderEl.classList.toggle('wiggle', sp.phase === 'hang' || sp.phase === 'up');
+  // kleine Spinne krabbelt ab und zu einmal um den Ring
+  cr.next -= dt;
+  if (cr.t < 0 && cr.next <= 0) cr.t = 0;
+  if (cr.t >= 0) {
+    cr.t += dt; const p = cr.t / 7;
+    crawler.setAttribute('transform', `rotate(${p * 360} 140 140)`);
+    crawler.setAttribute('opacity', Math.min(1, cr.t * 2, (7 - cr.t) * 2));
+    if (cr.t > 7) { cr.t = -1; cr.next = 10 + Math.random() * 8; crawler.setAttribute('opacity', 0); }
+  }
+  requestAnimationFrame(spiders);
+}
+requestAnimationFrame(spiders);
+
+// ===================== Easter Egg: 5 Geister anklicken =====================
+let caught = 0, caughtReset = null, boss = null;
+const poofs = [];
+const counter = document.createElement('div');
+counter.className = 'ghost-count'; document.body.appendChild(counter);
+addEventListener('click', e => {
+  if (boss || e.target.closest('.card, .avatar-wrap')) return;
+  const t = performance.now() / 1000;
+  for (const g of ghosts) {
+    if (g.hidden) continue;
+    const gx = g.x + Math.sin(t * .7 + g.ph) * 10, gy = g.y + Math.sin(t * 1.4 + g.ph) * 5 + g.s * .15;
+    if (Math.hypot(e.clientX - gx, e.clientY - gy) < g.s * .65) {
+      for (let k = 0; k < 18; k++) { const a = Math.random() * 6.28, v = 60 + Math.random() * 140; poofs.push({ x: gx, y: gy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1 }); }
+      respawnGhost(g);
+      caught++;
+      counter.textContent = '👻'.repeat(caught) + '·'.repeat(5 - caught);
+      counter.classList.add('show');
+      clearTimeout(caughtReset);
+      caughtReset = setTimeout(() => { caught = 0; counter.classList.remove('show'); }, 12000);
+      if (caught >= 5) { caught = 0; clearTimeout(caughtReset); setTimeout(() => counter.classList.remove('show'), 600); summonBoss(); }
+      break;
+    }
+  }
+});
+// Zerplatzter Geist: kurz weg, dann von einem zufaelligen Rand zuegig wieder rein
+function respawnGhost(g) {
+  g.hidden = true; g.vx = 0; g.vy = 0;
+  setTimeout(() => {
+    g.hidden = false;
+    newHome(g);
+    const side = Math.floor(Math.random() * 4);
+    if (side === 0) { g.x = -60; g.y = rand(H * .1, H * .9); g.vx = rand(60, 110); g.vy = rand(-20, 20); }
+    if (side === 1) { g.x = W + 60; g.y = rand(H * .1, H * .9); g.vx = -rand(60, 110); g.vy = rand(-20, 20); }
+    if (side === 2) { g.x = rand(W * .1, W * .9); g.y = H + 60; g.vx = rand(-20, 20); g.vy = -rand(70, 120); }
+    if (side === 3) { g.x = rand(W * .1, W * .9); g.y = -60; g.vx = rand(-20, 20); g.vy = rand(50, 90); }
+  }, 900 + Math.random() * 900);
+}
+function summonBoss() {
+  boss = { t: 0 };
+  document.getElementById('fx').style.zIndex = 5;
+}
+function drawPoofsAndBoss(dt, t) {
+  for (let i = poofs.length - 1; i >= 0; i--) {
+    const p = poofs[i]; p.life -= dt * 1.4; if (p.life <= 0) { poofs.splice(i, 1); continue; }
+    p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= .96; p.vy *= .96;
+    fx.fillStyle = `rgba(230,225,255,${p.life * .7})`; fx.beginPath(); fx.arc(p.x, p.y, 3 + (1 - p.life) * 6, 0, 7); fx.fill();
+  }
+  if (!boss) return;
+  boss.t += dt; const bt = boss.t;
+  const S = Math.min(W, H) * .95;
+  // Bildschirm wird dunkel
+  const dim = Math.min(1, bt / 1.2) * (bt > 4.6 ? Math.max(0, 1 - (bt - 4.6) / 1.2) : 1);
+  fx.fillStyle = `rgba(0,0,0,${dim * .72})`; fx.fillRect(0, 0, W, H);
+  // Riesengeist steigt von unten auf, schaut zur Maus, BOO, schwebt davon
+  const rise = Math.min(1, bt / 2), up = bt > 3.8 ? (bt - 3.8) * (bt - 3.8) * 420 : 0;
+  const cx = W / 2 + Math.sin(bt * 1.3) * 30, cy = H + S * .55 - rise * S * .95 - up;
+  const alpha = Math.min(.9, bt * .8) * (bt > 4.4 ? Math.max(0, 1 - (bt - 4.4) / 1.4) : 1);
+  const shake = bt > 2.2 && bt < 2.9 ? (Math.random() - .5) * 18 : 0;
+  fx.save(); fx.translate(cx + shake, cy + shake * .6); fx.globalAlpha = alpha;
+  const g = fx.createLinearGradient(0, -S * .5, 0, S * .7);
+  g.addColorStop(0, 'rgba(235,230,255,.95)'); g.addColorStop(.6, 'rgba(200,190,240,.75)'); g.addColorStop(1, 'rgba(160,150,220,0)');
+  fx.fillStyle = g; fx.shadowColor = 'rgba(200,180,255,.8)'; fx.shadowBlur = 80;
+  fx.beginPath(); fx.arc(0, 0, S * .42, Math.PI, 0); const b = S * .7; fx.lineTo(S * .42, b);
+  for (let i = 0; i < 7; i++) { const x1 = S * .42 - (i + .5) * (S * .84 / 7), x2 = S * .42 - (i + 1) * (S * .84 / 7); fx.quadraticCurveTo(x1, b - S * .1 + Math.sin(t * 4 + i) * S * .03, x2, b); }
+  // Arme
+  fx.closePath(); fx.fill(); fx.shadowBlur = 0;
+  // Augen folgen der Maus
+  const lx = Math.max(-1, Math.min(1, (mouse.sx - cx) / W * 3)), ly = Math.max(-1, Math.min(1, (mouse.sy - cy) / H * 3));
+  [-1, 1].forEach(side => {
+    const ex = side * S * .14, ey = -S * .08;
+    fx.fillStyle = 'rgba(15,8,20,.95)'; fx.beginPath(); fx.ellipse(ex, ey, S * .065, S * .09, 0, 0, 7); fx.fill();
+    const eg = fx.createRadialGradient(ex + lx * S * .025, ey + ly * S * .035, 0, ex + lx * S * .025, ey + ly * S * .035, S * .05);
+    eg.addColorStop(0, 'rgba(255,190,90,1)'); eg.addColorStop(1, 'rgba(255,90,20,0)');
+    fx.fillStyle = eg; fx.beginPath(); fx.arc(ex + lx * S * .025, ey + ly * S * .035, S * .05, 0, 7); fx.fill();
+  });
+  // Mund: geht beim BOO weit auf
+  const open = bt > 2.1 && bt < 3.2 ? 1 : .35;
+  fx.fillStyle = 'rgba(15,8,20,.95)'; fx.beginPath(); fx.ellipse(0, S * .12, S * .07 * (open > .5 ? 1.4 : 1), S * .06 * open + S * .02, 0, 0, 7); fx.fill();
+  fx.restore();
+  if (bt > 2.1 && bt < 3.6) {
+    const k = Math.min(1, (bt - 2.1) * 4), fade = bt > 3.1 ? Math.max(0, 1 - (bt - 3.1) * 2) : 1;
+    fx.save(); fx.globalAlpha = fade; fx.translate(W / 2 + shake, H * .3); fx.scale(.6 + k * .5, .6 + k * .5);
+    fx.font = `900 ${Math.round(S * .16)}px Cinzel, serif`; fx.textAlign = 'center';
+    fx.fillStyle = '#ffb36b'; fx.shadowColor = '#ff6a1a'; fx.shadowBlur = 40; fx.fillText('BOO!', 0, 0);
+    fx.restore();
+  }
+  if (bt > 6) { boss = null; document.getElementById('fx').style.zIndex = 1; }
+}
+
+// ===================== Profil-Rahmen: Ektoplasma-Rand, Ranken, 3D-Neigung =====================
+const card = document.getElementById('card');
+function layoutEdge() {
+  const w = card.offsetWidth, h = card.offsetHeight;
+  const svg = document.getElementById('edge'); svg.setAttribute('viewBox', `0 0 ${w + 44} ${h + 44}`);
+  const r = document.getElementById('edgeRect'); r.setAttribute('width', w); r.setAttribute('height', h);
+  // Ranken wachsen aus zwei Ecken, mit kleinen Kuerbis-Bluesten
+  const W2 = w + 44, H2 = h + 44;
+  const vine = (d, cls = '') => `<path class="vine ${cls}" pathLength="1" d="${d}"/>`;
+  const bloom = (x, y) => `<g class="bloom"><path d="M${x} ${y - 11} q1 -6 6 -7" stroke="#3f6b2a" stroke-width="2.2" fill="none"/><ellipse cx="${x}" cy="${y}" rx="13" ry="10.5" fill="#e8761c"/><ellipse cx="${x}" cy="${y}" rx="6.5" ry="10.5" fill="#f59a3c"/><path d="M${x - 7} ${y - 2} l3 -4 l3 4 z M${x + 1} ${y - 2} l3 -4 l3 4 z" fill="#2a1208"/><path d="M${x - 7} ${y + 3} q7 6 14 0 l-2 1 l-2 -2 l-2 2 l-2 -2 l-2 2 l-2 -2 z" fill="#2a1208"/><circle cx="${x}" cy="${y}" r="16" fill="#ff8a2a" opacity=".18"/></g>`;
+  const leaf = (x, y, rot) => `<path class="bloom" d="M${x} ${y} q8 -10 18 -2 q-8 10 -18 2 z" fill="#5a2a86" transform="rotate(${rot} ${x} ${y})"/>`;
+  document.getElementById('vines').innerHTML =
+    vine(`M14 ${H2 * .55} C 10 ${H2 * .35}, 30 ${H2 * .25}, 18 ${H2 * .12} S 40 6, ${W2 * .28} 14`) +
+    vine(`M22 ${H2 * .3} q 18 -6 26 -22`, 'thin') + vine(`M${W2 * .16} 18 q 6 16 24 18`, 'thin') +
+    vine(`M${W2 - 14} ${H2 * .45} C ${W2 - 8} ${H2 * .65}, ${W2 - 30} ${H2 * .78}, ${W2 - 18} ${H2 * .9} S ${W2 - 40} ${H2 - 6}, ${W2 * .72} ${H2 - 14}`) +
+    vine(`M${W2 - 22} ${H2 * .72} q -18 6 -26 22`, 'thin') +
+    leaf(16, H2 * .4, -40) + leaf(26, H2 * .2, 20) + leaf(W2 * .2, 12, -10) + leaf(W2 - 16, H2 * .6, 140) + leaf(W2 - 26, H2 * .8, 200) + leaf(W2 * .8, H2 - 12, 170) +
+    bloom(W2 * .28, 14) + bloom(18, H2 * .12) + bloom(W2 * .72, H2 - 14) + bloom(W2 - 18, H2 * .9);
+}
+layoutEdge();
+card.addEventListener('mousemove', e => {
+  const r = card.getBoundingClientRect(); const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+  card.style.transform = `rotateY(${(px - .5) * 14}deg) rotateX(${(.5 - py) * 12}deg)`;
+  card.style.setProperty('--mx', `${px * 100}%`); card.style.setProperty('--my', `${py * 100}%`);
+});
+card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+
+</script>
+</body>
+</html>

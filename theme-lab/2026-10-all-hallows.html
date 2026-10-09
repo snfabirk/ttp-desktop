@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>All Hallows - Tier 15 theme (Theme Lab)</title>
+<!-- Theme Lab (nicht im Installationspaket): Entwurf fuer das einfache
+     Oktober-Theme (Stufe 15) - ruhiger, stehender Hintergrund, nur die
+     Kuerbis-Gesichter glimmen. Zusammen mit Stufe 5 (Pumpkin Ring) und
+     Stufe 10 (Cobweb) gezeigt, plus Beispiel-Boxen fuer die Lesbarkeit. -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e10; --bg-rgb: 15, 14, 16; --panel-bg: rgba(15, 14, 16, .62); --input-bg: #1c1a1d;
+    --border: #3d3530; --gold: #ff7a18; --text: #ece6e0; --text-dim: #a59d96; --text-faint: #6b645f;
+    --green: #6fbf73; --red: #ff4d4d;
+  }
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: Georgia, serif; color: var(--text); }
+  /* ----- Hintergrund: Anthrazit, warmes Horizont-Gluehen ----- */
+  body {
+    background:
+      radial-gradient(ellipse 70% 38% at 50% 100%, rgba(255, 110, 30, .22), transparent 70%),
+      radial-gradient(ellipse 40% 22% at 18% 100%, rgba(255, 90, 20, .10), transparent 70%),
+      linear-gradient(180deg, #0b0a0d 0%, #100e11 45%, #1a120d 80%, #26150a 100%);
+  }
+  .stars { position: fixed; inset: 0 0 40% 0; pointer-events: none;
+    background-image:
+      radial-gradient(1px 1px at 8% 12%, #fff9 50%, transparent), radial-gradient(1px 1px at 23% 30%, #fff6 50%, transparent),
+      radial-gradient(1px 1px at 41% 9%, #fff8 50%, transparent), radial-gradient(1px 1px at 57% 24%, #fff5 50%, transparent),
+      radial-gradient(1px 1px at 72% 14%, #fff7 50%, transparent), radial-gradient(1px 1px at 88% 33%, #fff6 50%, transparent),
+      radial-gradient(1.5px 1.5px at 94% 8%, #fff9 50%, transparent), radial-gradient(1px 1px at 33% 44%, #fff4 50%, transparent); }
+  /* Mondsichel (bewusst schlichter als der Vollmond von Haunted Night) */
+  .moon { position: fixed; top: 9%; left: 11%; width: 54px; height: 54px; border-radius: 50%;
+    box-shadow: inset -12px 4px 0 0 #e9dcc0; filter: drop-shadow(0 0 10px rgba(255, 220, 160, .35)); transform: rotate(-20deg); opacity: .9; }
+  .scene { position: fixed; left: 0; right: 0; bottom: 0; height: 30vh; pointer-events: none; }
+  .scene svg { width: 100%; height: 100%; }
+  .pumpkin-face { animation: glow 4.5s ease-in-out infinite; }
+  .pumpkin-face.b { animation-delay: -1.5s; } .pumpkin-face.c { animation-delay: -3s; }
+  @keyframes glow { 0%, 100% { opacity: .75; } 50% { opacity: 1; } }
+  .web { position: fixed; width: 150px; height: 150px; pointer-events: none; opacity: .35; }
+  .web.tl { top: 0; left: 0; } .web.br { bottom: 0; right: 0; transform: rotate(180deg); }
+
+  /* ----- Beispiel-App-Oberflaeche ----- */
+  .nav { position: fixed; top: 18px; left: 24px; display: flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel-bg); backdrop-filter: blur(10px); }
+  .nav span { padding: 5px 11px; border-radius: 14px; font-family: 'Cinzel', serif; font-size: .78rem; letter-spacing: .5px; color: var(--text-dim); }
+  .nav span.on { background: var(--gold); color: var(--bg); }
+  header { text-align: center; padding-top: 34px; }
+  h1 { margin: 0; font-family: 'Cinzel', serif; font-weight: 900; font-size: 3rem; letter-spacing: 3px; color: var(--gold); text-shadow: 0 0 22px rgba(255, 122, 24, .35); }
+  .subtitle { margin: 6px 0 0; color: var(--text-dim); font-style: italic; letter-spacing: 6px; text-transform: uppercase; }
+  .wrap { position: relative; max-width: 1080px; margin: 34px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 26px; padding: 0 30px; }
+  .card { background: var(--panel-bg); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+  .card h3 { margin: 0 0 8px; color: var(--gold); font-family: 'Cinzel', serif; font-size: 1rem; letter-spacing: 1px; }
+  .muted { color: var(--text-dim); font-size: .9rem; }
+  .row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(61, 53, 48, .5); font-size: .9rem; }
+  .row:last-child { border-bottom: none; }
+  .xp { color: var(--gold); }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+  .tile { display: flex; flex-direction: column; gap: 6px; }
+  .tile b { font-family: 'Cinzel', serif; color: var(--gold); letter-spacing: 1px; }
+
+  /* Stufe 5: Pumpkin Ring */
+  .avatar { display: flex; align-items: center; gap: 16px; }
+  .ring { width: 74px; height: 74px; border-radius: 50%; padding: 4px; box-sizing: border-box; background: repeating-conic-gradient(#f08a2c 0deg 14deg, #c4560f 14deg 18deg); box-shadow: 0 0 10px rgba(232, 118, 28, .35); flex-shrink: 0; }
+  .ring img { width: 100%; height: 100%; border-radius: 50%; display: block; object-fit: cover; }
+  .name { font-family: 'Cinzel', serif; font-size: 1.4rem; color: var(--gold); letter-spacing: 1px; }
+  /* Stufe 10: Cobweb-Rahmen um die Profilflaeche */
+  .cobweb { position: relative; padding: 16px; border-radius: 16px; border: 2px solid #34343a; box-shadow: inset 0 0 0 1px rgba(232,118,28,.35); }
+  .cobweb::before, .cobweb::after { content: ''; position: absolute; width: 60px; height: 60px; background: var(--web) no-repeat center / contain; opacity: .8; }
+  .cobweb::before { top: -2px; left: -2px; } .cobweb::after { bottom: -2px; right: -2px; transform: rotate(180deg); }
+  .tag { display: inline-block; margin-bottom: 8px; padding: 1px 8px; border: 1px dashed var(--text-faint); border-radius: 9px; color: var(--text-faint); font-size: .7rem; letter-spacing: 1px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<div class="moon"></div>
+<svg class="web tl" viewBox="0 0 60 60" fill="none" stroke="#9a9aa3" stroke-width=".8" stroke-linecap="round"><path d="M0 0 L60 0 M0 0 L0 60 M0 0 L52 22 M0 0 L38 38 M0 0 L22 52"/><path d="M14 0 Q12 6 13 5.5 Q8 9 5.5 13 Q6 12 0 14"/><path d="M28 0 Q24 10 25.5 11 Q17 17 11 25.5 Q10 24 0 28"/><path d="M42 0 Q37 14 38.5 17 Q27 27 17 38.5 Q14 37 0 42"/></svg>
+<svg class="web br" viewBox="0 0 60 60" fill="none" stroke="#9a9aa3" stroke-width=".8" stroke-linecap="round"><path d="M0 0 L60 0 M0 0 L0 60 M0 0 L52 22 M0 0 L38 38 M0 0 L22 52"/><path d="M14 0 Q12 6 13 5.5 Q8 9 5.5 13 Q6 12 0 14"/><path d="M28 0 Q24 10 25.5 11 Q17 17 11 25.5 Q10 24 0 28"/><path d="M42 0 Q37 14 38.5 17 Q27 27 17 38.5 Q14 37 0 42"/></svg>
+
+<!-- Stehende Szene: Huegel, schiefer Zaun, kahler Baum, Kuerbisreihe -->
+<div class="scene">
+  <svg viewBox="0 0 1600 300" preserveAspectRatio="xMidYMax slice">
+    <defs>
+      <radialGradient id="pg" cx=".5" cy=".55" r=".55"><stop offset="0" stop-color="#f7a04a"/><stop offset=".7" stop-color="#e2721c"/><stop offset="1" stop-color="#a84a0c"/></radialGradient>
+      <g id="pk">
+        <path d="M0 -34 q2 -12 12 -14" stroke="#33421f" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <ellipse cx="0" cy="0" rx="38" ry="30" fill="url(#pg)"/>
+        <ellipse cx="0" cy="0" rx="18" ry="30" fill="none" stroke="#b85a14" stroke-width="2" opacity=".7"/>
+        <ellipse cx="-24" cy="0" rx="12" ry="27" fill="none" stroke="#b85a14" stroke-width="1.5" opacity=".5"/>
+        <ellipse cx="24" cy="0" rx="12" ry="27" fill="none" stroke="#b85a14" stroke-width="1.5" opacity=".5"/>
+      </g>
+      <g id="face"><path d="M-18 -6 l7 -10 l7 10 z M4 -6 l7 -10 l7 10 z" /><path d="M-20 6 q20 18 40 0 l-5 2 l-4 -4 l-4 5 l-5 -4 l-5 4 l-4 -5 l-4 4 z"/></g>
+    </defs>
+    <path d="M0 300 L0 170 Q200 120 420 160 T860 150 Q1100 110 1340 160 T1600 140 L1600 300 Z" fill="#141016"/>
+    <path d="M0 300 L0 220 Q260 190 520 215 T1040 205 Q1300 185 1600 215 L1600 300 Z" fill="#0b090c"/>
+    <!-- kahler Baum -->
+    <path d="M150 300 L158 150 M156 190 L118 150 M157 172 L196 128 M118 150 L104 136 M196 128 L214 120 M157 210 L188 196" stroke="#0b090c" stroke-width="9" fill="none" stroke-linecap="round"/>
+    <!-- schiefer Zaun -->
+    <g fill="#0b090c">
+      <rect x="1180" y="168" width="9" height="60" transform="rotate(-6 1184 228)"/><rect x="1215" y="172" width="9" height="56" transform="rotate(4 1219 228)"/>
+      <rect x="1250" y="166" width="9" height="62" transform="rotate(-3 1254 228)"/><rect x="1285" y="174" width="9" height="54" transform="rotate(7 1289 228)"/>
+      <rect x="1320" y="170" width="9" height="58" transform="rotate(-5 1324 228)"/>
+      <rect x="1170" y="186" width="166" height="6" transform="rotate(-2 1250 189)"/><rect x="1170" y="206" width="166" height="6" transform="rotate(1.5 1250 209)"/>
+    </g>
+    <!-- Kuerbisreihe mit glimmenden Gesichtern -->
+    <g transform="translate(420 232) scale(.9)"><use href="#pk"/><g class="pumpkin-face" fill="#2a1408"><use href="#face"/></g></g>
+    <g transform="translate(520 240) scale(.7)"><use href="#pk"/><g class="pumpkin-face b" fill="#2a1408"><use href="#face"/></g></g>
+    <g transform="translate(980 236) scale(1.05)"><use href="#pk"/><g class="pumpkin-face c" fill="#2a1408"><use href="#face"/></g></g>
+    <g transform="translate(1440 238) scale(.8)"><use href="#pk"/><g class="pumpkin-face" fill="#2a1408"><use href="#face"/></g></g>
+    <!-- warmes Licht hinter den Gesichtern -->
+    <g fill="#ffb347" opacity=".9">
+      <g class="pumpkin-face" transform="translate(420 232) scale(.9)"><g transform="scale(.82)"><use href="#face"/></g></g>
+      <g class="pumpkin-face b" transform="translate(520 240) scale(.7)"><g transform="scale(.82)"><use href="#face"/></g></g>
+      <g class="pumpkin-face c" transform="translate(980 236) scale(1.05)"><g transform="scale(.82)"><use href="#face"/></g></g>
+      <g class="pumpkin-face" transform="translate(1440 238) scale(.8)"><g transform="scale(.82)"><use href="#face"/></g></g>
+    </g>
+  </svg>
+</div>
+
+<div class="nav"><span class="on">⌂ Overview</span><span>Profile</span><span>Challenge</span><span>Pass</span><span>Trophies</span><span>Shop</span></div>
+<header><h1>League of Legends</h1><p class="subtitle">Three-Trick-Pony</p></header>
+
+<div class="wrap">
+  <div>
+    <span class="tag">Tier 15 theme · All Hallows</span>
+    <div class="card">
+      <h3>Today</h3>
+      <div class="row"><span>First Win of the Day</span><span class="xp">+400 XP</span></div>
+      <div class="row"><span>Champion of the Day</span><span class="xp">+500 XP</span></div>
+      <div class="row"><span>In the Thick of It</span><span class="xp">+300 XP</span></div>
+    </div>
+    <div class="tiles">
+      <div class="card tile"><b>⚔️ Challenge</b><span class="muted">Day 2 · Jungle</span></div>
+      <div class="card tile"><b>🎖️ Pass</b><span class="muted">Tier 15 / 30</span></div>
+    </div>
+  </div>
+  <div>
+    <span class="tag">Tier 5 border + tier 10 frame</span>
+    <div class="cobweb" id="cobweb">
+      <div class="card avatar">
+        <div class="ring"><img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" onerror="this.src='https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Evelynn.png'" alt=""></div>
+        <div><div class="name">LUCKSHOT</div><div class="muted">Level 17 · 🪙 2,400</div></div>
+      </div>
+      <div class="card" style="margin-top:12px"><h3>About me</h3><span class="muted">Trick or treat, gank or feed.</span></div>
+    </div>
+  </div>
+</div>
+<script>
+  // Spinnennetz-Ecke fuer den Cobweb-Rahmen (gleiches Netz wie oben)
+  const web = document.querySelector('.web.tl').outerHTML.replace('class="web tl"', 'xmlns="http://www.w3.org/2000/svg"').replace(/\s+/g, ' ');
+  document.getElementById('cobweb').style.setProperty('--web', `url("data:image/svg+xml,${encodeURIComponent(web)}")`);
+</script>
+</body>
+</html>
