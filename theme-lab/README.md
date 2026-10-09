@@ -38,6 +38,15 @@ Basic (gratis) -> Refined -> Fancy -> Animated. Pass: Stufe 5/10/15 Refined,
 20/25 Fancy, 30 Animated. Preise im Shop nach Seltenheit x Typ
 (server/lib/cosmetics.js `PRICES`).
 
+## Shop-Demos
+
+- `shop-deep-abyss.html` - Deep Abyss (Animated Theme, abgenommen 2026-10-09):
+  Tiefsee mit Lichtstrahlen, Meeresschnee, Blasen, 7 leuchtenden Quallen
+  (pulsieren, weichen der Maus aus), Plankton leuchtet um die Maus. Easter
+  Egg: ab und zu glimmt unten ein Koeder - Klick weckt den Anglerfisch (nur
+  vom Koeder beleuchtet, Gelenk-Kiefer, schnellt auf den Betrachter zu und
+  beisst zu, dann Schwarz). Regel: jedes Animated-Teil hat ein Easter Egg.
+
 ## Naechster Schritt: echte Shop-Cosmetics
 
 Im Shop stehen noch Platzhalter (server/lib/progression.js `SHOP_ITEMS`,
