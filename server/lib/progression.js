@@ -46,9 +46,14 @@ const XP_PER_LP_BANK = 1000;
 const PASS_TIERS = 30;
 const PASS_XP_PER_TIER = 1500;
 
-// XP fuer Level n -> n+1: jedes Level etwas teurer.
+// XP fuer Level n -> n+1: jedes Level 100 XP teurer, ab Level 21 fix 4.000
+// (Nutzerentscheidung 2026-10-09 - vorher +250 ohne Deckel, viel zu steil).
+// Der Challenge Pass bleibt bewusst linear (PASS_XP_PER_TIER).
+const LEVEL_XP_BASE = 2000;
+const LEVEL_XP_STEP = 100;
+const LEVEL_XP_CAP = 4000;
 function xpForLevel(level) {
-  return 2000 + 250 * (level - 1);
+  return Math.min(LEVEL_XP_CAP, LEVEL_XP_BASE + LEVEL_XP_STEP * (level - 1));
 }
 
 function levelFromXp(totalXp) {

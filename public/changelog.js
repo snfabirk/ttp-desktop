@@ -25,6 +25,15 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.2.1',
+      date: '2026-10-09',
+      notable: [
+        'Profile levels are much cheaper now: each level costs 100 XP more than the last, and from level 21 on every level costs a flat 4,000 XP.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.2.0',
       date: '2026-10-09',
       notable: [

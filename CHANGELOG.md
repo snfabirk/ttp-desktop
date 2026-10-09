@@ -1,5 +1,12 @@
 # Internal Changelog
 
+## 5.2.1 — 2026-10-09
+
+- Level curve: `xpForLevel` = min(4000, 2000 + 100 x (level-1)) instead of
+  2000 + 250 x (level-1) without cap (user: far too steep). Level 20 now
+  ~85 games instead of ~135, level 50 ~270 instead of ~625. Pass stays
+  linear at 1500/tier (user likes that).
+
 ## 5.2.0 — 2026-10-09
 
 - profile.html renamed to challenge.html ("Challenge & Pass": account card,
