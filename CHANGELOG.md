@@ -1,5 +1,13 @@
 # Internal Changelog
 
+## 5.12.1 — 2026-10-09
+
+- Profile identity widget (row sizes): CSS grid, picture always centered in
+  the first grid cell, name always starts at the second cell; all borders
+  share one picture size (70% of a cell, was up to 100px / 66px for the
+  overhanging ones), overhanging borders may spill over the widget edge
+  (widget overflow visible, z-index 2); pumpkin side margin disabled there.
+
 ## 5.12.0 — 2026-10-09
 
 - Theme Lab designs ported into the app (user-approved demos in theme-lab/).

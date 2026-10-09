@@ -140,19 +140,27 @@
     .neg { color: var(--red) !important; }
 
     /* Identitaet (feste 6x1) */
+    /* Nutzerwunsch: Profilbild immer mittig im ERSTEN Rasterquadrat, Name
+       beginnt immer im ZWEITEN - so verschiebt sich nichts, egal wie gross
+       der ausgeruestete Rahmen ist. Alle Borders haben dieselbe Bildgroesse;
+       ueberstehende Rahmen duerfen ueber den Widget-Rand hinausragen. */
     .identity {
-      flex-direction: row;
+      display: grid;
+      grid-template-columns: var(--cell) minmax(0, 1fr);
+      column-gap: var(--gap);
       align-items: center;
-      gap: 18px;
-      padding: 10px 20px;
+      padding: 0 20px 0 0;
     }
+    .identity > .id-frame { justify-self: center; }
+    .widget:has(> .identity) { overflow: visible; z-index: 2; }
     .id-frame {
-      width: calc(var(--cell) - 26px);
-      height: calc(var(--cell) - 26px);
-      max-width: 100px;
-      max-height: 100px;
+      width: calc(var(--cell) * 0.7);
+      height: calc(var(--cell) * 0.7);
+      max-width: 110px;
+      max-height: 110px;
       --cos-width: 4px;
     }
+    .identity .id-frame { margin: 0 !important; }
     .id-frame img { opacity: 0; transition: opacity 0.15s ease; }
     .id-frame img.loaded { opacity: 1; }
     .id-main { flex: 1; min-width: 0; }
@@ -462,25 +470,12 @@
     /* ----- v5.6.0: mehr Widgets, Ziehen aus der Seitenleiste ----- */
     .w-stats.grid2 { display: grid; grid-template-columns: 1fr 1fr; }
     .identity.col {
+      display: flex;
       flex-direction: column;
       justify-content: center;
       text-align: center;
       gap: 8px;
-    }
-    .identity.col .id-frame { width: calc(var(--cell) * 0.95); height: calc(var(--cell) * 0.95); max-width: 130px; max-height: 130px; }
-    /* Borders, die ueber das Bild hinausragen (Kuerbis, Widow's Nest): Bild
-       kleiner, damit der Rahmen oben/unten nicht abgeschnitten wird */
-    .id-frame:is(.cos-border-2026-10-pumpkin, .cos-border-2026-10-haunted) {
-      width: calc((var(--cell) - 26px) * 0.64);
-      height: calc((var(--cell) - 26px) * 0.64);
-      max-width: 66px;
-      max-height: 66px;
-    }
-    .identity.col .id-frame:is(.cos-border-2026-10-pumpkin, .cos-border-2026-10-haunted) {
-      width: calc(var(--cell) * 0.6);
-      height: calc(var(--cell) * 0.6);
-      max-width: 84px;
-      max-height: 84px;
+      padding: 10px 14px;
     }
     .identity.col .id-main { width: 100%; }
     .identity.col .id-top { justify-content: center; }
