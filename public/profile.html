@@ -11,6 +11,9 @@
   <script src="update-indicator.js"></script>
   <script src="changelog.js"></script>
   <style>
+    /* Spielerprofil (v5.2.0): waechst ueber ALLE Challenges hinweg - alles zur
+       laufenden Challenge lebt auf challenge.html. Spaeter kommen hier
+       freischaltbare Cosmetics (Borders usw.) dazu. */
     body {
       display: flex;
       flex-direction: column;
@@ -24,70 +27,49 @@
       align-items: center;
       text-align: center;
     }
-    .panel-heading {
-      color: var(--gold);
-      font-family: 'Cinzel', Georgia, serif;
-      font-size: 1.3rem;
-      letter-spacing: 1px;
-      margin: 8px 0 0;
-    }
-    /* Wie role.html: Karte im freien Bereich unter der Ueberschrift vertikal
-       mittig, bei kleinem Fenster rueckt sie nach oben. */
     .content {
       width: 100%;
-      max-width: 1100px;
+      max-width: 900px;
       box-sizing: border-box;
       padding: 0 30px;
-      margin: 20px 0 40px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
+      margin: 12px 0 24px;
     }
-    .profile-heading {
-      text-align: center;
-      margin: 0 0 12px;
-    }
-    .profile-status {
-      color: var(--text-dim);
-      font-family: Georgia, serif;
-      font-size: 0.85rem;
-      text-align: center;
-      margin: 10px 0 0;
-      min-height: 1.4em;
-    }
-    /* ----- Account-Karte (aus overview.html hierher umgezogen) ----- */
-    .account-overview-wrap {
-      box-sizing: border-box;
-      padding: 0 0 24px;
-    }
-    .account-overview-card {
+    .card {
       background: var(--panel-bg);
       backdrop-filter: blur(12px) saturate(1.1);
       -webkit-backdrop-filter: blur(12px) saturate(1.1);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 18px 24px;
-      box-sizing: border-box;
-      text-align: center;
+      padding: 14px 20px;
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+      margin-bottom: 14px;
     }
-    .account-overview-header {
+    .card h3 {
+      margin: 0 0 10px;
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 1rem;
+      letter-spacing: 1px;
+    }
+
+    /* ----- Kopf: Icon (spaeter mit Border), Name, Level ----- */
+    .hero {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 14px;
-      margin-bottom: 16px;
+      gap: 20px;
+      padding: 18px 24px;
     }
-    .account-overview-icon-wrap {
+    .hero-icon-wrap {
       flex-shrink: 0;
-      width: 48px;
-      height: 48px;
-      border-radius: 6px;
-      border: 2px solid var(--gold);
-      background: rgba(200, 170, 110, 0.08);
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      border: 3px solid var(--gold);
+      background: color-mix(in srgb, var(--gold) 8%, transparent);
+      box-shadow: 0 0 16px color-mix(in srgb, var(--gold) 25%, transparent);
       overflow: hidden;
     }
-    .account-overview-icon {
+    .hero-icon {
       width: 100%;
       height: 100%;
       object-fit: cover;
@@ -95,23 +77,152 @@
       opacity: 0;
       transition: opacity 0.15s ease;
     }
-    .account-overview-icon.loaded {
-      opacity: 1;
+    .hero-icon.loaded { opacity: 1; }
+    .hero-main {
+      flex: 1;
+      min-width: 0;
     }
-    .account-overview-titles {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      text-align: left;
-    }
-    .account-overview-name {
-      display: block;
+    .hero-name {
       color: var(--gold);
       font-family: 'Cinzel', Georgia, serif;
-      font-size: 1.4rem;
+      font-size: 1.6rem;
       letter-spacing: 1px;
-      margin: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
+    .hero-since {
+      color: var(--text-faint);
+      font-family: Georgia, serif;
+      font-size: 0.8rem;
+      font-style: italic;
+      margin: 2px 0 10px;
+      min-height: 1.2em;
+    }
+    .level-line {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .level-pill {
+      flex-shrink: 0;
+      padding: 2px 10px;
+      border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent);
+      border-radius: 11px;
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    .xp-bar {
+      flex: 1;
+      height: 10px;
+      border-radius: 5px;
+      background: color-mix(in srgb, var(--text-faint) 18%, transparent);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .xp-bar-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 70%, transparent), var(--gold));
+      transition: width 0.4s ease;
+    }
+    .xp-text {
+      flex-shrink: 0;
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    /* ----- Stat-Kacheln ----- */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+    @media (max-width: 760px) {
+      .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .stat {
+      padding: 10px 8px;
+      border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--input-bg) 55%, transparent);
+      text-align: center;
+    }
+    .stat .value {
+      display: block;
+      color: var(--text);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 1.25rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat .label {
+      display: block;
+      margin-top: 3px;
+      color: var(--text-faint);
+      font-size: 0.68rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 760px) {
+      .two-col { grid-template-columns: minmax(0, 1fr); }
+    }
+    .two-col .card { margin-bottom: 0; }
+
+    .champ-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+      font-family: Georgia, serif;
+    }
+    .champ-row:last-child { border-bottom: none; }
+    .champ-row img {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+    }
+    .champ-row .name { flex: 1; color: var(--text); font-size: 0.9rem; }
+    .champ-row .games { color: var(--text-dim); font-size: 0.8rem; }
+    .champ-row .wr { width: 52px; text-align: right; font-size: 0.85rem; }
+    .wr.pos { color: var(--green); }
+    .wr.neg { color: var(--red); }
+    .empty {
+      margin: 0;
+      color: var(--text-faint);
+      font-family: Georgia, serif;
+      font-size: 0.82rem;
+      font-style: italic;
+    }
+    .cosmetic-slots {
+      display: flex;
+      gap: 10px;
+    }
+    .cosmetic-slot {
+      flex: 1;
+      height: 64px;
+      border: 1px dashed var(--text-faint);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-faint);
+      font-size: 1.2rem;
+    }
+
+    /* "?"-Hinweis wie auf challenge.html */
     .info-icon {
       display: inline-flex;
       align-items: center;
@@ -123,587 +234,46 @@
       color: var(--text-dim);
       font-size: 0.75rem;
       line-height: 1;
-      cursor: help;
-      flex-shrink: 0;
+      font-style: normal;
     }
-    .info-icon:hover, .info-icon:focus {
-      border-color: var(--gold);
-      color: var(--gold);
-      outline: none;
-    }
-    .account-overview-stats {
-      display: flex;
-      justify-content: center;
-      gap: 32px;
-      flex-wrap: wrap;
-      /* LP-Goal- und Challenge-Timer-Bloecke sind anfangs versteckt und
-         erscheinen erst, sobald feststeht ob ein LP-Ziel/eine laufende
-         Challenge existiert - kommen dann beide dazu, wickelt die Reihe auf
-         eine 2. Zeile um (bei den ueblichen Fensterbreiten). Reserviert
-         immer die 2-zeilige Hoehe, damit die Karte nicht sichtbar waechst,
-         sobald diese Daten geladen sind. */
-      min-height: 124px;
-      align-content: center;
-    }
-    .account-overview-stats .stat-block {
-      text-align: center;
-    }
-    .account-overview-stats .stat-block .value {
-      display: block;
-      color: var(--text);
-      font-family: 'Cinzel', Georgia, serif;
-      font-size: 1.3rem;
-      font-variant-numeric: tabular-nums;
-    }
-    .account-overview-stats .stat-block .value.positive { color: var(--green); }
-    .account-overview-stats .stat-block .value.negative { color: var(--red); }
-    .account-overview-stats .stat-block .value.estimate {
-      font-style: italic;
-      opacity: 0.85;
-      font-size: 1.05rem;
-      white-space: nowrap;
-    }
-    .account-overview-stats .stat-block .value .w { color: var(--green); }
-    .account-overview-stats .stat-block .value .l { color: var(--red); }
-    .rank-with-icon {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      vertical-align: middle;
-    }
-    .rank-emblem {
-      width: 20px;
-      height: 20px;
-      object-fit: contain;
-      flex-shrink: 0;
-    }
-    .account-overview-stats .stat-block .label {
-      display: block;
-      color: var(--text-faint);
-      font-size: 0.7rem;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      margin-top: 4px;
-    }
-    .account-overview-graph {
-      margin-top: 16px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border);
-      /* Startet leer (0 Inhalt) und wird erst nach dem Laden entweder mit
-         dem echten Graph (Labels+SVG sind fix 64px hoch, siehe unten, plus
-         optional eine Disclaimer-Zeile) oder einem "nicht genug Daten"-Text
-         gefuellt - ohne reservierten Platz wird die ganze Karte (und alles
-         darunter) beim Nachladen sichtbar groesser. Deckt den groesstmoeglichen
-         Fall (voller Graph + Disclaimer) ab, die anderen Faelle sind kuerzer
-         und passen locker mit rein. */
-      min-height: 93px;
-    }
-    .lp-graph-wrap {
-      display: flex;
-      align-items: stretch;
-      text-align: left;
-    }
-    .lp-graph-labels {
-      position: relative;
-      flex: 0 0 58px;
-      height: 64px;
-    }
-    .lp-graph-labels span {
-      position: absolute;
-      right: 8px;
-      transform: translateY(-50%);
-      font-size: 0.62rem;
-      color: var(--text-faint);
-      white-space: nowrap;
-    }
-    .lp-graph-plot {
-      flex: 1 1 auto;
-      min-width: 0;
-    }
-    .lp-graph-svg {
-      display: block;
-      width: 100%;
-      height: 64px;
-    }
-    .lp-graph-empty {
-      color: var(--text-dim);
-      font-size: 0.75rem;
-      font-style: italic;
-      margin: 0;
-    }
-    .lp-graph-disclaimer {
-      color: var(--text-faint);
-      font-size: 0.68rem;
-      font-style: italic;
-      margin: 6px 0 0;
-    }
-
-    /* ===== XP / Level / Quests / Challenge Pass (v5.0.0, provisorisch) ===== */
-    .level-row {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      max-width: 560px;
-      margin: 0 auto 16px;
-    }
-    .level-badge {
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: 54px;
-      height: 54px;
-      border-radius: 50%;
-      border: 2px solid var(--gold);
-      background: color-mix(in srgb, var(--gold) 10%, transparent);
-      box-shadow: 0 0 12px color-mix(in srgb, var(--gold) 25%, transparent);
-    }
-    .level-badge small {
-      color: var(--text-faint);
-      font-family: Georgia, serif;
-      font-size: 0.6rem;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      line-height: 1;
-    }
-    .level-badge strong {
-      color: var(--gold);
-      font-family: 'Cinzel', Georgia, serif;
-      font-size: 1.3rem;
-      line-height: 1.1;
-    }
-    .level-bar-wrap {
-      flex: 1;
-      min-width: 0;
-      text-align: left;
-    }
-    .xp-bar {
-      position: relative;
-      height: 10px;
-      border-radius: 5px;
-      background: color-mix(in srgb, var(--text-faint) 18%, transparent);
-      border: 1px solid var(--border);
-      overflow: hidden;
-    }
-    .xp-bar-fill {
-      height: 100%;
-      width: 0;
-      border-radius: 5px;
-      background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 70%, transparent), var(--gold));
-      transition: width 0.4s ease;
-    }
-    .xp-bar.small {
-      height: 6px;
-    }
-    .level-bar-text {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      margin-top: 5px;
-      color: var(--text-dim);
-      font-family: Georgia, serif;
-      font-size: 0.78rem;
-      font-variant-numeric: tabular-nums;
-    }
-    .level-bar-text .xp-next {
-      color: var(--text-faint);
-    }
-
-    .progression-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-      gap: 20px;
-      align-items: start;
-    }
-    @media (max-width: 900px) {
-      .progression-grid { grid-template-columns: minmax(0, 1fr); }
-    }
-    .prog-card {
-      background: var(--panel-bg);
-      backdrop-filter: blur(12px) saturate(1.1);
-      -webkit-backdrop-filter: blur(12px) saturate(1.1);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px 20px;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
-      margin-bottom: 20px;
-    }
-    .prog-card-head {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    .prog-card-head h3 {
-      margin: 0;
-      color: var(--gold);
-      font-family: 'Cinzel', Georgia, serif;
-      font-size: 1rem;
-      letter-spacing: 1px;
-    }
-    .prog-card-head .reset-in {
-      color: var(--text-faint);
-      font-family: Georgia, serif;
-      font-size: 0.75rem;
-      font-style: italic;
-      white-space: nowrap;
-    }
-    .quest-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .quest {
-      padding: 9px 12px;
-      border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-      border-radius: 8px;
-      background: color-mix(in srgb, var(--input-bg) 55%, transparent);
-    }
-    .quest-top {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .quest-icon {
-      flex-shrink: 0;
-      width: 26px;
-      height: 26px;
-      border-radius: 5px;
-      border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--gold);
-      font-size: 0.85rem;
-      overflow: hidden;
-    }
-    .quest-icon img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .quest-text {
-      flex: 1;
-      min-width: 0;
-    }
-    .quest-title {
-      display: block;
-      color: var(--text);
-      font-family: 'Cinzel', Georgia, serif;
-      font-size: 0.85rem;
-      letter-spacing: 0.3px;
-    }
-    .quest-desc {
-      display: block;
-      color: var(--text-dim);
-      font-family: Georgia, serif;
-      font-size: 0.78rem;
-    }
-    .quest-xp {
-      flex-shrink: 0;
-      color: var(--gold);
-      font-family: Georgia, serif;
-      font-size: 0.8rem;
-      font-weight: bold;
-      white-space: nowrap;
-    }
-    .quest-reroll {
-      flex-shrink: 0;
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text-dim);
-      font-size: 0.85rem;
-      line-height: 1;
-      padding: 4px 6px;
-      cursor: pointer;
-      transition: border-color 0.15s ease, color 0.15s ease;
-    }
-    .quest-reroll:hover:not(:disabled) {
-      border-color: var(--gold);
-      color: var(--gold);
-    }
-    .quest-reroll:disabled {
-      opacity: 0.35;
-      cursor: default;
-    }
-    .quest-bottom {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 7px;
-    }
-    .quest-bottom .xp-bar {
-      flex: 1;
-    }
-    .quest-count {
-      flex-shrink: 0;
-      color: var(--text-faint);
-      font-family: Georgia, serif;
-      font-size: 0.72rem;
-      font-variant-numeric: tabular-nums;
-      min-width: 34px;
-      text-align: right;
-    }
-    .quest-breakdown {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px 14px;
-      margin-top: 6px;
-      color: var(--text-faint);
-      font-family: Georgia, serif;
-      font-size: 0.72rem;
-    }
-
-    /* Spiele heute: 1-5 volle XP, ab dem 6. halbiert */
-    .games-today {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-    .games-today-label {
-      color: var(--text-dim);
-      font-family: Georgia, serif;
-      font-size: 0.78rem;
-      margin-right: 4px;
-    }
-    .game-pip {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 22px;
-      height: 22px;
-      box-sizing: border-box;
-      border-radius: 50%;
-      border: 1.5px solid var(--border);
-      color: var(--text-faint);
-      font-family: Georgia, serif;
-      font-size: 0.7rem;
-      cursor: help;
-    }
-    .game-pip.played {
-      border-color: var(--gold);
-      background: color-mix(in srgb, var(--gold) 22%, transparent);
-      color: var(--gold);
-    }
-    .game-pip.reduced {
-      width: auto;
-      padding: 0 8px;
-      border-radius: 11px;
-      border-style: dashed;
-    }
-    .game-pip.reduced.active {
-      border-color: var(--red);
-      border-style: solid;
-      color: var(--red);
-    }
-    .game-pip-sep {
-      width: 10px;
-      height: 1px;
-      background: var(--border);
-    }
-
-    /* Challenge Pass */
-    .pass-summary {
-      display: flex;
-      justify-content: space-between;
-      color: var(--text-dim);
-      font-family: Georgia, serif;
-      font-size: 0.78rem;
-      margin: 6px 0 12px;
-      font-variant-numeric: tabular-nums;
-    }
-    .pass-grid {
-      display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: 6px;
-    }
-    .pass-tier {
-      aspect-ratio: 1.4;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 2px;
-      border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-      border-radius: 7px;
-      background: color-mix(in srgb, var(--input-bg) 55%, transparent);
-      color: var(--text-faint);
-      font-family: Georgia, serif;
-      cursor: help;
-    }
-    .pass-tier .tier-num {
-      font-size: 0.65rem;
-    }
-    .pass-tier .tier-reward {
-      font-size: 0.85rem;
-      opacity: 0.55;
-    }
-    .pass-tier.milestone {
-      border-color: color-mix(in srgb, var(--gold) 55%, transparent);
-    }
-    .pass-tier.milestone .tier-num,
-    .pass-tier.milestone .tier-reward {
-      color: var(--gold);
-    }
-    .pass-tier.unlocked {
-      border-color: var(--gold);
-      background: color-mix(in srgb, var(--gold) 30%, transparent);
-      color: var(--gold);
-    }
-    .pass-tier.unlocked .tier-num,
-    .pass-tier.unlocked .tier-reward {
-      color: var(--text);
-      opacity: 1;
-    }
-    /* Stufe, an der gerade gearbeitet wird: Rahmen + Mini-Fortschritt unten */
-    .pass-tier.current {
-      position: relative;
-      overflow: hidden;
-      border: 1.5px solid var(--gold);
-      box-shadow: 0 0 10px color-mix(in srgb, var(--gold) 35%, transparent);
-    }
-    .pass-tier.current .tier-num {
-      color: var(--gold);
-    }
-    .pass-tier .tier-progress {
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      height: 3px;
-      background: var(--gold);
-    }
-    .pass-note {
-      color: var(--text-faint);
-      font-family: Georgia, serif;
-      font-size: 0.72rem;
-      font-style: italic;
-      margin: 10px 0 0;
-      line-height: 1.4;
-    }
-
-    /* XP-Quellen */
-    .xp-sources {
-      width: 100%;
-      border-collapse: collapse;
-      font-family: Georgia, serif;
-      font-size: 0.8rem;
-    }
-    .xp-sources td {
-      padding: 4px 0;
-      color: var(--text-dim);
-      border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
-    }
-    .xp-sources td:last-child {
-      text-align: right;
-      color: var(--gold);
-      white-space: nowrap;
-      padding-left: 12px;
-    }
-    .xp-sources tr:last-child td {
-      border-bottom: none;
-    }
-    /* "How to earn XP" als Hover-Popup statt eigener Box (Nutzerwunsch,
-       zu viel Platz). Oeffnet bei Hover oder Tastaturfokus. */
-    .xp-help {
+    .hint {
       position: relative;
       display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--text-faint);
+      vertical-align: 2px;
+      margin-left: 4px;
       font-family: Georgia, serif;
       font-size: 0.75rem;
-      font-style: italic;
+      font-weight: normal;
+      letter-spacing: 0;
       cursor: help;
       outline: none;
     }
-    .xp-help:hover, .xp-help:focus-within { color: var(--gold); }
-    .xp-help:hover .info-icon, .xp-help:focus-within .info-icon { border-color: var(--gold); color: var(--gold); }
-    .xp-help-pop {
+    .hint:hover .info-icon, .hint:focus-within .info-icon { border-color: var(--gold); color: var(--gold); }
+    .hint-pop {
       position: absolute;
       top: calc(100% + 8px);
-      right: 0;
+      left: -10px;
       z-index: 20;
-      width: 330px;
+      width: 280px;
       padding: 10px 14px;
       background: var(--input-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-      font-style: normal;
+      color: var(--text-dim);
+      line-height: 1.45;
+      text-transform: none;
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.12s ease;
     }
-    .xp-help:hover .xp-help-pop, .xp-help:focus-within .xp-help-pop {
-      opacity: 1;
-      visibility: visible;
-    }
-    .recent-xp-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 6px 0;
-      border-bottom: 1px solid var(--border);
-      cursor: help;
-    }
-    .recent-xp-row:last-child { border-bottom: none; }
-    .recent-xp-icon {
-      width: 30px;
-      height: 30px;
-      flex: 0 0 30px;
-      border-radius: 50%;
-      overflow: hidden;
-      border: 1px solid var(--border);
-    }
-    .recent-xp-icon img { width: 100%; height: 100%; display: block; }
-    .recent-xp-text {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      font-family: Georgia, serif;
-    }
-    .recent-xp-title { font-size: 0.85rem; color: var(--text); }
-    .recent-xp-title .win { color: var(--green); }
-    .recent-xp-title .loss { color: var(--red); }
-    .recent-xp-desc { font-size: 0.75rem; color: var(--text-dim); }
-    .recent-xp-tags { display: flex; gap: 4px; }
-    .xp-tag {
-      padding: 1px 6px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-family: Georgia, serif;
-      font-size: 0.68rem;
+    .hint:hover .hint-pop, .hint:focus-within .hint-pop { opacity: 1; visibility: visible; }
+    .status {
+      text-align: center;
       color: var(--text-dim);
-    }
-    .recent-xp-amount {
-      color: var(--gold);
-      font-family: 'Cinzel', Georgia, serif;
-      font-size: 0.9rem;
-      white-space: nowrap;
-    }
-    .recent-xp-empty {
-      margin: 0;
       font-family: Georgia, serif;
-      font-size: 0.8rem;
-      color: var(--text-faint);
-    }
-    .provisional-tag {
-      display: inline-block;
-      margin-left: 8px;
-      padding: 1px 7px;
-      border: 1px dashed var(--text-faint);
-      border-radius: 9px;
-      color: var(--text-faint);
-      font-family: Georgia, serif;
-      font-size: 0.62rem;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      vertical-align: 2px;
+      font-size: 0.85rem;
+      min-height: 1.2em;
     }
   </style>
 </head>
@@ -717,794 +287,146 @@
   </header>
 
   <div class="content">
-    <h2 class="panel-heading profile-heading">Profile</h2>
-    <div class="account-overview-wrap">
-      <div class="account-overview-card" id="accountOverviewCard">
-        <div class="account-overview-header">
-          <div class="account-overview-icon-wrap">
-            <img id="accountOverviewIcon" class="account-overview-icon" src="" alt="">
-          </div>
-          <div class="account-overview-titles">
-            <span class="account-overview-name" id="accountOverviewName">No summoner loaded yet</span>
-            <span class="info-icon" id="accountOverviewNoteIcon" tabindex="0" hidden>ⓘ</span>
-          </div>
+    <div class="card hero">
+      <div class="hero-icon-wrap" title="Profile borders unlock through the Challenge Pass (coming soon)"><img id="heroIcon" class="hero-icon" src="" alt=""></div>
+      <div class="hero-main">
+        <div class="hero-name" id="heroName">No summoner loaded yet</div>
+        <div class="hero-since" id="heroSince"></div>
+        <div class="level-line" title="Profile level - keeps growing across all challenges">
+          <span class="level-pill" id="levelPill">Level 1</span>
+          <div class="xp-bar"><div class="xp-bar-fill" id="levelFill"></div></div>
+          <span class="xp-text" id="levelText">0 / 2,000 XP</span>
         </div>
-        <div class="level-row" title="Profile level - keeps growing across all challenges">
-          <div class="level-badge"><small>Level</small><strong id="profileLevel">1</strong></div>
-          <div class="level-bar-wrap">
-            <div class="xp-bar"><div class="xp-bar-fill" id="profileXpFill"></div></div>
-            <div class="level-bar-text">
-              <span id="profileXpText">0 / 2,000 XP</span>
-              <span class="xp-next" id="profileXpNext">2,000 XP to Level 2</span>
-            </div>
-          </div>
-        </div>
-        <div class="account-overview-stats">
-          <div class="stat-block">
-            <span class="value" id="accountWL">–</span>
-            <span class="label">Solo/Duo W / L</span>
-          </div>
-          <div class="stat-block">
-            <span class="value" id="accountRank">–</span>
-            <span class="label">Current Rank</span>
-          </div>
-          <div class="stat-block">
-            <span class="value" id="accountLpDelta">–</span>
-            <span class="label" id="accountLpDeltaLabel">LP since date</span>
-          </div>
-          <div class="stat-block">
-            <span class="value" id="accountStreak">–</span>
-            <span class="label" id="accountStreakLabel">Current Streak</span>
-          </div>
-          <div class="stat-block" id="accountLpGoalBlock" style="display:none;">
-            <span class="value" id="accountLpGoal">–</span>
-            <span class="label">LP Goal</span>
-          </div>
-          <div class="stat-block" id="profileChallengeTimerBlock" style="display:none;">
-            <span class="value" id="profileChallengeTimer">-</span>
-            <span class="label">Challenge Timer</span>
-          </div>
-        </div>
-        <div class="account-overview-graph" id="accountLpGraph"></div>
       </div>
-      <p class="profile-status" id="profileStatus"></p>
     </div>
 
-    <div class="progression-grid">
-      <div>
-        <div class="prog-card">
-          <div class="prog-card-head">
-            <h3>Daily Quests <span class="provisional-tag">Preview</span></h3>
-            <span class="reset-in" id="dailyResetIn"></span>
-          </div>
-          <div class="games-today" id="gamesToday"></div>
-          <div class="quest-list" id="dailyQuests" style="margin-top:12px;"></div>
-        </div>
-        <div class="prog-card">
-          <div class="prog-card-head">
-            <h3>Weekly Quests</h3>
-            <span class="reset-in" id="weeklyResetIn"></span>
-          </div>
-          <div class="quest-list" id="weeklyQuests"></div>
-        </div>
+    <div class="card">
+      <h3>Challenges</h3>
+      <div class="stat-grid">
+        <div class="stat"><span class="value" id="stChallenges">–</span><span class="label">Started</span></div>
+        <div class="stat"><span class="value" id="stGoals">–</span><span class="label">Goals Reached</span></div>
+        <div class="stat"><span class="value" id="stTrophies">–</span><span class="label">Trophies Earned</span></div>
+        <div class="stat"><span class="value" id="stBest">–</span><span class="label">Best Challenge</span></div>
+        <div class="stat"><span class="value" id="stPlatinum">–</span><span class="label">Platinum</span></div>
       </div>
-      <div>
-        <div class="prog-card">
-          <div class="prog-card-head">
-            <h3>Challenge Pass</h3>
-            <span class="reset-in">resets with every new challenge</span>
-          </div>
-          <div class="xp-bar"><div class="xp-bar-fill" id="passXpFill"></div></div>
-          <div class="pass-summary">
-            <span id="passTierText">Tier 0 / 30</span>
-            <span id="passXpText">0 / 1,500 XP</span>
-          </div>
-          <div class="pass-grid" id="passGrid"></div>
-          <p class="pass-note">Rewards are cosmetic profile extras (still to be decided). Every game, quest and trophy only ever counts once - resetting and restarting a challenge doesn't earn anything twice.</p>
-        </div>
-        <div class="prog-card">
-          <div class="prog-card-head">
-            <h3>LP Bank</h3>
-            <span class="reset-in" id="lpBankFills"></span>
-          </div>
-          <div class="xp-bar lp-bank-bar"><div class="xp-bar-fill" id="lpBankFill"></div></div>
-          <div class="pass-summary">
-            <span id="lpBankText">0 / 100 LP</span>
-            <span id="lpBankReward">+1,000 XP when full</span>
-          </div>
-          <p class="pass-note" id="lpBankNote">Every LP you gain goes into the bank, LP losses are ignored. When it hits 100 you get XP and it starts over - extra LP carry over.</p>
-        </div>
-        <div class="prog-card">
-          <div class="prog-card-head">
-            <h3>Recent XP</h3>
-            <span class="xp-help" tabindex="0">How to earn XP <span class="info-icon">?</span>
-              <span class="xp-help-pop"><table class="xp-sources" id="xpSources"></table></span>
-            </span>
-          </div>
-          <div class="recent-xp" id="recentXp"></div>
+    </div>
+
+    <div class="card">
+      <h3>Games <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop" id="gamesHint">Counts every ranked game the app has credited XP for, across all challenges.</span></span></h3>
+      <div class="stat-grid">
+        <div class="stat"><span class="value" id="stGames">–</span><span class="label">Games</span></div>
+        <div class="stat"><span class="value" id="stWinrate">–</span><span class="label">Win Rate</span></div>
+        <div class="stat"><span class="value" id="stKda">–</span><span class="label">Avg K / D / A</span></div>
+        <div class="stat"><span class="value" id="stLp">–</span><span class="label">LP Gained</span></div>
+        <div class="stat"><span class="value" id="stBank">–</span><span class="label">LP Bank Filled</span></div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h3>Most Played</h3>
+        <div id="topChamps"><p class="empty">No games yet.</p></div>
+      </div>
+      <div class="card">
+        <h3>Cosmetics <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Borders and other profile extras will unlock through the Challenge Pass. Coming soon.</span></span></h3>
+        <div class="cosmetic-slots">
+          <div class="cosmetic-slot" title="Border - locked">🔒</div>
+          <div class="cosmetic-slot" title="Banner - locked">🔒</div>
+          <div class="cosmetic-slot" title="Title - locked">🔒</div>
         </div>
       </div>
     </div>
+    <p class="status" id="status"></p>
   </div>
 
   <script>
     const DDRAGON_VERSION = '16.17.1';
-    const statusEl = document.getElementById('profileStatus');
-    const accountOverviewIcon = document.getElementById('accountOverviewIcon');
-    const accountOverviewName = document.getElementById('accountOverviewName');
-    const accountWLEl = document.getElementById('accountWL');
-    const accountRankEl = document.getElementById('accountRank');
-    const accountLpDeltaEl = document.getElementById('accountLpDelta');
-    const accountLpDeltaLabelEl = document.getElementById('accountLpDeltaLabel');
-    const accountStreakEl = document.getElementById('accountStreak');
-    const accountStreakLabelEl = document.getElementById('accountStreakLabel');
-    const accountLpGraphEl = document.getElementById('accountLpGraph');
-    const accountOverviewNoteIcon = document.getElementById('accountOverviewNoteIcon');
-    const profileChallengeTimerBlock = document.getElementById('profileChallengeTimerBlock');
-    const profileChallengeTimer = document.getElementById('profileChallengeTimer');
-
     const ls = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
-
-    function profileIconUrl(iconId) {
-      return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${iconId}.png`;
-    }
+    const fmtNum = n => Number(n).toLocaleString('en-US');
+    const statusEl = document.getElementById('status');
+    const setText = (id, text) => { document.getElementById(id).textContent = text; };
+    const fmtDate = iso => new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
     async function parseApiResponse(res) {
-      const contentType = res.headers.get('content-type') || '';
-      if (!contentType.includes('application/json')) {
-        throw new Error(`Server did not return a valid response (status ${res.status}).`);
-      }
-      return res.json();
+      const text = await res.text();
+      try { return JSON.parse(text); } catch (e) { return { error: text || `HTTP ${res.status}` }; }
     }
 
-    function formatDateTimeEU(iso) {
-      const d = new Date(iso);
-      if (isNaN(d.getTime())) return iso;
-      const pad = n => String(n).padStart(2, '0');
-      return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    }
+    function renderStats(d) {
+      const { level, xpIntoLevel, xpForNextLevel } = d.level;
+      setText('levelPill', `Level ${level}`);
+      document.getElementById('levelFill').style.width = `${(xpIntoLevel / xpForNextLevel) * 100}%`;
+      setText('levelText', `${fmtNum(xpIntoLevel)} / ${fmtNum(xpForNextLevel)} XP`);
 
-    function renderAccountIdentity({ gameName, tagLine, profileIconId }) {
-      accountOverviewName.textContent = `${gameName}#${tagLine}`;
-      if (profileIconId !== null && profileIconId !== undefined) {
-        accountOverviewIcon.src = profileIconUrl(profileIconId);
-        accountOverviewIcon.alt = `${gameName}#${tagLine}`;
-        accountOverviewIcon.classList.add('loaded');
-      } else {
-        accountOverviewIcon.classList.remove('loaded');
-      }
-    }
+      const c = d.challenges;
+      setText('stChallenges', c.started);
+      setText('stGoals', c.goalsReached);
+      setText('stTrophies', c.trophies);
+      setText('stBest', c.started ? `${c.bestTrophies} 🏆` : '–');
+      setText('stPlatinum', c.platinum);
+      setText('heroSince', c.firstStarted ? `Challenger since ${fmtDate(c.firstStarted)}` : '');
 
-    // Live-Timer seit Challenge-Start (Tage/Std/Min/Sek), wie zuvor auf der
-    // Overview-Karte.
-    function startChallengeTimer(startIso) {
-      const startMs = new Date(startIso).getTime();
-      function tick() {
-        const totalSeconds = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
-        const days = Math.floor(totalSeconds / 86400);
-        const hours = Math.floor((totalSeconds % 86400) / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-        profileChallengeTimer.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-      }
-      tick();
-      setInterval(tick, 1000);
-      profileChallengeTimerBlock.style.display = '';
-    }
-
-    const TIER_LABELS = {
-      IRON: 'Iron', BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold',
-      PLATINUM: 'Platinum', EMERALD: 'Emerald', DIAMOND: 'Diamond',
-      MASTER: 'Master', GRANDMASTER: 'Grandmaster', CHALLENGER: 'Challenger'
-    };
-    const APEX_TIERS = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
-    const TIER_ORDER = [
-      'IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD',
-      'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'
-    ];
-    const RANK_VALUE = { I: 3, II: 2, III: 1, IV: 0 };
-
-    // Client-seitiges Gegenstueck zu toComparableLP() im Backend - fuer den
-    // synthetischen Graph-Endpunkt, wo wir den aktuellen LP-Stand ohne
-    // Server-Roundtrip in dieselbe Skala umrechnen muessen.
-    function comparableLP(tier, rank, leaguePoints) {
-      const tierIndex = TIER_ORDER.indexOf(tier);
-      if (tierIndex < 0) return leaguePoints || 0;
-      if (APEX_TIERS.has(tier)) return tierIndex * 400 + (leaguePoints || 0);
-      const rankValue = RANK_VALUE[rank] ?? 0;
-      return tierIndex * 400 + rankValue * 100 + (leaguePoints || 0);
-    }
-
-    // Kuerzt lange Tier-Namen fuer eine kompaktere Anzeige neben dem
-    // Rang-Emblem (z.B. "Plat" statt "Platinum") - kurze Namen bleiben
-    // unveraendert, das spart nur bei den langen wirklich Platz.
-    const TIER_ABBR = {
-      IRON: 'Iron', BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold',
-      PLATINUM: 'Plat', EMERALD: 'Emer', DIAMOND: 'Dia',
-      MASTER: 'Master', GRANDMASTER: 'GM', CHALLENGER: 'Chall'
-    };
-
-    // "Mini-crests" statt der vollen Emblem-Grafiken - die vollen Embleme sind
-    // fuer grosse Darstellung gemacht (viele feine Details) und wirken bei
-    // ~20px nur wie ein verschwommener Fleck. Emerald existiert dort nur als
-    // .svg, alle anderen als .png.
-    function rankEmblemUrl(tier) {
-      const t = tier.toLowerCase();
-      const ext = t === 'emerald' ? 'svg' : 'png';
-      return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${t}.${ext}`;
-    }
-
-    function rankIconHtml(tier, restText) {
-      const abbr = TIER_ABBR[tier] || tier;
-      return `<span class="rank-with-icon"><img class="rank-emblem" src="${rankEmblemUrl(tier)}" alt="${abbr}" loading="lazy">${abbr}${restText}</span>`;
-    }
-
-    function formatRank(current) {
-      if (!current) return 'Unranked';
-      const rest = APEX_TIERS.has(current.tier)
-        ? ` · ${current.leaguePoints} LP`
-        : ` ${current.rank} · ${current.leaguePoints} LP`;
-      return rankIconHtml(current.tier, rest);
-    }
-
-    // LP-Ziel wird auf der Champion-Auswahl-Seite gesetzt (gleiches
-    // localStorage) und hier nur angezeigt.
-    const accountLpGoalBlock = document.getElementById('accountLpGoalBlock');
-    const accountLpGoalEl = document.getElementById('accountLpGoal');
-
-    function renderLpGoal() {
-      let tier = '';
-      let division = '';
-      let lp = '';
-      try {
-        tier = localStorage.getItem('ttp_lp_goal_tier') || '';
-        division = localStorage.getItem('ttp_lp_goal_division') || '';
-        lp = localStorage.getItem('ttp_lp_goal_lp') || '';
-      } catch (e) {}
-
-      if (!tier) {
-        accountLpGoalBlock.style.display = 'none';
-        return;
+      setText('stGames', d.games);
+      setText('stWinrate', d.games ? `${Math.round((d.wins / d.games) * 100)}%` : '–');
+      setText('stKda', d.games
+        ? [d.kills, d.deaths, d.assists].map(n => (n / d.games).toFixed(1)).join(' / ')
+        : '–');
+      setText('stLp', `+${fmtNum(d.lpGained)}`);
+      setText('stBank', `${d.lpBankFills}×`);
+      if (d.trackedSince) {
+        setText('gamesHint', `Counts every ranked game the app has credited XP for, across all challenges - tracked since ${fmtDate(d.trackedSince)}.`);
       }
 
-      const rest = APEX_TIERS.has(tier) ? '' : ` ${division}`;
-      accountLpGoalEl.innerHTML = rankIconHtml(tier, lp !== '' ? `${rest} · ${lp} LP` : rest);
-      accountLpGoalBlock.style.display = '';
+      document.getElementById('topChamps').innerHTML = d.topChamps.length
+        ? d.topChamps.map(ch => {
+          const wr = Math.round((ch.wins / ch.games) * 100);
+          return `<div class="champ-row">
+            <img src="https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${ch.champId}.png" alt="">
+            <span class="name">${ch.name}</span>
+            <span class="games">${ch.games} ${ch.games === 1 ? 'game' : 'games'}</span>
+            <span class="wr ${wr >= 50 ? 'pos' : 'neg'}">${wr}%</span>
+          </div>`;
+        }).join('')
+        : '<p class="empty">No games yet.</p>';
     }
 
-    function renderAccountOverview(data) {
-      const overall = data.overall;
-      const rank = data.rank;
-
-      accountLpDeltaLabelEl.textContent = data.since
-        ? `LP since ${formatDateTimeEU(data.since)}`
-        : 'LP change (start a challenge to track)';
-
-      if (overall) {
-        accountWLEl.innerHTML = `<span class="w">${overall.wins}W</span> / <span class="l">${overall.losses}L</span>`;
-      } else {
-        accountWLEl.textContent = '–';
-      }
-
-      accountRankEl.innerHTML = rank ? formatRank(rank.current) : '–';
-
-      if (rank && rank.isEstimate && rank.deltaLPRange) {
-        const { min, max } = rank.deltaLPRange;
-        const fmt = n => `${n > 0 ? '+' : ''}${n}`;
-        accountLpDeltaEl.textContent = `~ ${fmt(min)} to ${fmt(max)} LP`;
-        accountLpDeltaEl.className = 'value estimate' +
-          (min > 0 ? ' positive' : max < 0 ? ' negative' : '');
-      } else if (rank && rank.deltaLP !== null && rank.deltaLP !== undefined) {
-        const sign = rank.deltaLP > 0 ? '+' : '';
-        accountLpDeltaEl.textContent = `${sign}${rank.deltaLP} LP`;
-        accountLpDeltaEl.className = 'value' + (rank.deltaLP > 0 ? ' positive' : rank.deltaLP < 0 ? ' negative' : '');
-      } else {
-        accountLpDeltaEl.textContent = '–';
-        accountLpDeltaEl.className = 'value';
-      }
-
-      if (rank && rank.note) {
-        accountOverviewNoteIcon.title = rank.note;
-        accountOverviewNoteIcon.hidden = false;
-      } else {
-        accountOverviewNoteIcon.title = '';
-        accountOverviewNoteIcon.hidden = true;
-      }
-
-      renderStreaks(data.streaks);
-    }
-
-    // "bestWinStreak"/"worstLossStreak" sind nur innerhalb des gescannten
-    // Zeitraums bekannt (seit "since"), nicht Karriere-weit - dafuer muesste
-    // viel weiter zurueckgescannt werden als der Nutzer eingestellt hat.
-    function renderStreaks(streaks) {
-      if (!streaks || !streaks.current) {
-        accountStreakEl.textContent = '–';
-        accountStreakEl.className = 'value';
-        accountStreakLabelEl.textContent = 'Current Streak';
-        return;
-      }
-
-      const { current, bestWinStreak, worstLossStreak } = streaks;
-      accountStreakEl.textContent = `${current.count}${current.win ? 'W' : 'L'}`;
-      accountStreakEl.className = 'value' + (current.win ? ' positive' : ' negative');
-      accountStreakLabelEl.textContent = `Best ${bestWinStreak}W / Worst ${worstLossStreak}L this period`;
-    }
-
-    const DENSE_GAP_MS = 2 * 24 * 60 * 60 * 1000; // 2 Tage - darunter gilt eine echte Luecke als "dicht genug" fuer eine direkte, durchgezogene Verbindung
-    const SINCE_TOLERANCE_MS = 60 * 60 * 1000; // 1h Toleranz, um einen Snapshot als "praktisch am Since-Datum" zu behandeln
-
-    // Fuellt eine Luecke zwischen zwei bekannten Werten mit einem Random Walk,
-    // der von startValue nach endValue trendet (mit Rauschen proportional zur
-    // Groesse der Aenderung) - Start/Ende sind fix, nur der Zwischenverlauf
-    // ist erfunden. steps=6 ergibt 5 Zwischenpunkte.
-    function generateInteriorWalk(startMs, endMs, startValue, endValue, steps) {
-      const points = [];
-      const noiseScale = Math.abs(endValue - startValue) * 0.15 + 12;
-      // Auf die Spanne zwischen Start- und Endwert clampen - das Rauschen
-      // darf nicht ueber den bekannten Startpunkt (z.B. "ich habe bei Gold 2
-      // angefangen") hinaus nach unten oder oben ausschlagen, sonst zeigt
-      // die Divisions-Legende links faelschlich Raenge, die nie erreicht wurden.
-      const lo = Math.min(startValue, endValue);
-      const hi = Math.max(startValue, endValue);
-      for (let i = 1; i < steps; i++) {
-        const t = i / steps;
-        const base = startValue + (endValue - startValue) * t;
-        const val = base + (Math.random() - 0.5) * noiseScale;
-        points.push({
-          timestamp: startMs + t * (endMs - startMs),
-          comparableLP: Math.min(hi, Math.max(lo, val))
-        });
-      }
-      return points;
-    }
-
-    // Schaetzt den LP-Wert zum "Since"-Datum, wenn wir dafuer keinen echten
-    // Snapshot haben - nutzt den bereits bekannten Delta-Wert (exakt oder
-    // Schaetz-Spanne), damit zumindest die Gesamt-Steigung/das Gesamt-
-    // Gefaelle stimmt, statt einer beliebig kleinen Zufallsabweichung.
-    function estimateStartValue(nowValue, deltaLP, deltaLPRange) {
-      if (deltaLP !== null && deltaLP !== undefined) return nowValue - deltaLP;
-      if (deltaLPRange) return nowValue - (deltaLPRange.min + deltaLPRange.max) / 2;
-      return nowValue + (Math.random() * 40 - 20);
-    }
-
-    // Baut die volle Punktreihe seit "since": echte Snapshots bleiben echte
-    // Anker (durchgezogen verbunden, wenn sie zeitlich nah beieinander
-    // liegen), groessere Luecken - inklusive der Luecke vor dem ersten
-    // Snapshot bis "since" - werden mit einem erfundenen, aber an den echten
-    // Werten verankerten Verlauf gefuellt (gestrichelt markiert).
-    function buildLpSeries(realPoints, sinceMs, deltaLP, deltaLPRange) {
-      const real = realPoints.map(p => ({ ...p, synthetic: false }));
-      const nowValue = real[real.length - 1].comparableLP;
-      const series = [];
-
-      const first = real[0];
-      if (first.timestamp > sinceMs + SINCE_TOLERANCE_MS) {
-        const startValue = estimateStartValue(nowValue, deltaLP, deltaLPRange);
-        series.push({ timestamp: sinceMs, comparableLP: startValue, synthetic: true });
-        series.push(...generateInteriorWalk(sinceMs, first.timestamp, startValue, first.comparableLP, 6)
-          .map(p => ({ ...p, synthetic: true })));
-      }
-      series.push(first);
-
-      for (let i = 1; i < real.length; i++) {
-        const prev = real[i - 1];
-        const curr = real[i];
-        if (curr.timestamp - prev.timestamp > DENSE_GAP_MS) {
-          series.push(...generateInteriorWalk(prev.timestamp, curr.timestamp, prev.comparableLP, curr.comparableLP, 6)
-            .map(p => ({ ...p, synthetic: true })));
+    async function loadProfile() {
+      const parts = ls('ttp_summoner_name').trim().split('#');
+      let puuid = '';
+      if (parts.length === 2 && parts[0] && parts[1]) {
+        try {
+          const res = await fetch(`/api/account?${new URLSearchParams({ gameName: parts[0], tagLine: parts[1] })}`);
+          const account = await parseApiResponse(res);
+          if (!res.ok) throw new Error(account.error || 'Could not find summoner.');
+          puuid = account.puuid;
+          setText('heroName', `${account.gameName}#${account.tagLine}`);
+          if (account.profileIconId !== null && account.profileIconId !== undefined) {
+            const icon = document.getElementById('heroIcon');
+            icon.onload = () => icon.classList.add('loaded');
+            icon.src = `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${account.profileIconId}.png`;
+          }
+        } catch (e) {
+          statusEl.textContent = `Could not load summoner: ${e.message}`;
         }
-        series.push(curr);
+      } else {
+        statusEl.textContent = 'No valid summoner set - please set one on the Champion Selection page.';
       }
 
-      return series;
-    }
-
-    // Rueckrechnung von der comparableLP-Skala auf einen Tier/Division-Namen
-    // fuer die Achsenbeschriftung links - nur an vollen 100er-Grenzen
-    // (= Divisionsgrenzen) sinnvoll.
-    function labelForBoundary(boundary) {
-      const tierIndex = Math.floor(boundary / 400);
-      if (tierIndex < 0 || tierIndex >= TIER_ORDER.length) return null;
-      const tier = TIER_ORDER[tierIndex];
-      const tierLabel = TIER_LABELS[tier] || tier;
-      if (APEX_TIERS.has(tier)) return tierLabel;
-      const rankValue = Math.round((boundary - tierIndex * 400) / 100);
-      const rankNames = ['IV', 'III', 'II', 'I'];
-      return `${tierLabel} ${rankNames[Math.min(3, Math.max(0, rankValue))]}`;
-    }
-
-    function computeDivisionBoundaries(minY, maxY, maxLabels) {
-      const lower = Math.ceil(minY / 100) * 100;
-      const upper = Math.floor(maxY / 100) * 100;
-      const marks = [];
-      for (let b = lower; b <= upper; b += 100) marks.push(b);
-      if (marks.length <= maxLabels) return marks;
-      const step = Math.ceil(marks.length / maxLabels);
-      return marks.filter((_, i) => i % step === 0);
-    }
-
-    function renderLpGraph(realPoints, { sinceMs, rankCurrent, deltaLP, deltaLPRange } = {}) {
-      if ((!realPoints || realPoints.length === 0) && !rankCurrent) {
-        accountLpGraphEl.innerHTML = '<p class="lp-graph-empty">Not enough LP history yet for a graph - check back after a few more games.</p>';
-        return;
-      }
-      if (!realPoints || realPoints.length === 0) {
-        realPoints = [{
-          timestamp: Date.now(),
-          comparableLP: comparableLP(rankCurrent.tier, rankCurrent.rank, rankCurrent.leaguePoints),
-          tier: rankCurrent.tier,
-          rank: rankCurrent.rank,
-          leaguePoints: rankCurrent.leaguePoints,
-          manual: false
-        }];
-      }
-      if (!sinceMs) {
-        accountLpGraphEl.innerHTML = '<p class="lp-graph-empty">Not enough LP history yet for a graph - check back after a few more games.</p>';
-        return;
-      }
-
-      const points = buildLpSeries(realPoints, sinceMs, deltaLP, deltaLPRange);
-      const hasSynthetic = points.some(p => p.synthetic);
-      const disclaimer = hasSynthetic
-        ? 'Dashed sections are simulated for visualization only - Riot has no historical per-game LP data. Solid sections are real recorded snapshots; more of the graph becomes solid over time.'
-        : null;
-
-      const width = 600;
-      const height = 64;
-      const paddingLeft = 4;
-      const paddingRight = 8;
-      const paddingY = 6;
-
-      const xs = points.map(p => p.timestamp);
-      const ys = points.map(p => p.comparableLP);
-      const minX = Math.min(...xs);
-      const maxX = Math.max(...xs);
-      let minY = Math.min(...ys);
-      let maxY = Math.max(...ys);
-      // Direkt nach Challenge-Start (nur der aktuelle Rang als einziger
-      // Punkt) waere die Y-Spanne sonst quasi 0 - dann gaebe es auch keine
-      // Divisionsgrenzen/Labels zu sehen. Mit mindestens ~2 Divisionen (250
-      // LP) Puffer um den/die vorhandenen Punkt(e) herum sieht man von
-      // Anfang an, in welcher Division man aktuell steht.
-      const MIN_Y_SPAN = 250;
-      if (maxY - minY < MIN_Y_SPAN) {
-        const mid = (maxY + minY) / 2;
-        minY = mid - MIN_Y_SPAN / 2;
-        maxY = mid + MIN_Y_SPAN / 2;
-      }
-      const spanX = maxX - minX || 1;
-      const spanY = maxY - minY || 1;
-
-      const toX = t => paddingLeft + ((t - minX) / spanX) * (width - paddingLeft - paddingRight);
-      const toY = v => height - paddingY - ((v - minY) / spanY) * (height - paddingY * 2);
-      const toYPct = v => (toY(v) / height) * 100;
-
-      const coords = points.map(p => ({ x: toX(p.timestamp), y: toY(p.comparableLP), p }));
-
-      let segmentsSvg = '';
-      for (let i = 0; i < coords.length - 1; i++) {
-        const a = coords[i];
-        const b = coords[i + 1];
-        const dashed = a.p.synthetic || b.p.synthetic;
-        segmentsSvg += `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" ` +
-          `stroke="${dashed ? 'var(--text-faint)' : 'var(--gold)'}" stroke-width="2"${dashed ? ' stroke-dasharray="5 4"' : ''} />`;
-      }
-
-      const dots = coords.map(c => {
-        const date = new Date(c.p.timestamp).toLocaleDateString('en-GB');
-        if (c.p.synthetic) {
-          return `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="2" fill="var(--text-faint)"><title>${date} - simulated, not real data</title></circle>`;
-        }
-        const label = formatRank({ tier: c.p.tier, rank: c.p.rank, leaguePoints: c.p.leaguePoints });
-        const tag = c.p.manual ? ' (manually entered)' : '';
-        const color = c.p.manual ? 'var(--text-dim)' : 'var(--gold)';
-        return `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="3" fill="${color}"><title>${date} - ${label}${tag}</title></circle>`;
-      }).join('');
-
-      const boundaries = computeDivisionBoundaries(minY, maxY, 5);
-      const gridLines = boundaries.map(b =>
-        `<line x1="${paddingLeft}" y1="${toY(b).toFixed(1)}" x2="${width - paddingRight}" y2="${toY(b).toFixed(1)}" stroke="var(--border)" stroke-width="1" stroke-dasharray="2 3" />`
-      ).join('');
-      const labelHtml = boundaries.map(b => {
-        const label = labelForBoundary(b);
-        return label ? `<span style="top:${toYPct(b).toFixed(1)}%">${label}</span>` : '';
-      }).join('');
-
-      accountLpGraphEl.innerHTML = `
-        <div class="lp-graph-wrap">
-          <div class="lp-graph-labels">${labelHtml}</div>
-          <div class="lp-graph-plot">
-            <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="lp-graph-svg">
-              ${gridLines}
-              ${segmentsSvg}
-              ${dots}
-            </svg>
-          </div>
-        </div>
-        ${disclaimer ? `<p class="lp-graph-disclaimer">${disclaimer}</p>` : ''}
-      `;
-    }
-
-    async function loadLpGraph(puuid, since, rank) {
-      const sinceMs = since ? new Date(since).getTime() : null;
-      const rankCurrent = rank && rank.current;
-      const deltaLP = rank ? rank.deltaLP : null;
-      const deltaLPRange = rank ? rank.deltaLPRange : null;
       try {
-        const params = new URLSearchParams({ puuid, since });
-        const res = await fetch(`/api/rank-history?${params}`);
+        const res = await fetch(`/api/profile-stats?${new URLSearchParams({ puuid })}`);
         const data = await parseApiResponse(res);
         if (!res.ok) throw new Error(data.error || 'Unknown error');
-        renderLpGraph(data.points, { sinceMs, rankCurrent, deltaLP, deltaLPRange });
+        renderStats(data);
       } catch (e) {
-        // Graph ist ein Bonus-Feature - Fehler hier sollen den restlichen Load nicht stoeren.
-        accountLpGraphEl.innerHTML = '';
-      }
-    }
-
-    // Gleicher Match-Scan wie die Overview (/api/summary-batch) - Matches
-    // liegen dort schon im Cache, deshalb schnell.
-    async function loadProfile() {
-      const summonerName = ls('ttp_summoner_name').trim();
-      const since = ls('ttp_challenge_start');
-      let champions = [];
-      try { champions = JSON.parse(ls('ttp_selected_champs') || '[]'); } catch (e) {}
-
-      renderLpGoal();
-      if (since) startChallengeTimer(since);
-
-      const parts = summonerName.split('#');
-      if (parts.length !== 2 || !parts[0] || !parts[1]) { statusEl.textContent = 'No valid summoner set - please set one on the Champion Selection page.'; return; }
-
-      try {
-        statusEl.textContent = 'Loading …';
-        const accountRes = await fetch(`/api/account?${new URLSearchParams({ gameName: parts[0], tagLine: parts[1] })}`);
-        const account = await parseApiResponse(accountRes);
-        if (!accountRes.ok) throw new Error(account.error || 'Could not find summoner.');
-        renderAccountIdentity(account);
-
-        if (!since) { statusEl.textContent = 'Start a challenge on the Champion Selection page to see your stats.'; return; }
-        const keyed = champions.filter(c => c.key);
-        if (!keyed.length) { statusEl.textContent = 'No champion pool set yet.'; return; }
-
-        const startRes = await fetch('/api/summary-batch/start', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            puuid: account.puuid,
-            champions: keyed.map(c => ({ key: c.key, role: c.role || '' })),
-            since,
-            mainRole: ls('ttp_pool_role'),
-            secondRole: ls('ttp_pool_second_role')
-          })
-        });
-        const startData = await parseApiResponse(startRes);
-        if (!startRes.ok) throw new Error(startData.error || 'Unknown error');
-
-        let result = null;
-        while (!result) {
-          const res = await fetch(`/api/summary-batch/status/${startData.jobId}`);
-          const status = await parseApiResponse(res);
-          if (!res.ok || status.status === 'error') throw new Error(status.error || 'Unknown error');
-          if (status.status === 'done') { result = status.result; break; }
-          statusEl.textContent = status.total > 0 ? `Scanning matches … (${status.processed}/${status.total})` : 'Searching matches …';
-          await new Promise(r => setTimeout(r, 600));
-        }
-
-        statusEl.textContent = '';
-        renderAccountOverview(result);
-        // Der Scan hat eventuell neue Spiele gutgeschrieben -> XP neu laden.
-        loadProgression();
-        loadLpGraph(account.puuid, since, result.rank);
-      } catch (e) {
-        statusEl.textContent = `Could not load profile: ${e.message}`;
+        statusEl.textContent = `Could not load profile stats: ${e.message}`;
       }
     }
     loadProfile();
 
-    // ===== XP / Level / Quests / Challenge Pass (v5.0.0, provisorisch) =====
-    const fmtNum = n => Number(n).toLocaleString('en-US');
-
-    function timeUntil(iso) {
-      const ms = Math.max(0, new Date(iso).getTime() - Date.now());
-      const d = Math.floor(ms / 86400000);
-      const h = Math.floor((ms % 86400000) / 3600000);
-      const m = Math.floor((ms % 3600000) / 60000);
-      return d > 0 ? `${d}d ${h}h` : `${h}h ${m}m`;
-    }
-
-    function progressionContext() {
-      let champions = [];
-      try { champions = JSON.parse(ls('ttp_selected_champs') || '[]'); } catch (e) {}
-      return {
-        role: ls('ttp_pool_role'),
-        challengeLevel: ls('ttp_challenge_level'),
-        champions: JSON.stringify(champions.map(c => ({ id: c.id, name: c.name })))
-      };
-    }
-
-    // Spiele heute: 1-5 volle XP, ab dem 6. ist ALLES halbiert.
-    function renderGamesToday(played, fullXpGames) {
-      let html = '<span class="games-today-label">Games today</span>';
-      for (let i = 1; i <= fullXpGames; i++) {
-        html += `<span class="game-pip${played >= i ? ' played' : ''}" title="Game ${i} of the day - full XP">${i}</span>`;
-      }
-      html += '<span class="game-pip-sep"></span>';
-      html += `<span class="game-pip reduced${played > fullXpGames ? ' active' : ''}" title="From game ${fullXpGames + 1} on, ALL XP (games, kills + assists, quests, trophies) is halved for the rest of the day. Resets at 06:00.">${fullXpGames}+ · ½ XP</span>`;
-      document.getElementById('gamesToday').innerHTML = html;
-    }
-
-    function questHtml(q, { reroll } = {}) {
-      const pct = Math.min(100, Math.round((q.progress / q.target) * 100));
-      const icon = q.champId
-        ? `<span class="quest-icon"><img src="https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${q.champId}.png" alt=""></span>`
-        : `<span class="quest-icon">${q.id === 'firstwin' ? '☀' : '◆'}</span>`;
-      const rerollBtn = reroll
-        ? `<button type="button" class="quest-reroll" data-reroll="${q.id}" title="${q.rerollable ? 'Reroll this quest (1x per day)' : 'Reroll already used today'}"${q.rerollable ? '' : ' disabled'}>⟲</button>`
-        : '';
-      const breakdown = q.breakdown && q.breakdown.length
-        ? `<div class="quest-breakdown">${q.breakdown.map(b => `<span>${b.name} ${b.progress}/${b.target}</span>`).join('')}</div>`
-        : '';
-      return `<div class="quest">
-        <div class="quest-top">
-          ${icon}
-          <span class="quest-text"><span class="quest-title">${q.title}</span><span class="quest-desc">${q.desc}</span></span>
-          <span class="quest-xp">+${fmtNum(q.xp)} XP</span>
-          ${rerollBtn}
-        </div>
-        <div class="quest-bottom">
-          <div class="xp-bar small"><div class="xp-bar-fill" style="width:${pct}%"></div></div>
-          <span class="quest-count">${q.progress} / ${q.target}</span>
-        </div>
-        ${breakdown}
-      </div>`;
-    }
-
-    function renderPass(pass) {
-      document.getElementById('passTierText').textContent = `Tier ${pass.tier} / ${pass.tiers}`;
-      document.getElementById('passXpText').textContent = `${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP`;
-      document.getElementById('passXpFill').style.width = `${(pass.tier / pass.tiers) * 100}%`;
-      let html = '';
-      for (let t = 1; t <= pass.tiers; t++) {
-        const milestone = t % 5 === 0;
-        const current = t === pass.tier + 1;
-        const progress = current ? `<span class="tier-progress" style="width:${(pass.xpIntoTier / pass.xpPerTier) * 100}%"></span>` : '';
-        html += `<div class="pass-tier${milestone ? ' milestone' : ''}${t <= pass.tier ? ' unlocked' : ''}${current ? ' current' : ''}" title="Tier ${t} - reward to be decided${current ? ` (${pass.xpIntoTier} / ${pass.xpPerTier} XP)` : ''}">` +
-          `<span class="tier-num">${t}</span><span class="tier-reward">${t <= pass.tier ? '✓' : milestone ? '★' : '🔒'}</span>${progress}</div>`;
-      }
-      document.getElementById('passGrid').innerHTML = html;
-    }
-
-    // LP-Konto (server/lib/progression.js creditLp): Gewinne fuellen 0-100,
-    // Verluste zaehlen nicht, Ueberschuss wird mitgenommen.
-    function renderLpBank(bank) {
-      document.getElementById('lpBankFill').style.width = `${(bank.progress / bank.size) * 100}%`;
-      document.getElementById('lpBankText').textContent = `${bank.progress} / ${bank.size} LP`;
-      document.getElementById('lpBankReward').textContent = `+${fmtNum(bank.xpPerFill)} XP when full`;
-      document.getElementById('lpBankFills').textContent = bank.fills
-        ? `filled ${bank.fills}× · +${fmtNum(bank.fills * bank.xpPerFill)} XP`
-        : 'not filled yet';
-      if (bank.recent.length) {
-        const last = bank.recent[0];
-        const when = new Date(last.at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-        document.getElementById('lpBankNote').textContent =
-          `Last gain: +${last.gained} LP (${when})${last.filled ? ` - bank filled, +${fmtNum(last.xp)} XP` : ''}. LP losses are ignored, extra LP carry over.`;
-      }
-    }
-
-    const CATEGORY_LABELS = {
-      poolChamp: 'Pool champion',
-      sameRoleOther: 'Main role, other champ',
-      secondRole: 'Second role',
-      offRole: 'Off-role'
-    };
-
-    // Letzte gutgeschriebene Spiele mit Aufschluesselung im Tooltip.
-    function renderRecentXp(games) {
-      const el = document.getElementById('recentXp');
-      if (!games.length) {
-        el.innerHTML = '<p class="recent-xp-empty">No games credited yet - XP is added automatically after each ranked game (with the next refresh).</p>';
-        return;
-      }
-      el.innerHTML = games.map(g => {
-        const b = g.base;
-        const tip = [
-          `${CATEGORY_LABELS[g.category] || g.category}: +${b.game}`,
-          b.win ? `Win bonus: +${b.win}` : null,
-          `${g.kills} kills: +${b.kills}`,
-          `${g.assists} assists: +${b.assists}`,
-          g.halved ? `Game ${g.gameOfDay} of the day: ½ XP` : null
-        ].filter(Boolean).join('&#10;');
-        const icon = g.champId
-          ? `<img src="https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${g.champId}.png" alt="">`
-          : '';
-        const when = new Date(g.gameCreation).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-        return `<div class="recent-xp-row" title="${tip}">
-          <span class="recent-xp-icon">${icon}</span>
-          <span class="recent-xp-text">
-            <span class="recent-xp-title"><span class="${g.win ? 'win' : 'loss'}">${g.win ? 'Win' : 'Loss'}</span> · ${CATEGORY_LABELS[g.category] || g.category}</span>
-            <span class="recent-xp-desc">${g.kills} / ${g.deaths} / ${g.assists} · ${when}</span>
-          </span>
-          <span class="recent-xp-tags">${g.halved ? '<span class="xp-tag">½</span>' : ''}</span>
-          <span class="recent-xp-amount">+${fmtNum(g.xp)} XP</span>
-        </div>`;
-      }).join('');
-    }
-
-    function renderXpSources(src, fullXpGames) {
-      const rows = [
-        ['Game with one of your pool champions', src.perGame.poolChamp],
-        ['Game in your main role, other champion', src.perGame.sameRoleOther],
-        ['Game in your second role', src.perGame.secondRole],
-        ['Off-role game', src.perGame.offRole],
-        ['Win bonus (any game)', src.winBonus],
-        ['Per kill', src.perKill],
-        ['Per assist', src.perAssist],
-        [`Every ${src.lpBankSize} LP gained (LP Bank)`, src.perLpBank],
-        ['Trophy unlocked (temporary ones excluded)', src.perTrophy],
-        [`After ${fullXpGames} games a day`, '½ XP']
-      ];
-      document.getElementById('xpSources').innerHTML = rows
-        .map(([label, xp]) => `<tr><td>${label}</td><td>${typeof xp === 'number' ? `+${fmtNum(xp)} XP` : xp}</td></tr>`)
-        .join('');
-    }
-
-    async function loadProgression() {
-      try {
-        const res = await fetch(`/api/progression?${new URLSearchParams(progressionContext())}`);
-        const data = await parseApiResponse(res);
-        if (!res.ok) throw new Error(data.error || 'Unknown error');
-
-        const { level, xpIntoLevel, xpForNextLevel } = data.level;
-        document.getElementById('profileLevel').textContent = level;
-        document.getElementById('profileXpFill').style.width = `${(xpIntoLevel / xpForNextLevel) * 100}%`;
-        document.getElementById('profileXpText').textContent = `${fmtNum(xpIntoLevel)} / ${fmtNum(xpForNextLevel)} XP`;
-        document.getElementById('profileXpNext').textContent = `${fmtNum(xpForNextLevel - xpIntoLevel)} XP to Level ${level + 1}`;
-
-        renderGamesToday(data.gamesToday, data.fullXpGamesPerDay);
-        document.getElementById('dailyResetIn').textContent = `resets in ${timeUntil(data.dailyResetAt)}`;
-        document.getElementById('weeklyResetIn').textContent = `resets in ${timeUntil(data.weeklyResetAt)}`;
-        document.getElementById('dailyQuests').innerHTML = data.dailies
-          .map(q => questHtml(q, { reroll: q.id !== 'firstwin' && !q.champId }))
-          .join('');
-        document.getElementById('weeklyQuests').innerHTML = data.weeklies.map(q => questHtml(q)).join('');
-        renderPass(data.pass);
-        renderRecentXp(data.recentGames || []);
-        renderXpSources(data.xpSources, data.fullXpGamesPerDay);
-        renderLpBank(data.lpBank);
-      } catch (e) {
-        document.getElementById('dailyQuests').textContent = `Could not load quests: ${e.message}`;
-      }
-    }
-
-    document.getElementById('dailyQuests').addEventListener('click', async (e) => {
-      const btn = e.target.closest('[data-reroll]');
-      if (!btn || btn.disabled) return;
-      btn.disabled = true;
-      try {
-        const res = await fetch('/api/progression/reroll', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(progressionContext())
-        });
-        const data = await parseApiResponse(res);
-        if (!res.ok) throw new Error(data.error || 'Unknown error');
-      } catch (err) {
-        alert(`Reroll failed: ${err.message}`);
-      }
-      loadProgression();
-    });
-    loadProgression();
-
-    const settingsGearBtn = document.getElementById('settingsGearBtn');
-    settingsGearBtn.addEventListener('click', () => {
+    document.getElementById('settingsGearBtn').addEventListener('click', () => {
       if (window.ttpMain) window.ttpMain.openSettings();
     });
-
-    const quitBtn = document.getElementById('quitBtn');
-    quitBtn.addEventListener('click', () => {
+    document.getElementById('quitBtn').addEventListener('click', () => {
       const ok = confirm('Quit Three-Trick-Pony completely? It will no longer run in the background (no more update checks or LP tracking until you start it again).');
       if (window.ttpMain) window.ttpMain.restoreFocus();
       if (!ok) return;

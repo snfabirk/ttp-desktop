@@ -1,5 +1,20 @@
 # Internal Changelog
 
+## 5.2.0 — 2026-10-09
+
+- profile.html renamed to challenge.html ("Challenge & Pass": account card,
+  quests, pass, LP Bank, Recent XP) - user wants everything about the current
+  challenge to stay together there. Tightened vertical spacing, right column
+  now Recent XP -> LP Bank -> Challenge Pass, explanatory notes moved behind
+  "?" hover hints (`.hint` / `.hint-pop`).
+- New profile.html = real player profile built from scratch: icon (future
+  border slot), name, level bar, lifetime stats from `/api/profile-stats`
+  (challenge history + progression ledger), most played, locked cosmetic
+  slots placeholder.
+- Overview: profile card -> profile.html, new "Challenge & Pass" card below
+  it -> challenge.html (shows pass tier + LP Bank).
+- Ledger entries now also store champName (for "Most Played").
+
 ## 5.1.0 — 2026-10-09
 
 - Games now actually award XP (first real XP source). `progression.creditMatches()`

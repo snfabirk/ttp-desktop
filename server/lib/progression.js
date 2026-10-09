@@ -225,7 +225,7 @@ function creditMatches(games, { challengeStart }) {
       const entry = {
         matchId: g.matchId, gameCreation: g.gameCreation, day, gameOfDay,
         category: g.category, win: !!g.win, kills: g.kills || 0, deaths: g.deaths || 0, assists: g.assists || 0,
-        champId: g.champId || '', base, halved, xp
+        champId: g.champId || '', champName: g.champName || '', base, halved, xp
       };
       state.ledger.push(entry);
       state.totalXp += xp;
@@ -276,6 +276,33 @@ function creditLp({ puuid, currentLP, baselineLP, challengeStart }) {
   }
   writeState(state);
   return event;
+}
+
+// Lebenszeit-Zahlen fuer die Spielerprofil-Seite (profile.html) - alles,
+// was das Ledger seit v5.1.0 mitgeschrieben hat.
+function getLifetimeStats() {
+  const state = readState();
+  const games = state.ledger;
+  const champCounts = {};
+  games.forEach(g => {
+    if (!g.champId) return;
+    const c = champCounts[g.champId] || (champCounts[g.champId] = { champId: g.champId, name: g.champName || g.champId, games: 0, wins: 0 });
+    c.games++;
+    if (g.win) c.wins++;
+  });
+  return {
+    level: levelFromXp(state.totalXp),
+    totalXp: state.totalXp,
+    games: games.length,
+    wins: games.filter(g => g.win).length,
+    kills: games.reduce((n, g) => n + (g.kills || 0), 0),
+    deaths: games.reduce((n, g) => n + (g.deaths || 0), 0),
+    assists: games.reduce((n, g) => n + (g.assists || 0), 0),
+    topChamps: Object.values(champCounts).sort((a, b) => b.games - a.games || b.wins - a.wins).slice(0, 3),
+    lpGained: state.lpBank.events.reduce((n, e) => n + e.gained, 0),
+    lpBankFills: state.lpBank.fills,
+    trackedSince: games.length ? Math.min(...games.map(g => g.gameCreation)) : null
+  };
 }
 
 function rerollDaily(context) {
@@ -336,6 +363,7 @@ module.exports = {
   getOverview,
   creditMatches,
   creditLp,
+  getLifetimeStats,
   rerollDaily,
   resetState
 };

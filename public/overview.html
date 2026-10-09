@@ -167,8 +167,10 @@
     .role-breakdown-card:hover .role-breakdown-more {
       color: var(--gold);
     }
-    /* Kompakte Profil-Karte (Icon, Name, W/L) - Klick oeffnet profile.html
-       mit der vollen Account-Karte. Gleicher Kartenstil wie Trophies. */
+    /* Kompakte Profil-Karte (Icon, Name, W/L) - Klick oeffnet das
+       Spielerprofil (profile.html). Darunter die Challenge-&-Pass-Karte ->
+       challenge.html (volle Account-Karte, Quests, Pass). Gleicher
+       Kartenstil wie Trophies. */
     .profile-card-icon-wrap {
       flex-shrink: 0;
       width: 40px;
@@ -220,6 +222,12 @@
     }
     .profile-card-wl .w { color: var(--green); }
     .profile-card-wl .l { color: var(--red); }
+    .challenge-pass-card:hover .role-breakdown-more {
+      color: var(--gold);
+    }
+    .challenge-pass-card .trophies-progress {
+      white-space: nowrap;
+    }
     .profile-card:hover .profile-card-more {
       color: var(--gold);
     }
@@ -892,6 +900,13 @@
       <span class="role-breakdown-more profile-card-more" aria-hidden="true">View profile →</span>
     </a>
 
+    <a href="challenge.html" class="trophies-card challenge-pass-card" id="challengePassCard" title="Challenge details, quests and Challenge Pass">
+      <span class="trophies-icon">🎖️</span>
+      <span class="trophies-label">Challenge &amp; Pass</span>
+      <span class="trophies-progress" id="challengePassSummary">–</span>
+      <span class="role-breakdown-more" aria-hidden="true">More →</span>
+    </a>
+
     <a href="trophies.html" class="trophies-card" id="trophiesCard">
       <span class="trophies-icon">🏆</span>
       <span class="trophies-label">Trophies</span>
@@ -1126,7 +1141,7 @@
     }
 
     // Kompakte Profil-Karte: nur W/L hier, Rang/LP/Streak/Graph leben auf
-    // profile.html.
+    // challenge.html.
     function renderAccountWL(overall) {
       accountWLEl.innerHTML = overall
         ? `<span class="w">${overall.wins}W</span> / <span class="l">${overall.losses}L</span>`
@@ -1978,12 +1993,16 @@
       }, delay);
     }
 
-    // Profil-Level auf der kompakten Karte (v5.0.0) - Details auf profile.html.
+    // Profil-Level auf der kompakten Karte (Details auf profile.html) und
+    // Pass-Stand auf der Challenge-&-Pass-Karte (Details auf challenge.html).
     async function loadProfileLevel() {
       try {
         const res = await fetch('/api/progression');
         const data = await parseApiResponse(res);
-        if (res.ok) document.getElementById('profileCardLevel').textContent = `Lv ${data.level.level}`;
+        if (!res.ok) return;
+        document.getElementById('profileCardLevel').textContent = `Lv ${data.level.level}`;
+        document.getElementById('challengePassSummary').textContent =
+          `Tier ${data.pass.tier} / ${data.pass.tiers} · LP Bank ${data.lpBank.progress}/${data.lpBank.size}`;
       } catch (e) {}
     }
 

@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.2.0',
+      date: '2026-10-09',
+      notable: [
+        'New player profile: your level plus lifetime stats across all challenges (challenges, goals reached, trophies, games, win rate, LP gained, most played). Cosmetics will live here later.',
+        'The old profile page is now "Challenge & Pass" with everything about your current challenge, quests and the pass - open it from the new card on the Overview.'
+      ],
+      refinements: 1,
+      bugfixes: 0
+    },
+    {
       version: '5.1.0',
       date: '2026-10-09',
       notable: [

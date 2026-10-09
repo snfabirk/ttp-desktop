@@ -419,7 +419,8 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
         kills: me.kills,
         deaths: me.deaths,
         assists: me.assists,
-        champId: cat.champs[myKey].id
+        champId: cat.champs[myKey].id,
+        champName: cat.champs[myKey].name
       });
 
       const bucket = buckets[myKey];
@@ -720,6 +721,28 @@ app.get('/api/progression', (req, res) => {
 app.post('/api/progression/reroll', (req, res) => {
   const result = progression.rerollDaily(progressionContext(req.body || {}));
   res.status(result.ok ? 200 : 400).json(result);
+});
+
+// Spielerprofil (profile.html): Lebenszeit-Stats ueber alle Challenges -
+// Challenges/Trophies aus der Challenge History, Spiele/XP aus dem
+// Progression-Ledger. Rein lokal.
+app.get('/api/profile-stats', (req, res) => {
+  const { puuid } = req.query;
+  const entries = puuid ? listHistoryEntries(puuid) : [];
+  const goalReached = e => Array.isArray(e.trophies) && e.trophies.some(t => t.id === 'goal-reached' && t.unlocked);
+  const best = entries.reduce((b, e) => (!b || (e.unlockedCount || 0) > (b.unlockedCount || 0) ? e : b), null);
+  res.json({
+    ...progression.getLifetimeStats(),
+    challenges: {
+      started: entries.length,
+      finished: entries.filter(e => e.until).length,
+      goalsReached: entries.filter(goalReached).length,
+      trophies: entries.reduce((n, e) => n + (e.unlockedCount || 0), 0),
+      platinum: entries.filter(e => e.platinumUnlocked).length,
+      bestTrophies: best ? best.unlockedCount || 0 : 0,
+      firstStarted: entries.length ? entries[entries.length - 1].since : null // listEntries: neueste zuerst
+    }
+  });
 });
 
 // "Reset Account Progress" in den Settings - NUR Level/XP/Quests/Pass,
