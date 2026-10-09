@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Refined + Basic shop cosmetics (Theme Lab)</title>
+<!-- Theme Lab (nicht im Installationspaket): die 14 Refined- und 6 Basic-
+     Shop-Cosmetics auf einer Seite. Refined = schoen gestaltet, aber STEHEND
+     (keine Animation). Basic = schlicht und gratis.
+     Refined: Themes Desert Dusk, Emerald Forest - Borders Ember Ring, Frost Rim,
+     Moonlit Ring, Thorn Ring, Runestone Ring, Obsidian Ring - Rahmen Iron, Ivy,
+     Rune, Gilded, Marble, Bamboo.
+     Basic: Borders Plain Ring, Ash Ring, Silver Ring - Rahmen Slate, Oak, Paper. -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: #0a1428; color: #f0e6d2; font-family: Georgia, serif; }
+  body { padding: 20px 40px 40px; }
+  h1 { margin: 0; text-align: center; font-family: 'Cinzel', serif; color: #c8aa6e; letter-spacing: 3px; font-size: 1.5rem; }
+  h2 { margin: 22px 0 10px; font-family: 'Cinzel', serif; font-size: .95rem; letter-spacing: 2px; text-align: center; }
+  h2.refined { color: #4fa3ff; } h2.basic { color: #9aa0a6; }
+  .grid { display: flex; justify-content: center; gap: 26px; flex-wrap: wrap; }
+  .item { text-align: center; }
+  .item b { display: block; margin-top: 8px; font-family: 'Cinzel', serif; font-size: .85rem; }
+  .item small { color: #a09b8c; font-size: .7rem; }
+  canvas { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<h1>Refined + Basic · Shop Cosmetics</h1>
+<h2 class="refined">Refined · Themes</h2><div class="grid" id="rThemes"></div>
+<h2 class="refined">Refined · Borders</h2><div class="grid" id="rBorders"></div>
+<h2 class="refined">Refined · Profile frames</h2><div class="grid" id="rFrames"></div>
+<h2 class="basic">Basic · Borders</h2><div class="grid" id="bBorders"></div>
+<h2 class="basic">Basic · Profile frames</h2><div class="grid" id="bFrames"></div>
+
+<script>
+const DPR = Math.min(2, devicePixelRatio || 1);
+const img = new Image(); img.crossOrigin = 'anonymous';
+img.src = 'https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png';
+function seeded(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function card(host, name, sub, w, h) {
+  const d = document.createElement('div'); d.className = 'item';
+  const cv = document.createElement('canvas'); cv.width = w * DPR; cv.height = h * DPR; cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  d.append(cv); d.insertAdjacentHTML('beforeend', `<b>${name}</b><small>${sub}</small>`);
+  document.getElementById(host).append(d);
+  const c = cv.getContext('2d'); c.setTransform(DPR, 0, 0, DPR, 0, 0); return c;
+}
+const rr = (c, x, y, w, h, r) => { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
+
+// ---------- Themes (stehende Szene + Beispielbox) ----------
+const THEMES = [
+  { name: 'Desert Dusk', accent: '#ffb35c', panel: 'rgba(40, 20, 16, .55)', bd: '#7a4a2a', draw(c, W, H) {
+    const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#2a1838'); g.addColorStop(.45, '#a8485a'); g.addColorStop(.7, '#f0905a'); g.addColorStop(1, '#f6c27a');
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.fillStyle = 'rgba(255, 230, 170, .9)'; c.beginPath(); c.arc(W * .72, H * .66, 30, 0, 7); c.fill();
+    const dune = (y, col, amp, ph) => { c.fillStyle = col; c.beginPath(); c.moveTo(0, H); for (let x = 0; x <= W; x += 8) c.lineTo(x, y + Math.sin(x * .012 + ph) * amp + Math.sin(x * .03 + ph) * amp * .3); c.lineTo(W, H); c.fill(); };
+    dune(H * .74, '#b8603c', 14, 0); dune(H * .82, '#8a3e2a', 18, 2); dune(H * .9, '#5a2418', 12, 4);
+    // Kaktus + Felsbogen
+    c.fillStyle = '#3a160e'; c.fillRect(W * .18, H * .7, 7, 34); c.fillRect(W * .18 - 9, H * .74, 9, 5); c.fillRect(W * .18 - 9, H * .7, 5, 9); c.fillRect(W * .18 + 7, H * .76, 9, 5); c.fillRect(W * .18 + 11, H * .72, 5, 9);
+    c.beginPath(); c.moveTo(W * .84, H * .9); c.quadraticCurveTo(W * .88, H * .62, W * .95, H * .9); c.lineTo(W * .93, H * .9); c.quadraticCurveTo(W * .885, H * .72, W * .86, H * .9); c.fill();
+  } },
+  { name: 'Emerald Forest', accent: '#7ee08a', panel: 'rgba(10, 30, 18, .55)', bd: '#2c5a38', draw(c, W, H) {
+    const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0e2a1c'); g.addColorStop(1, '#04140c');
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    // Lichtstrahlen
+    for (let k = 0; k < 4; k++) { const x = W * (.2 + k * .2); const lg = c.createLinearGradient(x, 0, x + 60, H); lg.addColorStop(0, 'rgba(200, 255, 190, .12)'); lg.addColorStop(1, 'rgba(200, 255, 190, 0)'); c.fillStyle = lg; c.beginPath(); c.moveTo(x, 0); c.lineTo(x + 26, 0); c.lineTo(x + 90, H); c.lineTo(x + 40, H); c.fill(); }
+    const r = seeded(3);
+    const tree = (x, base, h, col) => { c.fillStyle = col; c.fillRect(x - 3, base - h * .25, 6, h * .25); for (let k = 0; k < 3; k++) { const w = h * (.42 - k * .1), y = base - h * .2 - k * h * .24; c.beginPath(); c.moveTo(x - w, y); c.lineTo(x, y - h * .38); c.lineTo(x + w, y); c.fill(); } };
+    for (let k = 0; k < 14; k++) tree(r() * W, H * .9, 90 + r() * 60, '#123a24');
+    for (let k = 0; k < 9; k++) tree(r() * W, H * 1.02, 130 + r() * 50, '#08200f');
+    // Gluehwuermchen (stehend)
+    for (let k = 0; k < 22; k++) { const x = r() * W, y = H * (.3 + r() * .6); const gl = c.createRadialGradient(x, y, 0, x, y, 6); gl.addColorStop(0, 'rgba(220, 255, 140, .9)'); gl.addColorStop(1, 'rgba(220, 255, 140, 0)'); c.fillStyle = gl; c.beginPath(); c.arc(x, y, 6, 0, 7); c.fill(); }
+  } }
+];
+THEMES.forEach(th => {
+  const W = 420, H = 230, c = card('rThemes', th.name, 'Theme · Refined', W, H);
+  th.draw(c, W, H);
+  rr(c, W / 2 - 110, H / 2 - 42, 220, 84, 10); c.fillStyle = th.panel; c.fill(); c.strokeStyle = th.bd; c.lineWidth = 1; c.stroke();
+  c.font = '700 13px Cinzel, serif'; c.fillStyle = th.accent; c.fillText('TODAY', W / 2 - 96, H / 2 - 18);
+  c.font = '12px Georgia'; c.fillStyle = '#f2ece4'; c.fillText('First Win of the Day', W / 2 - 96, H / 2 + 4); c.fillText('Champion of the Day', W / 2 - 96, H / 2 + 24);
+  c.fillStyle = th.accent; c.textAlign = 'right'; c.fillText('+400 XP', W / 2 + 96, H / 2 + 4); c.fillText('+500 XP', W / 2 + 96, H / 2 + 24); c.textAlign = 'left';
+});
+
+// ---------- Borders ----------
+function borderCard(host, name, sub, deco) {
+  const S = 160, c = card(host, name, sub, S, S), R = 46;
+  const go = () => { c.clearRect(0, 0, S, S); c.save(); c.translate(S / 2, S / 2); deco(c, R, 'under'); c.save(); c.beginPath(); c.arc(0, 0, R, 0, 7); c.clip(); c.drawImage(img, -R, -R, R * 2, R * 2); c.restore(); deco(c, R, 'over'); c.restore(); };
+  if (img.complete) go(); else img.addEventListener('load', go);
+}
+const ring = (c, r, w, stops) => { const g = c.createLinearGradient(-r, -r, r, r); stops.forEach((s, i) => g.addColorStop(i / (stops.length - 1), s)); c.strokeStyle = g; c.lineWidth = w; c.beginPath(); c.arc(0, 0, r, 0, 7); c.stroke(); };
+const REFINED_BORDERS = [
+  ['Ember Ring', (c, R, p) => { if (p !== 'over') { const h = c.createRadialGradient(0, 0, R, 0, 0, R * 1.45); h.addColorStop(0, 'rgba(255,110,30,.4)'); h.addColorStop(1, 'rgba(255,60,10,0)'); c.fillStyle = h; c.beginPath(); c.arc(0, 0, R * 1.45, 0, 7); c.fill(); return; } ring(c, R * 1.08, 8, ['#ffd27a', '#e85a14', '#7a1a04', '#e85a14', '#ffd27a']); const r = seeded(4); c.fillStyle = 'rgba(255, 210, 120, .9)'; for (let k = 0; k < 14; k++) { const a = r() * 7, d = R * (1.2 + r() * .2); c.beginPath(); c.arc(Math.cos(a) * d, Math.sin(a) * d, 1 + r() * 1.2, 0, 7); c.fill(); } }],
+  ['Frost Rim', (c, R, p) => { if (p !== 'over') return; ring(c, R * 1.07, 7, ['#e8f8ff', '#7cc4ef', '#2a6a9a', '#a8dcff']); c.strokeStyle = '#eef9ff'; c.lineWidth = 1.4; for (let k = 0; k < 10; k++) { const a = k / 10 * 6.283; c.save(); c.rotate(a); c.translate(R * 1.18, 0); c.beginPath(); for (let j = 0; j < 3; j++) { c.rotate(Math.PI / 3); c.moveTo(-5, 0); c.lineTo(5, 0); } c.stroke(); c.restore(); } }],
+  ['Moonlit Ring', (c, R, p) => { if (p !== 'over') return; ring(c, R * 1.06, 5, ['#2a2440', '#e9dcc0', '#2a2440']); c.fillStyle = '#e9dcc0'; c.save(); c.translate(0, -R * 1.18); c.beginPath(); c.arc(0, 0, 11, 0, 7); c.fill(); c.fillStyle = '#0a1428'; c.beginPath(); c.arc(5, -3, 9, 0, 7); c.fill(); c.restore(); const r = seeded(9); c.fillStyle = '#fff6dc'; for (let k = 0; k < 9; k++) { const a = Math.PI * (.65 + r() * 1.7), d = R * (1.18 + r() * .14); c.beginPath(); c.arc(Math.cos(a) * d, Math.sin(a) * d, .8 + r(), 0, 7); c.fill(); } }],
+  ['Thorn Ring', (c, R, p) => { if (p !== 'over') return; ring(c, R * 1.06, 5, ['#3e5a2a', '#1e2e14', '#4e6a32']); c.fillStyle = '#2a3a1a'; for (let k = 0; k < 18; k++) { const a = k / 18 * 6.283 + (k % 2) * .08; c.save(); c.rotate(a); c.beginPath(); c.moveTo(R * 1.08, -3); c.lineTo(R * 1.28, k % 2 ? 4 : -4); c.lineTo(R * 1.08, 3); c.fill(); c.restore(); } [[-.7, '#c8202a'], [2.3, '#c8202a']].forEach(([a, col]) => { c.save(); c.translate(Math.cos(a) * R * 1.1, Math.sin(a) * R * 1.1); for (let k = 0; k < 5; k++) { c.rotate(1.2566); c.fillStyle = col; c.beginPath(); c.ellipse(5, 0, 6, 4, 0, 0, 7); c.fill(); } c.fillStyle = '#ffd86b'; c.beginPath(); c.arc(0, 0, 2.5, 0, 7); c.fill(); c.restore(); }); }],
+  ['Runestone Ring', (c, R, p) => { if (p !== 'over') return; ring(c, R * 1.12, 13, ['#6a6a70', '#3a3a40', '#7a7a80', '#2e2e34']); c.fillStyle = '#7fd4ff'; c.font = 'bold 11px serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; const g = 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃ'; for (let k = 0; k < 12; k++) { c.save(); c.rotate(k / 12 * 6.283); c.fillText(g[k], 0, -R * 1.12); c.restore(); } }],
+  ['Obsidian Ring', (c, R, p) => { if (p !== 'over') return; const N = 10; for (let k = 0; k < N; k++) { const a0 = k / N * 6.283, a1 = (k + 1) / N * 6.283, am = (a0 + a1) / 2; c.beginPath(); c.moveTo(Math.cos(a0) * R, Math.sin(a0) * R); c.lineTo(Math.cos(am) * R * 1.26, Math.sin(am) * R * 1.26); c.lineTo(Math.cos(a1) * R, Math.sin(a1) * R); c.closePath(); const g = c.createLinearGradient(Math.cos(a0) * R, Math.sin(a0) * R, Math.cos(am) * R * 1.26, Math.sin(am) * R * 1.26); g.addColorStop(0, '#0c0a12'); g.addColorStop(1, k % 3 ? '#3a2a4a' : '#7a5ab0'); c.fillStyle = g; c.fill(); c.strokeStyle = 'rgba(200,170,255,.35)'; c.lineWidth = .8; c.stroke(); } }]
+];
+const BASIC_BORDERS = [
+  ['Plain Ring', (c, R, p) => { if (p === 'over') ring(c, R * 1.04, 4, ['#c8c8cc', '#8a8a90']); }],
+  ['Ash Ring', (c, R, p) => { if (p === 'over') ring(c, R * 1.04, 5, ['#7d7470', '#3a3330', '#7d7470']); }],
+  ['Silver Ring', (c, R, p) => { if (p !== 'over') return; ring(c, R * 1.05, 5, ['#f2f4f8', '#9aa0aa', '#f2f4f8', '#6a707a']); ring(c, R * 1.13, 1, ['#c8ccd4', '#c8ccd4']); }]
+];
+REFINED_BORDERS.forEach(([n, d]) => borderCard('rBorders', n, 'Border · Refined', d));
+BASIC_BORDERS.forEach(([n, d]) => borderCard('bBorders', n, 'Border · Basic', d));
+
+// ---------- Rahmen ----------
+function frameCard(host, name, sub, deco) {
+  const W = 300, H = 180, P = 22, c = card(host, name, sub, W, H), w = W - P * 2, h = H - P * 2;
+  rr(c, P, P, w, h, 12); c.fillStyle = 'rgba(10, 20, 40, .7)'; c.fill();
+  c.fillStyle = 'rgba(255,255,255,.05)'; c.strokeStyle = 'rgba(255,255,255,.08)';
+  [[P + 12, P + 12, w - 24, 46], [P + 12, P + 66, (w - 32) / 2, h - 78], [P + 20 + (w - 32) / 2, P + 66, (w - 32) / 2, h - 78]].forEach(b => { rr(c, ...b, 7); c.fill(); c.stroke(); });
+  deco(c, P, P, w, h);
+}
+const corners = (x, y, w, h) => [[x, y, 1, 1], [x + w, y, -1, 1], [x + w, y + h, -1, -1], [x, y + h, 1, -1]];
+const REFINED_FRAMES = [
+  ['Iron Frame', (c, x, y, w, h) => { const g = c.createLinearGradient(x, y, x + w, y + h); g.addColorStop(0, '#9a9aa3'); g.addColorStop(.5, '#4a4a52'); g.addColorStop(1, '#8a8a92'); c.strokeStyle = g; c.lineWidth = 6; rr(c, x, y, w, h, 10); c.stroke(); corners(x, y, w, h).forEach(([cx, cy, sx, sy]) => { c.fillStyle = '#5a5a62'; c.fillRect(cx - (sx > 0 ? 3 : 25), cy - (sy > 0 ? 3 : 25), 28, 28); c.fillStyle = '#c8c8d0'; [[8, 8], [20, 8], [8, 20]].forEach(([a, b]) => { c.beginPath(); c.arc(cx + sx * a, cy + sy * b, 2, 0, 7); c.fill(); }); }); }],
+  ['Ivy Frame', (c, x, y, w, h) => { c.strokeStyle = '#3a5a2a'; c.lineWidth = 3; rr(c, x, y, w, h, 12); c.stroke(); const r = seeded(11); const leaf = (lx, ly, a) => { c.save(); c.translate(lx, ly); c.rotate(a); c.fillStyle = r() < .5 ? '#4caf7d' : '#2e7d47'; c.beginPath(); c.moveTo(0, 0); c.bezierCurveTo(5, -6, 11, -2, 12, 0); c.bezierCurveTo(11, 2, 5, 6, 0, 0); c.fill(); c.restore(); }; for (let k = 0; k < 40; k++) { const u = r(); const side = Math.floor(r() * 4); const [lx, ly] = side === 0 ? [x + u * w, y] : side === 1 ? [x + w, y + u * h] : side === 2 ? [x + u * w, y + h] : [x, y + u * h]; if ((u > .25 && u < .75) && r() < .7) continue; leaf(lx, ly, r() * 6.28); } }],
+  ['Rune Frame', (c, x, y, w, h) => { c.strokeStyle = '#6a4ab0'; c.lineWidth = 2; rr(c, x, y, w, h, 12); c.stroke(); rr(c, x - 6, y - 6, w + 12, h + 12, 16); c.globalAlpha = .4; c.stroke(); c.globalAlpha = 1; c.fillStyle = '#b088ff'; c.font = '12px serif'; c.textAlign = 'center'; const g = 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈ'; for (let k = 0; k < 7; k++) { c.fillText(g[k], x + 30 + k * (w - 60) / 6, y - 1); c.fillText(g[k + 7], x + 30 + k * (w - 60) / 6, y + h + 9); } c.textAlign = 'left'; }],
+  ['Gilded Frame', (c, x, y, w, h) => { const g = c.createLinearGradient(x, y, x + w, y + h); g.addColorStop(0, '#f6dc8c'); g.addColorStop(.5, '#a8762a'); g.addColorStop(1, '#f2d27a'); c.strokeStyle = g; c.lineWidth = 5; rr(c, x, y, w, h, 12); c.stroke(); c.lineWidth = 1; rr(c, x + 6, y + 6, w - 12, h - 12, 8); c.stroke(); corners(x, y, w, h).forEach(([cx, cy, sx, sy]) => { c.fillStyle = g; c.save(); c.translate(cx, cy); c.rotate(Math.PI / 4); c.fillRect(-6, -6, 12, 12); c.restore(); }); }],
+  ['Marble Frame', (c, x, y, w, h) => { c.save(); c.beginPath(); c.rect(x - 7, y - 7, w + 14, h + 14); c.rect(x + 2, y + 2, w - 4, h - 4); c.clip('evenodd'); c.fillStyle = '#ece8e2'; c.fillRect(x - 10, y - 10, w + 20, h + 20); const r = seeded(21); c.strokeStyle = 'rgba(120, 110, 120, .5)'; c.lineWidth = .8; for (let k = 0; k < 14; k++) { c.beginPath(); let px = x - 10 + r() * (w + 20), py = y - 10; c.moveTo(px, py); for (let j = 0; j < 8; j++) { px += r() * 30 - 15; py += (h + 20) / 8; c.lineTo(px, py); } c.stroke(); } c.restore(); c.strokeStyle = '#c8c0b4'; c.lineWidth = 1; rr(c, x - 7, y - 7, w + 14, h + 14, 16); c.stroke(); }],
+  ['Bamboo Frame', (c, x, y, w, h) => { const stalk = (x0, y0, x1, y1) => { const horiz = y0 === y1, len = horiz ? x1 - x0 : y1 - y0; const g = horiz ? c.createLinearGradient(0, y0 - 5, 0, y0 + 5) : c.createLinearGradient(x0 - 5, 0, x0 + 5, 0); g.addColorStop(0, '#c8b060'); g.addColorStop(.5, '#e8d488'); g.addColorStop(1, '#8a7430'); c.fillStyle = g; if (horiz) c.fillRect(x0, y0 - 5, len, 10); else c.fillRect(x0 - 5, y0, 10, len); c.fillStyle = '#6a5420'; for (let k = 30; k < len - 10; k += 46) { if (horiz) c.fillRect(x0 + k, y0 - 5, 2, 10); else c.fillRect(x0 - 5, y0 + k, 10, 2); } }; stalk(x - 8, y, x + w + 8, y); stalk(x - 8, y + h, x + w + 8, y + h); stalk(x, y - 8, x, y + h + 8); stalk(x + w, y - 8, x + w, y + h + 8); c.strokeStyle = '#5a3a1a'; c.lineWidth = 2; corners(x, y, w, h).forEach(([cx, cy]) => { c.beginPath(); c.moveTo(cx - 6, cy - 6); c.lineTo(cx + 6, cy + 6); c.moveTo(cx + 6, cy - 6); c.lineTo(cx - 6, cy + 6); c.stroke(); }); }]
+];
+const BASIC_FRAMES = [
+  ['Slate Frame', (c, x, y, w, h) => { c.strokeStyle = '#6e7480'; c.lineWidth = 2; rr(c, x, y, w, h, 12); c.stroke(); }],
+  ['Oak Frame', (c, x, y, w, h) => { c.strokeStyle = '#8a6a44'; c.lineWidth = 6; rr(c, x, y, w, h, 10); c.stroke(); c.strokeStyle = 'rgba(40, 24, 10, .5)'; c.lineWidth = 1; rr(c, x - 2, y - 2, w + 4, h + 4, 12); c.stroke(); }],
+  ['Paper Frame', (c, x, y, w, h) => { c.strokeStyle = '#e8e0cc'; c.lineWidth = 3; c.setLineDash([10, 5]); rr(c, x, y, w, h, 12); c.stroke(); c.setLineDash([]); }]
+];
+REFINED_FRAMES.forEach(([n, d]) => frameCard('rFrames', n, 'Frame · Refined', d));
+BASIC_FRAMES.forEach(([n, d]) => frameCard('bFrames', n, 'Frame · Basic', d));
+</script>
+</body>
+</html>
