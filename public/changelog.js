@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.4.0',
+      date: '2026-10-09',
+      notable: [
+        'Challenge & Pass is split into two tabs: "Challenge" (your rank, LP and graph) and "Pass & Quests".',
+        'Pass coins now grow with the tier: 50 coins on tiers 1-10, 100 on 11-20 and 150 on 21-30.'
+      ],
+      refinements: 3,
+      bugfixes: 0
+    },
+    {
       version: '5.3.1',
       date: '2026-10-09',
       notable: [],

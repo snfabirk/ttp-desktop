@@ -1,5 +1,15 @@
 # Internal Changelog
 
+## 5.4.0 — 2026-10-09
+
+- challenge.html: tabs "Challenge" (account card + LP graph) / "Pass &
+  Quests" (quests, XP, pass); last tab remembered in localStorage
+  (`ttp_challenge_tab`). Level row removed (lives on the profile).
+- Recent XP + LP Bank merged into one "XP" card.
+- Pass bar now shows XP inside the current tier (tier count is visible in
+  the grid); full when the pass is complete.
+- `coinsForTier`: 50 (1-10) / 100 (11-20) / 150 (21-30), same 2,400 total.
+
 ## 5.3.1 — 2026-10-09
 
 - Overview: profile card stays full width, Challenge & Pass / Trophies /

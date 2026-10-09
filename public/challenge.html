@@ -317,6 +317,55 @@
       color: var(--text-faint);
     }
 
+    /* Tabs (Nutzerwunsch: Seite war ueberladen) - "Challenge" = Account-Karte,
+       "Pass & Quests" = Quests, XP, Pass. Gemerkter Tab nur als Komfort. */
+    .page-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 0 0 14px;
+    }
+    .page-tab {
+      padding: 6px 18px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: transparent;
+      color: var(--text-dim);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    }
+    .page-tab:hover { border-color: var(--border-hover); color: var(--text); }
+    .page-tab.active {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: color-mix(in srgb, var(--gold) 12%, transparent);
+    }
+    .tab-panel[hidden] { display: none; }
+    .sub-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+      color: var(--text-dim);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.5px;
+    }
+    .sub-head .reset-in {
+      color: var(--text-faint);
+      font-family: Georgia, serif;
+      font-size: 0.75rem;
+      font-style: italic;
+      letter-spacing: 0;
+    }
+    .sub-head-gap {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+    }
     .progression-grid {
       display: grid;
       grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
@@ -794,6 +843,11 @@
 
   <div class="content">
     <h2 class="panel-heading profile-heading">Challenge &amp; Pass</h2>
+    <div class="page-tabs" role="tablist">
+      <button type="button" class="page-tab" role="tab" data-tab="challenge">Challenge</button>
+      <button type="button" class="page-tab" role="tab" data-tab="pass">Pass &amp; Quests</button>
+    </div>
+    <div class="tab-panel" data-panel="challenge">
     <div class="account-overview-wrap">
       <div class="account-overview-card" id="accountOverviewCard">
         <div class="account-overview-header">
@@ -803,16 +857,6 @@
           <div class="account-overview-titles">
             <span class="account-overview-name" id="accountOverviewName">No summoner loaded yet</span>
             <span class="info-icon" id="accountOverviewNoteIcon" tabindex="0" hidden>ⓘ</span>
-          </div>
-        </div>
-        <div class="level-row" title="Profile level - keeps growing across all challenges">
-          <div class="level-badge"><small>Level</small><strong id="profileLevel">1</strong></div>
-          <div class="level-bar-wrap">
-            <div class="xp-bar"><div class="xp-bar-fill" id="profileXpFill"></div></div>
-            <div class="level-bar-text">
-              <span id="profileXpText">0 / 2,000 XP</span>
-              <span class="xp-next" id="profileXpNext">2,000 XP to Level 2</span>
-            </div>
           </div>
         </div>
         <div class="account-overview-stats">
@@ -845,7 +889,9 @@
       </div>
       <p class="profile-status" id="profileStatus"></p>
     </div>
+    </div>
 
+    <div class="tab-panel" data-panel="pass">
     <div class="progression-grid">
       <div>
         <div class="prog-card">
@@ -867,16 +913,13 @@
       <div>
         <div class="prog-card">
           <div class="prog-card-head">
-            <h3>Recent XP</h3>
+            <h3>XP</h3>
             <span class="hint xp-help" tabindex="0">How to earn XP <span class="info-icon">?</span>
               <span class="hint-pop xp-help-pop"><table class="xp-sources" id="xpSources"></table></span>
             </span>
           </div>
-          <div class="recent-xp" id="recentXp"></div>
-        </div>
-        <div class="prog-card">
-          <div class="prog-card-head">
-            <h3>LP Bank <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Every LP you gain goes into the bank, LP losses are ignored. When it hits 100 you get XP and it starts over - extra LP carry over.</span></span></h3>
+          <div class="sub-head">
+            <span>LP Bank <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Every LP you gain goes into the bank, LP losses are ignored. When it hits 100 you get XP and it starts over - extra LP carry over.</span></span></span>
             <span class="reset-in" id="lpBankFills"></span>
           </div>
           <div class="xp-bar lp-bank-bar"><div class="xp-bar-fill" id="lpBankFill"></div></div>
@@ -884,6 +927,8 @@
             <span id="lpBankText">0 / 100 LP</span>
             <span id="lpBankReward">+1,000 XP when full</span>
           </div>
+          <div class="sub-head sub-head-gap"><span>Recent games</span></div>
+          <div class="recent-xp" id="recentXp"></div>
         </div>
         <div class="prog-card pass-card">
           <div class="prog-card-head">
@@ -900,6 +945,7 @@
           <div class="pass-overflow" id="passOverflow"></div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 
@@ -1380,6 +1426,18 @@
     }
     loadProfile();
 
+    // Tabs
+    const TAB_KEY = 'ttp_challenge_tab';
+    function showTab(name) {
+      document.querySelectorAll('.page-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+      document.querySelectorAll('.tab-panel').forEach(p => { p.hidden = p.dataset.panel !== name; });
+      try { localStorage.setItem(TAB_KEY, name); } catch (e) {}
+    }
+    document.querySelectorAll('.page-tab').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+    let initialTab = 'challenge';
+    try { if (localStorage.getItem(TAB_KEY) === 'pass') initialTab = 'pass'; } catch (e) {}
+    showTab(initialTab);
+
     // ===== XP / Level / Quests / Challenge Pass (v5.0.0, provisorisch) =====
     const fmtNum = n => Number(n).toLocaleString('en-US');
 
@@ -1448,7 +1506,9 @@
       document.getElementById('passXpText').textContent = pass.tier >= pass.tiers
         ? 'Pass complete'
         : `${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP`;
-      document.getElementById('passXpFill').style.width = `${(pass.tier / pass.tiers) * 100}%`;
+      document.getElementById('passXpFill').style.width = pass.tier >= pass.tiers
+        ? '100%'
+        : `${(pass.xpIntoTier / pass.xpPerTier) * 100}%`;
       let html = '';
       pass.rewards.forEach(r => {
         const t = r.tier;
@@ -1554,11 +1614,6 @@
         const data = await parseApiResponse(res);
         if (!res.ok) throw new Error(data.error || 'Unknown error');
 
-        const { level, xpIntoLevel, xpForNextLevel } = data.level;
-        document.getElementById('profileLevel').textContent = level;
-        document.getElementById('profileXpFill').style.width = `${(xpIntoLevel / xpForNextLevel) * 100}%`;
-        document.getElementById('profileXpText').textContent = `${fmtNum(xpIntoLevel)} / ${fmtNum(xpForNextLevel)} XP`;
-        document.getElementById('profileXpNext').textContent = `${fmtNum(xpForNextLevel - xpIntoLevel)} XP to Level ${level + 1}`;
 
         renderGamesToday(data.gamesToday, data.fullXpGamesPerDay);
         document.getElementById('dailyResetIn').textContent = `resets in ${timeUntil(data.dailyResetAt)}`;

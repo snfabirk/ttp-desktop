@@ -51,7 +51,12 @@ const PASS_XP_PER_TIER = 1500;
 // Cosmetics DIESES Monats (cosmetics.js), alle anderen Stufen = Coins. Nach
 // Stufe 30 gibt es endlos weiter Coins, aber jede 30+-Stufe kostet mehr XP,
 // damit der Coin-Grind langsamer ist als der Pass selbst.
-const COINS_PER_TIER = 100;
+// Coins steigen leicht mit der Stufe (Nutzerwunsch: spaeter auch coin-
+// technisch lohnender) - 1-10: 50, 11-20: 100, 21-30: 150, in Summe wie
+// vorher 2.400 pro Pass.
+function coinsForTier(tier) {
+  return tier <= 10 ? 50 : tier <= 20 ? 100 : 150;
+}
 const FALLBACK_COSMETIC_COINS = 300; // Monat ohne angelegte Cosmetics
 const OVERFLOW_XP_PER_STEP = 2500;
 const COINS_PER_OVERFLOW_STEP = 100;
@@ -201,7 +206,7 @@ function tierReward(month, tier) {
     if (cosmetic) return { type: 'cosmetic', id: cosmetic.id, name: cosmetic.name, cosmeticType: cosmetic.type };
     return { type: 'coins', amount: FALLBACK_COSMETIC_COINS };
   }
-  return { type: 'coins', amount: COINS_PER_TIER };
+  return { type: 'coins', amount: coinsForTier(tier) };
 }
 
 // Vergibt alle Belohnungen bis zur aktuell erreichten Stufe, die in diesem
