@@ -4,18 +4,21 @@
 // markiert die aktive Seite. Unterseiten (Trophies, Roles & Picks, Champion) gehoeren
 // zur Challenge.
 (function () {
+  // Hauptseiten (Nutzerwunsch 2026-10-09): Overview ist die Startseite und
+  // immer hervorgehoben, Shop folgt noch. Setup ist KEIN Leisten-Eintrag
+  // mehr, sondern ein eigener Text-Knopf oben rechts neben den Patch Notes.
   const ITEMS = [
-    { href: 'index.html', label: 'Setup', title: 'Start or change your challenge' },
-    { href: 'overview.html', label: 'Overview' },
-    { href: 'challenge.html', label: 'Challenge', also: ['trophies.html', 'role.html', 'champion.html'] },
+    { href: 'overview.html', label: 'Overview', home: true, title: 'Home' },
+    { href: 'profile.html', label: 'Profile' },
+    { href: 'challenge.html', label: 'Challenge', also: ['role.html', 'champion.html'] },
     { href: 'challenge.html?view=pass', label: 'Pass' },
-    { href: 'profile.html', label: 'Profile' }
+    { href: 'trophies.html', label: 'Trophies' },
+    { label: 'Shop', soon: true, title: 'Shop - coming soon' }
   ];
 
   // Unterseiten bekommen zusaetzlich einen Zurueck-Knopf zur uebergeordneten
   // Seite (Nutzerwunsch: fuehlt sich dort intuitiver an als nur die Leiste).
   const PARENTS = {
-    'trophies.html': { href: 'challenge.html', label: 'Challenge' },
     'role.html': { href: 'challenge.html', label: 'Challenge' },
     'champion.html': { href: 'challenge.html', label: 'Challenge' }
   };
@@ -24,6 +27,7 @@
   const isPass = file === 'challenge.html' && new URLSearchParams(location.search).get('view') === 'pass';
 
   function isActive(item) {
+    if (!item.href) return false;
     if (item.label === 'Pass') return isPass;
     if (item.label === 'Challenge') return (file === 'challenge.html' && !isPass) || item.also.includes(file);
     return item.href === file;
@@ -33,10 +37,44 @@
     const nav = document.createElement('nav');
     nav.className = 'top-nav';
     nav.setAttribute('aria-label', 'Main navigation');
-    nav.innerHTML = ITEMS.map(item =>
-      `<a href="${item.href}" class="top-nav-link${isActive(item) ? ' active' : ''}"${item.title ? ` title="${item.title}"` : ''}>${item.label}</a>`
-    ).join('');
+    nav.innerHTML = ITEMS.map(item => {
+      if (item.soon) return `<span class="top-nav-link soon" title="${item.title}" aria-disabled="true">${item.label}</span>`;
+      const cls = `top-nav-link${item.home ? ' home' : ''}${isActive(item) ? ' active' : ''}`;
+      return `<a href="${item.href}" class="${cls}"${item.title ? ` title="${item.title}"` : ''}>${item.home ? '<span class="home-ic" aria-hidden="true">⌂</span>' : ''}${item.label}</a>`;
+    }).join('');
     document.body.prepend(nav);
+
+    // Gleitender Hintergrund unter dem aktiven Eintrag (Nutzerwunsch: beim
+    // Klick nicht springen, sondern schnell rueber gleiten).
+    const pill = document.createElement('span');
+    pill.className = 'nav-pill';
+    nav.prepend(pill);
+    const placePill = el => {
+      if (!el) { pill.style.opacity = '0'; return; }
+      pill.style.opacity = '1';
+      pill.style.left = `${el.offsetLeft}px`;
+      pill.style.width = `${el.offsetWidth}px`;
+    };
+    const current = () => nav.querySelector('.top-nav-link.active');
+    placePill(current());
+    // Erst nach dem ersten Platzieren animieren; Schrift kann spaeter laden
+    // und die Breiten aendern.
+    requestAnimationFrame(() => requestAnimationFrame(() => nav.classList.add('pill-ready')));
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => placePill(current()));
+    window.addEventListener('resize', () => placePill(current()));
+    nav.slidePillTo = el => {
+      nav.querySelectorAll('.top-nav-link.active').forEach(a => a.classList.remove('active'));
+      el.classList.add('active');
+      placePill(el);
+    };
+
+    // Setup (Challenge starten/aendern) als eigener Knopf oben rechts.
+    const setup = document.createElement('a');
+    setup.href = 'index.html';
+    setup.className = `setup-btn${file === 'index.html' || file === '' ? ' active' : ''}`;
+    setup.textContent = 'Setup';
+    setup.title = 'Start or change your challenge';
+    document.body.appendChild(setup);
     const parent = PARENTS[file];
     if (parent) {
       const back = document.createElement('a');
@@ -70,5 +108,12 @@
       return;
     }
     navigating = true;
+    // Leisten-Eintrag: erst den Hintergrund hinueber gleiten lassen, dann wechseln.
+    const nav = a.closest('.top-nav');
+    if (nav && nav.slidePillTo && a.classList.contains('top-nav-link')) {
+      e.preventDefault();
+      nav.slidePillTo(a);
+      setTimeout(() => { location.href = a.href; }, 170);
+    }
   }, true);
 })();

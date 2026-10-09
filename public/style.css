@@ -620,7 +620,7 @@ html, body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
 }
 .top-nav-link {
-  padding: 5px 13px;
+  padding: 5px 11px;
   border-radius: 14px;
   color: var(--text-dim);
   font-family: 'Cinzel', Georgia, serif;
@@ -636,13 +636,39 @@ html, body {
 }
 .top-nav-link.active {
   color: var(--bg);
-  background: var(--gold);
+  background: transparent;
 }
-/* Schmales Fenster: Leiste nicht ueber den Seitentitel legen (bis ~1450px
+.top-nav-link {
+  position: relative;
+  z-index: 1;
+}
+/* Gleitender goldener Hintergrund des aktiven Eintrags (nav.js) */
+.nav-pill {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  width: 0;
+  border-radius: 14px;
+  background: var(--gold);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.top-nav.pill-ready .nav-pill {
+  transition: left 0.18s ease, width 0.18s ease, opacity 0.15s ease;
+}
+.top-nav.pill-ready .top-nav-link {
+  transition: color 0.18s ease, background 0.15s ease;
+}
+.top-nav-link.active:hover { background: transparent; }
+/* Schmales Fenster: Leiste nicht ueber den Seitentitel legen (bis ~1620px
    wuerde sie den mittigen Titel beruehren). */
-@media (max-width: 1460px) {
+@media (max-width: 1640px) {
   .top-nav {
-    position: static;
+    position: relative;
+    top: auto;
+    left: auto;
     align-self: center;
     margin: 14px auto 0;
     width: fit-content;
@@ -671,7 +697,7 @@ html, body {
   transition: color 0.15s ease, border-color 0.15s ease;
 }
 .sub-back:hover { color: var(--gold); border-color: var(--gold); }
-@media (max-width: 1460px) {
+@media (max-width: 1640px) {
   .sub-back {
     position: static;
     align-self: center;
@@ -684,3 +710,46 @@ html, body {
 .top-nav-link.active {
   cursor: default;
 }
+
+/* Overview = Startseite: immer leicht hervorgehoben (Haus-Symbol + Rand),
+   auch wenn man gerade woanders ist. */
+.top-nav-link.home {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 55%, transparent);
+  color: var(--gold);
+}
+.top-nav-link.home.active { box-shadow: none; color: var(--bg); }
+.top-nav-link .home-ic { margin-right: 5px; font-size: 0.9rem; line-height: 1; }
+/* Noch nicht verfuegbar (Shop) */
+.top-nav-link.soon {
+  opacity: 0.45;
+  cursor: default;
+}
+.top-nav-link.soon:hover { background: none; color: var(--text-dim); }
+
+/* Setup-Knopf oben rechts, links neben den Patch Notes (changelog-btn sitzt
+   bei right:144px, 34px breit). */
+.setup-btn {
+  position: fixed;
+  top: 18px;
+  right: 188px;
+  z-index: 50;
+  height: 34px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(10px) saturate(1.15);
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  color: var(--text-dim);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  transition: color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+.setup-btn:hover { color: var(--gold); border-color: var(--gold); transform: translateY(-1px); }
+.setup-btn.active { color: var(--bg); background: var(--gold); border-color: var(--gold); cursor: default; transform: none; }

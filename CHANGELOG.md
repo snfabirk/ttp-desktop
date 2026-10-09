@@ -1,5 +1,18 @@
 # Internal Changelog
 
+## 5.8.0 — 2026-10-09
+
+- Nav items now Overview (home: icon + gold ring always) / Profile /
+  Challenge / Pass / Trophies / Shop (disabled "soon"). Setup is a separate
+  `.setup-btn` text pill top-right (right:188px, left of the changelog
+  button). Trophies is top-level (no back link anymore); role/champion keep
+  "← Challenge".
+- Sliding `.nav-pill` behind the active item: on a nav click the pill
+  animates (0.18s) to the target, navigation follows after 170ms; placed
+  without animation on load, re-placed on fonts.ready/resize.
+- Nav links more compact (padding 11px), static breakpoint raised to
+  1640px (overlap with the title measured up to ~1560px).
+
 ## 5.7.2 — 2026-10-09
 
 - nav.js global click guard (capture phase): links to the current page do

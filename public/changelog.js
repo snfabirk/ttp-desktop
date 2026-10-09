@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.8.0',
+      date: '2026-10-09',
+      notable: [
+        'New top bar: Overview (your home, always highlighted), Profile, Challenge, Pass, Trophies and Shop (coming soon). Setup moved to its own button at the top right.',
+        'Switching tabs now slides smoothly, and clicking a link several times no longer reloads the page several times.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.7.2',
       date: '2026-10-09',
       notable: [],
