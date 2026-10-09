@@ -1,5 +1,21 @@
 # Internal Changelog
 
+## 5.13.0 — 2026-10-09
+
+- Provisional shop (`public/shop.html`, nav "Shop" now live): daily 3 offers
+  (rotate with the quest day, 06:00) + weekly 2 shop-exclusive highlights
+  (Monday 06:00), seeded per day/week from placeholder pools in
+  progression.js; items not purchasable yet, prices are placeholders.
+- Lucky Wheel: small SVG wheel, click -> zooms to the screen centre (overlay),
+  one free spin per quest day (server-side `wheel.lastSpinDay`, second spin
+  -> 400), placeholder coin segments/weights; result credited to coins.
+- PRIVATE (user's own easter egg, never mention in-app): 13 clicks in the
+  invisible bottom-left corner of the shop (cursor stays default) toggles a
+  plain bright yellow wheel (localStorage `ttp_wheel_sep`) - homage to the
+  user's SEP uni project.
+- Pass coins per tier: 80 (1-10) / 100 (11-20) / 120 (21-30), total 2,400
+  unchanged; already claimed tiers keep what they paid.
+
 ## 5.12.1 — 2026-10-09
 
 - Profile identity widget (row sizes): CSS grid, picture always centered in

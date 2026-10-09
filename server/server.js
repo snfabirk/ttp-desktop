@@ -745,6 +745,15 @@ app.get('/api/profile-stats', (req, res) => {
 });
 
 // Cosmetics ausruesten (nur eigene) - id null = ablegen.
+// Shop (v5.13.0, provisorisch): rotierende Angebote + taegliches Gluecksrad
+app.get('/api/shop', (req, res) => {
+  res.json(progression.getShopState());
+});
+app.post('/api/shop/spin', (req, res) => {
+  const result = progression.spinWheel();
+  res.status(result.ok ? 200 : 400).json(result);
+});
+
 app.post('/api/cosmetics/equip', (req, res) => {
   const { type, id } = req.body || {};
   if (!type) return res.status(400).json({ error: 'type is required.' });

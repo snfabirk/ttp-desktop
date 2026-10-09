@@ -13,7 +13,7 @@
     { href: 'challenge.html', label: 'Challenge', also: ['role.html', 'champion.html'] },
     { href: 'challenge.html?view=pass', label: 'Pass' },
     { href: 'trophies.html', label: 'Trophies' },
-    { label: 'Shop', soon: true, title: 'Shop - coming soon' }
+    { href: 'shop.html', label: 'Shop' }
   ];
 
   // Unterseiten bekommen zusaetzlich einen Zurueck-Knopf zur uebergeordneten

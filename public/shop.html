@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Shop – Three-Trick-Pony</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Spiegel:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="cosmetics.css">
+<script src="theme.js"></script>
+<script src="nav.js"></script>
+<script src="update-indicator.js"></script>
+<script src="changelog.js"></script>
+<style>
+  /* Shop (v5.13.0, provisorisch): rotierende Angebote (taeglich 3, woechentlich
+     2 Highlights) + kleines Gluecksrad (einmal pro Tag gratis). Artikel und
+     Preise sind Platzhalter - noch nichts kaufbar. */
+  body { display: flex; flex-direction: column; align-items: center; }
+  .site-header { text-align: center; padding: 30px 30px 0; }
+  .panel-heading.centered { color: var(--gold); text-align: center; margin: 14px 0 0; }
+  .shop {
+    width: 100%;
+    max-width: 1180px;
+    box-sizing: border-box;
+    padding: 0 30px;
+    margin: 18px 0 30px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 24px;
+    align-items: start;
+  }
+  .shop-card {
+    background: var(--panel-bg);
+    backdrop-filter: blur(12px) saturate(1.1);
+    -webkit-backdrop-filter: blur(12px) saturate(1.1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px 18px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+  }
+  .shop-card + .shop-card { margin-top: 18px; }
+  .sc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .sc-head h3 { margin: 0; color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-size: 1.05rem; letter-spacing: 1px; }
+  .sc-reset { color: var(--text-faint); font-style: italic; font-size: 0.8rem; }
+  .coin-balance {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 12px; border: 1px solid var(--border); border-radius: 14px;
+    color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-size: 0.95rem;
+  }
+  .offers { display: grid; gap: 14px; }
+  .offers.weekly { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .offers.daily { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .offer {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 16px 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--input-bg) 55%, transparent);
+    text-align: center;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .offer:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+  .weekly .offer { padding: 22px 14px 16px; }
+  .offer-tag {
+    position: absolute; top: 8px; left: 8px;
+    padding: 1px 7px; border-radius: 8px;
+    font-size: 0.62rem; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--text-faint); border: 1px solid var(--border);
+  }
+  .offer-tag.excl { color: var(--gold); border-color: var(--gold); }
+  .offer-name { font-family: 'Cinzel', Georgia, serif; color: var(--text); font-size: 0.95rem; letter-spacing: 0.5px; }
+  .offer-type { color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
+  .offer-buy {
+    margin-top: 4px;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 14px; border-radius: 14px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text-faint); font-family: inherit; font-size: 0.85rem;
+    cursor: not-allowed;
+  }
+  .offer-buy b { color: var(--gold); font-weight: normal; }
+  .offer-soon { font-size: 0.68rem; color: var(--text-faint); letter-spacing: 1px; text-transform: uppercase; }
+  /* Vorschauen der Platzhalter-Artikel */
+  .pv { flex-shrink: 0; }
+  .pv-border { width: 64px; height: 64px; border-radius: 50%; background: conic-gradient(var(--a), var(--b), var(--a), var(--b), var(--a)); padding: 5px; box-sizing: border-box; }
+  .pv-border::after { content: ''; display: block; width: 100%; height: 100%; border-radius: 50%; background: var(--input-bg); }
+  .pv-frame { width: 82px; height: 60px; border-radius: 8px; border: 3px solid var(--a); box-shadow: inset 0 0 0 2px var(--b), 0 0 10px color-mix(in srgb, var(--a) 40%, transparent); background: color-mix(in srgb, var(--b) 60%, transparent); box-sizing: border-box; }
+  .pv-theme { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--b) 0 55%, var(--a) 55% 100%); border: 1px solid var(--a); box-sizing: border-box; }
+  .weekly .pv-border, .weekly .pv-theme { width: 84px; height: 84px; }
+  .weekly .pv-frame { width: 108px; height: 78px; }
+  .pv.fancy, .pv.animated { box-shadow: 0 0 16px color-mix(in srgb, var(--a) 55%, transparent); }
+
+  /* ----- Gluecksrad ----- */
+  .wheel-card { text-align: center; }
+  .wheel-small { width: 200px; height: 200px; margin: 4px auto 10px; cursor: pointer; transition: transform 0.15s ease; }
+  .wheel-small:hover { transform: scale(1.03); }
+  .wheel-status { color: var(--text-dim); font-size: 0.85rem; min-height: 1.3em; }
+  .wheel-status.free { color: var(--gold); }
+  .wheel-svg { width: 100%; height: 100%; overflow: visible; display: block; }
+  .wheel-svg .seg { stroke: color-mix(in srgb, var(--bg) 70%, black); stroke-width: 1.5; }
+  .wheel-svg .seg.a { fill: var(--gold); }
+  .wheel-svg .seg.b { fill: color-mix(in srgb, var(--gold) 35%, var(--bg)); }
+  .wheel-svg .lbl { font-family: 'Cinzel', Georgia, serif; font-size: 13px; text-anchor: middle; dominant-baseline: middle; }
+  .wheel-svg .lbl.a { fill: var(--bg); }
+  .wheel-svg .lbl.b { fill: var(--text); }
+  .wheel-svg .rim { fill: none; stroke: var(--gold); stroke-width: 4; }
+  .wheel-svg .hub { fill: var(--bg); stroke: var(--gold); stroke-width: 3; }
+  .wheel-svg .pointer { fill: var(--text); stroke: var(--bg); stroke-width: 1.5; }
+  /* (privat) */
+  .wheel-svg.sep .seg, .wheel-svg.sep .hub { fill: #ffeb00; stroke: #ffeb00; }
+  .wheel-svg.sep .rim { stroke: #ffeb00; }
+  .wheel-svg.sep .lbl { fill: #1a1a00; }
+
+  /* Gross-Ansicht: Rad zoomt in die Bildschirmmitte */
+  .wheel-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0px);
+    transition: background 0.35s ease, backdrop-filter 0.35s ease;
+  }
+  .wheel-overlay.open { background: rgba(0, 0, 0, 0.62); backdrop-filter: blur(3px); }
+  .wheel-big {
+    position: fixed; z-index: 501;
+    transition: left 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .wheel-big .wheel-rot { width: 100%; height: 100%; }
+  .wheel-big-ui {
+    position: fixed; left: 50%; z-index: 502; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    opacity: 0; transition: opacity 0.25s ease 0.25s;
+    pointer-events: none;
+  }
+  .wheel-big-ui.show { opacity: 1; pointer-events: auto; }
+  .spin-btn {
+    padding: 9px 30px; border-radius: 20px;
+    border: 1px solid var(--gold); background: var(--gold); color: var(--bg);
+    font-family: 'Cinzel', Georgia, serif; font-size: 1rem; letter-spacing: 1px; cursor: pointer;
+  }
+  .spin-btn:disabled { background: transparent; color: var(--text-faint); border-color: var(--border); cursor: default; }
+  .spin-result { font-family: 'Cinzel', Georgia, serif; color: var(--gold); font-size: 1.3rem; min-height: 1.6em; text-shadow: 0 0 14px color-mix(in srgb, var(--gold) 50%, transparent); }
+  .spin-hint { color: var(--text-faint); font-size: 0.78rem; }
+
+  .shop-note { color: var(--text-faint); font-size: 0.78rem; text-align: center; margin-top: 12px; font-style: italic; }
+  /* (privat) - unsichtbar, Mauszeiger bleibt normal */
+  .corner-spot { position: fixed; left: 0; bottom: 0; width: 64px; height: 64px; z-index: 50; cursor: default; background: transparent; }
+
+  @media (max-width: 1000px) {
+    .shop { grid-template-columns: minmax(0, 1fr); }
+    .offers.daily { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>
+</head>
+<body>
+  <button type="button" class="settings-gear-btn" id="settingsGearBtn" title="Settings" aria-label="Settings">⚙</button>
+  <button type="button" class="quit-btn" id="quitBtn" title="Quit completely" aria-label="Quit completely">⏻</button>
+  <header class="site-header">
+    <h1>League of Legends</h1>
+    <p class="subtitle">Three-Trick-Pony</p>
+    <h2 class="panel-heading centered">Shop</h2>
+  </header>
+
+  <div class="shop">
+    <div>
+      <section class="shop-card">
+        <div class="sc-head"><h3>Weekly Highlights</h3><span class="sc-reset" id="weeklyReset"></span></div>
+        <div class="offers weekly" id="weeklyOffers"></div>
+      </section>
+      <section class="shop-card">
+        <div class="sc-head"><h3>Daily Offers</h3><span class="sc-reset" id="dailyReset"></span></div>
+        <div class="offers daily" id="dailyOffers"></div>
+      </section>
+      <p class="shop-note">Preview - the shop opens soon. Items and prices are placeholders.</p>
+    </div>
+    <aside>
+      <section class="shop-card wheel-card">
+        <div class="sc-head"><h3>Lucky Wheel</h3><span class="coin-balance" id="coinBalance">🪙 –</span></div>
+        <div class="wheel-small" id="wheelSmall" title="Open the wheel"></div>
+        <div class="wheel-status" id="wheelStatus"></div>
+      </section>
+    </aside>
+  </div>
+  <div class="corner-spot" id="cornerSpot" aria-hidden="true"></div>
+
+  <script>
+    const fmtNum = n => Number(n || 0).toLocaleString('en-US');
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const TYPE_LABEL = { border: 'Border', frame: 'Profile frame', theme: 'Theme' };
+    let shop = null;
+
+    function until(iso) {
+      const ms = Math.max(0, new Date(iso) - Date.now());
+      const d = Math.floor(ms / 86400000), h = Math.floor(ms / 3600000) % 24, m = Math.floor(ms / 60000) % 60;
+      return d ? `${d}d ${h}h` : `${h}h ${m}m`;
+    }
+
+    function offerHtml(o, weekly) {
+      const kind = o.type === 'theme' ? 'pv-theme' : o.type === 'frame' ? 'pv-frame' : 'pv-border';
+      const extra = o.animated ? ' · animated' : o.fancy ? ' · fancy' : '';
+      return `<div class="offer">
+        <span class="offer-tag${weekly ? ' excl' : ''}">${weekly ? 'Shop exclusive' : 'Daily'}</span>
+        <span class="pv ${kind}${o.fancy ? ' fancy' : ''}${o.animated ? ' animated' : ''}" style="--a:${o.c[1]};--b:${o.c[0]}"></span>
+        <span class="offer-name">${esc(o.name)}</span>
+        <span class="offer-type">${TYPE_LABEL[o.type] || o.type}${extra}</span>
+        <button type="button" class="offer-buy" disabled>🪙 <b>${fmtNum(o.price)}</b></button>
+        <span class="offer-soon">Coming soon</span>
+      </div>`;
+    }
+
+    // ----- Gluecksrad (SVG) -----
+    function wheelSvg(segments) {
+      const n = segments.length, R = 100, cx = 110, cy = 110;
+      const pt = (a, r) => [cx + Math.sin(a) * r, cy - Math.cos(a) * r];
+      let segs = '';
+      segments.forEach((s, i) => {
+        const a0 = i / n * Math.PI * 2, a1 = (i + 1) / n * Math.PI * 2, am = (a0 + a1) / 2;
+        const [x0, y0] = pt(a0, R), [x1, y1] = pt(a1, R), [lx, ly] = pt(am, R * 0.68);
+        const k = i % 2 ? 'b' : 'a';
+        segs += `<path class="seg ${k}" d="M${cx} ${cy} L${x0.toFixed(2)} ${y0.toFixed(2)} A${R} ${R} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z"/>` +
+          `<text class="lbl ${k}" x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" transform="rotate(${(am * 180 / Math.PI).toFixed(1)} ${lx.toFixed(2)} ${ly.toFixed(2)})">${esc(s.label)}</text>`;
+      });
+      return `<svg class="wheel-svg${sepOn() ? ' sep' : ''}" viewBox="0 0 220 230">
+        <g class="wheel-rot" style="transform-origin:110px 110px">${segs}<circle class="rim" cx="110" cy="110" r="${R}"/></g>
+        <circle class="hub" cx="110" cy="110" r="14"/>
+        <path class="pointer" d="M110 22 L101 2 L119 2 Z"/>
+      </svg>`;
+    }
+
+    function renderWheelSmall() {
+      document.getElementById('wheelSmall').innerHTML = wheelSvg(shop.wheel.segments);
+      const st = document.getElementById('wheelStatus');
+      st.className = 'wheel-status' + (shop.wheel.canSpin ? ' free' : '');
+      st.textContent = shop.wheel.canSpin ? 'Free spin available!' : `Next free spin in ${until(shop.wheel.nextSpinAt)}`;
+    }
+
+    function render() {
+      document.getElementById('coinBalance').textContent = `🪙 ${fmtNum(shop.coins)}`;
+      document.getElementById('weeklyOffers').innerHTML = shop.weekly.map(o => offerHtml(o, true)).join('');
+      document.getElementById('dailyOffers').innerHTML = shop.daily.map(o => offerHtml(o, false)).join('');
+      document.getElementById('weeklyReset').textContent = `new in ${until(shop.weeklyResetAt)}`;
+      document.getElementById('dailyReset').textContent = `new in ${until(shop.dailyResetAt)}`;
+      renderWheelSmall();
+    }
+
+    async function load() {
+      try {
+        const res = await fetch('/api/shop');
+        shop = await res.json();
+        render();
+      } catch (e) {
+        document.getElementById('wheelStatus').textContent = 'Shop could not be loaded.';
+      }
+    }
+
+    // ----- Gross-Ansicht: Klick aufs Rad -> zoomt in die Mitte, dort drehen -----
+    let big = null;
+    let rotation = 0;
+    let spinning = false;
+
+    function bigRect() {
+      const s = Math.min(innerWidth, innerHeight) * 0.62;
+      return { left: (innerWidth - s) / 2, top: (innerHeight - s) / 2 - 40, width: s, height: s };
+    }
+    const place = (el, r) => Object.assign(el.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+
+    function openWheel() {
+      if (big || !shop) return;
+      const small = document.getElementById('wheelSmall');
+      const from = small.getBoundingClientRect();
+      const overlay = document.createElement('div');
+      overlay.className = 'wheel-overlay';
+      const wheel = document.createElement('div');
+      wheel.className = 'wheel-big';
+      wheel.innerHTML = wheelSvg(shop.wheel.segments);
+      wheel.querySelector('.wheel-rot').style.transform = `rotate(${rotation}deg)`;
+      const ui = document.createElement('div');
+      ui.className = 'wheel-big-ui';
+      ui.innerHTML = `<div class="spin-result" id="spinResult"></div>
+        <button type="button" class="spin-btn" id="spinBtn"${shop.wheel.canSpin ? '' : ' disabled'}>${shop.wheel.canSpin ? 'Spin' : 'Spun today'}</button>
+        <div class="spin-hint">${shop.wheel.canSpin ? 'One free spin per day' : `Next free spin in ${until(shop.wheel.nextSpinAt)}`}</div>`;
+      document.body.append(overlay, wheel, ui);
+      place(wheel, from);
+      small.style.visibility = 'hidden';
+      big = { overlay, wheel, ui, small };
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        overlay.classList.add('open');
+        const to = bigRect();
+        place(wheel, to);
+        ui.style.top = `${to.top + to.height + 14}px`;
+        ui.classList.add('show');
+      }));
+      overlay.addEventListener('click', closeWheel);
+      ui.querySelector('#spinBtn').addEventListener('click', spin);
+    }
+
+    function closeWheel() {
+      if (!big || spinning) return;
+      const { overlay, wheel, ui, small } = big;
+      overlay.classList.remove('open');
+      ui.classList.remove('show');
+      place(wheel, small.getBoundingClientRect());
+      big = null;
+      setTimeout(() => {
+        overlay.remove(); wheel.remove(); ui.remove();
+        small.style.visibility = '';
+        renderWheelSmall();
+      }, 460);
+    }
+
+    async function spin() {
+      if (!big || spinning || !shop.wheel.canSpin) return;
+      spinning = true;
+      const btn = big.ui.querySelector('#spinBtn');
+      btn.disabled = true;
+      let result;
+      try {
+        const res = await fetch('/api/shop/spin', { method: 'POST' });
+        result = await res.json();
+      } catch (e) { result = { ok: false, error: 'Could not reach the app server.' }; }
+      if (!result.ok) {
+        big.ui.querySelector('#spinResult').textContent = result.error || 'Spin failed.';
+        spinning = false;
+        return;
+      }
+      // Ziel: Mitte des gewonnenen Felds unter den Zeiger (oben), 6 volle Runden
+      const n = shop.wheel.segments.length, segDeg = 360 / n;
+      const jitter = (Math.random() - 0.5) * segDeg * 0.6;
+      const target = 360 - (result.index * segDeg + segDeg / 2) + jitter;
+      rotation = rotation - (rotation % 360) + 360 * 6 + target;
+      const rot = big.wheel.querySelector('.wheel-rot');
+      rot.style.transition = 'transform 4.6s cubic-bezier(0.12, 0.7, 0.12, 1)';
+      rot.style.transform = `rotate(${rotation}deg)`;
+      setTimeout(() => {
+        shop.coins = result.totalCoins;
+        shop.wheel.canSpin = false;
+        document.getElementById('coinBalance').textContent = `🪙 ${fmtNum(shop.coins)}`;
+        if (big) {
+          big.ui.querySelector('#spinResult').textContent = `+${fmtNum(result.coins)} coins`;
+          btn.textContent = 'Spun today';
+          big.ui.querySelector('.spin-hint').textContent = `Next free spin in ${until(shop.wheel.nextSpinAt)}`;
+        }
+        spinning = false;
+      }, 4700);
+    }
+
+    document.getElementById('wheelSmall').addEventListener('click', openWheel);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeWheel(); });
+    window.addEventListener('resize', () => { if (big) place(big.wheel, bigRect()); });
+
+    // (privat)
+    const SEP_KEY = 'ttp_wheel_sep';
+    function sepOn() { try { return localStorage.getItem(SEP_KEY) === '1'; } catch (e) { return false; } }
+    let cornerClicks = 0, cornerT = null;
+    document.getElementById('cornerSpot').addEventListener('click', () => {
+      cornerClicks++;
+      clearTimeout(cornerT);
+      cornerT = setTimeout(() => { cornerClicks = 0; }, 2500);
+      if (cornerClicks < 13) return;
+      cornerClicks = 0;
+      try { localStorage.setItem(SEP_KEY, sepOn() ? '0' : '1'); } catch (e) {}
+      document.querySelectorAll('.wheel-svg').forEach(s => s.classList.toggle('sep', sepOn()));
+    });
+
+    load();
+    setInterval(() => { if (shop && !big) render(); }, 60000);
+
+    document.getElementById('settingsGearBtn').addEventListener('click', () => {
+      if (window.ttpMain) window.ttpMain.openSettings();
+    });
+    document.getElementById('quitBtn').addEventListener('click', () => {
+      const ok = confirm('Quit Three-Trick-Pony completely? It will no longer run in the background (no more update checks or LP tracking until you start it again).');
+      if (window.ttpMain) window.ttpMain.restoreFocus();
+      if (!ok) return;
+      if (window.ttpMain) window.ttpMain.quitApp();
+    });
+  </script>
+</body>
+</html>

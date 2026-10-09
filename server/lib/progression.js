@@ -52,10 +52,10 @@ const PASS_XP_PER_TIER = 1500;
 // Stufe 30 gibt es endlos weiter Coins, aber jede 30+-Stufe kostet mehr XP,
 // damit der Coin-Grind langsamer ist als der Pass selbst.
 // Coins steigen leicht mit der Stufe (Nutzerwunsch: spaeter auch coin-
-// technisch lohnender) - 1-10: 50, 11-20: 100, 21-30: 150, in Summe wie
-// vorher 2.400 pro Pass.
+// technisch lohnender) - seit v5.13.0 1-10: 80, 11-20: 100, 21-30: 120,
+// in Summe weiterhin 2.400 pro Pass (24 Coin-Stufen).
 function coinsForTier(tier) {
-  return tier <= 10 ? 50 : tier <= 20 ? 100 : 150;
+  return tier <= 10 ? 80 : tier <= 20 ? 100 : 120;
 }
 const FALLBACK_COSMETIC_COINS = 300; // Monat ohne angelegte Cosmetics
 const OVERFLOW_XP_PER_STEP = 2500;
@@ -321,7 +321,9 @@ function emptyState() {
     profileLayout: null,
     // lastLP: zuletzt gesehener LP-Stand (vergleichbar ueber Tiers hinweg,
     // siehe rankHistory.toComparableLP), progress: 0-99 auf dem Konto.
-    lpBank: { puuid: null, lastLP: null, progress: 0, fills: 0, events: [] }
+    lpBank: { puuid: null, lastLP: null, progress: 0, fills: 0, events: [] },
+    // Gluecksrad im Shop: einmal pro Tag (Tageswechsel wie die Quests)
+    wheel: { lastSpinDay: null, spins: 0 }
   };
 }
 
@@ -503,6 +505,86 @@ function rerollDaily(context) {
   return { ok: true };
 }
 
+// ----- Shop (v5.13.0, PROVISORISCH) -----
+// Rotierende Angebote: taeglich 3 (Wechsel wie die Daily Quests, 06:00) und
+// woechentlich 2 Highlights (Montag 06:00). Die Artikel sind Platzhalter fuer
+// spaetere Shop-exklusive Cosmetics - noch nicht kaufbar. Preise sind
+// Platzhalter, die Preisstaffel nach Typ legt der Nutzer noch fest.
+const SHOP_DAILY_POOL = [
+  { id: 'shop-ember-ring', type: 'border', name: 'Ember Ring', price: 350, c: ['#ff7a18', '#5a1a08'] },
+  { id: 'shop-frost-rim', type: 'border', name: 'Frost Rim', price: 350, c: ['#9fd8ff', '#1c3a5a'] },
+  { id: 'shop-moonlit-ring', type: 'border', name: 'Moonlit Ring', price: 350, c: ['#e9dcc0', '#2a2440'] },
+  { id: 'shop-thorn-ring', type: 'border', name: 'Thorn Ring', price: 350, c: ['#6fbf73', '#1a2a14'] },
+  { id: 'shop-iron-frame', type: 'frame', name: 'Iron Frame', price: 400, c: ['#9a9aa3', '#202024'] },
+  { id: 'shop-ivy-frame', type: 'frame', name: 'Ivy Frame', price: 400, c: ['#4caf7d', '#10241a'] },
+  { id: 'shop-rune-frame', type: 'frame', name: 'Rune Frame', price: 400, c: ['#b088ff', '#1e1436'] },
+  { id: 'shop-gilded-frame', type: 'frame', name: 'Gilded Frame', price: 400, c: ['#c8aa6e', '#2a2010'] }
+];
+const SHOP_WEEKLY_POOL = [
+  { id: 'shop-starfall', type: 'theme', name: 'Starfall', price: 900, c: ['#0a0f2a', '#ffd86b'] },
+  { id: 'shop-sakura', type: 'theme', name: 'Sakura Garden', price: 1200, c: ['#2a0f1c', '#ff8fb1'], animated: true },
+  { id: 'shop-dragonfire', type: 'border', name: 'Dragonfire Ring', price: 800, c: ['#ff4d1a', '#3a0a04'], fancy: true },
+  { id: 'shop-void-rift', type: 'frame', name: 'Void Rift', price: 800, c: ['#7a3cff', '#0c0618'], fancy: true },
+  { id: 'shop-deep-sea', type: 'theme', name: 'Deep Sea', price: 900, c: ['#04161f', '#3fd0c9'] }
+];
+// Gluecksrad - Felder und Gewichte sind Platzhalter (Nutzer legt sie fest)
+const WHEEL_SEGMENTS = [
+  { label: '10', coins: 10, weight: 30 },
+  { label: '25', coins: 25, weight: 24 },
+  { label: '15', coins: 15, weight: 26 },
+  { label: '50', coins: 50, weight: 10 },
+  { label: '20', coins: 20, weight: 25 },
+  { label: '100', coins: 100, weight: 4 },
+  { label: '30', coins: 30, weight: 16 },
+  { label: '250', coins: 250, weight: 1 }
+];
+
+function weekKey(now) {
+  const d = nextWeeklyReset(now);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function pickRotation(pool, count, seed) {
+  const left = pool.slice();
+  const out = [];
+  for (let i = 0; i < count && left.length; i++) out.push(left.splice(seededIndex(`${seed}:${i}`, left.length), 1)[0]);
+  return out;
+}
+
+function getShopState() {
+  const now = new Date();
+  const state = readState();
+  const today = dayKey(now);
+  return {
+    provisional: true,
+    coins: state.coins,
+    daily: pickRotation(SHOP_DAILY_POOL, 3, `shop:${today}`),
+    weekly: pickRotation(SHOP_WEEKLY_POOL, 2, `shopw:${weekKey(now)}`),
+    dailyResetAt: nextDailyReset(now).toISOString(),
+    weeklyResetAt: nextWeeklyReset(now).toISOString(),
+    wheel: {
+      segments: WHEEL_SEGMENTS.map(s => ({ label: s.label, coins: s.coins })),
+      canSpin: state.wheel.lastSpinDay !== today,
+      nextSpinAt: nextDailyReset(now).toISOString()
+    }
+  };
+}
+
+function spinWheel() {
+  const state = readState();
+  const today = dayKey(new Date());
+  if (state.wheel.lastSpinDay === today) return { ok: false, error: 'Already spun today - come back tomorrow.' };
+  const total = WHEEL_SEGMENTS.reduce((a, s) => a + s.weight, 0);
+  let roll = Math.random() * total;
+  let index = 0;
+  while (roll >= WHEEL_SEGMENTS[index].weight) { roll -= WHEEL_SEGMENTS[index].weight; index++; }
+  const seg = WHEEL_SEGMENTS[index];
+  state.wheel = { lastSpinDay: today, spins: (state.wheel.spins || 0) + 1 };
+  state.coins += seg.coins;
+  writeState(state);
+  return { ok: true, index, coins: seg.coins, totalCoins: state.coins };
+}
+
 function getOverview(context) {
   const now = new Date();
   const state = readState();
@@ -548,5 +630,7 @@ module.exports = {
   equipCosmetic,
   saveProfileLayout,
   rerollDaily,
+  getShopState,
+  spinWheel,
   resetState
 };

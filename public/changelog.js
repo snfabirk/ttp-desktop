@@ -25,6 +25,17 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.13.0',
+      date: '2026-10-09',
+      notable: [
+        'Shop preview: rotating daily offers and weekly highlights (not for sale yet).',
+        'Lucky Wheel: one free spin per day for coins - click the wheel to open it.',
+        'Pass coin rewards rebalanced: tiers 1-10 now give 80, 11-20 give 100, 21-30 give 120 (still 2,400 per pass).'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.12.1',
       date: '2026-10-09',
       notable: [],
