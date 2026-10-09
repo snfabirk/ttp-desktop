@@ -403,6 +403,9 @@
       margin-bottom: 14px;
     }
     .pony-card {
+      display: block;
+      text-decoration: none;
+      transition: border-color 0.15s ease, transform 0.15s ease;
       position: relative;
       min-height: 118px;
       border: 1px solid var(--border);
@@ -412,6 +415,7 @@
       background-position: center 20%;
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
     }
+    .pony-card:hover { border-color: var(--gold); transform: translateY(-2px); }
     .pony-card::before {
       content: '';
       position: absolute;
@@ -1560,7 +1564,7 @@
         const st = (byChampion && byChampion[c.key]) || {};
         const games = (st.wins || 0) + (st.losses || 0);
         const wr = games ? Math.round((st.wins / games) * 100) : null;
-        return `<div class="pony-card" style="background-image:url('https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${c.id}_0.jpg')">
+        return `<a class="pony-card" href="champion.html?champ=${encodeURIComponent(c.id)}" title="Open ${c.name}: record, matchups, last games" style="background-image:url('https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${c.id}_0.jpg')">
           <div class="pony-body">
             <div class="pony-name">${c.name}</div>
             <div class="pony-wl">${games
@@ -1572,7 +1576,7 @@
               <span><strong>${st.laneWinrate !== null && st.laneWinrate !== undefined ? `${Math.round(st.laneWinrate)}%` : '–'}</strong>Lane WR</span>
             </div>
           </div>
-        </div>`;
+        </a>`;
       }).join('');
     }
 

@@ -177,6 +177,19 @@ async function getSummonerByPuuid(puuid, apiKey, platformHost) {
   return riotFetch(url, apiKey, { priority: true });
 }
 
+// Laufendes Spiel (Spectator-V5, Platform-Host). Riot antwortet mit 404, wenn
+// der Spieler gerade in keinem Spiel ist - das ist der Normalfall, kein Fehler.
+// Champion-Auswahl zaehlt noch nicht als Spiel.
+async function getActiveGame(puuid, apiKey, platformHost) {
+  const url = `https://${platformHost}.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/${puuid}`;
+  try {
+    return await riotFetch(url, apiKey, { priority: true });
+  } catch (e) {
+    if (e.status === 404) return null;
+    throw e;
+  }
+}
+
 async function getMatch(matchId, apiKey, regionalHost) {
   const cachePath = path.join(CACHE_DIR, `${matchId}.json`);
   if (fs.existsSync(cachePath)) {
@@ -215,5 +228,6 @@ module.exports = {
   getMatch,
   getMatchTimeline,
   getLeagueEntriesByPuuid,
-  getSummonerByPuuid
+  getSummonerByPuuid,
+  getActiveGame
 };

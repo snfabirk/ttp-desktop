@@ -1,5 +1,20 @@
 # Internal Changelog
 
+## 5.7.0 — 2026-10-09
+
+- Old overview.html (pony selector, record, matchups, last 10, Load button
+  with cooldown, opponent analysis) moved to `champion.html` (copy with the
+  profile card/tile grid removed, null guards, `?champ=<id>` preselect).
+  Pony cards on challenge.html link there; nav marks it as Challenge.
+- New overview.html written from scratch as home screen: left profile card,
+  2x2 tiles, Last Game (+ LP Bank bar); right Live Game, Today (game pips +
+  dailies), Activity (own games + LP bank events, friends placeholder).
+  Runs the summary scan on open and every quarter hour (W/L, matchups, XP
+  credit) + achievements job for the trophy %.
+- `GET /api/live-game` (spectator-v5 `getActiveGame`, 404 -> not in game):
+  me/allies/enemies with smite flag; overview polls every 60s while visible,
+  shows your record vs each enemy from the pony's matchups.
+
 ## 5.6.0 — 2026-10-09
 
 - `public/nav.js` + `.top-nav` (style.css): fixed main nav top-left on all

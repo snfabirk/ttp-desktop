@@ -2,7 +2,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const fs = require('fs');
 const express = require('express');
-const { getAccountByRiotId, getAccountByPuuid, getAllMatchIds, getMatch, getMatchTimeline, getLeagueEntriesByPuuid, getSummonerByPuuid } = require('./lib/riot');
+const { getAccountByRiotId, getAccountByPuuid, getAllMatchIds, getMatch, getMatchTimeline, getLeagueEntriesByPuuid, getSummonerByPuuid, getActiveGame } = require('./lib/riot');
 const { loadPersistedApiKey, savePersistedApiKey } = require('./lib/envStore');
 const { createBucket, addMatchToBucket, finalizeBucket, isRemake, computeStreaks } = require('./lib/stats');
 const { createJob, updateProgress, completeJob, failJob, getJob } = require('./lib/jobs');
@@ -750,6 +750,42 @@ app.post('/api/cosmetics/equip', (req, res) => {
   if (!type) return res.status(400).json({ error: 'type is required.' });
   const result = progression.equipCosmetic(type, id || null);
   res.status(result.ok ? 200 : 400).json(result);
+});
+
+// Live-Spiel fuer die Overview (v5.7.0). Spectator liefert keine Rollen -
+// der gegnerische Jungler ist am Smite (Summoner Spell 11) erkennbar, fuer
+// andere Rollen zeigt die Overview einfach alle 5 Gegner.
+const SMITE_SPELL_ID = 11;
+app.get('/api/live-game', requireApiKey, async (req, res) => {
+  const { puuid } = req.query;
+  if (!puuid) return res.status(400).json({ error: 'puuid is required.' });
+  try {
+    const game = await getActiveGame(puuid, config.apiKey, PLATFORM);
+    if (!game) return res.json({ inGame: false });
+    const champ = p => {
+      const info = championByKey.get(String(p.championId));
+      return {
+        key: String(p.championId),
+        id: info ? info.id : '',
+        name: info ? info.name : String(p.championId),
+        smite: p.spell1Id === SMITE_SPELL_ID || p.spell2Id === SMITE_SPELL_ID,
+        riotId: p.riotId || ''
+      };
+    };
+    const me = game.participants.find(p => p.puuid === puuid);
+    const myTeam = me ? me.teamId : null;
+    res.json({
+      inGame: true,
+      queueId: game.gameQueueConfigId,
+      gameStartTime: game.gameStartTime,
+      gameLength: game.gameLength,
+      me: me ? champ(me) : null,
+      allies: game.participants.filter(p => p.teamId === myTeam && p.puuid !== puuid).map(champ),
+      enemies: game.participants.filter(p => p.teamId !== myTeam).map(champ)
+    });
+  } catch (e) {
+    res.status(e.status || 500).json({ error: e.message });
+  }
 });
 
 // Profil-Layout (Widget-Raster auf profile.html) speichern.

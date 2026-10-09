@@ -1,13 +1,13 @@
 // Feste Hauptleiste oben links (v5.6.0, Nutzerwunsch 2026-10-09): ersetzt die
 // "Zurueck"-Pfeile - die Overview ist die Kernseite, nicht "Seite 2" einer
 // Kette. Wird von jeder Seite per <script src="nav.js"> eingebunden und
-// markiert die aktive Seite. Unterseiten (Trophies, Roles & Picks) gehoeren
+// markiert die aktive Seite. Unterseiten (Trophies, Roles & Picks, Champion) gehoeren
 // zur Challenge.
 (function () {
   const ITEMS = [
     { href: 'index.html', label: 'Setup', title: 'Start or change your challenge' },
     { href: 'overview.html', label: 'Overview' },
-    { href: 'challenge.html', label: 'Challenge', also: ['trophies.html', 'role.html'] },
+    { href: 'challenge.html', label: 'Challenge', also: ['trophies.html', 'role.html', 'champion.html'] },
     { href: 'challenge.html?view=pass', label: 'Pass' },
     { href: 'profile.html', label: 'Profile' }
   ];

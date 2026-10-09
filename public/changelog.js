@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.7.0',
+      date: '2026-10-09',
+      notable: [
+        'The Overview is now your home screen: live game (your record against every enemy, your jungle opponent highlighted), today's games and dailies, your last game and recent activity.',
+        'Champion details (record, matchups, last 10 games, opponent analysis) moved to their own page - click a champion card on the Challenge page.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.6.0',
       date: '2026-10-09',
       notable: [
