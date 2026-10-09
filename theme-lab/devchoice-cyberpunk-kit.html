@@ -62,7 +62,7 @@
 
 <script>
 const D = Math.min(2, devicePixelRatio || 1), rand = (a, b) => a + Math.random() * (b - a);
-const RED = '255, 74, 74', CYAN = '94, 240, 240', YEL = '232, 212, 58';
+const RED = '255, 74, 74', CYAN = '94, 240, 240', YEL = '232, 212, 58', DEEP = '200, 8, 20'; // DEEP = Hack/Alarm (tiefes Rot)
 
 // ===================== Border: Optic Scan =====================
 const optic = document.getElementById('optic'), oc = optic.querySelector('canvas'), ox = oc.getContext('2d');
@@ -130,7 +130,7 @@ function drawHud(t, dt) {
   const W2 = BW + P * 2, H2 = BH + P * 2, x0 = P, y0 = P, x1 = P + BW, y1 = P + BH;
   hx.clearRect(0, 0, W2, H2);
   const ov = over ? over.t : -1, alarm = ov >= 0 && ov < 2.2, reboot = ov >= 2.2;
-  const main = alarm ? RED : YEL, acc = alarm ? RED : CYAN;
+  const main = alarm ? DEEP : YEL, acc = alarm ? DEEP : CYAN;
   const jit = alarm ? rand(-4, 4) : 0;
   hx.save(); hx.translate(jit, 0);
   // abgeschraegte Hauptkontur (oben rechts + unten links Fasen)
@@ -149,10 +149,10 @@ function drawHud(t, dt) {
   // Datenstrom links ausserhalb (Hex-Codes scrollen nach oben)
   nextStream -= dt; if (nextStream <= 0) { streamL.shift(); streamL.push(hexs()); nextStream = alarm ? .03 : .25; }
   hx.font = '10px "Share Tech Mono", monospace'; hx.textAlign = 'right';
-  streamL.forEach((s, i) => { hx.fillStyle = `rgba(${alarm ? RED : CYAN}, ${(i / streamL.length) * .7 * bootA})`; hx.fillText(s, x0 - 12, y0 + 30 + i * 13); });
+  streamL.forEach((s, i) => { hx.fillStyle = `rgba(${alarm ? DEEP : CYAN}, ${(i / streamL.length) * .8 * bootA})`; hx.fillText(s, x0 - 12, y0 + 30 + i * 13); });
   // rechts: kleine Balken-Anzeigen (Netzlast)
   hx.textAlign = 'left';
-  for (let k = 0; k < 6; k++) { const v = alarm ? rand(.7, 1) : .3 + .25 * Math.sin(t * 1.3 + k * 1.1) + .15 * Math.sin(t * 3.7 + k); hx.fillStyle = `rgba(${k > 3 || alarm ? RED : CYAN}, .55 * ${bootA})`; hx.fillStyle = `rgba(${k > 3 || alarm ? RED : CYAN}, ${.6 * bootA})`; hx.fillRect(x1 + 14, y0 + 40 + k * 12, Math.max(2, v * 34), 6); }
+  for (let k = 0; k < 6; k++) { const v = alarm ? rand(.7, 1) : .3 + .25 * Math.sin(t * 1.3 + k * 1.1) + .15 * Math.sin(t * 3.7 + k); hx.fillStyle = `rgba(${k > 3 || alarm ? RED : CYAN}, .55 * ${bootA})`; hx.fillStyle = `rgba(${alarm ? DEEP : k > 3 ? RED : CYAN}, ${.7 * bootA})`; hx.fillRect(x1 + 14, y0 + 40 + k * 12, Math.max(2, v * 34), 6); }
   hx.fillStyle = `rgba(${CYAN}, ${.7 * bootA})`; hx.fillText(alarm ? 'NET LOAD 999%' : `NET LOAD ${Math.round(40 + 20 * Math.sin(t))}%`, x1 + 14, y0 + 30);
   // Chip unten rechts (Easter Egg)
   const cxp = x1 - 6, cyp = y1 + 18, blink = Math.sin(t * 4) > 0;
@@ -167,13 +167,13 @@ function drawHud(t, dt) {
     over.t += dt; const o = over.t;
     if (o < 2.2) {
       // rote Glitch-Balken ueber dem Rahmen + Warnung
-      for (let k = 0; k < 8; k++) { hx.fillStyle = `rgba(${RED}, ${rand(.05, .25)})`; hx.fillRect(rand(x0, x1 - 100), rand(y0, y1), rand(40, 200), rand(2, 8)); }
+      for (let k = 0; k < 10; k++) { hx.fillStyle = `rgba(${DEEP}, ${rand(.1, .4)})`; hx.fillRect(rand(x0, x1 - 100), rand(y0, y1), rand(40, 200), rand(2, 8)); }
       if (Math.sin(o * 14) > -.3) {
         hx.font = 'bold 28px Rajdhani, sans-serif'; hx.textAlign = 'center';
-        hx.fillStyle = `rgba(${RED}, .95)`; hx.shadowColor = `rgba(${RED}, 1)`; hx.shadowBlur = 20;
+        hx.fillStyle = `rgba(${DEEP}, 1)`; hx.shadowColor = `rgba(${DEEP}, 1)`; hx.shadowBlur = 24;
         hx.fillText('SYSTEM OVERLOAD', (x0 + x1) / 2, y0 - 18); hx.shadowBlur = 0;
       }
-      board.style.filter = `drop-shadow(${rand(-3, 3)}px 0 rgba(255,74,74,.8)) drop-shadow(${rand(-3, 3)}px 0 rgba(94,240,240,.6))`;
+      board.style.filter = `drop-shadow(${rand(-3, 3)}px 0 rgba(200,8,20,.95)) drop-shadow(${rand(-3, 3)}px 0 rgba(94,240,240,.5)) drop-shadow(0 0 18px rgba(200,8,20,.5))`;
       board.style.opacity = Math.random() < .1 ? .4 : 1;
     } else {
       board.style.filter = ''; board.style.opacity = 1;
