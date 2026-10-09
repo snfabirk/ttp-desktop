@@ -1,5 +1,14 @@
 # Internal Changelog
 
+## 5.18.1 — 2026-10-09
+
+- Max 3 active buffs (MAX_BUFFS, "Buff slots full"); the buff bar always
+  shows 3 slots ("Free slot" placeholders) + "x / 3".
+- Daily Goods: empty slot has the same height as a filled one (128px).
+- Shop columns are flex columns stretched to equal height, so both end at
+  the same line; the left cards share the extra height; preview note moved
+  below the whole grid.
+
 ## 5.18.0 — 2026-10-09
 
 - Consumables (progression.js CONSUMABLES): 2 daily slots under the wheel

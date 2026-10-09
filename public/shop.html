@@ -28,8 +28,17 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) 300px;
     gap: 24px;
-    align-items: start;
+    align-items: stretch;
   }
+  /* Nutzerwunsch: unten buendig - keine Spalte haengt tiefer als die andere */
+  .shop > .col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  .shop > .col > .shop-card:last-child { flex: 1; display: flex; flex-direction: column; }
+  /* Angebots-Kacheln wachsen mit, statt leeren Platz darunter zu lassen */
+  .shop > .col > .shop-card:last-child > .offers { flex: 1; }
+  /* links teilen sich beide Karten den Extra-Platz (sonst wird nur "Daily" riesig) */
+  .shop > div.col > .shop-card { flex: 1; display: flex; flex-direction: column; }
+  .shop > div.col > .shop-card > .offers { flex: 1; }
+  .offer { justify-content: center; }
   .shop-card {
     background: var(--panel-bg);
     backdrop-filter: blur(12px) saturate(1.1);
@@ -39,7 +48,7 @@
     padding: 16px 20px 18px;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
   }
-  .shop-card + .shop-card { margin-top: 18px; }
+  .shop-card + .shop-card { margin-top: 0; }
   .sc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
   .sc-head h3 { margin: 0; color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-size: 1.05rem; letter-spacing: 1px; }
   .sc-reset { color: var(--text-faint); font-style: italic; font-size: 0.8rem; }
@@ -180,7 +189,7 @@
   /* ----- Consumables: 2 Tagesplaetze + Buff-Leiste ----- */
   .goods { display: grid; gap: 10px; }
   .good {
-    display: grid; grid-template-columns: 38px 1fr; gap: 4px 12px; align-items: center;
+    display: grid; grid-template-columns: 38px 1fr; gap: 4px 12px; align-items: center; height: 128px; box-sizing: border-box; align-content: center;
     padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
     background: color-mix(in srgb, var(--input-bg) 55%, transparent); text-align: left;
   }
@@ -195,7 +204,7 @@
   .good-buy:hover { background: color-mix(in srgb, var(--gold) 14%, transparent); }
   .good-buy.confirm { background: var(--gold); color: var(--bg); }
   .good-buy:disabled { border-color: var(--border); color: var(--text-faint); background: transparent; cursor: default; }
-  .good.empty { display: flex; align-items: center; justify-content: center; min-height: 64px; color: var(--text-faint); font-style: italic; font-size: 0.8rem; border-style: dashed; }
+  .good.empty { display: flex; align-items: center; justify-content: center; color: var(--text-faint); font-style: italic; font-size: 0.8rem; border-style: dashed; }
   .good.sold { opacity: 0.6; }
   .good-msg { grid-column: 1 / -1; color: var(--gold); font-size: 0.78rem; min-height: 0; }
   .buffs-head { margin: 14px 0 6px; color: var(--text-faint); font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase; }
@@ -207,7 +216,8 @@
   }
   .buff small { color: var(--text-dim); }
   .buff .buff-time { margin-left: auto; color: var(--text-faint); font-size: 0.72rem; white-space: nowrap; }
-  .buffs-none { color: var(--text-faint); font-size: 0.78rem; font-style: italic; }
+  .buff { height: 32px; box-sizing: border-box; }
+  .buff.free { justify-content: center; border-style: dashed; border-color: var(--border); background: transparent; color: var(--text-faint); font-style: italic; font-size: 0.74rem; }
   /* Try It On: Auswahl */
   .pick-overlay { position: fixed; inset: 0; z-index: 600; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; }
   .pick-box { width: min(520px, 92vw); max-height: 80vh; overflow: auto; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--border); background: var(--input-bg); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); }
@@ -240,7 +250,7 @@
   </header>
 
   <div class="shop">
-    <div>
+    <div class="col">
       <section class="shop-card">
         <div class="sc-head"><h3>Weekly Highlights</h3><span class="hint" tabindex="0">Prices &amp; rates <span class="info-icon">?</span><span class="hint-pop" id="shopHelp"></span></span><span class="sc-reset" id="weeklyReset"></span></div>
         <div class="offers weekly" id="weeklyOffers"></div>
@@ -249,9 +259,8 @@
         <div class="sc-head"><h3>Daily Offers</h3><span class="sc-reset" id="dailyReset"></span></div>
         <div class="offers daily" id="dailyOffers"></div>
       </section>
-      <p class="shop-note">Preview - the shop opens soon. Items and prices are placeholders.</p>
     </div>
-    <aside>
+    <aside class="col">
       <section class="shop-card wheel-card">
         <div class="sc-head"><h3>Lucky Wheel</h3><span class="coin-balance" id="coinBalance">🪙 –</span></div>
         <div class="wheel-small" id="wheelSmall" title="Open the wheel"></div>
@@ -260,11 +269,12 @@
       <section class="shop-card">
         <div class="sc-head"><h3>Daily Goods</h3><span class="sc-reset" id="goodsReset"></span></div>
         <div class="goods" id="goods"></div>
-        <div class="buffs-head">Active buffs</div>
+        <div class="buffs-head">Active buffs <span id="buffCount"></span></div>
         <div class="buffs" id="buffs"></div>
       </section>
     </aside>
   </div>
+  <p class="shop-note">Preview - the shop opens soon. Items and prices are placeholders.</p>
   <div class="corner-spot" id="cornerSpot" aria-hidden="true"></div>
 
   <script>
@@ -373,10 +383,16 @@
           ${goodMsg[i] ? `<span class="good-msg">${esc(goodMsg[i])}</span>` : ''}
         </div>`;
       }).join('');
+      // Immer 3 Buff-Plaetze (max. 3 gleichzeitig - "man muss smart sein")
       const buffs = shop.buffs || [];
-      document.getElementById('buffs').innerHTML = buffs.length
-        ? buffs.map(b => `<div class="buff"><span>${esc(b.label)}${b.detail ? ` <small>· ${esc(b.detail)}</small>` : ''}</span><span class="buff-time">⏳ ${until(b.expiresAt)}</span></div>`).join('')
-        : '<div class="buffs-none">No active buffs.</div>';
+      const max = shop.maxBuffs || 3;
+      document.getElementById('buffCount').textContent = `${buffs.length} / ${max}`;
+      document.getElementById('buffs').innerHTML = Array.from({ length: max }, (_, i) => {
+        const b = buffs[i];
+        return b
+          ? `<div class="buff"><span>${esc(b.label)}${b.detail ? ` <small>· ${esc(b.detail)}</small>` : ''}</span><span class="buff-time">⏳ ${until(b.expiresAt)}</span></div>`
+          : '<div class="buff free">Free slot</div>';
+      }).join('');
     }
 
     async function buyGood(slot, choice) {

@@ -796,6 +796,7 @@ function refreshShop(state, now) {
 // Was eine Dauer hat, wird ein Buff mit Ablaufdatum; pro Buff-Art ist immer
 // nur einer gleichzeitig aktiv. Preise/Gewichte sind Startwerte.
 const CONSUMABLE_EMPTY_CHANCE = 0.3;
+const MAX_BUFFS = 3; // Nutzer: hoechstens 3 Buffs gleichzeitig - "man muss smart sein"
 const CONSUMABLES = {
   xp_double: { name: 'Double XP', desc: '+100% level XP for your next 3 games', price: 100, weight: 15, icon: '⚡', buff: { kind: 'xpLevel', days: 3, games: 3 } },
   lp_boost: { name: 'LP Bank Booster', desc: 'Your next full LP Bank gives +50% XP', price: 150, weight: 12, icon: '📈', buff: { kind: 'lpBank', days: 7 } },
@@ -840,6 +841,7 @@ function lootableCosmetics(state) {
 function consumableUnavailable(state, id) {
   const c = CONSUMABLES[id];
   if (c.buff && activeBuff(state, c.buff.kind)) return 'Already active';
+  if (c.buff && (state.buffs || []).length >= MAX_BUFFS) return 'Buff slots full';
   if (id === 'bonus_daily' && state.bonusQuests.daily && state.bonusQuests.daily.day === dayKey(new Date())) return 'Already active';
   if (id === 'bonus_weekly' && state.bonusQuests.weekly && state.bonusQuests.weekly.week === weekKey(new Date())) return 'Already active';
   if ((id === 'mystery' || id === 'try_on') && !lootableCosmetics(state).filter(c => id === 'mystery' || !rentedIds(state).includes(c.id)).length) return 'Nothing left';
@@ -992,6 +994,7 @@ function getShopState() {
     prices: PRICES,
     odds: { daily: SHOP_DAILY_WEIGHTS, weekly: SHOP_WEEKLY_WEIGHTS, pastPass: PAST_PASS_CHANCE },
     consumables: consumablesView(state),
+    maxBuffs: MAX_BUFFS,
     consumablesResetAt: nextDailyReset(now).toISOString(),
     buffs: buffsView(state),
     tryOn: lootableCosmetics(state).filter(c => !rentedIds(state).includes(c.id)).map(c => ({ id: c.id, name: c.name, type: c.type, rarity: c.rarity, themeKey: c.themeKey || null })),

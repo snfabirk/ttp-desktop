@@ -25,6 +25,15 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.18.1',
+      date: '2026-10-09',
+      notable: [
+        'You can have at most 3 buffs active at the same time - choose wisely.'
+      ],
+      refinements: 2,
+      bugfixes: 0
+    },
+    {
       version: '5.18.0',
       date: '2026-10-09',
       notable: [
