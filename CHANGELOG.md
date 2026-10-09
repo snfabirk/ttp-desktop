@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 5.13.1 — 2026-10-09
+
+- Small visual tweak on the shop page.
+
 ## 5.13.0 — 2026-10-09
 
 - Provisional shop (`public/shop.html`, nav "Shop" now live): daily 3 offers
