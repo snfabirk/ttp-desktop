@@ -69,6 +69,12 @@
     transition: opacity 1.4s ease;
     -webkit-mask: radial-gradient(circle at var(--ex, 80%) var(--ey, 90%), transparent calc(var(--eh, 14px) * .7), #000 calc(var(--eh, 14px) * 1.5));
             mask: radial-gradient(circle at var(--ex, 80%) var(--ey, 90%), transparent calc(var(--eh, 14px) * .7), #000 calc(var(--eh, 14px) * 1.5)); }
+  /* Boese Kuerbisgesichter: eigene Ebene UEBER dem Abdunkeln, gleiche Geometrie wie .scene */
+  .scene.evil { z-index: 9; }
+  .evil-face { opacity: 0; filter: drop-shadow(0 0 4px rgba(255, 40, 10, .85)); }
+  .evil-face.on { animation: evilOn 1s ease-out forwards; animation-delay: var(--d, 0s); }
+  .evil-face.off { opacity: 0; transition: opacity .25s ease; }
+  @keyframes evilOn { 0% { opacity: 0; } 20% { opacity: .6; } 30% { opacity: .1; } 55% { opacity: .9; } 65% { opacity: .5; } 100% { opacity: 1; } }
   .dim.on { opacity: .9; transition: opacity .9s ease .25s; }
   .web { position: fixed; width: 150px; height: 150px; pointer-events: none; opacity: .35; }
   .web.tl { top: 0; left: 0; } .web.br { bottom: 0; right: 0; transform: rotate(180deg); }
@@ -190,6 +196,15 @@
 </div>
 
 <div class="dim" id="dim"></div>
+<div class="scene evil" aria-hidden="true">
+  <svg viewBox="0 0 1600 300" preserveAspectRatio="xMidYMax slice" fill="#ff4a14">
+    <defs><g id="evilFace"><path d="M-21 -15 L-5 -6 L-17 -1 Z M21 -15 L5 -6 L17 -1 Z"/><path d="M-23 3 L-16 8 L-12 4 L-7 10 L-3 5 L0 9 L3 5 L7 10 L12 4 L16 8 L23 3 Q16 21 0 21 Q-16 21 -23 3 Z"/></g></defs>
+    <g class="evil-face" style="--d:0s" transform="translate(1440 238) scale(.8)"><g transform="scale(.82)"><use href="#evilFace"/></g></g>
+    <g class="evil-face" style="--d:.25s" transform="translate(980 236) scale(1.05)"><g transform="scale(.82)"><use href="#evilFace"/></g></g>
+    <g class="evil-face" style="--d:.45s" transform="translate(520 240) scale(.7)"><g transform="scale(.82)"><use href="#evilFace"/></g></g>
+    <g class="evil-face" style="--d:.6s" transform="translate(420 232) scale(.9)"><g transform="scale(.82)"><use href="#evilFace"/></g></g>
+  </svg>
+</div>
 <div class="nav"><span class="on">⌂ Overview</span><span>Profile</span><span>Challenge</span><span>Pass</span><span>Trophies</span><span>Shop</span></div>
 <header><h1>League of Legends</h1><p class="subtitle">Three-Trick-Pony</p></header>
 
@@ -223,7 +238,7 @@
   // werden rot, alle Kerzen/Kuerbisse/die Laterne gehen aus. Danach flackert alles wieder an.
   (function () {
     const cat = document.getElementById('cat'), dim = document.getElementById('dim');
-    const fires = [...document.querySelectorAll('.fire')];
+    const fires = [...document.querySelectorAll('.fire')], evil = [...document.querySelectorAll('.evil-face')];
     let clicks = 0, reset = null, busy = false;
     const wait = ms => new Promise(r => setTimeout(r, ms));
     cat.addEventListener('click', async () => {
@@ -242,14 +257,18 @@
       await wait(500);
       fires.forEach(f => { f.classList.remove('relit'); f.classList.add('out'); });  // Lichter gehen aus
       dim.classList.add('on');
-      await wait(2600);                                             // Stille
+      await wait(1100);                                             // Stille ...
+      evil.forEach(f => { f.classList.remove('off'); f.classList.add('on'); });     // ... dann grinsen die Kuerbisse boese
+      await wait(2300);
+      evil.forEach(f => { f.classList.remove('on'); f.classList.add('off'); });
+      await wait(300);
       dim.classList.remove('on');
       cat.classList.remove('red');
       fires.forEach(f => { f.classList.remove('out'); f.classList.add('relit'); });  // flackert wieder an
       await wait(900);
       cat.classList.remove('stare');                                // schaut wieder weg
       await wait(1300);
-      fires.forEach(f => f.classList.remove('relit'));
+      fires.forEach(f => f.classList.remove('relit')); evil.forEach(f => f.classList.remove('off'));
       busy = false;
     });
   })();
