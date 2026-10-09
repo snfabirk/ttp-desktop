@@ -1,5 +1,30 @@
 # Internal Changelog
 
+## 5.12.0 — 2026-10-09
+
+- Theme Lab designs ported into the app (user-approved demos in theme-lab/).
+- `public/theme-fx.js` rewritten: scenes with mount/unmount.
+  - hallows: static DOM scene behind content (moon mirrored, bats, hills,
+    tree + lantern, graves, fence + cat, candles, pumpkins); cat easter
+    egg via position click (5x).
+  - haunted: WebGL fog/moon/stars + 2D canvas (lantern hole following the
+    mouse, 9 ghosts fleeing the light, dimmed lightning + manor); ghost
+    easter egg (5 ghosts -> boss BOO). Clicks on interactive elements
+    never count.
+  - Container opacity = animation level; old body::before/::after decor
+    and .theme-fx-canvas removed.
+- New `public/cosmetics-fx.js` (loaded via nav.js): MutationObserver
+  decorates every `.cos-border` with its border deco (pumpkin shell +
+  candle glow + side margin; Widow's Nest ring/webs/dew + dangling
+  spider >=64px + crawler, one shared rAF loop that pauses with
+  fx-off/fx-paused). `TTPCos.decorateFrame(wrap, id)` builds Cobweb
+  (corner webs, sag thread, draft sway) and Ectoplasm Manor (ecto edge,
+  hover/intro vines, subtle 3D tilt off in edit mode).
+- Renamed: Haunted Halo -> Widow's Nest, Haunted Manor -> Ectoplasm Manor
+  (ids unchanged, so ownership/equipped survive).
+- Profile identity widget: smaller picture for the overhanging borders so
+  they are no longer clipped top/bottom.
+
 ## 5.11.1 — 2026-10-09
 
 - Profile identity widget: "Challenger since" -> "Pony since" (Challenger reads like the LoL rank).

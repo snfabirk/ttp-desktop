@@ -468,6 +468,20 @@
       gap: 8px;
     }
     .identity.col .id-frame { width: calc(var(--cell) * 0.95); height: calc(var(--cell) * 0.95); max-width: 130px; max-height: 130px; }
+    /* Borders, die ueber das Bild hinausragen (Kuerbis, Widow's Nest): Bild
+       kleiner, damit der Rahmen oben/unten nicht abgeschnitten wird */
+    .id-frame:is(.cos-border-2026-10-pumpkin, .cos-border-2026-10-haunted) {
+      width: calc((var(--cell) - 26px) * 0.64);
+      height: calc((var(--cell) - 26px) * 0.64);
+      max-width: 66px;
+      max-height: 66px;
+    }
+    .identity.col .id-frame:is(.cos-border-2026-10-pumpkin, .cos-border-2026-10-haunted) {
+      width: calc(var(--cell) * 0.6);
+      height: calc(var(--cell) * 0.6);
+      max-width: 84px;
+      max-height: 84px;
+    }
     .identity.col .id-main { width: 100%; }
     .identity.col .id-top { justify-content: center; }
     .identity.col .id-since { margin: 0 0 6px; }
@@ -1227,8 +1241,8 @@
     });
 
     // ===== Profil-Rahmen um die Widget-Flaeche =====
-    // Sichtbar fuer alle (anders als das Theme). Fancy-Rahmen zeichnen sich
-    // beim Oeffnen einmal ein und pulsieren kurz bei einem Klick.
+    // Sichtbar fuer alle (anders als das Theme). Die Deko baut cosmetics-fx.js
+    // (TTPCos.decorateFrame); fancy Rahmen spielen beim Oeffnen einmal ihr Intro.
     let introPlayed = false;
     let introUntil = 0; // Intro-Klasse ueberlebt Neu-Renders (Daten laden nach)
     function applyFrame() {
@@ -1237,38 +1251,26 @@
       const frameId = editState ? (editState.frame === 'none' ? null : editState.frame) : eq.frame;
       const bgOn = editState ? editState.frameBg : eq.frameBg !== false;
       const cos = frameId && S() ? S().owned.find(c => c.id === frameId) : null;
-      wrap.querySelectorAll(':scope > .pframe-bg, :scope > .pf-corner, :scope > .pf-line').forEach(n => n.remove());
+      wrap.querySelectorAll(':scope > .pframe-bg').forEach(n => n.remove());
       wrap.className = 'canvas-wrap' + (cos ? ` pframe pframe-${cos.id}` : '') + (Date.now() < introUntil ? ' intro' : '');
+      const decoId = cos ? cos.id : '';
+      if (window.TTPCos && (wrap.dataset.pfDeco !== decoId || (decoId && !wrap.querySelector(':scope > .pf-deco')))) {
+        wrap.dataset.pfDeco = decoId;
+        window.TTPCos.decorateFrame(wrap, decoId);
+      }
       if (!cos) return;
       if (cos.hasBackground && bgOn) {
         const bg = document.createElement('div');
         bg.className = `pframe-bg bg-${cos.id}`;
         wrap.prepend(bg);
       }
-      ['tl', 'tr', 'bl', 'br'].forEach(pos => {
-        const c = document.createElement('span');
-        c.className = `pf-corner ${pos}`;
-        wrap.appendChild(c);
-      });
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      line.setAttribute('class', 'pf-line');
-      line.innerHTML = '<rect x="0.5%" y="0.5%" width="99%" height="99%" rx="12" ry="12" pathLength="1"></rect>';
-      wrap.appendChild(line);
       if (!introPlayed && !editState) {
         introPlayed = true;
-        introUntil = Date.now() + 2200;
+        introUntil = Date.now() + 3000;
         wrap.classList.add('intro');
-        setTimeout(() => wrap.classList.remove('intro'), 2200);
+        setTimeout(() => wrap.classList.remove('intro'), 3000);
       }
     }
-    document.querySelector('.canvas-wrap').addEventListener('click', e => {
-      const wrap = e.currentTarget;
-      if (editState || !wrap.classList.contains('pframe')) return;
-      wrap.classList.remove('pulse');
-      void wrap.offsetWidth;
-      wrap.classList.add('pulse');
-      setTimeout(() => wrap.classList.remove('pulse'), 700);
-    });
 
     // ===== Modus wechseln / Speichern =====
     async function loadChampionList() {

@@ -162,6 +162,10 @@
     const fx = document.createElement('script');
     fx.src = 'theme-fx.js';
     document.head.appendChild(fx);
+    // Aufwendige Borders/Rahmen (Spinnen, Kuerbis, Ranken ...)
+    const cos = document.createElement('script');
+    cos.src = 'cosmetics-fx.js';
+    document.head.appendChild(cos);
   }
 
   if (document.body) init();

@@ -25,6 +25,17 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.12.0',
+      date: '2026-10-09',
+      notable: [
+        'All October cosmetics got a full makeover: All Hallows now has its own night scene, Haunted Night has drifting fog, a lantern that follows your mouse and ghosts that flee from its light.',
+        'Borders and frames reworked: Pumpkin Ring, Cobweb, Widow’s Nest (spiders!) and Ectoplasm Manor (vines grow while you hover).',
+        'Some themes hide a little secret. Try clicking around.'
+      ],
+      refinements: 2,
+      bugfixes: 0
+    },
+    {
       version: '5.11.1',
       date: '2026-10-09',
       notable: [],
