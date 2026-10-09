@@ -25,6 +25,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.19.1',
+      date: '2026-10-09',
+      notable: ['Shop themes now preview as a mini version of the whole app, with their scene running live.'],
+      refinements: 0,
+      bugfixes: 1
+    },
+    {
       version: '5.19.0',
       date: '2026-10-09',
       notable: [

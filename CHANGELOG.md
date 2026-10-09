@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 5.19.1 — 2026-10-09
+
+- Theme hover preview: 460x270 mini app (nav, title, cards in theme colours) over the live scene (TTPThemePreviewLive; starfall/koi run their real scene scaled down, others still images). Fixed a console error when hovering a theme while a frame is equipped.
+
 ## 5.19.0 — 2026-10-09
 
 - 33 shop cosmetics (cosmetics.js source 'shop'; designs from theme-lab/shop-*.html):

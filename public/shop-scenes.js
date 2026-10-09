@@ -661,9 +661,9 @@ on(window, 'click', e => {
   const rand = (a, b) => a + Math.random() * (b - a);
   function seeded(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
-  let starfallDraw, koiDraw, desertDraw, forestDraw;
+  let starfallDraw, koiDraw, desertDraw, forestDraw, starfallSetup, koiSetup;
   const starfall = simpleScene(true,
-    (W, H) => ({ stars: Array.from({ length: Math.round(W * H / 3500) }, () => ({ x: rand(0, W), y: rand(0, H * .85), r: rand(.3, 1.4), ph: rand(0, 6), sp: rand(.5, 2) })), shoot: null, next: 1.5 }),
+    starfallSetup = (W, H) => ({ stars: Array.from({ length: Math.round(W * H / 3500) }, () => ({ x: rand(0, W), y: rand(0, H * .85), r: rand(.3, 1.4), ph: rand(0, 6), sp: rand(.5, 2) })), shoot: null, next: 1.5 }),
     starfallDraw = (c, W, H, t, dt, s) => {
       const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#050817'); g.addColorStop(.6, '#0a0f2a'); g.addColorStop(1, '#1a1838');
       c.fillStyle = g; c.fillRect(0, 0, W, H);
@@ -679,7 +679,7 @@ on(window, 'click', e => {
     });
 
   const koi = simpleScene(true,
-    (W, H) => ({
+    koiSetup = (W, H) => ({
       koi: Array.from({ length: Math.max(6, Math.round(W * H / 160000)) }, (_, i) => ({ x: rand(0, W), y: rand(0, H), a: rand(0, 6.28), v: rand(24, 40), turn: 0, len: rand(50, 80), col: i % 3 === 0 ? ['#f4f4f2', '#d0222c'] : i % 3 === 1 ? ['#c81f28', '#f4f4f2'] : ['#ececea', '#1c1c1e'], ph: rand(0, 6) })),
       pads: Array.from({ length: Math.max(7, Math.round(W * H / 120000)) }, () => ({ x: rand(0, W), y: rand(0, H), r: rand(24, 44), rot: rand(0, 6), flower: Math.random() < .35 })),
       ripples: []
@@ -742,6 +742,22 @@ on(window, 'click', e => {
     forest: (c, W, H) => forestDraw(c, W, H),
     abyss: (c, W, H) => { const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#06324a'); g.addColorStop(1, '#01060c'); c.fillStyle = g; c.fillRect(0, 0, W, H); [[.3, .45, '120,230,255'], [.68, .3, '255,140,210'], [.6, .72, '170,140,255']].forEach(([x, y, col]) => { const r = W * .11, gl = c.createRadialGradient(W * x, H * y, 0, W * x, H * y, r * 2); gl.addColorStop(0, `rgba(${col},.5)`); gl.addColorStop(1, `rgba(${col},0)`); c.fillStyle = gl; c.beginPath(); c.arc(W * x, H * y, r * 2, 0, 7); c.fill(); c.fillStyle = `rgba(${col},.7)`; c.beginPath(); c.arc(W * x, H * y, r, Math.PI, 0); c.fill(); c.strokeStyle = `rgba(${col},.5)`; c.lineWidth = 1; for (let k = -2; k <= 2; k++) { c.beginPath(); c.moveTo(W * x + k * r * .35, H * y); c.lineTo(W * x + k * r * .35 + 2, H * y + r * 1.6); c.stroke(); } }); },
     neon: (c, W, H) => { const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0a0614'); g.addColorStop(.7, '#2a1036'); c.fillStyle = g; c.fillRect(0, 0, W, H); const r = seeded(7); let x = 0; while (x < W) { const w = W * (.12 + r() * .12), h = H * (.3 + r() * .4); c.fillStyle = '#0a0613'; c.fillRect(x, H * .85 - h, w, h); c.fillStyle = 'rgba(255,200,120,.6)'; for (let k = 0; k < 6; k++) c.fillRect(x + r() * (w - 3), H * .85 - h + r() * (h - 4), 2, 3); x += w + 2; } c.fillStyle = '#07040d'; c.fillRect(0, H * .85, W, H * .15); c.strokeStyle = '#ff4fb8'; c.shadowColor = '#ff4fb8'; c.shadowBlur = 8; c.lineWidth = 1.5; c.strokeRect(W * .35, H * .45, W * .3, H * .12); c.shadowBlur = 0; }
+  };
+  // Laufende Vorschau in eine kleine Canvas (Shop-Hover). Fancy-Themes laufen
+  // mit ihrer echten Szene in Mini-Groesse, die anderen als Standbild.
+  // Gibt eine Stopp-Funktion zurueck.
+  window.TTPThemePreviewLive = (key, cv) => {
+    const d = Math.min(2, devicePixelRatio || 1), W = cv.clientWidth, H = cv.clientHeight;
+    cv.width = W * d; cv.height = H * d; const c = cv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0);
+    const live = { starfall: [starfallSetup, starfallDraw, 1], koi: [koiSetup, koiDraw, .55] }[key];
+    if (!live) { (PV[key] || (() => {}))(c, W, H); return () => {}; }
+    const [setup, draw, scale] = live;
+    // in "virtueller" groesserer Flaeche simulieren, damit Fische/Sterne passend klein wirken
+    const VW = W / scale, VH = H / scale, st = setup(VW, VH);
+    let raf = 0, last = performance.now();
+    const step = now => { const dt = Math.min(.05, (now - last) / 1000); last = now; c.save(); c.scale(scale, scale); draw(c, VW, VH, now / 1000, dt, st); c.restore(); raf = requestAnimationFrame(step); };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
   };
   window.TTPThemePreview = (key, cv) => { const fn = PV[key]; if (!fn) return false; const d = Math.min(2, devicePixelRatio || 1), W = cv.clientWidth || 96, H = cv.clientHeight || 96; cv.width = W * d; cv.height = H * d; const c = cv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0); fn(c, W, H); return true; };
 

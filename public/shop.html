@@ -270,6 +270,20 @@
   .pv-pop .pv-card small { font-size: .7rem; }
   .pv-pop .pv-row { display: flex; gap: 8px; flex: 1; }
   .pv-pop .pv-row span { flex: 1; border-radius: 8px; border: 1px solid; }
+  /* Theme-Vorschau: Mini-App mit echter Szene */
+  .pv-pop.theme { width: 460px; height: 270px; overflow: hidden; }
+  .pv-pop.theme .pv-label { bottom: 6px; z-index: 2; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+  .pv-app { position: absolute; inset: 0; padding: 12px 16px; box-sizing: border-box; }
+  .pv-app .nav { display: flex; gap: 3px; width: max-content; padding: 2px; border-radius: 10px; border: 1px solid; }
+  .pv-app .nav i { font-style: normal; font-family: 'Cinzel', Georgia, serif; font-size: .5rem; padding: 2px 6px; border-radius: 8px; }
+  .pv-app h5 { margin: 8px 0 0; text-align: center; font-family: 'Cinzel', Georgia, serif; font-size: 1.05rem; letter-spacing: 1.5px; }
+  .pv-app .sub { text-align: center; font-size: .5rem; letter-spacing: 3px; font-style: italic; opacity: .8; }
+  .pv-app .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .pv-app .box { border-radius: 7px; border: 1px solid; padding: 6px 8px; font-size: .55rem; backdrop-filter: blur(4px); }
+  .pv-app .box b { display: block; font-family: 'Cinzel', Georgia, serif; font-size: .58rem; margin-bottom: 3px; }
+  .pv-app .box div { display: flex; justify-content: space-between; padding: 1px 0; }
+  .pv-app .box div.who { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
+  .pv-app .who .cos-border { width: 22px; height: 22px; }
   .pv-pop .pv-label { position: absolute; left: 0; right: 0; bottom: -22px; text-align: center; font-size: .72rem; color: var(--text-dim); font-style: italic; }
   .shop-note { color: var(--text-faint); font-size: 0.78rem; text-align: center; margin-top: 12px; font-style: italic; }
   /* (privat) - unsichtbar, Mauszeiger bleibt normal */
@@ -441,7 +455,23 @@
       }
     })();
     let pop = null, popTimer = null;
-    function hidePreview() { clearTimeout(popTimer); if (pop) { const p = pop; pop = null; p.classList.remove('show'); setTimeout(() => p.remove(), 160); } }
+    let stopLive = null;
+    function hidePreview() { clearTimeout(popTimer); if (stopLive) { stopLive(); stopLive = null; } if (pop) { const p = pop; pop = null; p.classList.remove('show'); setTimeout(() => p.remove(), 160); } }
+    // Themes: kleine App-Ansicht mit laufender Szene statt Profil-Ausschnitt
+    function themePreviewHtml(o, bg, accent, text, line) {
+      const tile = `background:color-mix(in srgb, ${bg} 62%, transparent);border-color:${line};color:${text}`;
+      return `<canvas class="pv-bg"></canvas>
+        <div class="pv-app">
+          <div class="nav" style="border-color:${line};background:color-mix(in srgb, ${bg} 60%, transparent)"><i style="background:${accent};color:${bg}">Overview</i><i style="color:${text}">Profile</i><i style="color:${text}">Pass</i><i style="color:${text}">Shop</i></div>
+          <h5 style="color:${accent};text-shadow:0 0 12px color-mix(in srgb, ${accent} 50%, transparent)">League of Legends</h5>
+          <div class="sub" style="color:${text}">THREE-TRICK-PONY</div>
+          <div class="cols">
+            <div class="box" style="${tile}"><div class="who"><span class="cos-border cos-${me.border}"><img src="${me.icon}" alt=""></span><b style="color:${accent};margin:0">${esc(me.name)}</b></div></div>
+            <div class="box" style="${tile}"><b style="color:${accent}">Today</b><div><span>First Win</span><span style="color:${accent}">+400 XP</span></div><div><span>Grinder</span><span style="color:${accent}">+250 XP</span></div></div>
+          </div>
+        </div>
+        <div class="pv-label">The whole app in ${esc(o.name)}</div>`;
+    }
     function showPreview(offerEl, o) {
       hidePreview();
       const theme = o.type === 'theme' ? o.themeKey : null;
@@ -451,10 +481,11 @@
       const [bg, accent, text, line] = theme && PALETTE[theme] ? PALETTE[theme] : ['--bg', '--gold', '--text', '--border'].map(v => cs.getPropertyValue(v).trim());
       const tile = `background:color-mix(in srgb, ${bg} 70%, transparent);border-color:${line}`;
       const el = document.createElement('div');
-      el.className = 'pv-pop';
+      el.className = 'pv-pop' + (theme ? ' theme' : '');
       el.dataset.for = o.id;
       el.style.background = bg;
-      el.innerHTML = `${theme ? '<canvas class="pv-bg"></canvas>' : ''}
+      if (theme) el.innerHTML = themePreviewHtml(o, bg, accent, text, line);
+      else el.innerHTML = `
         <div class="pv-board${frame ? ` pframe pframe-${frame}` : ''}">
           <div class="pv-card" style="${tile};color:${text}">
             <span class="cos-border cos-${border}"><img src="${me.icon}" alt=""></span>
@@ -465,12 +496,15 @@
         <div class="pv-label">Your profile with ${esc(o.name)}</div>`;
       document.body.appendChild(el);
       const r = offerEl.getBoundingClientRect();
-      let left = r.left + r.width / 2 - 160, top = r.top - 200 - 34;
+      const pw = theme ? 460 : 320, ph = theme ? 270 : 200;
+      let left = r.left + r.width / 2 - pw / 2, top = r.top - ph - 34;
       if (top < 70) top = r.bottom + 14;
-      left = Math.max(12, Math.min(innerWidth - 332, left));
+      if (top + ph > innerHeight - 10) top = Math.max(10, innerHeight - ph - 10);
+      left = Math.max(12, Math.min(innerWidth - pw - 12, left));
       Object.assign(el.style, { left: `${left}px`, top: `${top}px` });
-      if (theme && window.TTPThemePreview) window.TTPThemePreview(theme, el.querySelector('.pv-bg'));
-      if (frame && window.TTPCos) window.TTPCos.decorateFrame(el.querySelector('.pv-board'), frame);
+      if (theme && window.TTPThemePreviewLive) stopLive = window.TTPThemePreviewLive(theme, el.querySelector('.pv-bg'));
+      const board = el.querySelector('.pv-board');
+      if (frame && board && window.TTPCos) window.TTPCos.decorateFrame(board, frame);
       pop = el;
       requestAnimationFrame(() => el.classList.add('show'));
     }
