@@ -29,7 +29,7 @@
   .border img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
   .border canvas { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; pointer-events: none; }
   /* Rahmen */
-  .frame { position: relative; width: 300px; height: 170px; margin: 26px 26px 0; }
+  .frame { position: relative; width: 300px; height: 170px; margin: 26px 26px 34px; }
   .frame .inner { position: absolute; inset: 0; border-radius: 14px; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; box-sizing: border-box; }
   .frame .inner span { border-radius: 8px; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .08); }
   .frame .inner span:first-child { grid-column: span 2; }
@@ -240,23 +240,51 @@ document.querySelectorAll('.frame').forEach(el => {
       for (let i = motes.length - 1; i >= 0; i--) { const m = motes[i]; m.life -= dt * .8; if (m.life <= 0) { motes.splice(i, 1); continue; } m.x += (m.tx - m.x) * dt * 1.5; m.y += (m.ty - m.y) * dt * 1.5; c.fillStyle = `rgba(200, 150, 255, ${m.life * .8})`; c.beginPath(); c.arc(m.x, m.y, 1.4, 0, 7); c.fill(); }
       c.restore();
     } else if (kind === 'clock') {
-      // Messingrahmen, Zahnraeder in den Ecken drehen sich gegeneinander
-      const brass = c.createLinearGradient(0, 0, W, H); brass.addColorStop(0, '#e2b45c'); brass.addColorStop(.5, '#8a5e20'); brass.addColorStop(1, '#d6a24a');
-      c.strokeStyle = brass; c.lineWidth = 4; rr(P, P, w, h, 14); c.stroke();
-      c.strokeStyle = 'rgba(255, 220, 150, .25)'; c.lineWidth = 1; rr(P + 5, P + 5, w - 10, h - 10, 10); c.stroke();
-      const gear = (x, y, r, teeth, ang, col) => {
+      // Steampunk: dunkle Bronze mit Kupferglanz, Nieten, Kupferrohr mit Ventil
+      // und Manometer, Zahnraeder mit Patina in den Ecken
+      const bronze = c.createLinearGradient(0, 0, W, H); bronze.addColorStop(0, '#b87a3a'); bronze.addColorStop(.35, '#5e3816'); bronze.addColorStop(.65, '#8a5426'); bronze.addColorStop(1, '#3e2410');
+      c.strokeStyle = bronze; c.lineWidth = 7; rr(P, P, w, h, 12); c.stroke();
+      c.strokeStyle = 'rgba(240, 170, 100, .35)'; c.lineWidth = 1; rr(P - 3, P - 3, w + 6, h + 6, 14); c.stroke();
+      c.strokeStyle = 'rgba(20, 10, 4, .8)'; rr(P + 4, P + 4, w - 8, h - 8, 9); c.stroke();
+      // Nieten rundherum
+      const rivet = (x, y) => { const g = c.createRadialGradient(x - 1, y - 1, 0, x, y, 3); g.addColorStop(0, '#f2c48a'); g.addColorStop(1, '#4a2a10'); c.fillStyle = g; c.beginPath(); c.arc(x, y, 2.4, 0, 7); c.fill(); };
+      for (let x = P + 40; x < P + w - 30; x += 26) { rivet(x, P); rivet(x, P + h); }
+      for (let y = P + 36; y < P + h - 30; y += 26) { rivet(P, y); rivet(P + w, y); }
+      // Kupferrohr an der unteren Kante mit Ventilrad und kleinem Dampfstoss
+      const py = P + h + 14;
+      const pipe = c.createLinearGradient(0, py - 4, 0, py + 4); pipe.addColorStop(0, '#f0a868'); pipe.addColorStop(.5, '#a85a24'); pipe.addColorStop(1, '#4e2610');
+      c.fillStyle = pipe; c.fillRect(P + 50, py - 4, w - 100, 8);
+      [P + 50, P + w - 50].forEach(x => { c.fillStyle = '#6a3a16'; c.fillRect(x - 3, py - 6, 6, 12); });
+      c.save(); c.translate(P + w * .5, py); c.rotate(t * .8);
+      c.strokeStyle = '#c47a38'; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 8, 0, 7); c.stroke();
+      for (let k = 0; k < 4; k++) { c.rotate(Math.PI / 2); c.beginPath(); c.moveTo(0, 0); c.lineTo(8, 0); c.stroke(); }
+      c.restore();
+      const puff = (t * .5) % 1;
+      c.fillStyle = `rgba(230, 225, 215, ${.3 * (1 - puff)})`; c.beginPath(); c.arc(P + w * .5 + 22, py - 8 - puff * 20, 3 + puff * 8, 0, 7); c.fill();
+      // Manometer an der oberen Kante, Zeiger zittert
+      const mx = P + w * .5, my = P - 12;
+      const dial = c.createRadialGradient(mx, my, 0, mx, my, 13); dial.addColorStop(0, '#efe4cc'); dial.addColorStop(.8, '#cbb894'); dial.addColorStop(1, '#5e3816');
+      c.fillStyle = dial; c.beginPath(); c.arc(mx, my, 12, 0, 7); c.fill(); c.strokeStyle = '#8a5426'; c.lineWidth = 2.5; c.stroke();
+      c.strokeStyle = '#3a2410'; c.lineWidth = 1; for (let k = 0; k < 7; k++) { const a = Math.PI * .8 + k / 6 * Math.PI * 1.4; c.beginPath(); c.moveTo(mx + Math.cos(a) * 8, my + Math.sin(a) * 8); c.lineTo(mx + Math.cos(a) * 10, my + Math.sin(a) * 10); c.stroke(); }
+      const na = Math.PI * 1.25 + Math.sin(t * .7) * .5 + Math.sin(t * 9) * .03;
+      c.strokeStyle = '#a01818'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(mx, my); c.lineTo(mx + Math.cos(na) * 9, my + Math.sin(na) * 9); c.stroke();
+      // Zahnraeder: Bronze mit Patina (Gruenspan) an den Kanten
+      const gear = (x, y, r, teeth, ang) => {
         c.save(); c.translate(x, y); c.rotate(ang);
         c.beginPath();
-        for (let k = 0; k < teeth * 2; k++) { const a = k / (teeth * 2) * Math.PI * 2, rad = k % 2 ? r : r * 1.18; c.lineTo(Math.cos(a - .08) * rad, Math.sin(a - .08) * rad); c.lineTo(Math.cos(a + .08) * rad, Math.sin(a + .08) * rad); }
-        c.closePath(); c.fillStyle = col; c.fill(); c.strokeStyle = 'rgba(60, 35, 10, .8)'; c.lineWidth = 1; c.stroke();
-        c.fillStyle = '#2a1a08'; c.beginPath(); c.arc(0, 0, r * .3, 0, 7); c.fill();
-        for (let k = 0; k < 4; k++) { c.rotate(Math.PI / 2); c.fillStyle = 'rgba(40, 25, 8, .6)'; c.fillRect(r * .38, -r * .08, r * .45, r * .16); }
+        for (let k = 0; k < teeth * 2; k++) { const a = k / (teeth * 2) * Math.PI * 2, rad = k % 2 ? r : r * 1.2; c.lineTo(Math.cos(a - .09) * rad, Math.sin(a - .09) * rad); c.lineTo(Math.cos(a + .09) * rad, Math.sin(a + .09) * rad); }
+        c.closePath();
+        const g = c.createRadialGradient(-r * .3, -r * .3, 0, 0, 0, r * 1.2); g.addColorStop(0, '#d89a5a'); g.addColorStop(.6, '#7a4618'); g.addColorStop(1, '#3e2208');
+        c.fillStyle = g; c.fill(); c.strokeStyle = 'rgba(80, 150, 125, .55)'; c.lineWidth = 1.2; c.stroke();
+        c.strokeStyle = 'rgba(30, 15, 4, .9)'; c.lineWidth = 1; c.beginPath(); c.arc(0, 0, r * .72, 0, 7); c.stroke();
+        for (let k = 0; k < 5; k++) { c.rotate(Math.PI * 2 / 5); c.fillStyle = 'rgba(25, 12, 3, .85)'; c.beginPath(); c.ellipse(r * .45, 0, r * .16, r * .1, 0, 0, 7); c.fill(); }
+        c.fillStyle = '#2a1606'; c.beginPath(); c.arc(0, 0, r * .22, 0, 7); c.fill();
+        c.fillStyle = '#c88a4a'; c.beginPath(); c.arc(0, 0, r * .1, 0, 7); c.fill();
         c.restore();
       };
       corners.forEach(([x, y, sx, sy], i) => {
-        const g1 = c.createRadialGradient(x, y, 0, x, y, 22); g1.addColorStop(0, '#f2cd7a'); g1.addColorStop(1, '#9a6a24');
-        gear(x, y, 18, 12, t * .6 * (i % 2 ? -1 : 1), g1);
-        gear(x + sx * 24, y + sy * 14, 9, 8, -t * 1.2 * (i % 2 ? -1 : 1) + .2, '#c89040');
+        gear(x, y, 19, 12, t * .5 * (i % 2 ? -1 : 1));
+        gear(x + sx * 26, y + sy * 14, 10, 8, -t * 1.0 * (i % 2 ? -1 : 1) + .2);
       });
     } else if (kind === 'filigree') {
       // feiner Goldrand, verschnoerkelte Ecken, Glanz laeuft um den Rahmen
