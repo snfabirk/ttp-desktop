@@ -99,7 +99,7 @@
 
   /* Stufe 5: Pumpkin Ring - Kuerbisschale mit weichen Rippen, Stiel + Ranke oben,
      innen warmes Kerzenlicht, das leicht flackert */
-  .avatar { display: flex; align-items: center; gap: 18px; }
+  .avatar { display: flex; align-items: center; gap: 18px; position: relative; z-index: 3; }
   .pring { --s: 86px; position: relative; width: var(--s); height: var(--s); flex-shrink: 0; margin: 0 10px; }
   .pring img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
   .pring .candle { position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
@@ -247,8 +247,8 @@
   <div>
     <span class="tag">Tier 5 border + tier 10 frame</span>
     <div class="cobweb" id="cobweb">
-      <svg class="cweb l" id="webL" width="150" height="120"><g></g></svg>
-      <svg class="cweb r" id="webR" width="96" height="84"><g></g></svg>
+      <svg class="cweb l" id="webL" width="86" height="86"><g></g></svg>
+      <svg class="cweb r" id="webR" width="72" height="72"><g></g></svg>
       <svg class="csag" id="sag" viewBox="0 0 100 40" preserveAspectRatio="none"><path vector-effect="non-scaling-stroke"/></svg>
       <div class="card avatar">
         <div class="pring">
@@ -259,9 +259,9 @@
               <radialGradient id="segD" cx=".5" cy=".35" r=".8"><stop offset="0" stop-color="#d9681a"/><stop offset=".6" stop-color="#b9540f"/><stop offset="1" stop-color="#7a3307"/></radialGradient>
             </defs>
             <g stroke="#7a3307" stroke-width="1.1">
-              <ellipse cx="-38" cy="5" rx="26" ry="43" fill="url(#segD)"/><ellipse cx="38" cy="5" rx="26" ry="43" fill="url(#segD)"/>
-              <ellipse cx="-22" cy="3" rx="29" ry="50" fill="url(#seg)"/><ellipse cx="22" cy="3" rx="29" ry="50" fill="url(#seg)"/>
-              <ellipse cx="0" cy="2" rx="25" ry="53" fill="url(#seg)"/>
+              <ellipse cx="-38" cy="1" rx="26" ry="44" fill="url(#segD)"/><ellipse cx="38" cy="1" rx="26" ry="44" fill="url(#segD)"/>
+              <ellipse cx="-22" cy="0" rx="29" ry="51" fill="url(#seg)"/><ellipse cx="22" cy="0" rx="29" ry="51" fill="url(#seg)"/>
+              <ellipse cx="0" cy="0" rx="25" ry="53" fill="url(#seg)"/>
             </g>
             <ellipse cx="-6" cy="-36" rx="6" ry="10" fill="#fff" opacity=".08"/>
             <!-- Stiel, Blatt, Ranke -->
@@ -323,28 +323,26 @@
   // Cobweb-Rahmen: Dachboden-Spinnweben in den oberen Ecken (fester Seed).
   // Faeden spannen sich zwischen oberer und seitlicher Kante und haengen durch die Schwerkraft durch.
   function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-  function cornerWeb(svg, seed, n) {
-    const W = +svg.getAttribute('width'), H = +svg.getAttribute('height'), r = rng(seed), R = Math.min(W, H) * 1.15; let d = '';
-    const f = v => v.toFixed(1);
-    const line = (x1, y1, cx, cy, x2, y2, o, w) => d += `<path d="M${f(x1)} ${f(y1)} Q${f(cx)} ${f(cy)} ${f(x2)} ${f(y2)}" stroke-opacity="${o.toFixed(2)}" stroke-width="${w.toFixed(2)}"/>`;
-    // ein paar Haltefaeden aus der Ecke heraus
-    for (const a of [.12, .45, .78, 1.15, 1.42]) { const L = R * (.55 + r() * .4); line(0, 0, Math.cos(a) * L * .5, Math.sin(a) * L * .5 + 3, Math.cos(a) * L, Math.sin(a) * L, .16 + r() * .12, .45); }
-    // viele kurze, durchhaengende Wisps, dicht in der Ecke, nach aussen duenner
-    for (let i = 0; i < n; i++) {
-      const u = Math.pow(r(), 1.5), dist = 6 + u * R, th = (.1 + r() * .8) * Math.PI / 2;
-      const cx = Math.cos(th) * dist, cy = Math.sin(th) * dist * (H / W) * 1.1;
-      const dir = th + Math.PI / 2 + (r() - .5) * .9, L = 10 + r() * 26 * (1 - u * .4);
-      const dx = Math.cos(dir) * L / 2, dy = Math.sin(dir) * L / 2;
-      line(cx - dx, cy - dy, cx, cy + L * (.12 + r() * .2), cx + dx, cy + dy, .1 + (1 - u) * .38 * (.4 + r() * .6), .35 + r() * .45);
-    }
-    for (let i = 0; i < 2; i++) {                       // lose herabhaengende Faeden
-      const x = 14 + r() * W * .45, len = 12 + r() * 22;
-      line(x, 0, x + 3 - r() * 6, len * .6, x + 2 - r() * 4, len, .16 + r() * .14, .4);
+  function cornerWeb(svg, seed, rings) {
+    const W = +svg.getAttribute('width'), H = +svg.getAttribute('height'), r = rng(seed); let d = '';
+    const f = v => v.toFixed(1), R = Math.min(W, H) - 4, n = 6;
+    const ang = [...Array(n)].map((_, i) => i === 0 ? 0 : i === n - 1 ? Math.PI / 2 : (i + (r() - .5) * .35) / (n - 1) * Math.PI / 2);
+    const len = ang.map((a, i) => R * (i === 0 || i === n - 1 ? 1.05 : .85 + r() * .2));
+    ang.forEach((a, i) => d += `<path d="M0 0 L${f(Math.cos(a) * len[i])} ${f(Math.sin(a) * len[i])}" stroke-width="1.1" stroke-opacity=".6"/>`);
+    for (let k = 1; k <= rings; k++) {
+      const rad = R * k / (rings + .4);
+      const pts = ang.map(a => { const q = rad * (1 + (r() - .5) * .08); return [Math.cos(a) * q, Math.sin(a) * q]; });
+      let path = `M${f(pts[0][0])} ${f(pts[0][1])}`;
+      for (let i = 1; i < n; i++) {                     // Bogen haengt zur Ecke hin durch
+        const a = (ang[i - 1] + ang[i]) / 2, sagR = rad * (.78 + r() * .06);
+        path += ` Q${f(Math.cos(a) * sagR)} ${f(Math.sin(a) * sagR)} ${f(pts[i][0])} ${f(pts[i][1])}`;
+      }
+      d += `<path d="${path}" stroke-width="${k === rings ? .9 : 1}" stroke-opacity="${(.62 - k * .04).toFixed(2)}"/>`;
     }
     svg.querySelector('g').innerHTML = d;
   }
-  cornerWeb(document.getElementById('webL'), 21, 70);
-  cornerWeb(document.getElementById('webR'), 7, 38);
+  cornerWeb(document.getElementById('webL'), 21, 5);
+  cornerWeb(document.getElementById('webR'), 7, 4);
   // durchhaengender Faden entlang der oberen Kante (von der linken Ecke bis ca. zur Mitte)
   document.querySelector('#sag path').setAttribute('d', 'M12 0 Q30 22 52 0');
   document.querySelector('#sag path').setAttribute('style', 'stroke-opacity:.32;stroke-width:.6px');
