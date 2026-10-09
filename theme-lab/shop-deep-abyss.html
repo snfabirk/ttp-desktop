@@ -169,76 +169,174 @@ addEventListener('click', e => {
   if (angler || lure.on < .6) return;
   if (e.target.closest('.card, .nav, .hint')) return;
   const lx = lure.x + Math.sin(performance.now() / 700) * 6, ly = lure.y + Math.sin(performance.now() / 500) * 4;
-  if (Math.hypot(e.clientX - lx, e.clientY - ly) < 26) angler = { t: 0, x: lx, y: ly, dir: lx < W / 2 ? -1 : 1 }; // Fisch kommt von der Seite mit mehr Platz
+  if (Math.hypot(e.clientX - lx, e.clientY - ly) < 26) cv.style.zIndex = 5, angler = { t: 0, x: lx, y: ly, dir: lx < W / 2 ? -1 : 1 }; // Fisch kommt von der Seite mit mehr Platz
 });
+
+// Anglerfisch v2: plastisch (Licht nur vom Koeder, Hauttextur, Rachen mit
+// Tiefe, zwei Zahnreihen) und bedrohlicher: kommt langsam aus dem Dunkel,
+// oeffnet das Maul, schnellt dann auf den Betrachter zu - Schwarz.
+const SPECK = Array.from({ length: 260 }, () => ({ x: rand(-.9, .55), y: rand(-.5, .35), r: rand(.002, .007), a: rand(.2, 1) }));
+const WRINKLES = Array.from({ length: 14 }, (_, k) => ({ x: rand(.05, .42), y: rand(-.32, .2), l: rand(.04, .1), c: rand(-.03, .03) }));
+function anglerBody(S, open) {
+  const jaw = open * S * .16;
+  const head = new Path2D();
+  head.moveTo(S * .47, -S * .07);
+  head.bezierCurveTo(S * .44, -S * .36, S * .16, -S * .52, -S * .14, -S * .45);
+  head.bezierCurveTo(-S * .44, -S * .37, -S * .62, -S * .16, -S * .74, -S * .03);
+  head.lineTo(-S * .98, -S * .22); head.quadraticCurveTo(-S * .9, 0, -S * .98, S * .2); head.lineTo(-S * .74, S * .06);
+  head.bezierCurveTo(-S * .5, S * .3, -S * .02, S * .36, S * .3, S * .22 + jaw * .45);
+  head.lineTo(S * .2, S * .01); head.closePath();
+  const lower = new Path2D();                         // massiger, vorstehender Unterkiefer
+  lower.moveTo(S * .18, S * .0);
+  lower.quadraticCurveTo(S * .42, S * .05 + jaw * .55, S * .6, S * .1 + jaw);
+  lower.quadraticCurveTo(S * .58, S * .2 + jaw, S * .4, S * .26 + jaw * .6);
+  lower.quadraticCurveTo(S * .1, S * .3, -S * .05, S * .2);
+  lower.closePath();
+  const mouth = new Path2D();
+  mouth.moveTo(S * .47, -S * .07);
+  mouth.quadraticCurveTo(S * .3, S * .0, S * .19, S * .01);
+  mouth.quadraticCurveTo(S * .42, S * .05 + jaw * .55, S * .6, S * .1 + jaw);
+  mouth.closePath();
+  return { head, lower, mouth, jaw };
+}
 
 function drawAngler(dt) {
   angler.t += dt;
   const a = angler, t = a.t;
-  // Dunkelheit zieht zu (alles ausser dem Koederlicht)
-  const dark = Math.min(1, t / .8) * (t > 4.6 ? Math.max(0, 1 - (t - 4.6) / 1) : 1);
-  cx.save();
-  cx.fillStyle = `rgba(0, 3, 6, ${dark * .82})`; cx.fillRect(0, 0, W, H);
-  // Fisch kommt langsam aus der Dunkelheit hinter dem Licht hervor, oeffnet das Maul, dreht ab
   const S = Math.min(W, H) * .55;
-  const appear = Math.min(1, Math.max(0, (t - .6) / 1.6));
-  const leave = t > 3.6 ? (t - 3.6) * (t - 3.6) * 900 : 0;
-  const fx = a.x - a.dir * (S * .72) - a.dir * leave, fy = a.y + S * .1;
-  const open = t > 2.2 && t < 3.6 ? Math.sin(Math.min(1, (t - 2.2) / .5) * Math.PI / 2) : (t >= 3.6 ? Math.max(0, 1 - (t - 3.6) * 3) : 0);
-  cx.translate(fx, fy); cx.scale(a.dir, 1);
-  // Nur das Koederlicht beleuchtet den Fisch - je weiter weg, desto schwaerzer
-  const lx = S * .72, ly = -S * .1; // Koeder haengt direkt vor dem Maul
-  const lit = cx.createRadialGradient(lx, ly, 0, lx, ly, S * .85);
-  lit.addColorStop(0, `rgba(58, 92, 98, ${appear})`); lit.addColorStop(.3, `rgba(16, 30, 36, ${appear})`); lit.addColorStop(.7, `rgba(4, 9, 12, ${appear})`); lit.addColorStop(1, `rgba(1, 3, 5, ${appear})`);
-  const jaw = open * S * .13;
-  const body = new Path2D();
-  body.moveTo(S * .47, -S * .07);                                                   // Oberlippe
-  body.bezierCurveTo(S * .42, -S * .34, S * .16, -S * .5, -S * .12, -S * .44);      // grosser runder Kopf
-  body.bezierCurveTo(-S * .42, -S * .36, -S * .6, -S * .16, -S * .72, -S * .03);    // Ruecken zum Schwanz
-  body.lineTo(-S * .96, -S * .2); body.quadraticCurveTo(-S * .88, 0, -S * .96, S * .19); body.lineTo(-S * .72, S * .05); // Schwanzflosse
-  body.bezierCurveTo(-S * .48, S * .3, S * .02, S * .4, S * .4, S * .22 + jaw * .6); // Bauch
-  body.lineTo(S * .58, S * .1 + jaw);                                               // vorstehender Unterkiefer
-  body.quadraticCurveTo(S * .42, S * .05 + jaw * .6, S * .2, S * .01);              // Kieferlinie zum Mundwinkel
-  body.closePath();
-  cx.fillStyle = lit; cx.fill(body);
-  // feine Lichtkante, wo das Licht auftrifft
-  const rim = cx.createRadialGradient(lx, ly, 0, lx, ly, S * .55);
-  rim.addColorStop(0, `rgba(140, 220, 210, ${.55 * appear})`); rim.addColorStop(1, 'rgba(140, 220, 210, 0)');
-  cx.strokeStyle = rim; cx.lineWidth = Math.max(1, S * .004); cx.stroke(body);
-  // Rachen: tiefes Schwarz zwischen den Kiefern
-  if (open > .02) {
-    cx.fillStyle = `rgba(0, 0, 0, ${appear})`;
-    cx.beginPath(); cx.moveTo(S * .47, -S * .07); cx.quadraticCurveTo(S * .3, S * .02, S * .2, S * .01);
-    cx.quadraticCurveTo(S * .42, S * .05 + jaw * .6, S * .58, S * .1 + jaw); cx.closePath(); cx.fill();
+  // Ablauf: 0-1.8 auftauchen, 1.8-3.0 Maul oeffnet sich langsam, 3.0-3.3 Satz
+  // nach vorn (Richtung Betrachter), 3.3-3.42 beisst zu, dann Schwarz
+  const appear = Math.min(1, Math.max(0, (t - .4) / 1.4));
+  const open = t < 1.8 ? 0 : t < 3.3 ? Math.min(1, (t - 1.8) / 1.2) : Math.max(0, 1 - (t - 3.3) / .12); // ... und schnappt zu
+  const ease = x => x * x * (3 - 2 * x);
+  const lunge = t < 3 ? 0 : Math.min(1, (t - 3) / .42);
+  const zoom = 1 + .12 * appear + ease(lunge) * 2.2;
+  const blackout = t < 3.4 ? 0 : t < 4.2 ? Math.min(1, (t - 3.4) / .12) : Math.max(0, 1 - (t - 4.2) / .9);
+  // Erschuetterung beim Zubeissen
+  const shake = t > 3.3 && t < 3.5 ? (Math.random() - .5) * S * .03 : 0;
+  const dark = Math.min(1, t / .8) * (t > 4.2 ? Math.max(0, 1 - (t - 4.2) / .9) : 1);
+  const drift = Math.sin(t * 1.3) * S * .01;
+
+  cx.save();
+  cx.fillStyle = `rgba(0, 3, 6, ${dark * .85})`; cx.fillRect(0, 0, W, H);
+  if (t < 4.2) {
+    const lx = S * .72, ly = -S * .1;               // Koeder relativ zum Fisch
+    // Ankerpunkt: der Koeder bleibt, wo man geklickt hat; beim Satz wird um
+    // die Maulmitte herangezoomt
+    const mx = S * .4, my = S * .05;
+    cx.translate(a.x + shake, a.y + drift + shake * .6);
+    cx.scale(a.dir, 1);
+    cx.translate(-lx, -ly);
+    cx.translate(mx, my); cx.scale(zoom, zoom); cx.translate(-mx, -my);
+    // Kiefer als Gelenk: Form immer "weit offen", der Unterkiefer dreht sich
+    // um das Kiefergelenk - bei open = 0 ist das Maul wirklich zu (Zubeissen)
+    const B = anglerBody(S, 1);
+    const hx = S * .19, hy = S * .01, jawA = -(1 - open) * .72;
+    const rot = (x, y) => { const c = Math.cos(jawA), sn = Math.sin(jawA), dx = x - hx, dy = y - hy; return [hx + dx * c - dy * sn, hy + dx * sn + dy * c]; };
+    const jawOn = () => { cx.save(); cx.translate(hx, hy); cx.rotate(jawA); cx.translate(-hx, -hy); };
+    const light = (x, y, r, stops) => { const g = cx.createRadialGradient(lx, ly, 0, lx, ly, r); stops.forEach(([o, c]) => g.addColorStop(o, c)); return g; };
+
+    // Brustflosse hinter dem Koerper, durchscheinend mit Strahlen
+    cx.save();
+    cx.translate(-S * .12, S * .12); cx.rotate(.35 + Math.sin(t * 2.2) * .12);
+    cx.fillStyle = `rgba(30, 55, 60, ${.35 * appear})`;
+    cx.beginPath(); cx.moveTo(0, 0); cx.quadraticCurveTo(-S * .12, S * .2, -S * .3, S * .14); cx.quadraticCurveTo(-S * .16, S * .02, 0, 0); cx.fill();
+    cx.strokeStyle = `rgba(90, 140, 140, ${.18 * appear})`; cx.lineWidth = 1;
+    for (let k = 1; k < 6; k++) { cx.beginPath(); cx.moveTo(0, 0); cx.lineTo(-S * .3 * k / 6 - S * .04, S * (.2 - k * .012)); cx.stroke(); }
+    cx.restore();
+
+    // Koerper: Grundfarbe fast schwarz, Licht nur vom Koeder (staerker abfallend)
+    const body = light(0, 0, S * .9, [[0, `rgba(78, 112, 112, ${appear})`], [.25, `rgba(30, 48, 50, ${appear})`], [.6, `rgba(8, 14, 16, ${appear})`], [1, `rgba(2, 4, 6, ${appear})`]]);
+    cx.fillStyle = body; cx.fill(B.head);
+    // Volumen: Bauch und Ruecken dunkler (Woelbung)
+    cx.save(); cx.clip(B.head);
+    const vol = cx.createLinearGradient(0, -S * .5, 0, S * .35);
+    vol.addColorStop(0, 'rgba(0,0,0,.55)'); vol.addColorStop(.35, 'rgba(0,0,0,0)'); vol.addColorStop(.75, 'rgba(0,0,0,.15)'); vol.addColorStop(1, 'rgba(0,0,0,.7)');
+    cx.fillStyle = vol; cx.fillRect(-S, -S * .6, S * 1.8, S);
+    // Hauttextur: Poren/Warzen, nur sichtbar, wo Licht hinfaellt
+    SPECK.forEach(p => {
+      const px = p.x * S, py = p.y * S, near = Math.max(0, 1 - Math.hypot(px - lx, py - ly) / (S * .75));
+      if (near < .05) return;
+      cx.fillStyle = `rgba(150, 190, 185, ${.28 * near * p.a * appear})`; cx.beginPath(); cx.arc(px, py, p.r * S, 0, 7); cx.fill();
+      cx.fillStyle = `rgba(0, 0, 0, ${.35 * near * p.a * appear})`; cx.beginPath(); cx.arc(px + p.r * S * .6, py + p.r * S * .6, p.r * S, 0, 7); cx.fill();
+    });
+    // Falten um Maul und Kiefer
+    cx.lineWidth = Math.max(1, S * .003);
+    WRINKLES.forEach(w => {
+      const wx = w.x * S, wy = w.y * S, near = Math.max(0, 1 - Math.hypot(wx - lx, wy - ly) / (S * .6));
+      cx.strokeStyle = `rgba(0, 0, 0, ${.5 * near * appear})`;
+      cx.beginPath(); cx.moveTo(wx, wy); cx.quadraticCurveTo(wx + w.l * S * .5, wy + w.c * S, wx + w.l * S, wy); cx.stroke();
+    });
+    // Kiemenspalt
+    cx.strokeStyle = `rgba(0, 0, 0, ${.7 * appear})`; cx.lineWidth = Math.max(1.5, S * .006);
+    cx.beginPath(); cx.moveTo(-S * .12, -S * .18); cx.quadraticCurveTo(-S * .2, S * .02, -S * .1, S * .18); cx.stroke();
+    cx.restore();
+
+    // Rachen: Tiefe - am Rand rot-braun vom Licht, innen schwarz
+    if (open > .02) {
+      const J = S * .16, [cxp, cyp] = rot(S * .42, S * .05 + J * .55), [tx, ty] = rot(S * .6, S * .1 + J);
+      const mouth = new Path2D();
+      mouth.moveTo(S * .47, -S * .07); mouth.quadraticCurveTo(S * .3, 0, hx, hy); mouth.quadraticCurveTo(cxp, cyp, tx, ty); mouth.closePath();
+      const throat = cx.createRadialGradient(S * .3, S * .04, 0, S * .42, S * .03, S * .3);
+      throat.addColorStop(0, `rgba(0, 0, 0, ${appear})`); throat.addColorStop(.6, `rgba(16, 4, 6, ${appear})`); throat.addColorStop(1, `rgba(60, 22, 24, ${appear})`);
+      cx.fillStyle = throat; cx.fill(mouth);
+    }
+
+    // Zaehne: hintere Reihe klein + dunkel, vordere lang + hell - gibt Tiefe
+    const tooth = (x, y, len, dirY, lean, w, alpha) => {
+      const near = Math.max(.12, 1 - Math.hypot(x - lx, y - ly) / (S * .7));
+      const g = cx.createLinearGradient(x, y, x + lean, y + dirY * len);
+      g.addColorStop(0, `rgba(120, 140, 135, ${alpha * .5 * appear * near})`); g.addColorStop(1, `rgba(235, 245, 240, ${alpha * appear * near})`);
+      cx.fillStyle = g;
+      cx.beginPath(); cx.moveTo(x - w, y); cx.quadraticCurveTo(x + lean * .3, y + dirY * len * .55, x + lean, y + dirY * len); cx.quadraticCurveTo(x + lean * .3 + w * .4, y + dirY * len * .5, x + w, y); cx.fill();
+    };
+    for (let k = 0; k < 8; k++) { const u = k / 7; tooth(S * (.22 + u * .24), -S * (.005 + u * .06) + S * .012, S * (.03 + (k % 2) * .015), 1, S * .004, S * .004, .45); }        // oben hinten
+    jawOn();
+    for (let k = 0; k < 9; k++) { const u = k / 8; tooth(S * (.23 + u * .33), S * .015 + u * (S * .085 + B.jaw * .9), S * (.03 + (k % 2) * .015), -1, -S * .004, S * .004, .45); } // unten hinten
+    cx.restore();
+    for (let k = 0; k < 7; k++) { const u = k / 6; tooth(S * (.25 + u * .22), -S * (.0 + u * .065), S * (.06 + (k % 3) * .025 + u * .02), 1, S * .01, S * .007, 1); }         // oben vorne
+    // Unterkiefer liegt vor allem anderen (dreht sich im Gelenk mit)
+    jawOn();
+    const jawFill = light(0, 0, S * .8, [[0, `rgba(86, 120, 118, ${appear})`], [.3, `rgba(28, 44, 46, ${appear})`], [.7, `rgba(6, 11, 13, ${appear})`], [1, `rgba(2, 4, 6, ${appear})`]]);
+    cx.fillStyle = jawFill; cx.fill(B.lower);
+    cx.save(); cx.clip(B.lower);
+    const jv = cx.createLinearGradient(0, S * .05, 0, S * .4); jv.addColorStop(0, 'rgba(0,0,0,0)'); jv.addColorStop(1, 'rgba(0,0,0,.75)');
+    cx.fillStyle = jv; cx.fillRect(-S * .1, 0, S * .8, S * .5);
+    cx.restore();
+    for (let k = 0; k < 9; k++) { const u = k / 8; tooth(S * (.24 + u * .35), S * .02 + u * (S * .09 + B.jaw), S * (.07 + (k % 2) * .045 + u * .04), -1, -S * .012, S * .008, 1); } // unten vorne, ragen weit hoch
+    const rimJ = light(0, 0, S * .5, [[0, `rgba(150, 230, 215, ${.6 * appear})`], [1, 'rgba(150, 230, 215, 0)']]);
+    cx.strokeStyle = rimJ; cx.lineWidth = Math.max(1, S * .004); cx.stroke(B.lower);
+    cx.restore();
+    // Lichtkante entlang des Kopfs
+    const rim = light(0, 0, S * .5, [[0, `rgba(150, 230, 215, ${.6 * appear})`], [1, 'rgba(150, 230, 215, 0)']]);
+    cx.strokeStyle = rim; cx.lineWidth = Math.max(1, S * .004); cx.stroke(B.head);
+
+    // Auge: kleine Kugel mit feuchtem Glanz, starrt in Richtung Betrachter
+    const ex = S * .17, ey = -S * .24, er = S * .028;
+    const eg = cx.createRadialGradient(ex - er * .3, ey - er * .3, 0, ex, ey, er);
+    eg.addColorStop(0, `rgba(60, 80, 78, ${appear})`); eg.addColorStop(.7, `rgba(8, 12, 12, ${appear})`); eg.addColorStop(1, `rgba(0, 0, 0, ${appear})`);
+    cx.fillStyle = eg; cx.beginPath(); cx.arc(ex, ey, er, 0, 7); cx.fill();
+    cx.fillStyle = `rgba(200, 255, 240, ${.9 * appear})`; cx.beginPath(); cx.arc(ex + er * .35, ey - er * .1, er * .22, 0, 7); cx.fill();
+
+    // Angel aus der Stirn zum Koeder
+    cx.strokeStyle = `rgba(80, 120, 120, ${.9 * appear})`; cx.lineWidth = Math.max(1.2, S * .006);
+    cx.beginPath(); cx.moveTo(S * .1, -S * .45); cx.bezierCurveTo(S * .25, -S * .7, S * .7, -S * .55, lx, ly); cx.stroke();
+    // der Koeder selbst haengt am Fisch und kommt beim Satz mit
+    cx.save(); cx.globalCompositeOperation = 'lighter';
+    const flick = .85 + .15 * Math.sin(t * 7) * Math.sin(t * 3.1);
+    const lg = cx.createRadialGradient(lx, ly, 0, lx, ly, 70 / zoom * (1 + (zoom - 1) * .5));
+    lg.addColorStop(0, `rgba(210, 255, 240, ${.9 * flick})`); lg.addColorStop(.12, 'rgba(120, 255, 220, .45)'); lg.addColorStop(1, 'rgba(60, 200, 190, 0)');
+    cx.fillStyle = lg; cx.beginPath(); cx.arc(lx, ly, 70, 0, 7); cx.fill();
+    cx.restore();
   }
-  // Nadelzaehne: duenn, gebogen, halbdurchsichtig - je naeher am Licht, desto sichtbarer
-  const tooth = (x, y, len, dirY, lean) => {
-    const near = Math.max(.15, 1 - Math.hypot(x - lx, y - ly) / (S * .7));
-    cx.fillStyle = `rgba(205, 225, 220, ${.75 * appear * near})`;
-    cx.beginPath(); cx.moveTo(x - S * .006, y); cx.quadraticCurveTo(x + lean, y + dirY * len * .6, x + lean * 1.4, y + dirY * len); cx.lineTo(x + S * .006, y); cx.fill();
-  };
-  for (let k = 0; k < 9; k++) {                       // oben, nach unten zeigend
-    const u = k / 8, x = S * (.2 + u * .27), y = -S * (.0 + u * .07) + (1 - u) * S * .01;
-    tooth(x, y, S * (.035 + (k % 3) * .02 + u * .02), 1, S * .006);
-  }
-  for (let k = 0; k < 10; k++) {                      // unten, laenger, ragen ueber die Oberlippe
-    const u = k / 9, x = S * (.21 + u * .36), y = S * .01 + u * (S * .09 + jaw);
-    tooth(x, y, S * (.05 + (k % 2) * .035 + u * .03), -1, -S * .008);
-  }
-  // kleines, kaltes Auge mit Spiegelung des Koeders
-  cx.fillStyle = `rgba(6, 12, 14, ${appear})`; cx.beginPath(); cx.arc(S * .17, -S * .23, S * .022, 0, 7); cx.fill();
-  cx.fillStyle = `rgba(170, 240, 225, ${.8 * appear})`; cx.beginPath(); cx.arc(S * .178, -S * .238, S * .005, 0, 7); cx.fill();
-  // Angel: entspringt der Stirn, Bogen zum Koeder
-  cx.strokeStyle = `rgba(70, 110, 112, ${.9 * appear})`; cx.lineWidth = Math.max(1.2, S * .006);
-  cx.beginPath(); cx.moveTo(S * .1, -S * .45); cx.bezierCurveTo(S * .25, -S * .7, S * .7, -S * .55, lx, ly); cx.stroke();
   cx.restore();
-  if (t > 5.8) { angler = null; lure.target = 0; lure.on = 0; lure.next = rand(25, 40); }
+  if (blackout > 0) { cx.fillStyle = `rgba(0, 0, 0, ${blackout})`; cx.fillRect(0, 0, W, H); }
+  if (t > 5.1) { cv.style.zIndex = ''; angler = null; lure.target = 0; lure.on = 0; lure.next = rand(25, 40); }
 }
 
 function drawLure(t) {
-  if (lure.on < .01) return;
+  if (lure.on < .01 || angler) return; // waehrend des Easter Eggs zeichnet drawAngler den Koeder
   const x = lure.x + Math.sin(t * 1.4) * 6, y = lure.y + Math.sin(t * 2) * 4;
-  if (angler) { angler.x = x; angler.y = y; }
   cx.save(); cx.globalCompositeOperation = 'lighter';
   const flick = .85 + .15 * Math.sin(t * 7) * Math.sin(t * 3.1);
   const g = cx.createRadialGradient(x, y, 0, x, y, 70);
