@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fancy shop cosmetics (Theme Lab)</title>
+<!-- Theme Lab (nicht im Installationspaket): die 8 Fancy-Shop-Cosmetics auf
+     einer Seite zum Vergleichen. Fancy = bewegt und mit Effekten, aber ohne
+     Easter Egg (das haben nur die Animated-Teile).
+     Themes: Starfall, Koi Garden - Borders: Dragonfire Ring, Crystal Ring,
+     Golden Laurel - Rahmen: Void Rift, Clockwork, Golden Filigree. -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: #0a1428; color: #f0e6d2; font-family: Georgia, serif; }
+  body { padding: 24px 40px 40px; }
+  h1 { margin: 0 0 4px; text-align: center; font-family: 'Cinzel', serif; color: #c8aa6e; letter-spacing: 3px; font-size: 1.6rem; }
+  h2 { margin: 26px 0 12px; font-family: 'Cinzel', serif; color: #b26bff; font-size: 1rem; letter-spacing: 2px; text-align: center; }
+  .grid { display: flex; justify-content: center; gap: 34px; flex-wrap: wrap; }
+  .item { text-align: center; }
+  .item b { display: block; margin-top: 10px; font-family: 'Cinzel', serif; color: #f0e6d2; font-size: .95rem; }
+  .item small { color: #a09b8c; font-size: .75rem; }
+  /* Themes: Vorschau-Fenster */
+  .theme { position: relative; width: 520px; height: 280px; border-radius: 12px; overflow: hidden; border: 1px solid #3a3020; }
+  .theme canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .theme .mock { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 240px; padding: 12px 16px; border-radius: 10px; backdrop-filter: blur(8px); text-align: left; font-size: .8rem; }
+  .theme .mock h4 { margin: 0 0 6px; font-family: 'Cinzel', serif; font-size: .8rem; letter-spacing: 1px; }
+  .theme .mock div { display: flex; justify-content: space-between; padding: 3px 0; }
+  /* Borders */
+  .border { position: relative; width: 100px; height: 100px; margin: 30px auto 0; }
+  .border img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .border canvas { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; pointer-events: none; }
+  /* Rahmen */
+  .frame { position: relative; width: 300px; height: 170px; margin: 26px 26px 0; }
+  .frame .inner { position: absolute; inset: 0; border-radius: 14px; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; box-sizing: border-box; }
+  .frame .inner span { border-radius: 8px; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .08); }
+  .frame .inner span:first-child { grid-column: span 2; }
+  .frame canvas { position: absolute; left: -40px; top: -40px; pointer-events: none; }
+</style>
+</head>
+<body>
+<h1>Fancy · Shop Cosmetics</h1>
+
+<h2>Themes</h2>
+<div class="grid">
+  <div class="item"><div class="theme" id="starfall"><canvas></canvas>
+    <div class="mock" style="background:rgba(10,15,42,.55);border:1px solid #2c3a6e;color:#e8ecff"><h4 style="color:#ffd86b">Today</h4><div><span>First Win of the Day</span><span style="color:#ffd86b">+400 XP</span></div><div><span>Champion of the Day</span><span style="color:#ffd86b">+500 XP</span></div></div></div>
+    <b>Starfall</b><small>Theme · Fancy</small></div>
+  <div class="item"><div class="theme" id="koi"><canvas></canvas>
+    <div class="mock" style="background:rgba(10,30,26,.55);border:1px solid #2c5245;color:#eaf6ef"><h4 style="color:#ff9a6b">Today</h4><div><span>First Win of the Day</span><span style="color:#ff9a6b">+400 XP</span></div><div><span>Champion of the Day</span><span style="color:#ff9a6b">+500 XP</span></div></div></div>
+    <b>Koi Garden</b><small>Theme · Fancy</small></div>
+</div>
+
+<h2>Borders</h2>
+<div class="grid">
+  <div class="item"><div class="border" data-kind="dragonfire"><img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" onerror="this.src='https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Evelynn.png'" alt=""><canvas></canvas></div><b>Dragonfire Ring</b><small>Border · Fancy</small></div>
+  <div class="item"><div class="border" data-kind="crystal"><img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><canvas></canvas></div><b>Crystal Ring</b><small>Border · Fancy</small></div>
+  <div class="item"><div class="border" data-kind="laurel"><img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><canvas></canvas></div><b>Golden Laurel</b><small>Border · Fancy</small></div>
+</div>
+
+<h2>Profile frames</h2>
+<div class="grid">
+  <div class="item"><div class="frame" data-kind="void"><div class="inner" style="background:rgba(16,8,30,.6)"><span></span><span></span><span></span></div><canvas></canvas></div><b>Void Rift</b><small>Frame · Fancy</small></div>
+  <div class="item"><div class="frame" data-kind="clock"><div class="inner" style="background:rgba(30,22,12,.6)"><span></span><span></span><span></span></div><canvas></canvas></div><b>Clockwork</b><small>Frame · Fancy</small></div>
+  <div class="item"><div class="frame" data-kind="filigree"><div class="inner" style="background:rgba(20,16,8,.6)"><span></span><span></span><span></span></div><canvas></canvas></div><b>Golden Filigree</b><small>Frame · Fancy</small></div>
+</div>
+
+<script>
+const rand = (a, b) => a + Math.random() * (b - a);
+const DPR = Math.min(2, devicePixelRatio || 1);
+function setup(cv, w, h) { cv.width = w * DPR; cv.height = h * DPR; cv.style.width = w + 'px'; cv.style.height = h + 'px'; const c = cv.getContext('2d'); c.setTransform(DPR, 0, 0, DPR, 0, 0); return c; }
+const draws = [];
+
+// ======================= THEME: Starfall =======================
+(() => {
+  const el = document.getElementById('starfall'), W = el.offsetWidth, H = el.offsetHeight, c = setup(el.querySelector('canvas'), W, H);
+  const stars = Array.from({ length: 220 }, () => ({ x: rand(0, W), y: rand(0, H * .85), r: rand(.3, 1.4), ph: rand(0, 6), sp: rand(.5, 2) }));
+  let shoot = null, next = 1.5;
+  draws.push((t, dt) => {
+    const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#050817'); g.addColorStop(.6, '#0a0f2a'); g.addColorStop(1, '#1a1838');
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    // sanftes Polarlicht-Band
+    c.save(); c.globalCompositeOperation = 'lighter';
+    for (let k = 0; k < 3; k++) {
+      c.beginPath(); for (let x = 0; x <= W; x += 10) { const y = H * (.22 + k * .05) + Math.sin(x * .012 + t * .3 + k) * 14 + Math.sin(x * .03 + t * .2) * 6; x ? c.lineTo(x, y) : c.moveTo(x, y); }
+      c.strokeStyle = `rgba(${k === 1 ? '120, 220, 255' : '170, 140, 255'}, ${.05 + .03 * Math.sin(t * .5 + k)})`; c.lineWidth = 18; c.stroke();
+    }
+    c.restore();
+    // Sterne funkeln
+    stars.forEach(s => { const a = .35 + .65 * (.5 + .5 * Math.sin(t * s.sp + s.ph)); c.fillStyle = `rgba(255, 250, 230, ${a})`; c.beginPath(); c.arc(s.x, s.y, s.r, 0, 7); c.fill(); });
+    // Sternschnuppe ab und zu
+    next -= dt;
+    if (!shoot && next <= 0) shoot = { x: rand(W * .2, W), y: rand(0, H * .3), vx: -rand(320, 460), vy: rand(120, 200), life: 1 };
+    if (shoot) {
+      shoot.x += shoot.vx * dt; shoot.y += shoot.vy * dt; shoot.life -= dt * 1.1;
+      const tg = c.createLinearGradient(shoot.x, shoot.y, shoot.x - shoot.vx * .25, shoot.y - shoot.vy * .25);
+      tg.addColorStop(0, `rgba(255, 245, 210, ${shoot.life})`); tg.addColorStop(1, 'rgba(255, 216, 107, 0)');
+      c.strokeStyle = tg; c.lineWidth = 2; c.beginPath(); c.moveTo(shoot.x, shoot.y); c.lineTo(shoot.x - shoot.vx * .25, shoot.y - shoot.vy * .25); c.stroke();
+      if (shoot.life <= 0) { shoot = null; next = rand(2.5, 6); }
+    }
+    // Horizont: Huegelsilhouette mit kleinem Observatorium
+    c.fillStyle = '#05060f';
+    c.beginPath(); c.moveTo(0, H); c.lineTo(0, H * .86); c.quadraticCurveTo(W * .3, H * .76, W * .55, H * .84); c.quadraticCurveTo(W * .8, H * .9, W, H * .82); c.lineTo(W, H); c.fill();
+    c.beginPath(); c.arc(W * .78, H * .86, 16, Math.PI, 0); c.fill(); c.fillRect(W * .78 - 16, H * .86, 32, 12);
+  });
+})();
+
+// ======================= THEME: Koi Garden =======================
+(() => {
+  const el = document.getElementById('koi'), W = el.offsetWidth, H = el.offsetHeight, c = setup(el.querySelector('canvas'), W, H);
+  const koi = Array.from({ length: 6 }, (_, i) => ({ x: rand(0, W), y: rand(0, H), a: rand(0, 6.28), v: rand(18, 32), turn: rand(-.3, .3), len: rand(34, 52), col: i % 3 === 0 ? ['#f4f1ea', '#e8481c'] : i % 3 === 1 ? ['#f09030', '#f8e6c8'] : ['#f4f1ea', '#1a1a1a'], ph: rand(0, 6) }));
+  const pads = Array.from({ length: 7 }, () => ({ x: rand(0, W), y: rand(0, H), r: rand(16, 30), rot: rand(0, 6), flower: Math.random() < .35 }));
+  const ripples = [];
+  draws.push((t, dt) => {
+    const g = c.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * .7); g.addColorStop(0, '#13403a'); g.addColorStop(1, '#071a17');
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    // Lichtflecken auf dem Wasser
+    c.save(); c.globalCompositeOperation = 'lighter';
+    for (let k = 0; k < 8; k++) { const x = (k * 97 + t * 8) % (W + 80) - 40, y = (k * 53) % H; c.fillStyle = 'rgba(120, 200, 170, .03)'; c.beginPath(); c.ellipse(x, y, 60, 14, .4, 0, 7); c.fill(); }
+    c.restore();
+    // Kois: schwimmen, wackeln mit dem Schwanz, wenden an den Raendern
+    koi.forEach(k => {
+      k.turn += (rand(-1, 1) * .6 - k.turn) * dt * .5; k.a += k.turn * dt;
+      const cx = W / 2 - k.x, cy = H / 2 - k.y, toC = Math.atan2(cy, cx);
+      if (k.x < 30 || k.x > W - 30 || k.y < 30 || k.y > H - 30) k.a += Math.sin(toC - k.a) * dt * 2;
+      k.x += Math.cos(k.a) * k.v * dt; k.y += Math.sin(k.a) * k.v * dt;
+      if (Math.random() < dt * .08) ripples.push({ x: k.x, y: k.y, r: 2, life: 1 });
+      c.save(); c.translate(k.x, k.y); c.rotate(k.a);
+      const L = k.len, wag = Math.sin(t * 6 + k.ph) * .35;
+      c.globalAlpha = .85;
+      // Schwanzflosse
+      c.save(); c.translate(-L * .45, 0); c.rotate(wag);
+      c.fillStyle = k.col[0]; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-L * .25, -L * .2, -L * .35, -L * .14); c.quadraticCurveTo(-L * .22, 0, -L * .35, L * .14); c.quadraticCurveTo(-L * .25, L * .2, 0, 0); c.fill();
+      c.restore();
+      // Koerper
+      c.fillStyle = k.col[0]; c.beginPath(); c.ellipse(0, 0, L * .5, L * .16, 0, 0, 7); c.fill();
+      // Flecken
+      c.fillStyle = k.col[1]; c.beginPath(); c.ellipse(L * .12, -L * .03, L * .16, L * .09, .3, 0, 7); c.fill(); c.beginPath(); c.ellipse(-L * .16, L * .03, L * .11, L * .07, -.2, 0, 7); c.fill();
+      // Brustflossen
+      c.fillStyle = k.col[0]; c.globalAlpha = .55; c.beginPath(); c.ellipse(L * .18, -L * .17, L * .1, L * .05, -.6 + wag * .3, 0, 7); c.ellipse(L * .18, L * .17, L * .1, L * .05, .6 - wag * .3, 0, 7); c.fill();
+      c.restore();
+    });
+    // Seerosenblaetter (ueber den Fischen)
+    pads.forEach(p => {
+      c.save(); c.translate(p.x + Math.sin(t * .3 + p.rot) * 2, p.y); c.rotate(p.rot + Math.sin(t * .2 + p.r) * .05);
+      c.fillStyle = '#2f6b3c'; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, p.r, .25, Math.PI * 2 - .05); c.closePath(); c.fill();
+      c.strokeStyle = 'rgba(160, 220, 150, .25)'; c.lineWidth = 1; for (let k = 0; k < 6; k++) { const a = .5 + k * 1; c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(a) * p.r * .9, Math.sin(a) * p.r * .9); c.stroke(); }
+      if (p.flower) { c.fillStyle = '#ffd0e0'; for (let k = 0; k < 6; k++) { c.save(); c.rotate(k * Math.PI / 3 + t * .05); c.beginPath(); c.ellipse(p.r * .1, 0, p.r * .32, p.r * .12, 0, 0, 7); c.fill(); c.restore(); } c.fillStyle = '#ffd86b'; c.beginPath(); c.arc(0, 0, p.r * .12, 0, 7); c.fill(); }
+      c.restore();
+    });
+    // Ringe auf dem Wasser
+    for (let i = ripples.length - 1; i >= 0; i--) { const r = ripples[i]; r.r += dt * 26; r.life -= dt * .7; if (r.life <= 0) { ripples.splice(i, 1); continue; } c.strokeStyle = `rgba(200, 240, 220, ${.35 * r.life})`; c.lineWidth = 1; c.beginPath(); c.arc(r.x, r.y, r.r, 0, 7); c.stroke(); }
+  });
+})();
+
+// ======================= BORDERS =======================
+document.querySelectorAll('.border').forEach(el => {
+  const S = el.offsetWidth, C = S * 2, c = setup(el.querySelector('canvas'), C, C), R = S / 2, kind = el.dataset.kind;
+  const embers = [];
+  draws.push((t, dt) => {
+    c.clearRect(0, 0, C, C); c.save(); c.translate(C / 2, C / 2);
+    if (kind === 'dragonfire') {
+      // gluehender Ring, flackernde Flammenzungen, aufsteigende Glut
+      const flick = .85 + .15 * Math.sin(t * 9) * Math.sin(t * 3.7);
+      const halo = c.createRadialGradient(0, 0, R * .9, 0, 0, R * 1.5); halo.addColorStop(0, `rgba(255, 110, 30, ${.35 * flick})`); halo.addColorStop(1, 'rgba(255, 60, 10, 0)');
+      c.fillStyle = halo; c.beginPath(); c.arc(0, 0, R * 1.5, 0, 7); c.fill();
+      c.save(); c.globalCompositeOperation = 'lighter';
+      for (let k = 0; k < 28; k++) {
+        const a = k / 28 * Math.PI * 2, h = R * (.12 + .1 * (.5 + .5 * Math.sin(t * 7 + k * 1.7)) + (Math.sin(a) < 0 ? .1 : 0));
+        const bx = Math.cos(a) * R * 1.05, by = Math.sin(a) * R * 1.05;
+        const fg = c.createLinearGradient(bx, by, bx, by - h * 1.6);
+        fg.addColorStop(0, 'rgba(255, 190, 80, .55)'); fg.addColorStop(1, 'rgba(255, 60, 10, 0)');
+        c.fillStyle = fg; c.beginPath(); c.moveTo(bx - R * .07, by); c.quadraticCurveTo(bx + Math.sin(t * 5 + k) * R * .05, by - h, bx + Math.sin(t * 4 + k) * R * .04, by - h * 1.6); c.quadraticCurveTo(bx + R * .02, by - h * .6, bx + R * .07, by); c.fill();
+      }
+      c.restore();
+      const ring = c.createLinearGradient(-R, -R, R, R); ring.addColorStop(0, '#ffcf6b'); ring.addColorStop(.5, '#e84a10'); ring.addColorStop(1, '#7a1a04');
+      c.strokeStyle = ring; c.lineWidth = R * .1; c.beginPath(); c.arc(0, 0, R * 1.05, 0, 7); c.stroke();
+      if (Math.random() < dt * 14) { const a = rand(0, 6.28); embers.push({ x: Math.cos(a) * R * 1.05, y: Math.sin(a) * R * 1.05, vx: rand(-8, 8), vy: rand(-40, -20), life: 1 }); }
+      for (let i = embers.length - 1; i >= 0; i--) { const e = embers[i]; e.life -= dt * .7; if (e.life <= 0) { embers.splice(i, 1); continue; } e.x += (e.vx + Math.sin(t * 3 + i) * 10) * dt; e.y += e.vy * dt; c.fillStyle = `rgba(255, ${150 + 80 * e.life}, 60, ${e.life})`; c.beginPath(); c.arc(e.x, e.y, 1.3, 0, 7); c.fill(); }
+    } else if (kind === 'crystal') {
+      // facettierte Kristallsegmente, ein Lichtschimmer wandert herum
+      const N = 16, sweep = (t * .9) % (Math.PI * 2);
+      for (let k = 0; k < N; k++) {
+        const a0 = k / N * Math.PI * 2, a1 = (k + 1) / N * Math.PI * 2, am = (a0 + a1) / 2;
+        const d = Math.abs(((am - sweep + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+        const shine = Math.max(0, 1 - d / .7);
+        const r0 = R * .98, r1 = R * (1.16 + (k % 2) * .05);
+        c.beginPath(); c.moveTo(Math.cos(a0) * r0, Math.sin(a0) * r0); c.lineTo(Math.cos(am) * r1, Math.sin(am) * r1); c.lineTo(Math.cos(a1) * r0, Math.sin(a1) * r0); c.closePath();
+        const g = c.createLinearGradient(Math.cos(a0) * r0, Math.sin(a0) * r0, Math.cos(am) * r1, Math.sin(am) * r1);
+        g.addColorStop(0, `rgba(${120 + 135 * shine}, ${180 + 75 * shine}, 255, .9)`); g.addColorStop(1, `rgba(${200 + 55 * shine}, ${235 + 20 * shine}, 255, ${.6 + .4 * shine})`);
+        c.fillStyle = g; c.fill(); c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = .7; c.stroke();
+        if (shine > .6) { c.fillStyle = `rgba(255,255,255,${(shine - .6) * 2})`; c.beginPath(); c.arc(Math.cos(am) * r1 * .97, Math.sin(am) * r1 * .97, 1.6, 0, 7); c.fill(); }
+      }
+      c.strokeStyle = 'rgba(180, 225, 255, .9)'; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, R * .99, 0, 7); c.stroke();
+    } else if (kind === 'laurel') {
+      // goldener Lorbeerkranz: zwei Zweige, die sich unten treffen, Glanz wandert
+      const ring = c.createLinearGradient(-R, -R, R, R); ring.addColorStop(0, '#f6dc8c'); ring.addColorStop(.5, '#b8862e'); ring.addColorStop(1, '#f2d27a');
+      c.strokeStyle = ring; c.lineWidth = R * .06; c.beginPath(); c.arc(0, 0, R * 1.02, 0, 7); c.stroke();
+      const glint = (t * .6) % 1;
+      for (const side of [-1, 1]) {
+        for (let k = 0; k < 11; k++) {
+          const u = k / 11, a = Math.PI / 2 + side * (.25 + u * 2.6);
+          const x = Math.cos(a) * R * 1.13, y = Math.sin(a) * R * 1.13;
+          const sh = Math.max(0, 1 - Math.abs(u - glint) * 6);
+          for (const off of [-1, 1]) {
+            c.save(); c.translate(x, y); c.rotate(a + side * Math.PI / 2 + off * .55 * side);
+            const lg = c.createLinearGradient(0, -R * .05, 0, R * .05);
+            lg.addColorStop(0, `rgb(${246}, ${220 + 30 * sh}, ${140 + 100 * sh})`); lg.addColorStop(1, '#8a5e18');
+            c.fillStyle = lg; c.beginPath(); c.ellipse(0, -R * .1 * off, R * .045, R * .11, 0, 0, 7); c.fill();
+            c.restore();
+          }
+        }
+      }
+      // kleine Schleife unten
+      c.fillStyle = '#c8402a'; c.beginPath(); c.ellipse(-R * .1, R * 1.13, R * .1, R * .05, .3, 0, 7); c.ellipse(R * .1, R * 1.13, R * .1, R * .05, -.3, 0, 7); c.fill();
+    }
+    c.restore();
+  });
+});
+
+// ======================= FRAMES =======================
+document.querySelectorAll('.frame').forEach(el => {
+  const w = el.offsetWidth, h = el.offsetHeight, P = 40, W = w + P * 2, H = h + P * 2, c = setup(el.querySelector('canvas'), W, H), kind = el.dataset.kind;
+  const motes = [];
+  const rr = (x, y, ww, hh, r) => { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + ww, y, x + ww, y + hh, r); c.arcTo(x + ww, y + hh, x, y + hh, r); c.arcTo(x, y + hh, x, y, r); c.arcTo(x, y, x + ww, y, r); c.closePath(); };
+  const corners = [[P, P, 1, 1], [P + w, P, -1, 1], [P + w, P + h, -1, -1], [P, P + h, 1, -1]];
+  // Void-Risse: feste Zickzacklinien aus jeder Ecke
+  const cracks = corners.map(([x, y, sx, sy]) => Array.from({ length: 3 }, () => { const pts = [[x, y]]; let px = x, py = y; const dir = rand(.2, 1.3); for (let k = 0; k < 6; k++) { px += Math.cos(dir) * sx * rand(6, 12) + rand(-3, 3); py += Math.sin(dir) * sy * rand(6, 12) + rand(-3, 3); pts.push([px, py]); } return pts; }));
+  draws.push((t, dt) => {
+    c.clearRect(0, 0, W, H);
+    if (kind === 'void') {
+      c.strokeStyle = '#3a1a5e'; c.lineWidth = 2; rr(P, P, w, h, 14); c.stroke();
+      c.save(); c.globalCompositeOperation = 'lighter';
+      cracks.forEach((set, ci) => set.forEach((pts, k) => {
+        const pulse = .5 + .5 * Math.sin(t * 2 + ci + k);
+        c.strokeStyle = `rgba(178, 107, 255, ${.35 + .5 * pulse})`; c.shadowColor = '#b26bff'; c.shadowBlur = 10 + 10 * pulse; c.lineWidth = 1.6;
+        c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke();
+      }));
+      c.shadowBlur = 0;
+      // Teilchen werden in die Risse gezogen
+      if (Math.random() < dt * 10) { const [x, y] = corners[Math.floor(rand(0, 4))]; const a = rand(0, 6.28), d = rand(30, 60); motes.push({ x: x + Math.cos(a) * d, y: y + Math.sin(a) * d, tx: x, ty: y, life: 1 }); }
+      for (let i = motes.length - 1; i >= 0; i--) { const m = motes[i]; m.life -= dt * .8; if (m.life <= 0) { motes.splice(i, 1); continue; } m.x += (m.tx - m.x) * dt * 1.5; m.y += (m.ty - m.y) * dt * 1.5; c.fillStyle = `rgba(200, 150, 255, ${m.life * .8})`; c.beginPath(); c.arc(m.x, m.y, 1.4, 0, 7); c.fill(); }
+      c.restore();
+    } else if (kind === 'clock') {
+      // Messingrahmen, Zahnraeder in den Ecken drehen sich gegeneinander
+      const brass = c.createLinearGradient(0, 0, W, H); brass.addColorStop(0, '#e2b45c'); brass.addColorStop(.5, '#8a5e20'); brass.addColorStop(1, '#d6a24a');
+      c.strokeStyle = brass; c.lineWidth = 4; rr(P, P, w, h, 14); c.stroke();
+      c.strokeStyle = 'rgba(255, 220, 150, .25)'; c.lineWidth = 1; rr(P + 5, P + 5, w - 10, h - 10, 10); c.stroke();
+      const gear = (x, y, r, teeth, ang, col) => {
+        c.save(); c.translate(x, y); c.rotate(ang);
+        c.beginPath();
+        for (let k = 0; k < teeth * 2; k++) { const a = k / (teeth * 2) * Math.PI * 2, rad = k % 2 ? r : r * 1.18; c.lineTo(Math.cos(a - .08) * rad, Math.sin(a - .08) * rad); c.lineTo(Math.cos(a + .08) * rad, Math.sin(a + .08) * rad); }
+        c.closePath(); c.fillStyle = col; c.fill(); c.strokeStyle = 'rgba(60, 35, 10, .8)'; c.lineWidth = 1; c.stroke();
+        c.fillStyle = '#2a1a08'; c.beginPath(); c.arc(0, 0, r * .3, 0, 7); c.fill();
+        for (let k = 0; k < 4; k++) { c.rotate(Math.PI / 2); c.fillStyle = 'rgba(40, 25, 8, .6)'; c.fillRect(r * .38, -r * .08, r * .45, r * .16); }
+        c.restore();
+      };
+      corners.forEach(([x, y, sx, sy], i) => {
+        const g1 = c.createRadialGradient(x, y, 0, x, y, 22); g1.addColorStop(0, '#f2cd7a'); g1.addColorStop(1, '#9a6a24');
+        gear(x, y, 18, 12, t * .6 * (i % 2 ? -1 : 1), g1);
+        gear(x + sx * 24, y + sy * 14, 9, 8, -t * 1.2 * (i % 2 ? -1 : 1) + .2, '#c89040');
+      });
+    } else if (kind === 'filigree') {
+      // feiner Goldrand, verschnoerkelte Ecken, Glanz laeuft um den Rahmen
+      const gold = c.createLinearGradient(0, 0, W, H); gold.addColorStop(0, '#f8e2a0'); gold.addColorStop(.5, '#b8862e'); gold.addColorStop(1, '#f2d27a');
+      c.strokeStyle = gold; c.lineWidth = 2; rr(P, P, w, h, 14); c.stroke();
+      c.lineWidth = 1; rr(P - 5, P - 5, w + 10, h + 10, 18); c.globalAlpha = .5; c.stroke(); c.globalAlpha = 1;
+      corners.forEach(([x, y, sx, sy]) => {
+        c.save(); c.translate(x, y); c.scale(sx, sy);
+        c.strokeStyle = gold; c.lineWidth = 1.6; c.lineCap = 'round';
+        c.beginPath(); c.moveTo(-8, 30); c.bezierCurveTo(-8, 8, 8, -8, 30, -8); c.stroke();          // Grundbogen
+        c.beginPath(); c.moveTo(-2, 14); c.bezierCurveTo(10, 14, 14, 4, 6, 0); c.bezierCurveTo(0, -3, -2, 4, 3, 6); c.stroke(); // Schnecke
+        c.beginPath(); c.moveTo(14, -2); c.bezierCurveTo(14, 10, 4, 14, 0, 6); c.stroke();
+        c.beginPath(); c.moveTo(30, -8); c.bezierCurveTo(40, -16, 50, -6, 44, -2); c.stroke();     // Ranke entlang der Kante
+        c.beginPath(); c.moveTo(-8, 30); c.bezierCurveTo(-16, 40, -6, 50, -2, 44); c.stroke();
+        c.fillStyle = gold; c.beginPath(); c.arc(-6, -6, 3, 0, 7); c.fill();
+        c.restore();
+      });
+      // wandernder Glanz entlang des Rahmens
+      const per = 2 * (w + h), d = (t * 160) % per;
+      let gx, gy; if (d < w) { gx = P + d; gy = P; } else if (d < w + h) { gx = P + w; gy = P + d - w; } else if (d < 2 * w + h) { gx = P + w - (d - w - h); gy = P + h; } else { gx = P; gy = P + h - (d - 2 * w - h); }
+      c.save(); c.globalCompositeOperation = 'lighter';
+      const sg = c.createRadialGradient(gx, gy, 0, gx, gy, 26); sg.addColorStop(0, 'rgba(255, 245, 210, .75)'); sg.addColorStop(1, 'rgba(255, 220, 140, 0)');
+      c.fillStyle = sg; c.beginPath(); c.arc(gx, gy, 26, 0, 7); c.fill(); c.restore();
+    }
+  });
+});
+
+let last = performance.now();
+function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; const t = now / 1000; draws.forEach(d => d(t, dt)); requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
