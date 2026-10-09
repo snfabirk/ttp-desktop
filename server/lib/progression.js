@@ -279,6 +279,27 @@ function equipCosmetic(type, id) {
   return { ok: true, equipped: state.equipped };
 }
 
+// ----- Profil-Layout -----
+const LAYOUT_COLS = 6;
+const LAYOUT_MAX_WIDGETS = 40;
+
+// Nur grobe Plausibilitaet - welche Typen/Groessen es gibt, weiss der Client.
+function saveProfileLayout(layout) {
+  if (!Array.isArray(layout) || layout.length > LAYOUT_MAX_WIDGETS) return { ok: false, error: 'Invalid layout.' };
+  const clean = [];
+  for (const w of layout) {
+    const ints = ['x', 'y', 'w', 'h'].every(k => Number.isInteger(w && w[k]));
+    if (!ints || typeof w.type !== 'string' || typeof w.id !== 'string') return { ok: false, error: 'Invalid widget.' };
+    if (w.x < 0 || w.y < 0 || w.w < 1 || w.h < 1 || w.x + w.w > LAYOUT_COLS || w.y + w.h > 60) return { ok: false, error: 'Widget out of bounds.' };
+    const config = w.config && typeof w.config === 'object' ? { text: typeof w.config.text === 'string' ? w.config.text.slice(0, 280) : undefined } : {};
+    clean.push({ id: w.id.slice(0, 40), type: w.type.slice(0, 30), x: w.x, y: w.y, w: w.w, h: w.h, config });
+  }
+  const state = readState();
+  state.profileLayout = clean;
+  writeState(state);
+  return { ok: true };
+}
+
 // ----- Speicherung -----
 function filePath() {
   return path.join(dataSubdir('progression'), 'progression.json');
@@ -289,6 +310,9 @@ function emptyState() {
     version: 2, totalXp: 0, ledger: [], rerolls: {},
     // passes['YYYY-MM'] = { xp, claimedTier, claimedOverflow }
     passes: {}, coins: 0, inventory: [], equipped: { border: null },
+    // Profil-Layout (Widget-Raster auf profile.html), null = Standard-Layout
+    // des Clients. [{ id, type, x, y, w, h, config }]
+    profileLayout: null,
     // lastLP: zuletzt gesehener LP-Stand (vergleichbar ueber Tiers hinweg,
     // siehe rankHistory.toComparableLP), progress: 0-99 auf dem Konto.
     lpBank: { puuid: null, lastLP: null, progress: 0, fills: 0, events: [] }
@@ -433,6 +457,7 @@ function getLifetimeStats() {
     coins: state.coins,
     equipped: state.equipped,
     owned: state.inventory.map(getCosmetic).filter(Boolean),
+    profileLayout: state.profileLayout,
     trackedSince: games.length ? Math.min(...games.map(g => g.gameCreation)) : null
   };
 }
@@ -493,6 +518,7 @@ module.exports = {
   getLifetimeStats,
   getCosmeticsState,
   equipCosmetic,
+  saveProfileLayout,
   rerollDaily,
   resetState
 };

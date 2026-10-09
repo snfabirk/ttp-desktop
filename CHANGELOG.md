@@ -1,5 +1,21 @@
 # Internal Changelog
 
+## 5.5.0 — 2026-10-09
+
+- profile.html rebuilt as a widget board: 6-column grid (square cells via
+  container query units), widget catalog `WIDGETS` with allowed sizes per
+  type and size-aware render (identity 6x1 fixed; challenges/games 2x1,3x1,
+  6x1; mostPlayed 1x1,2x1,2x2,3x2; rank 1x1,2x1; winrate/level 1x1;
+  trophies 1x1,2x1; bio 2x1,3x1,6x1,3x2 with editable text).
+- Edit mode ("Edit profile" text button below): slot outlines, drag to move
+  (snap, overlap rejected), corner handle snaps to the nearest allowed
+  size, x removes; left panel adds widgets / Save / Cancel / reset; right
+  panel = cosmetics inventory with tabs (Borders live, Backgrounds/
+  Stickers/Themes placeholders). Border equip applied on Save.
+- Layout persisted in progression.json `profileLayout` via
+  `POST /api/profile/layout` (validated: <=40 widgets, in bounds, bio text
+  <=280 chars); returned by /api/profile-stats.
+
 ## 5.4.1 — 2026-10-09
 
 - Challenge tab filled (user: looked bare): Goal Progress bar (start snapshot

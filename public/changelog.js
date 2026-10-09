@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.5.0',
+      date: '2026-10-09',
+      notable: [
+        'Your profile is now a customizable board of widgets. Click "Edit profile" to move widgets, resize them (each widget has its own sizes, bigger shows more), add or remove them and leave gaps.',
+        'While editing, your cosmetics open on the right - pick a border and see it live before saving.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.4.1',
       date: '2026-10-09',
       notable: [

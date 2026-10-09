@@ -752,6 +752,12 @@ app.post('/api/cosmetics/equip', (req, res) => {
   res.status(result.ok ? 200 : 400).json(result);
 });
 
+// Profil-Layout (Widget-Raster auf profile.html) speichern.
+app.post('/api/profile/layout', (req, res) => {
+  const result = progression.saveProfileLayout((req.body || {}).layout);
+  res.status(result.ok ? 200 : 400).json(result);
+});
+
 // "Reset Account Progress" in den Settings - NUR Level/XP/Quests/Pass,
 // alles andere (Challenge, Trophies, Verlauf) bleibt.
 app.post('/api/progression/reset', (req, res) => {

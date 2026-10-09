@@ -12,9 +12,13 @@
   <script src="update-indicator.js"></script>
   <script src="changelog.js"></script>
   <style>
-    /* Spielerprofil (v5.2.0): waechst ueber ALLE Challenges hinweg - alles zur
-       laufenden Challenge lebt auf challenge.html. Spaeter kommen hier
-       freischaltbare Cosmetics (Borders usw.) dazu. */
+    /* Spielerprofil (v5.5.0): eine Widget-Flaeche, die genau so aussieht, wie
+       Freunde sie spaeter sehen. "Edit profile" oeffnet den Bearbeitungsmodus
+       (Nutzerdesign 2026-10-09): links Werkzeuge (Widgets hinzufuegen,
+       Speichern/Abbrechen), rechts das Inventar (Borders, spaeter Backgrounds,
+       Sticker, Themes). Widgets rasten in ein 6-Spalten-Raster ein und haben
+       je Typ erlaubte Groessen (wie iPhone-Widgets) - je groesser, desto mehr
+       Infos. Layout liegt in progression.json (profileLayout). */
     body {
       display: flex;
       flex-direction: column;
@@ -35,100 +39,153 @@
       padding: 0 30px;
       margin: 12px 0 24px;
     }
-    .card {
+
+    /* ----- Flaeche + Raster ----- */
+    .canvas-wrap {
+      container-type: inline-size;
+    }
+    .canvas {
+      --gap: 12px;
+      --cell: calc((100cqw - 5 * var(--gap)) / 6);
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-auto-rows: var(--cell);
+      gap: var(--gap);
+    }
+    .slot {
+      border: 1px dashed color-mix(in srgb, var(--text-faint) 55%, transparent);
+      border-radius: 10px;
+      pointer-events: none;
+    }
+    .widget {
+      position: relative;
+      z-index: 1;
+      min-width: 0;
+      min-height: 0;
+      box-sizing: border-box;
       background: var(--panel-bg);
       backdrop-filter: blur(12px) saturate(1.1);
       -webkit-backdrop-filter: blur(12px) saturate(1.1);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 14px 20px;
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
-      margin-bottom: 14px;
+      overflow: hidden;
     }
-    .card h3 {
-      margin: 0 0 10px;
+    .w-body {
+      height: 100%;
+      box-sizing: border-box;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      font-family: Georgia, serif;
+    }
+    .w-title {
       color: var(--gold);
       font-family: 'Cinzel', Georgia, serif;
-      font-size: 1rem;
+      font-size: 0.8rem;
       letter-spacing: 1px;
+      margin-bottom: 8px;
     }
-
-    /* ----- Kopf: Icon (spaeter mit Border), Name, Level ----- */
-    .hero {
+    .w-center { align-items: center; text-align: center; }
+    .w-big {
+      color: var(--text);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 1.9rem;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+    .w-label {
+      color: var(--text-faint);
+      font-size: 0.66rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+    .w-stats {
       display: flex;
-      align-items: center;
-      gap: 20px;
-      padding: 18px 24px;
+      gap: 8px;
     }
-    /* Profilbild im ausgeruesteten Border (cosmetics.css). */
-    .hero-frame {
-      width: 92px;
-      height: 92px;
-      --cos-width: 4px;
-    }
-    .hero-icon {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-    .hero-icon.loaded { opacity: 1; }
-    .hero-main {
+    .w-stat {
       flex: 1;
       min-width: 0;
+      padding: 8px 4px;
+      border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--input-bg) 55%, transparent);
+      text-align: center;
     }
-    .hero-top {
-      display: flex;
-      align-items: baseline;
-      gap: 12px;
-    }
-    .coin-pill {
-      flex-shrink: 0;
-      margin-left: auto;
-      padding: 2px 10px;
-      border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent);
-      border-radius: 11px;
-      color: var(--gold);
+    .w-stat .v {
+      display: block;
+      color: var(--text);
       font-family: 'Cinzel', Georgia, serif;
-      font-size: 0.85rem;
+      font-size: 1.1rem;
       font-variant-numeric: tabular-nums;
-      cursor: help;
+      white-space: nowrap;
     }
-    .hero-name {
+    .w-stat .l {
+      display: block;
+      margin-top: 2px;
+      color: var(--text-faint);
+      font-size: 0.6rem;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pos { color: var(--green) !important; }
+    .neg { color: var(--red) !important; }
+
+    /* Identitaet (feste 6x1) */
+    .identity {
+      flex-direction: row;
+      align-items: center;
+      gap: 18px;
+      padding: 10px 20px;
+    }
+    .id-frame {
+      width: calc(var(--cell) - 26px);
+      height: calc(var(--cell) - 26px);
+      max-width: 100px;
+      max-height: 100px;
+      --cos-width: 4px;
+    }
+    .id-frame img { opacity: 0; transition: opacity 0.15s ease; }
+    .id-frame img.loaded { opacity: 1; }
+    .id-main { flex: 1; min-width: 0; }
+    .id-top { display: flex; align-items: baseline; gap: 12px; }
+    .id-name {
       min-width: 0;
       color: var(--gold);
       font-family: 'Cinzel', Georgia, serif;
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       letter-spacing: 1px;
+      white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
     }
-    .hero-since {
-      color: var(--text-faint);
-      font-family: Georgia, serif;
-      font-size: 0.8rem;
-      font-style: italic;
-      margin: 2px 0 10px;
-      min-height: 1.2em;
-    }
-    .level-line {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .level-pill {
+    .coin-pill, .level-pill {
       flex-shrink: 0;
       padding: 2px 10px;
       border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent);
       border-radius: 11px;
       color: var(--gold);
       font-family: 'Cinzel', Georgia, serif;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       white-space: nowrap;
+      font-variant-numeric: tabular-nums;
     }
+    .coin-pill { margin-left: auto; }
+    .id-since {
+      color: var(--text-faint);
+      font-size: 0.78rem;
+      font-style: italic;
+      margin: 2px 0 8px;
+      min-height: 1.2em;
+    }
+    .level-line { display: flex; align-items: center; gap: 12px; }
     .xp-bar {
       flex: 1;
       height: 10px;
@@ -141,180 +198,262 @@
       height: 100%;
       width: 0;
       background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 70%, transparent), var(--gold));
-      transition: width 0.4s ease;
     }
     .xp-text {
       flex-shrink: 0;
       color: var(--text-dim);
-      font-family: Georgia, serif;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
 
-    /* ----- Stat-Kacheln ----- */
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 10px;
+    /* Champion-Widgets */
+    .champ-splash {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center 20%;
     }
-    @media (max-width: 760px) {
-      .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .champ-splash::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg, rgba(var(--bg-rgb), 0.95) 0%, rgba(var(--bg-rgb), 0.35) 60%, rgba(var(--bg-rgb), 0.1) 100%);
     }
-    .stat {
-      padding: 10px 8px;
-      border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-      border-radius: 8px;
-      background: color-mix(in srgb, var(--input-bg) 55%, transparent);
-      text-align: center;
+    .champ-over {
+      position: relative;
+      z-index: 1;
+      margin-top: auto;
     }
-    .stat .value {
-      display: block;
-      color: var(--text);
+    .champ-over .n {
+      color: var(--gold);
       font-family: 'Cinzel', Georgia, serif;
-      font-size: 1.25rem;
-      font-variant-numeric: tabular-nums;
+      font-size: 0.95rem;
     }
-    .stat .label {
-      display: block;
-      margin-top: 3px;
-      color: var(--text-faint);
-      font-size: 0.68rem;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-    }
-
-    .two-col {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 14px;
-    }
-    @media (max-width: 760px) {
-      .two-col { grid-template-columns: minmax(0, 1fr); }
-    }
-    .two-col .card { margin-bottom: 0; }
-
+    .champ-over .s { color: var(--text-dim); font-size: 0.75rem; }
     .champ-row {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 6px 0;
+      padding: 5px 0;
       border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
-      font-family: Georgia, serif;
+      font-size: 0.85rem;
     }
     .champ-row:last-child { border-bottom: none; }
-    .champ-row img {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
+    .champ-row img { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); }
+    .champ-row .name { flex: 1; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .champ-row .g { color: var(--text-dim); font-size: 0.75rem; }
+
+    /* Die Riot-Embleme haben sehr viel transparenten Rand -> Ausschnitt. */
+    .emblem-box { overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .emblem-box img { width: 100%; height: 100%; object-fit: contain; transform: scale(3.4); }
+    .emblem-box.big { width: 62%; max-width: 92px; aspect-ratio: 1; }
+    .emblem-box.small { width: 72px; height: 72px; }
+    .rank-row { display: flex; align-items: center; gap: 12px; }
+    .rank-text { color: var(--text); font-family: 'Cinzel', Georgia, serif; font-size: 1.1rem; }
+    .bio-text {
+      color: var(--text);
+      font-size: 0.9rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      overflow: hidden;
     }
-    .champ-row .name { flex: 1; color: var(--text); font-size: 0.9rem; }
-    .champ-row .games { color: var(--text-dim); font-size: 0.8rem; }
-    .champ-row .wr { width: 52px; text-align: right; font-size: 0.85rem; }
-    .wr.pos { color: var(--green); }
-    .wr.neg { color: var(--red); }
-    .empty {
-      margin: 0;
+    .bio-text.empty { color: var(--text-faint); font-style: italic; }
+    .bio-edit {
+      width: 100%;
+      flex: 1;
+      box-sizing: border-box;
+      resize: none;
+      background: color-mix(in srgb, var(--input-bg) 70%, transparent);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: Georgia, serif;
+      font-size: 0.88rem;
+      padding: 6px 8px;
+    }
+
+    /* ----- Bearbeiten-Knopf unter der Flaeche ----- */
+    .edit-toggle {
+      display: block;
+      margin: 14px auto 0;
+      padding: 4px 8px;
+      border: none;
+      background: none;
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.9rem;
+      font-style: italic;
+      cursor: pointer;
+    }
+    .edit-toggle:hover { color: var(--gold); }
+    body.editing .edit-toggle { display: none; }
+
+    /* ----- Bearbeitungsmodus ----- */
+    body.editing .widget { cursor: grab; user-select: none; }
+    body.editing .widget.dragging { cursor: grabbing; opacity: 0.85; z-index: 5; border-color: var(--gold); }
+    body.editing .widget.invalid { border-color: var(--red); box-shadow: 0 0 0 2px color-mix(in srgb, var(--red) 50%, transparent); }
+    body.editing .widget.selected { border-color: var(--gold); box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 45%, transparent); }
+    .w-remove, .w-resize, .w-size {
+      display: none;
+      position: absolute;
+      z-index: 3;
+    }
+    body.editing .w-remove, body.editing .w-resize, body.editing .w-size { display: flex; }
+    .w-remove {
+      top: 6px;
+      right: 6px;
+      width: 22px;
+      height: 22px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      border: 1px solid var(--red);
+      background: var(--bg);
+      color: var(--red);
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .w-resize {
+      right: 4px;
+      bottom: 4px;
+      width: 18px;
+      height: 18px;
+      cursor: nwse-resize;
+      border-right: 3px solid var(--gold);
+      border-bottom: 3px solid var(--gold);
+      border-radius: 0 0 6px 0;
+      opacity: 0.8;
+    }
+    .w-size {
+      left: 6px;
+      bottom: 6px;
+      padding: 0 6px;
+      border-radius: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 0.65rem;
+      line-height: 16px;
+    }
+
+    .side-panel {
+      position: fixed;
+      top: 90px;
+      bottom: 24px;
+      width: 230px;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      padding: 14px 16px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+      font-family: Georgia, serif;
+      transition: transform 0.22s ease, opacity 0.22s ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .side-panel.left { left: 20px; transform: translateX(-30px); }
+    .side-panel.right { right: 20px; transform: translateX(30px); }
+    body.editing .side-panel { opacity: 1; transform: none; pointer-events: auto; }
+    .side-panel h3 {
+      margin: 0 0 10px;
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.95rem;
+      letter-spacing: 1px;
+    }
+    .panel-scroll { flex: 1; overflow-y: auto; margin: 0 -6px; padding: 0 6px; }
+    .panel-hint {
+      margin: 0 0 10px;
+      color: var(--text-faint);
+      font-size: 0.75rem;
+      line-height: 1.4;
+    }
+    .add-item {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      margin-bottom: 6px;
+      padding: 8px 10px;
+      text-align: left;
+      border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--bg) 50%, transparent);
+      color: var(--text);
+      font-family: Georgia, serif;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .add-item:hover { border-color: var(--gold); }
+    .add-item small { color: var(--text-faint); font-size: 0.7rem; margin-top: 2px; }
+    .add-item:disabled { opacity: 0.4; cursor: default; }
+    .add-item:disabled:hover { border-color: color-mix(in srgb, var(--border) 70%, transparent); }
+    .panel-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .panel-actions button {
+      flex: 1;
+      padding: 8px 0;
+      border-radius: 8px;
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .btn-save { border: 1px solid var(--gold); background: var(--gold); color: var(--bg); }
+    .btn-cancel { border: 1px solid var(--border); background: transparent; color: var(--text-dim); }
+    .btn-cancel:hover { color: var(--text); border-color: var(--border-hover); }
+    .btn-reset {
+      margin-top: 8px;
+      border: none;
+      background: none;
       color: var(--text-faint);
       font-family: Georgia, serif;
-      font-size: 0.82rem;
-      font-style: italic;
+      font-size: 0.75rem;
+      cursor: pointer;
+      text-decoration: underline;
     }
-    .cos-list {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px;
+
+    .inv-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+    .inv-tab {
+      padding: 3px 9px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: transparent;
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.75rem;
+      cursor: pointer;
     }
-    .cos-item {
+    .inv-tab.active { border-color: var(--gold); color: var(--gold); }
+    .inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .inv-item {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 6px;
-      padding: 8px 4px;
+      padding: 10px 4px 8px;
       border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
       border-radius: 8px;
-      background: color-mix(in srgb, var(--input-bg) 55%, transparent);
+      background: color-mix(in srgb, var(--bg) 50%, transparent);
       color: var(--text-dim);
-      font-family: Georgia, serif;
       font-size: 0.72rem;
       text-align: center;
       cursor: pointer;
-      transition: border-color 0.15s ease, color 0.15s ease;
     }
-    .cos-item:hover { border-color: var(--border-hover); color: var(--text); }
-    .cos-item.equipped {
-      border-color: var(--gold);
-      color: var(--gold);
-      background: color-mix(in srgb, var(--gold) 12%, transparent);
-    }
-    .cos-item .cos-border { width: 38px; height: 38px; }
-    .cos-item.locked {
-      cursor: help;
-      border-style: dashed;
-      color: var(--text-faint);
-    }
-    .cos-item.locked .lock {
-      width: 38px;
-      height: 38px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-    }
+    .inv-item:hover { border-color: var(--border-hover); color: var(--text); }
+    .inv-item.equipped { border-color: var(--gold); color: var(--gold); background: color-mix(in srgb, var(--gold) 12%, transparent); }
+    .inv-item .cos-border { width: 40px; height: 40px; }
+    .inv-empty { color: var(--text-faint); font-size: 0.8rem; font-style: italic; line-height: 1.4; }
 
-    /* "?"-Hinweis wie auf challenge.html */
-    .info-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      color: var(--text-dim);
-      font-size: 0.75rem;
-      line-height: 1;
-      font-style: normal;
-    }
-    .hint {
-      position: relative;
-      display: inline-flex;
-      vertical-align: 2px;
-      margin-left: 4px;
-      font-family: Georgia, serif;
-      font-size: 0.75rem;
-      font-weight: normal;
-      letter-spacing: 0;
-      cursor: help;
-      outline: none;
-    }
-    .hint:hover .info-icon, .hint:focus-within .info-icon { border-color: var(--gold); color: var(--gold); }
-    .hint-pop {
-      position: absolute;
-      top: calc(100% + 8px);
-      left: -10px;
-      z-index: 20;
-      width: 280px;
-      padding: 10px 14px;
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-      color: var(--text-dim);
-      line-height: 1.45;
-      text-transform: none;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.12s ease;
-    }
-    .hint:hover .hint-pop, .hint:focus-within .hint-pop { opacity: 1; visibility: visible; }
     .status {
       text-align: center;
       color: var(--text-dim);
       font-family: Georgia, serif;
       font-size: 0.85rem;
       min-height: 1.2em;
+      margin-top: 8px;
     }
   </style>
 </head>
@@ -328,149 +467,422 @@
   </header>
 
   <div class="content">
-    <div class="card hero">
-      <span class="cos-border cos-none hero-frame" id="heroFrame"><img id="heroIcon" class="hero-icon" src="" alt=""></span>
-      <div class="hero-main">
-        <div class="hero-top">
-          <div class="hero-name" id="heroName">No summoner loaded yet</div>
-          <span class="coin-pill" id="coinPill" title="Coins from the monthly pass - spend them in the shop (coming soon)">🪙 0</span>
-        </div>
-        <div class="hero-since" id="heroSince"></div>
-        <div class="level-line" title="Profile level - keeps growing across all challenges">
-          <span class="level-pill" id="levelPill">Level 1</span>
-          <div class="xp-bar"><div class="xp-bar-fill" id="levelFill"></div></div>
-          <span class="xp-text" id="levelText">0 / 2,000 XP</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>Challenges</h3>
-      <div class="stat-grid">
-        <div class="stat"><span class="value" id="stChallenges">–</span><span class="label">Started</span></div>
-        <div class="stat"><span class="value" id="stGoals">–</span><span class="label">Goals Reached</span></div>
-        <div class="stat"><span class="value" id="stTrophies">–</span><span class="label">Trophies Earned</span></div>
-        <div class="stat"><span class="value" id="stBest">–</span><span class="label">Best Challenge</span></div>
-        <div class="stat"><span class="value" id="stPlatinum">–</span><span class="label">Platinum</span></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>Games <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop" id="gamesHint">Counts every ranked game the app has credited XP for, across all challenges.</span></span></h3>
-      <div class="stat-grid">
-        <div class="stat"><span class="value" id="stGames">–</span><span class="label">Games</span></div>
-        <div class="stat"><span class="value" id="stWinrate">–</span><span class="label">Win Rate</span></div>
-        <div class="stat"><span class="value" id="stKda">–</span><span class="label">Avg K / D / A</span></div>
-        <div class="stat"><span class="value" id="stLp">–</span><span class="label">LP Gained</span></div>
-        <div class="stat"><span class="value" id="stBank">–</span><span class="label">LP Bank Filled</span></div>
-      </div>
-    </div>
-
-    <div class="two-col">
-      <div class="card">
-        <h3>Most Played</h3>
-        <div id="topChamps"><p class="empty">No games yet.</p></div>
-      </div>
-      <div class="card">
-        <h3>Borders <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Click a border to equip it. Borders unlock on tiers 5, 10, 15, 20, 25 and 30 of the monthly pass and stay yours forever. More cosmetics and a shop are coming.</span></span></h3>
-        <div class="cos-list" id="cosList"></div>
-      </div>
-    </div>
+    <div class="canvas-wrap"><div class="canvas" id="canvas"></div></div>
+    <button type="button" class="edit-toggle" id="editToggle">✎ Edit profile</button>
     <p class="status" id="status"></p>
   </div>
 
+  <aside class="side-panel left" id="toolPanel" aria-label="Profile tools">
+    <h3>Widgets</h3>
+    <p class="panel-hint">Drag widgets to move them, pull the corner to resize (only sizes that make sense for that widget), × removes. Empty spaces are fine.</p>
+    <div class="panel-scroll" id="addList"></div>
+    <div class="panel-actions">
+      <button type="button" class="btn-cancel" id="cancelBtn">Cancel</button>
+      <button type="button" class="btn-save" id="saveBtn">Save</button>
+    </div>
+    <button type="button" class="btn-reset" id="resetLayoutBtn">Reset to default layout</button>
+  </aside>
+
+  <aside class="side-panel right" id="invPanel" aria-label="Cosmetics">
+    <h3>Cosmetics</h3>
+    <div class="inv-tabs" id="invTabs"></div>
+    <div class="panel-scroll" id="invList"></div>
+  </aside>
+
   <script>
     const DDRAGON_VERSION = '16.17.1';
+    const COLS = 6;
     const ls = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
     const fmtNum = n => Number(n).toLocaleString('en-US');
-    const statusEl = document.getElementById('status');
-    const setText = (id, text) => { document.getElementById(id).textContent = text; };
     const fmtDate = iso => new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const esc = str => String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const canvas = document.getElementById('canvas');
+    const statusEl = document.getElementById('status');
 
     async function parseApiResponse(res) {
       const text = await res.text();
       try { return JSON.parse(text); } catch (e) { return { error: text || `HTTP ${res.status}` }; }
     }
 
-    // Borders: "Default" + alle eigenen; Klick = ausruesten.
-    function applyBorder(id) {
-      document.getElementById('heroFrame').className = `cos-border hero-frame cos-${id || 'none'}`;
+    // ===== Daten =====
+    const data = { account: null, stats: null, rank: null };
+
+    // ===== Widget-Katalog =====
+    // sizes: erlaubte [Breite, Hoehe] in Rasterzellen, erste = Standard.
+    const RANK_ABBR = { IRON: 'Iron', BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold', PLATINUM: 'Plat', EMERALD: 'Emerald', DIAMOND: 'Diamond', MASTER: 'Master', GRANDMASTER: 'GM', CHALLENGER: 'Challenger' };
+    const APEX = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
+    function emblemUrl(tier) {
+      return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-${tier.toLowerCase()}.png`;
+    }
+    const stat = (v, l, cls = '') => `<div class="w-stat"><span class="v ${cls}">${v}</span><span class="l">${l}</span></div>`;
+    const big = (v, l, cls = '') => `<div class="w-body w-center"><div class="w-big ${cls}">${v}</div><div class="w-label">${l}</div></div>`;
+
+    const WIDGETS = {
+      identity: {
+        name: 'Name & Level', desc: 'Always on your profile', fixed: true, sizes: [[6, 1]],
+        render() {
+          const s = data.stats;
+          const a = data.account;
+          const lvl = s ? s.level : { level: 1, xpIntoLevel: 0, xpForNextLevel: 2000 };
+          const border = (editState ? editState.border : (s && s.equipped && s.equipped.border)) || 'none';
+          const icon = a && a.profileIconId != null ? `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${a.profileIconId}.png` : '';
+          return `<div class="w-body identity">
+            <span class="cos-border id-frame cos-${border}"><img src="${icon}" alt="" onload="this.classList.add('loaded')"></span>
+            <div class="id-main">
+              <div class="id-top">
+                <div class="id-name">${a ? esc(`${a.gameName}#${a.tagLine}`) : 'No summoner loaded yet'}</div>
+                <span class="coin-pill" title="Coins from the monthly pass">🪙 ${fmtNum(s ? s.coins : 0)}</span>
+              </div>
+              <div class="id-since">${s && s.challenges.firstStarted ? `Challenger since ${fmtDate(s.challenges.firstStarted)}` : ''}</div>
+              <div class="level-line" title="Profile level - keeps growing across all challenges">
+                <span class="level-pill">Level ${lvl.level}</span>
+                <div class="xp-bar"><div class="xp-bar-fill" style="width:${(lvl.xpIntoLevel / lvl.xpForNextLevel) * 100}%"></div></div>
+                <span class="xp-text">${fmtNum(lvl.xpIntoLevel)} / ${fmtNum(lvl.xpForNextLevel)} XP</span>
+              </div>
+            </div>
+          </div>`;
+        }
+      },
+      challenges: {
+        name: 'Challenges', desc: 'Started, goals, trophies', sizes: [[3, 1], [2, 1], [6, 1]],
+        render(w) {
+          const c = data.stats ? data.stats.challenges : null;
+          const all = [
+            stat(c ? c.started : '–', 'Started'),
+            stat(c ? c.goalsReached : '–', 'Goals'),
+            stat(c ? c.trophies : '–', 'Trophies'),
+            stat(c && c.started ? `${c.bestTrophies} 🏆` : '–', 'Best'),
+            stat(c ? c.platinum : '–', 'Platinum')
+          ];
+          const n = w.w >= 6 ? 5 : w.w >= 3 ? 3 : 2;
+          return `<div class="w-body"><div class="w-title">Challenges</div><div class="w-stats">${all.slice(0, n).join('')}</div></div>`;
+        }
+      },
+      games: {
+        name: 'Games', desc: 'Games, win rate, KDA, LP', sizes: [[3, 1], [2, 1], [6, 1]],
+        render(w) {
+          const d = data.stats;
+          const g = d ? d.games : 0;
+          const wr = g ? Math.round((d.wins / g) * 100) : null;
+          const all = [
+            stat(d ? g : '–', 'Games'),
+            stat(wr === null ? '–' : `${wr}%`, 'Win rate', wr === null ? '' : wr >= 50 ? 'pos' : 'neg'),
+            stat(g ? [d.kills, d.deaths, d.assists].map(n => (n / g).toFixed(1)).join('/') : '–', 'Avg KDA'),
+            stat(d ? `+${fmtNum(d.lpGained)}` : '–', 'LP gained'),
+            stat(d ? `${d.lpBankFills}×` : '–', 'LP Bank')
+          ];
+          const n = w.w >= 6 ? 5 : w.w >= 3 ? 3 : 2;
+          return `<div class="w-body"><div class="w-title">Games</div><div class="w-stats">${all.slice(0, n).join('')}</div></div>`;
+        }
+      },
+      mostPlayed: {
+        name: 'Most Played', desc: 'Your top champions', sizes: [[2, 2], [1, 1], [2, 1], [3, 2]],
+        render(w) {
+          const top = data.stats ? data.stats.topChamps : [];
+          if (!top.length) return `<div class="w-body w-center"><div class="w-title">Most Played</div><div class="w-label">No games yet</div></div>`;
+          const t = top[0];
+          const wrOf = c => Math.round((c.wins / c.games) * 100);
+          if (w.h === 1 || (w.w === 2 && w.h === 2 && top.length === 1)) {
+            return `<div class="champ-splash" style="background-image:url('https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${t.champId}_0.jpg')"></div>
+              <div class="w-body"><div class="champ-over"><div class="n">${esc(t.name)}</div>${w.w > 1 || w.h > 1 ? `<div class="s">${t.games} ${t.games === 1 ? 'game' : 'games'} · ${wrOf(t)}% WR</div>` : ''}</div></div>`;
+          }
+          return `<div class="w-body" style="justify-content:flex-start"><div class="w-title">Most Played</div>${top.map(c => `<div class="champ-row">
+            <img src="https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${c.champId}.png" alt="">
+            <span class="name">${esc(c.name)}</span>
+            <span class="g">${c.games}G · <span class="${wrOf(c) >= 50 ? 'pos' : 'neg'}">${wrOf(c)}%</span></span>
+          </div>`).join('')}</div>`;
+        }
+      },
+      rank: {
+        name: 'Current Rank', desc: 'Solo/Duo rank', sizes: [[2, 1], [1, 1]],
+        render(w) {
+          const r = data.rank;
+          if (!r) return big('–', 'Unranked');
+          const text = APEX.has(r.tier) ? `${RANK_ABBR[r.tier]} · ${r.leaguePoints} LP` : `${RANK_ABBR[r.tier] || r.tier} ${r.rank} · ${r.leaguePoints} LP`;
+          if (w.w === 1) return `<div class="w-body w-center" title="${text}"><span class="emblem-box big"><img src="${emblemUrl(r.tier)}" alt=""></span><div class="w-label">${RANK_ABBR[r.tier] || r.tier} ${APEX.has(r.tier) ? '' : r.rank}</div></div>`;
+          return `<div class="w-body"><div class="rank-row"><span class="emblem-box small"><img src="${emblemUrl(r.tier)}" alt=""></span><div><div class="rank-text">${text}</div><div class="w-label">Solo / Duo</div></div></div></div>`;
+        }
+      },
+      winrate: {
+        name: 'Win Rate', desc: 'One big number', sizes: [[1, 1]],
+        render() {
+          const d = data.stats;
+          const wr = d && d.games ? Math.round((d.wins / d.games) * 100) : null;
+          return big(wr === null ? '–' : `${wr}%`, 'Win rate', wr === null ? '' : wr >= 50 ? 'pos' : 'neg');
+        }
+      },
+      level: {
+        name: 'Level', desc: 'Your level, big', sizes: [[1, 1]],
+        render() {
+          return big(data.stats ? data.stats.level.level : 1, 'Level');
+        }
+      },
+      trophies: {
+        name: 'Trophies', desc: 'Trophies earned', sizes: [[1, 1], [2, 1]],
+        render(w) {
+          const c = data.stats ? data.stats.challenges : null;
+          if (w.w === 1) return big(c ? `${c.trophies}` : '–', 'Trophies 🏆');
+          return `<div class="w-body"><div class="w-title">Trophies</div><div class="w-stats">${stat(c ? c.trophies : '–', 'Earned')}${stat(c ? c.platinum : '–', 'Platinum')}</div></div>`;
+        }
+      },
+      bio: {
+        name: 'About me', desc: 'A short text', sizes: [[3, 1], [2, 1], [6, 1], [3, 2]],
+        render(w) {
+          const text = (w.config && w.config.text) || '';
+          if (editState) {
+            return `<div class="w-body" style="justify-content:flex-start"><div class="w-title">About me</div><textarea class="bio-edit" maxlength="280" data-bio="${w.id}" placeholder="Write something…">${esc(text)}</textarea></div>`;
+          }
+          return `<div class="w-body" style="justify-content:flex-start"><div class="w-title">About me</div><div class="bio-text${text ? '' : ' empty'}">${text ? esc(text) : 'Nothing here yet.'}</div></div>`;
+        }
+      }
+    };
+
+    const DEFAULT_LAYOUT = [
+      { id: 'identity', type: 'identity', x: 0, y: 0, w: 6, h: 1 },
+      { id: 'challenges', type: 'challenges', x: 0, y: 1, w: 3, h: 1 },
+      { id: 'games', type: 'games', x: 3, y: 1, w: 3, h: 1 },
+      { id: 'mostPlayed', type: 'mostPlayed', x: 0, y: 2, w: 2, h: 2 },
+      { id: 'rank', type: 'rank', x: 2, y: 2, w: 2, h: 1 },
+      { id: 'winrate', type: 'winrate', x: 4, y: 2, w: 1, h: 1 },
+      { id: 'level', type: 'level', x: 5, y: 2, w: 1, h: 1 },
+      { id: 'bio', type: 'bio', x: 2, y: 3, w: 3, h: 1, config: { text: '' } }
+    ];
+
+    let layout = DEFAULT_LAYOUT.map(w => ({ ...w }));
+    // editState: null = Ansicht; sonst { layout-Kopie fuer Abbrechen, border }
+    let editState = null;
+
+    // ===== Raster-Logik =====
+    function overlaps(a, b) {
+      return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+    }
+    function fits(rect, ignoreId) {
+      if (rect.x < 0 || rect.y < 0 || rect.x + rect.w > COLS) return false;
+      return layout.every(o => o.id === ignoreId || !overlaps(rect, o));
+    }
+    function firstFreeSpot(w, h) {
+      for (let y = 0; y < 60; y++) {
+        for (let x = 0; x + w <= COLS; x++) {
+          if (fits({ x, y, w, h }, null)) return { x, y };
+        }
+      }
+      return null;
+    }
+    function rowCount() {
+      const bottom = layout.reduce((m, w) => Math.max(m, w.y + w.h), 1);
+      return editState ? bottom + 2 : bottom;
     }
 
-    function renderBorders(owned, equippedId) {
-      const borders = owned.filter(c => c.type === 'border');
-      const items = [{ id: null, name: 'Default' }, ...borders];
-      document.getElementById('cosList').innerHTML = items.map(c => `
-        <div class="cos-item${(c.id || null) === (equippedId || null) ? ' equipped' : ''}" data-equip="${c.id || ''}" title="${c.id ? `Equip ${c.name}` : 'Plain gold border'}">
-          <span class="cos-border cos-${c.id || 'none'}"><span class="cos-fill"></span></span>
-          <span>${c.name}</span>
-        </div>`).join('') +
-        (borders.length < 6 ? `<div class="cos-item locked" title="Unlock more borders in the monthly pass"><span class="lock">🔒</span><span>More in the pass</span></div>` : '');
+    function render() {
+      const rows = rowCount();
+      let html = '';
+      if (editState) {
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < COLS; x++) html += `<div class="slot" style="grid-column:${x + 1};grid-row:${y + 1}"></div>`;
+        }
+      }
+      layout.forEach(w => {
+        const def = WIDGETS[w.type];
+        if (!def) return;
+        html += `<div class="widget" data-id="${w.id}" style="grid-column:${w.x + 1} / span ${w.w};grid-row:${w.y + 1} / span ${w.h}">
+          ${def.render(w)}
+          ${def.fixed ? '' : '<button type="button" class="w-remove" title="Remove widget" data-remove>×</button>'}
+          ${def.sizes.length > 1 ? '<span class="w-resize" title="Drag to resize" data-resize></span>' : ''}
+          <span class="w-size">${w.w}×${w.h}</span>
+        </div>`;
+      });
+      canvas.style.gridTemplateRows = `repeat(${rows}, var(--cell))`;
+      canvas.innerHTML = html;
+      if (editState) renderPanels();
     }
 
-    document.getElementById('cosList').addEventListener('click', async e => {
-      const item = e.target.closest('[data-equip]');
-      if (!item || item.classList.contains('equipped')) return;
-      const id = item.dataset.equip || null;
+    // ===== Ziehen / Groesse aendern =====
+    function cellMetrics() {
+      const rect = canvas.getBoundingClientRect();
+      const gap = 12;
+      const cell = (rect.width - gap * (COLS - 1)) / COLS;
+      return { rect, step: cell + gap };
+    }
+
+    let drag = null;
+    canvas.addEventListener('pointerdown', e => {
+      if (!editState) return;
+      const el = e.target.closest('.widget');
+      if (!el || e.target.closest('[data-remove]') || e.target.closest('textarea')) return;
+      const w = layout.find(x => x.id === el.dataset.id);
+      if (!w) return;
+      e.preventDefault();
+      drag = { w, el, mode: e.target.closest('[data-resize]') ? 'resize' : 'move', startX: e.clientX, startY: e.clientY, orig: { x: w.x, y: w.y, w: w.w, h: w.h }, ok: true };
+      el.classList.add('dragging');
+      el.setPointerCapture(e.pointerId);
+    });
+    canvas.addEventListener('pointermove', e => {
+      if (!drag) return;
+      const { step } = cellMetrics();
+      const o = drag.orig;
+      let next;
+      if (drag.mode === 'move') {
+        next = { ...o, x: o.x + Math.round((e.clientX - drag.startX) / step), y: o.y + Math.round((e.clientY - drag.startY) / step) };
+        next.x = Math.max(0, Math.min(COLS - o.w, next.x));
+        next.y = Math.max(0, next.y);
+      } else {
+        // Naechste erlaubte Groesse zur Mauszeiger-Position
+        const wantW = o.w + (e.clientX - drag.startX) / step;
+        const wantH = o.h + (e.clientY - drag.startY) / step;
+        const sizes = WIDGETS[drag.w.type].sizes;
+        const best = sizes.reduce((b, s) => {
+          const d = Math.hypot(s[0] - wantW, s[1] - wantH);
+          return !b || d < b.d ? { s, d } : b;
+        }, null).s;
+        next = { ...o, w: best[0], h: best[1] };
+        if (next.x + next.w > COLS) next.x = COLS - next.w;
+      }
+      drag.ok = fits(next, drag.w.id);
+      drag.next = next;
+      drag.el.style.gridColumn = `${next.x + 1} / span ${next.w}`;
+      drag.el.style.gridRow = `${next.y + 1} / span ${next.h}`;
+      drag.el.classList.toggle('invalid', !drag.ok);
+      const rows = Math.max(rowCount(), next.y + next.h + 1);
+      canvas.style.gridTemplateRows = `repeat(${rows}, var(--cell))`;
+    });
+    function endDrag() {
+      if (!drag) return;
+      const { w, next, ok } = drag;
+      if (next && ok) Object.assign(w, { x: next.x, y: next.y, w: next.w, h: next.h });
+      drag = null;
+      render();
+    }
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+
+    canvas.addEventListener('click', e => {
+      if (!editState || !e.target.closest('[data-remove]')) return;
+      const id = e.target.closest('.widget').dataset.id;
+      layout = layout.filter(w => w.id !== id);
+      render();
+    });
+    canvas.addEventListener('input', e => {
+      const ta = e.target.closest('[data-bio]');
+      if (!ta) return;
+      const w = layout.find(x => x.id === ta.dataset.bio);
+      if (w) w.config = { ...(w.config || {}), text: ta.value };
+    });
+
+    // ===== Panels =====
+    let invTab = 'border';
+    const INV_TABS = [
+      { id: 'border', label: 'Borders' },
+      { id: 'background', label: 'Backgrounds' },
+      { id: 'sticker', label: 'Stickers' },
+      { id: 'theme', label: 'Themes' }
+    ];
+
+    function renderPanels() {
+      const present = new Set(layout.map(w => w.type));
+      document.getElementById('addList').innerHTML = Object.entries(WIDGETS)
+        .filter(([, def]) => !def.fixed)
+        .map(([type, def]) => `<button type="button" class="add-item" data-add="${type}"${present.has(type) ? ' disabled' : ''}>
+          ${def.name}<small>${present.has(type) ? 'Already on your profile' : `${def.desc} · ${def.sizes.map(s => s.join('×')).join(', ')}`}</small>
+        </button>`).join('');
+
+      document.getElementById('invTabs').innerHTML = INV_TABS
+        .map(t => `<button type="button" class="inv-tab${t.id === invTab ? ' active' : ''}" data-invtab="${t.id}">${t.label}</button>`).join('');
+      const owned = data.stats ? data.stats.owned : [];
+      const list = document.getElementById('invList');
+      if (invTab === 'border') {
+        const items = [{ id: null, name: 'Default' }, ...owned.filter(c => c.type === 'border')];
+        list.innerHTML = `<div class="inv-grid">${items.map(c => `
+          <div class="inv-item${(c.id || 'none') === editState.border ? ' equipped' : ''}" data-equip="${c.id || 'none'}">
+            <span class="cos-border cos-${c.id || 'none'}"><span class="cos-fill"></span></span>${esc(c.name)}
+          </div>`).join('')}</div>`;
+      } else {
+        list.innerHTML = '<p class="inv-empty">Nothing here yet - these will come from the monthly pass and the shop.</p>';
+      }
+    }
+
+    document.getElementById('addList').addEventListener('click', e => {
+      const btn = e.target.closest('[data-add]');
+      if (!btn || btn.disabled) return;
+      const type = btn.dataset.add;
+      const [w, h] = WIDGETS[type].sizes[0];
+      const spot = firstFreeSpot(w, h);
+      if (!spot) return;
+      layout.push({ id: type, type, x: spot.x, y: spot.y, w, h, config: type === 'bio' ? { text: '' } : undefined });
+      render();
+    });
+    document.getElementById('invTabs').addEventListener('click', e => {
+      const t = e.target.closest('[data-invtab]');
+      if (!t) return;
+      invTab = t.dataset.invtab;
+      renderPanels();
+    });
+    document.getElementById('invList').addEventListener('click', e => {
+      const it = e.target.closest('[data-equip]');
+      if (!it) return;
+      editState.border = it.dataset.equip;
+      render();
+    });
+
+    // ===== Modus wechseln / Speichern =====
+    function enterEdit() {
+      editState = {
+        snapshot: JSON.parse(JSON.stringify(layout)),
+        border: (data.stats && data.stats.equipped && data.stats.equipped.border) || 'none'
+      };
+      document.body.classList.add('editing');
+      render();
+    }
+    function leaveEdit() {
+      editState = null;
+      document.body.classList.remove('editing');
+      render();
+    }
+
+    document.getElementById('editToggle').addEventListener('click', enterEdit);
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+      layout = editState.snapshot;
+      leaveEdit();
+    });
+    document.getElementById('resetLayoutBtn').addEventListener('click', () => {
+      const bio = layout.find(w => w.type === 'bio');
+      layout = DEFAULT_LAYOUT.map(w => (w.type === 'bio' && bio ? { ...w, config: bio.config } : { ...w }));
+      render();
+    });
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true;
       try {
-        const res = await fetch('/api/cosmetics/equip', {
+        const res = await fetch('/api/profile/layout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'border', id })
+          body: JSON.stringify({ layout })
         });
-        const data = await parseApiResponse(res);
-        if (!res.ok) throw new Error(data.error || 'Unknown error');
-        applyBorder(data.equipped.border);
-        document.querySelectorAll('#cosList .cos-item').forEach(el => {
-          el.classList.toggle('equipped', el.dataset.equip !== undefined && (el.dataset.equip || null) === (data.equipped.border || null));
-        });
+        const out = await parseApiResponse(res);
+        if (!res.ok) throw new Error(out.error || 'Unknown error');
+        const newBorder = editState.border === 'none' ? null : editState.border;
+        const oldBorder = (data.stats && data.stats.equipped && data.stats.equipped.border) || null;
+        if (newBorder !== oldBorder) {
+          const r2 = await fetch('/api/cosmetics/equip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'border', id: newBorder })
+          });
+          const o2 = await parseApiResponse(r2);
+          if (!r2.ok) throw new Error(o2.error || 'Unknown error');
+          data.stats.equipped = o2.equipped;
+        }
+        statusEl.textContent = '';
+        leaveEdit();
       } catch (err) {
-        statusEl.textContent = `Could not equip: ${err.message}`;
+        statusEl.textContent = `Could not save: ${err.message}`;
+      } finally {
+        btn.disabled = false;
       }
     });
 
-    function renderStats(d) {
-      const { level, xpIntoLevel, xpForNextLevel } = d.level;
-      setText('levelPill', `Level ${level}`);
-      document.getElementById('levelFill').style.width = `${(xpIntoLevel / xpForNextLevel) * 100}%`;
-      setText('levelText', `${fmtNum(xpIntoLevel)} / ${fmtNum(xpForNextLevel)} XP`);
-      setText('coinPill', `🪙 ${fmtNum(d.coins)}`);
-      applyBorder(d.equipped && d.equipped.border);
-      renderBorders(d.owned || [], d.equipped && d.equipped.border);
-
-      const c = d.challenges;
-      setText('stChallenges', c.started);
-      setText('stGoals', c.goalsReached);
-      setText('stTrophies', c.trophies);
-      setText('stBest', c.started ? `${c.bestTrophies} 🏆` : '–');
-      setText('stPlatinum', c.platinum);
-      setText('heroSince', c.firstStarted ? `Challenger since ${fmtDate(c.firstStarted)}` : '');
-
-      setText('stGames', d.games);
-      setText('stWinrate', d.games ? `${Math.round((d.wins / d.games) * 100)}%` : '–');
-      setText('stKda', d.games
-        ? [d.kills, d.deaths, d.assists].map(n => (n / d.games).toFixed(1)).join(' / ')
-        : '–');
-      setText('stLp', `+${fmtNum(d.lpGained)}`);
-      setText('stBank', `${d.lpBankFills}×`);
-      if (d.trackedSince) {
-        setText('gamesHint', `Counts every ranked game the app has credited XP for, across all challenges - tracked since ${fmtDate(d.trackedSince)}.`);
-      }
-
-      document.getElementById('topChamps').innerHTML = d.topChamps.length
-        ? d.topChamps.map(ch => {
-          const wr = Math.round((ch.wins / ch.games) * 100);
-          return `<div class="champ-row">
-            <img src="https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${ch.champId}.png" alt="">
-            <span class="name">${ch.name}</span>
-            <span class="games">${ch.games} ${ch.games === 1 ? 'game' : 'games'}</span>
-            <span class="wr ${wr >= 50 ? 'pos' : 'neg'}">${wr}%</span>
-          </div>`;
-        }).join('')
-        : '<p class="empty">No games yet.</p>';
-    }
-
+    // ===== Laden =====
     async function loadProfile() {
+      render();
       const parts = ls('ttp_summoner_name').trim().split('#');
       let puuid = '';
       if (parts.length === 2 && parts[0] && parts[1]) {
@@ -478,13 +890,8 @@
           const res = await fetch(`/api/account?${new URLSearchParams({ gameName: parts[0], tagLine: parts[1] })}`);
           const account = await parseApiResponse(res);
           if (!res.ok) throw new Error(account.error || 'Could not find summoner.');
+          data.account = account;
           puuid = account.puuid;
-          setText('heroName', `${account.gameName}#${account.tagLine}`);
-          if (account.profileIconId !== null && account.profileIconId !== undefined) {
-            const icon = document.getElementById('heroIcon');
-            icon.onload = () => icon.classList.add('loaded');
-            icon.src = `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${account.profileIconId}.png`;
-          }
         } catch (e) {
           statusEl.textContent = `Could not load summoner: ${e.message}`;
         }
@@ -494,11 +901,25 @@
 
       try {
         const res = await fetch(`/api/profile-stats?${new URLSearchParams({ puuid })}`);
-        const data = await parseApiResponse(res);
-        if (!res.ok) throw new Error(data.error || 'Unknown error');
-        renderStats(data);
+        const stats = await parseApiResponse(res);
+        if (!res.ok) throw new Error(stats.error || 'Unknown error');
+        data.stats = stats;
+        if (Array.isArray(stats.profileLayout) && stats.profileLayout.length) {
+          layout = stats.profileLayout.filter(w => WIDGETS[w.type]);
+          if (!layout.some(w => w.type === 'identity')) layout.unshift({ ...DEFAULT_LAYOUT[0] });
+        }
       } catch (e) {
         statusEl.textContent = `Could not load profile stats: ${e.message}`;
+      }
+      if (!drag) render();
+
+      if (puuid) {
+        try {
+          const res = await fetch(`/api/current-rank?${new URLSearchParams({ puuid })}`);
+          const r = await parseApiResponse(res);
+          if (res.ok) data.rank = r.current || null;
+        } catch (e) {}
+        if (!drag) render();
       }
     }
     loadProfile();
