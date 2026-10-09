@@ -230,6 +230,7 @@
 
     function renderWheelSmall() {
       document.getElementById('wheelSmall').innerHTML = wheelSvg(shop.wheel.segments);
+      document.querySelector('#wheelSmall .wheel-rot').style.transform = `rotate(${rotation}deg)`;
       const st = document.getElementById('wheelStatus');
       st.className = 'wheel-status' + (shop.wheel.canSpin ? ' free' : '');
       st.textContent = shop.wheel.canSpin ? 'Free spin available!' : `Next free spin in ${until(shop.wheel.nextSpinAt)}`;
@@ -248,6 +249,11 @@
       try {
         const res = await fetch('/api/shop');
         shop = await res.json();
+        // Heute schon gedreht: das Rad steht auf dem gewonnenen Feld
+        if (shop.wheel.todayIndex != null) {
+          const segDeg = 360 / shop.wheel.segments.length;
+          rotation = 360 - (shop.wheel.todayIndex * segDeg + segDeg / 2);
+        }
         render();
       } catch (e) {
         document.getElementById('wheelStatus').textContent = 'Shop could not be loaded.';
@@ -256,7 +262,7 @@
 
     // ----- Gross-Ansicht: Klick aufs Rad -> zoomt in die Mitte, dort drehen -----
     let big = null;
-    let rotation = 0;
+    let rotation = 0; // aktuelle Drehung des Rads (bleibt nach dem Dreh dort stehen)
     let spinning = false;
 
     function bigRect() {

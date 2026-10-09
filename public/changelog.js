@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.14.0',
+      date: '2026-10-09',
+      notable: [
+        'Pass 30+: still 100 coins per step, but every step now takes 500 XP more than the one before (2,500, 3,000, 3,500 ...).',
+        'The Lucky Wheel now stays on the field you won until your next free spin.'
+      ],
+      refinements: 1,
+      bugfixes: 0
+    },
+    {
       version: '5.13.1',
       date: '2026-10-09',
       notable: [],

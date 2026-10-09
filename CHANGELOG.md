@@ -1,5 +1,14 @@
 # Internal Changelog
 
+## 5.14.0 — 2026-10-09
+
+- Economy (user decisions): pass 30+ steps grow by 500 XP each
+  (2,500 / 3,000 / 3,500 ...; still 100 coins, already claimed steps kept);
+  quests give NO coins; placeholder shop prices ~doubled (border 500/1,000,
+  frame 650/1,300, theme 900/2,000 simple/fancy).
+- Wheel remembers today's result (`wheel.lastIndex`, `todayIndex` in
+  /api/shop); the small wheel stays rotated onto it until the next spin.
+
 ## 5.13.1 — 2026-10-09
 
 - Small visual tweak on the shop page.

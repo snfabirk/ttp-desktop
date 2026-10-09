@@ -58,8 +58,13 @@ function coinsForTier(tier) {
   return tier <= 10 ? 80 : tier <= 20 ? 100 : 120;
 }
 const FALLBACK_COSMETIC_COINS = 300; // Monat ohne angelegte Cosmetics
-const OVERFLOW_XP_PER_STEP = 2500;
+// Pass 30+ (Nutzerentscheidung 2026-10-09, v5.14.0): jede weitere 30+-Stufe
+// kostet 500 XP mehr als die vorige (2.500, 3.000, 3.500 ...), damit
+// Vielspieler den Shop nicht leerkaufen. Bereits abgeholte Stufen bleiben.
+const OVERFLOW_XP_FIRST = 2500;
+const OVERFLOW_XP_GROWTH = 500;
 const COINS_PER_OVERFLOW_STEP = 100;
+const overflowStepCost = n => OVERFLOW_XP_FIRST + OVERFLOW_XP_GROWTH * n; // n = schon erreichte Stufen
 
 // XP fuer Level n -> n+1: jedes Level 100 XP teurer, ab Level 21 fix 4.000
 // (Nutzerentscheidung 2026-10-09 - vorher +250 ohne Deckel, viel zu steil).
@@ -191,12 +196,15 @@ function monthEnd(key) {
 
 function passProgress(xp) {
   const tier = Math.min(PASS_TIERS, Math.floor(xp / PASS_XP_PER_TIER));
-  const overflowXp = Math.max(0, xp - PASS_TIERS * PASS_XP_PER_TIER);
+  let overflowXp = Math.max(0, xp - PASS_TIERS * PASS_XP_PER_TIER);
+  let overflowCount = 0;
+  while (overflowXp >= overflowStepCost(overflowCount)) { overflowXp -= overflowStepCost(overflowCount); overflowCount++; }
   return {
     tier,
     xpIntoTier: tier >= PASS_TIERS ? PASS_XP_PER_TIER : xp % PASS_XP_PER_TIER,
-    overflowCount: Math.floor(overflowXp / OVERFLOW_XP_PER_STEP),
-    overflowXpInto: overflowXp % OVERFLOW_XP_PER_STEP
+    overflowCount,
+    overflowXpInto: overflowXp,
+    overflowStepXp: overflowStepCost(overflowCount)
   };
 }
 
@@ -249,7 +257,9 @@ function getPassOverview(state, now) {
     xpIntoTier: prog.xpIntoTier,
     rewards,
     overflow: {
-      xpPerStep: OVERFLOW_XP_PER_STEP,
+      xpPerStep: prog.overflowStepXp,
+      firstStepXp: OVERFLOW_XP_FIRST,
+      stepGrowthXp: OVERFLOW_XP_GROWTH,
       coinsPerStep: COINS_PER_OVERFLOW_STEP,
       count: prog.overflowCount,
       xpInto: prog.overflowXpInto
@@ -511,20 +521,20 @@ function rerollDaily(context) {
 // spaetere Shop-exklusive Cosmetics - noch nicht kaufbar. Preise sind
 // Platzhalter, die Preisstaffel nach Typ legt der Nutzer noch fest.
 const SHOP_DAILY_POOL = [
-  { id: 'shop-ember-ring', type: 'border', name: 'Ember Ring', price: 350, c: ['#ff7a18', '#5a1a08'] },
-  { id: 'shop-frost-rim', type: 'border', name: 'Frost Rim', price: 350, c: ['#9fd8ff', '#1c3a5a'] },
-  { id: 'shop-moonlit-ring', type: 'border', name: 'Moonlit Ring', price: 350, c: ['#e9dcc0', '#2a2440'] },
-  { id: 'shop-thorn-ring', type: 'border', name: 'Thorn Ring', price: 350, c: ['#6fbf73', '#1a2a14'] },
-  { id: 'shop-iron-frame', type: 'frame', name: 'Iron Frame', price: 400, c: ['#9a9aa3', '#202024'] },
-  { id: 'shop-ivy-frame', type: 'frame', name: 'Ivy Frame', price: 400, c: ['#4caf7d', '#10241a'] },
-  { id: 'shop-rune-frame', type: 'frame', name: 'Rune Frame', price: 400, c: ['#b088ff', '#1e1436'] },
-  { id: 'shop-gilded-frame', type: 'frame', name: 'Gilded Frame', price: 400, c: ['#c8aa6e', '#2a2010'] }
+  { id: 'shop-ember-ring', type: 'border', name: 'Ember Ring', price: 500, c: ['#ff7a18', '#5a1a08'] },
+  { id: 'shop-frost-rim', type: 'border', name: 'Frost Rim', price: 500, c: ['#9fd8ff', '#1c3a5a'] },
+  { id: 'shop-moonlit-ring', type: 'border', name: 'Moonlit Ring', price: 500, c: ['#e9dcc0', '#2a2440'] },
+  { id: 'shop-thorn-ring', type: 'border', name: 'Thorn Ring', price: 500, c: ['#6fbf73', '#1a2a14'] },
+  { id: 'shop-iron-frame', type: 'frame', name: 'Iron Frame', price: 650, c: ['#9a9aa3', '#202024'] },
+  { id: 'shop-ivy-frame', type: 'frame', name: 'Ivy Frame', price: 650, c: ['#4caf7d', '#10241a'] },
+  { id: 'shop-rune-frame', type: 'frame', name: 'Rune Frame', price: 650, c: ['#b088ff', '#1e1436'] },
+  { id: 'shop-gilded-frame', type: 'frame', name: 'Gilded Frame', price: 650, c: ['#c8aa6e', '#2a2010'] }
 ];
 const SHOP_WEEKLY_POOL = [
   { id: 'shop-starfall', type: 'theme', name: 'Starfall', price: 900, c: ['#0a0f2a', '#ffd86b'] },
-  { id: 'shop-sakura', type: 'theme', name: 'Sakura Garden', price: 1200, c: ['#2a0f1c', '#ff8fb1'], animated: true },
-  { id: 'shop-dragonfire', type: 'border', name: 'Dragonfire Ring', price: 800, c: ['#ff4d1a', '#3a0a04'], fancy: true },
-  { id: 'shop-void-rift', type: 'frame', name: 'Void Rift', price: 800, c: ['#7a3cff', '#0c0618'], fancy: true },
+  { id: 'shop-sakura', type: 'theme', name: 'Sakura Garden', price: 2000, c: ['#2a0f1c', '#ff8fb1'], animated: true },
+  { id: 'shop-dragonfire', type: 'border', name: 'Dragonfire Ring', price: 1000, c: ['#ff4d1a', '#3a0a04'], fancy: true },
+  { id: 'shop-void-rift', type: 'frame', name: 'Void Rift', price: 1300, c: ['#7a3cff', '#0c0618'], fancy: true },
   { id: 'shop-deep-sea', type: 'theme', name: 'Deep Sea', price: 900, c: ['#04161f', '#3fd0c9'] }
 ];
 // Gluecksrad - Felder und Gewichte sind Platzhalter (Nutzer legt sie fest)
@@ -565,6 +575,7 @@ function getShopState() {
     wheel: {
       segments: WHEEL_SEGMENTS.map(s => ({ label: s.label, coins: s.coins })),
       canSpin: state.wheel.lastSpinDay !== today,
+      todayIndex: state.wheel.lastSpinDay === today && Number.isInteger(state.wheel.lastIndex) ? state.wheel.lastIndex : null,
       nextSpinAt: nextDailyReset(now).toISOString()
     }
   };
@@ -579,7 +590,7 @@ function spinWheel() {
   let index = 0;
   while (roll >= WHEEL_SEGMENTS[index].weight) { roll -= WHEEL_SEGMENTS[index].weight; index++; }
   const seg = WHEEL_SEGMENTS[index];
-  state.wheel = { lastSpinDay: today, spins: (state.wheel.spins || 0) + 1 };
+  state.wheel = { lastSpinDay: today, lastIndex: index, spins: (state.wheel.spins || 0) + 1 };
   state.coins += seg.coins;
   writeState(state);
   return { ok: true, index, coins: seg.coins, totalCoins: state.coins };

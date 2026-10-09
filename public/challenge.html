@@ -1104,7 +1104,7 @@
         </div>
         <div class="prog-card pass-card">
           <div class="prog-card-head">
-            <h3><span id="passTitle">Monthly Pass</span> <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">A new pass starts every month. Tiers 5, 10, 15, 20, 25 and 30 unlock this month's exclusive cosmetics (yours forever), all other tiers give coins for the shop. After tier 30 you keep earning coins every 2,500 XP. Every reward is given once per tier - resetting a challenge doesn't reset the pass.</span></span></h3>
+            <h3><span id="passTitle">Monthly Pass</span> <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">A new pass starts every month. Tiers 5, 10, 15, 20, 25 and 30 unlock this month's exclusive cosmetics (yours forever), all other tiers give coins for the shop. After tier 30 you keep earning 100 coins per step - the first step takes 2,500 XP, every further one 500 XP more. Every reward is given once per tier - resetting a challenge doesn't reset the pass.</span></span></h3>
             <span class="reset-in" id="passEndsIn"></span>
           </div>
           <div class="xp-bar"><div class="xp-bar-fill" id="passXpFill"></div></div>
@@ -1803,10 +1803,10 @@
       const done = pass.tier >= pass.tiers;
       const el = document.getElementById('passOverflow');
       el.classList.toggle('locked', !done);
-      el.title = `After tier ${pass.tiers}: +${of.coinsPerStep} coins every ${fmtNum(of.xpPerStep)} XP, as often as you like`;
+      el.title = `After tier ${pass.tiers}: +${of.coinsPerStep} coins per step, as often as you like - the first step takes ${fmtNum(of.firstStepXp)} XP, every further step ${fmtNum(of.stepGrowthXp)} XP more`;
       el.innerHTML = `<span class="of-label">30+</span>` +
         `<div class="xp-bar"><div class="xp-bar-fill" style="width:${done ? (of.xpInto / of.xpPerStep) * 100 : 0}%"></div></div>` +
-        `<span class="of-info">${done ? `${fmtNum(of.xpInto)} / ${fmtNum(of.xpPerStep)} XP · ${of.count}× claimed` : `🪙 +${of.coinsPerStep} every ${fmtNum(of.xpPerStep)} XP`}</span>`;
+        `<span class="of-info">${done ? `${fmtNum(of.xpInto)} / ${fmtNum(of.xpPerStep)} XP · ${of.count}× claimed` : `🪙 +${of.coinsPerStep} per step from ${fmtNum(of.firstStepXp)} XP`}</span>`;
     }
 
     // LP-Konto (server/lib/progression.js creditLp): Gewinne fuellen 0-100,
