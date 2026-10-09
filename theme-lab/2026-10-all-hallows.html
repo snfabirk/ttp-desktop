@@ -44,20 +44,32 @@
   .lantern-glow { animation: lglow 3.2s ease-in-out infinite; }
   @keyframes lglow { 0%, 100% { opacity: .55; } 50% { opacity: .85; } }
   .bats { position: fixed; top: 6%; left: 14.5%; width: 190px; height: 95px; pointer-events: none; opacity: .95; filter: drop-shadow(0 0 6px rgba(255, 210, 150, .25)); }
-  /* ----- Easter Egg: 5x auf die Katze -> ihr Schatten waechst und schnappt zu ----- */
+  /* ----- Easter Egg: 5x auf die Katze -> sie dreht den Kopf zu dir, Augen werden rot,
+     alle Lichter gehen aus. Nach ein paar Sekunden flackert alles wieder an. ----- */
   .scene .cat { pointer-events: auto; cursor: pointer; }
   .tail { transform-box: fill-box; transform-origin: 0% 100%; }
   .cat.twitch .tail { animation: twitch .35s ease-in-out; }
   @keyframes twitch { 30% { transform: rotate(-14deg); } 70% { transform: rotate(8deg); } }
-  .dim { position: fixed; inset: 0; pointer-events: none; z-index: 8; opacity: 0; transition: opacity .8s ease;
-    background: radial-gradient(ellipse at var(--cx, 70%) 100%, rgba(0,0,0,.15), rgba(0,0,0,.7) 70%); }
-  .dim.on { opacity: 1; }
-  /* Die SELBE Katze waechst von ihren Pfoten aus nach oben (startet deckungsgleich
-     mit der kleinen Katze), beugt sich vor, Augen werden boese, am Ende Maul auf. */
-  .big-cat { position: fixed; z-index: 9; pointer-events: none; overflow: visible; display: none; }
-  .big-cat.go { display: block; }
-  .big-cat .eye-glow { transition: opacity .4s; }
-  .cat-hidden { opacity: 0; }
+  /* Kopf schaut normalerweise zur Seite, beim Easter Egg langsam zu dir */
+  .cat-look { transform: translateX(3.2px); transition: transform .9s cubic-bezier(.5, 0, .2, 1); }
+  .cat.stare .cat-look { transform: translateX(0); }
+  .cat-eye { transition: fill .6s ease; }
+  .cat.red .cat-eye { fill: #e01e12; animation: none; }
+  .cat-slit { opacity: 0; transition: opacity .6s ease; }
+  .cat.red .cat-slit { opacity: 1; }
+  .cat-eyes { transition: filter .6s ease; }
+  .cat.red .cat-eyes { filter: drop-shadow(0 0 3px rgba(230, 20, 10, .9)); }
+  /* Lichter: erst flackern, dann aus - und spaeter wieder an */
+  .fire.out { animation: fireOut .7s ease-in forwards; animation-delay: var(--d, 0s); }
+  .fire.relit { animation: fireOn 1.1s ease-out both; animation-delay: var(--d, 0s); }
+  @keyframes fireOut { 0% { opacity: 1; } 25% { opacity: .35; } 40% { opacity: .9; } 60% { opacity: .2; } 100% { opacity: 0; } }
+  @keyframes fireOn { 0% { opacity: 0; } 15% { opacity: .7; } 25% { opacity: .05; } 45% { opacity: .85; } 55% { opacity: .3; } 100% { opacity: 1; } }
+  /* Abdunkeln - Loch um die Augen, damit nur die roten Augen bleiben */
+  .dim { position: fixed; inset: 0; pointer-events: none; z-index: 8; opacity: 0; background: #020103;
+    transition: opacity 1.4s ease;
+    -webkit-mask: radial-gradient(circle at var(--ex, 80%) var(--ey, 90%), transparent calc(var(--eh, 14px) * .7), #000 calc(var(--eh, 14px) * 1.5));
+            mask: radial-gradient(circle at var(--ex, 80%) var(--ey, 90%), transparent calc(var(--eh, 14px) * .7), #000 calc(var(--eh, 14px) * 1.5)); }
+  .dim.on { opacity: .9; transition: opacity .9s ease .25s; }
   .web { position: fixed; width: 150px; height: 150px; pointer-events: none; opacity: .35; }
   .web.tl { top: 0; left: 0; } .web.br { bottom: 0; right: 0; transform: rotate(180deg); }
 
@@ -131,9 +143,9 @@
     <text x="652" y="200" font-family="Cinzel, serif" font-size="13" fill="#3a3038" transform="rotate(-6 664 230)">RIP</text>
     <!-- Laterne am Ast des Baums -->
     <path d="M196 128 L196 150" stroke="#0b090c" stroke-width="2"/>
-    <circle class="lantern-glow" cx="196" cy="164" r="26" fill="url(#lantG)"/>
+    <g class="fire" style="--d:.5s"><circle class="lantern-glow" cx="196" cy="164" r="26" fill="url(#lantG)"/></g>
     <rect x="188" y="150" width="16" height="22" rx="3" fill="#1a1410" stroke="#0b090c" stroke-width="2"/>
-    <rect x="191" y="154" width="10" height="14" rx="2" fill="#ffb347" class="lantern-glow"/>
+    <g class="fire" style="--d:.5s"><rect x="191" y="154" width="10" height="14" rx="2" fill="#ffb347" class="lantern-glow"/></g>
     <!-- schiefer Zaun -->
     <g fill="#0b090c">
       <rect x="1180" y="168" width="9" height="60" transform="rotate(-6 1184 228)"/><rect x="1215" y="172" width="9" height="56" transform="rotate(4 1219 228)"/>
@@ -146,12 +158,16 @@
       <rect x="-10" y="-14" width="62" height="56" fill="transparent"/>
       <path d="M0 36 Q-4 14 6 6 L4 -6 L11 2 Q15 0 19 2 L26 -6 L24 6 Q34 14 30 36 Z"/>
       <path class="tail" d="M28 32 Q46 30 44 10 Q43 4 40 6 Q42 26 26 28 Z"/>
-      <ellipse class="cat-eye" cx="10" cy="12" rx="2.4" ry="2" fill="#f5d041"/>
-      <ellipse class="cat-eye" cx="20" cy="12" rx="2.4" ry="2" fill="#f5d041"/>
+      <g class="cat-look"><g class="cat-eyes">
+        <ellipse class="cat-eye" cx="10" cy="12" rx="2.4" ry="2" fill="#f5d041"/>
+        <ellipse class="cat-eye" cx="20" cy="12" rx="2.4" ry="2" fill="#f5d041"/>
+        <ellipse class="cat-slit" cx="10" cy="12" rx=".45" ry="1.7" fill="#120303"/>
+        <ellipse class="cat-slit" cx="20" cy="12" rx=".45" ry="1.7" fill="#120303"/>
+      </g></g>
     </g>
     <!-- Kerzen zwischen den Kuerbissen -->
-    <g transform="translate(470 238)"><rect x="-5" y="-22" width="10" height="24" rx="2" fill="#e8dcc6"/><path class="flame" d="M0 -36 Q6 -28 0 -22 Q-6 -28 0 -36 Z" fill="#ffb347"/><circle cx="0" cy="-28" r="12" fill="#ffb347" opacity=".18"/></g>
-    <g transform="translate(1030 242)"><rect x="-4" y="-18" width="8" height="20" rx="2" fill="#e8dcc6"/><path class="flame b" d="M0 -31 Q5 -24 0 -18 Q-5 -24 0 -31 Z" fill="#ffb347"/><circle cx="0" cy="-24" r="10" fill="#ffb347" opacity=".18"/></g>
+    <g transform="translate(470 238)"><rect x="-5" y="-22" width="10" height="24" rx="2" fill="#e8dcc6"/><g class="fire" style="--d:.1s"><path class="flame" d="M0 -36 Q6 -28 0 -22 Q-6 -28 0 -36 Z" fill="#ffb347"/><circle cx="0" cy="-28" r="12" fill="#ffb347" opacity=".18"/></g></g>
+    <g transform="translate(1030 242)"><rect x="-4" y="-18" width="8" height="20" rx="2" fill="#e8dcc6"/><g class="fire" style="--d:0s"><path class="flame b" d="M0 -31 Q5 -24 0 -18 Q-5 -24 0 -31 Z" fill="#ffb347"/><circle cx="0" cy="-24" r="10" fill="#ffb347" opacity=".18"/></g></g>
     <!-- Herbstlaub am Boden -->
     <g opacity=".85">
       <path d="M560 262 q6 -8 12 0 q-6 6 -12 0 z" fill="#8a3b12"/><path d="M600 270 q5 -7 10 0 q-5 5 -10 0 z" fill="#a8551a" transform="rotate(30 605 270)"/>
@@ -165,52 +181,15 @@
     <g transform="translate(1440 238) scale(.8)"><use href="#pk"/><g class="pumpkin-face" fill="#2a1408"><use href="#face"/></g></g>
     <!-- warmes Licht hinter den Gesichtern -->
     <g fill="#ffb347" opacity=".9">
-      <g class="pumpkin-face" transform="translate(420 232) scale(.9)"><g transform="scale(.82)"><use href="#face"/></g></g>
-      <g class="pumpkin-face b" transform="translate(520 240) scale(.7)"><g transform="scale(.82)"><use href="#face"/></g></g>
-      <g class="pumpkin-face c" transform="translate(980 236) scale(1.05)"><g transform="scale(.82)"><use href="#face"/></g></g>
-      <g class="pumpkin-face" transform="translate(1440 238) scale(.8)"><g transform="scale(.82)"><use href="#face"/></g></g>
+      <g class="fire" style="--d:.35s"><g class="pumpkin-face" transform="translate(420 232) scale(.9)"><g transform="scale(.82)"><use href="#face"/></g></g></g>
+      <g class="fire" style="--d:.2s"><g class="pumpkin-face b" transform="translate(520 240) scale(.7)"><g transform="scale(.82)"><use href="#face"/></g></g></g>
+      <g class="fire" style="--d:.05s"><g class="pumpkin-face c" transform="translate(980 236) scale(1.05)"><g transform="scale(.82)"><use href="#face"/></g></g></g>
+      <g class="fire" style="--d:0s"><g class="pumpkin-face" transform="translate(1440 238) scale(.8)"><g transform="scale(.82)"><use href="#face"/></g></g></g>
     </g>
   </svg>
 </div>
 
 <div class="dim" id="dim"></div>
-<!-- Easter Egg: dieselbe Katze in gross (gleiche Form wie die kleine auf dem Zaun) -->
-<svg class="big-cat" id="bigCat" viewBox="-12 -14 64 54">
-  <defs>
-    <!-- Fell: leicht unruhige Kanten -->
-    <filter id="fur" x="-10%" y="-10%" width="120%" height="120%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="n"/>
-      <feDisplacementMap in="SourceGraphic" in2="n" scale="0.9" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-    <!-- Gegenlicht vom orangen Horizont -->
-    <filter id="rim" x="-30%" y="-30%" width="160%" height="160%">
-      <feMorphology in="SourceAlpha" operator="dilate" radius="0.45" result="d"/>
-      <feGaussianBlur in="d" stdDeviation="0.9" result="b"/>
-      <feFlood flood-color="#ff7a18" flood-opacity=".75"/>
-      <feComposite in2="b" operator="in" result="glow"/>
-      <feMerge><feMergeNode in="glow"/></feMerge>
-    </filter>
-    <radialGradient id="vol" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#1c1621"/><stop offset=".55" stop-color="#0a080c"/><stop offset="1" stop-color="#000"/></radialGradient>
-    <radialGradient id="evil" cx=".5" cy=".5" r=".6"><stop offset="0" stop-color="#fff6a8"/><stop offset=".45" stop-color="#ffd23a"/><stop offset="1" stop-color="#ff7a10"/></radialGradient>
-    <clipPath id="catClip"><path d="M0 36 Q-4 14 6 6 L4 -6 L11 2 Q15 0 19 2 L26 -6 L24 6 Q34 14 30 36 Z"/></clipPath>
-  </defs>
-  <g id="bigBody">
-    <g filter="url(#rim)"><path d="M0 36 Q-4 14 6 6 L4 -6 L11 2 Q15 0 19 2 L26 -6 L24 6 Q34 14 30 36 Z"/><path d="M28 32 Q46 30 44 10 Q43 4 40 6 Q42 26 26 28 Z"/></g>
-    <g filter="url(#fur)" fill="url(#vol)"><path d="M0 36 Q-4 14 6 6 L4 -6 L11 2 Q15 0 19 2 L26 -6 L24 6 Q34 14 30 36 Z"/><path d="M28 32 Q46 30 44 10 Q43 4 40 6 Q42 26 26 28 Z"/></g>
-    <!-- Maul (erst am Ende sichtbar), innerhalb des Koerpers -->
-    <g clip-path="url(#catClip)">
-      <path id="maw" d="M7.5 20.5 Q15 31 22.5 20.5 Q15 22.5 7.5 20.5 Z" fill="#3a0812" opacity="0"/>
-      <path id="fangs" d="M9 21 L10.4 25.2 L11.8 21.5 Z M18.2 21.5 L19.6 25.2 L21 21 Z M13 21.9 L13.8 23.6 L14.6 22 Z M15.4 22 L16.2 23.6 L17 21.9 Z" fill="#f2e8d8" opacity="0"/>
-    </g>
-    <!-- boese Augen: schraeg zulaufend (Lid faellt zur Nase ab), Schlitzpupillen -->
-    <g class="eye-glow" id="eyes">
-      <path d="M6.4 12.6 Q9 9.6 12.6 11.6 Q10 14.6 6.4 12.6 Z" fill="url(#evil)" style="filter:drop-shadow(0 0 .8px #ffb000)"/>
-      <path d="M23.6 12.6 Q21 9.6 17.4 11.6 Q20 14.6 23.6 12.6 Z" fill="url(#evil)" style="filter:drop-shadow(0 0 .8px #ffb000)"/>
-      <ellipse id="pupL" cx="9.6" cy="12.2" rx=".75" ry="1.5" fill="#140800"/>
-      <ellipse id="pupR" cx="20.4" cy="12.2" rx=".75" ry="1.5" fill="#140800"/>
-    </g>
-  </g>
-</svg>
 <div class="nav"><span class="on">⌂ Overview</span><span>Profile</span><span>Challenge</span><span>Pass</span><span>Trophies</span><span>Shop</span></div>
 <header><h1>League of Legends</h1><p class="subtitle">Three-Trick-Pony</p></header>
 
@@ -240,48 +219,38 @@
   </div>
 </div>
 <script>
-  // Easter Egg: 5x auf die Katze klicken -> dieselbe Katze waechst nach oben,
-  // beugt sich vor, Augen werden boese, am Ende Maul auf und schnappt zu.
+  // Easter Egg: 5x auf die Katze klicken -> sie dreht den Kopf zu dir, die Augen
+  // werden rot, alle Kerzen/Kuerbisse/die Laterne gehen aus. Danach flackert alles wieder an.
   (function () {
-    const cat = document.getElementById('cat'), big = document.getElementById('bigCat'), dim = document.getElementById('dim');
-    const maw = document.getElementById('maw'), fangs = document.getElementById('fangs');
-    const pupL = document.getElementById('pupL'), pupR = document.getElementById('pupR');
+    const cat = document.getElementById('cat'), dim = document.getElementById('dim');
+    const fires = [...document.querySelectorAll('.fire')];
     let clicks = 0, reset = null, busy = false;
-    const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-    const easeIn = t => t * t * t;
-    cat.addEventListener('click', () => {
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    cat.addEventListener('click', async () => {
       if (busy) return;
       cat.classList.remove('twitch'); void cat.getBoundingClientRect(); cat.classList.add('twitch');
       clicks++; clearTimeout(reset); reset = setTimeout(() => { clicks = 0; }, 8000);
       if (clicks < 5) return;
       clicks = 0; busy = true;
-      // Grosse Katze exakt deckungsgleich ueber die kleine legen (gleiche viewBox-Region)
-      const m = cat.getScreenCTM();
-      const p0 = new DOMPoint(-12, -14).matrixTransform(m), p1 = new DOMPoint(52, 40).matrixTransform(m);
-      const w = p1.x - p0.x, h = p1.y - p0.y;
-      Object.assign(big.style, { left: `${p0.x}px`, top: `${p0.y}px`, width: `${w}px`, height: `${h}px` });
-      const footX = (15 + 12) / 64 * 100, footY = (36 + 14) / 54 * 100; // Pfoten = Drehpunkt
-      big.style.transformOrigin = `${footX}% ${footY}%`;
-      const target = Math.min(innerHeight * .62 / h, innerWidth * .55 / w); // Endgroesse wie die Version davor
-      document.documentElement.style.setProperty('--cx', `${(p0.x + w * footX / 100) / innerWidth * 100}%`);
-      big.classList.add('go'); cat.classList.add('cat-hidden'); dim.classList.add('on');
-      const T = 4200, t0 = performance.now();
-      (function step(now) {
-        const t = Math.min(1, (now - t0) / T);
-        let k, lean = 0, mouth = 0, slit = 1;
-        if (t < .08) { k = 1; slit = 1 - t / .08 * .6; }                       // Augen verengen sich
-        else if (t < .68) { const u = (t - .08) / .6; k = 1 + (target - 1) * ease(u); lean = ease(u) * 7; slit = .4; mouth = Math.max(0, (u - .7) / .3) * .5; }
-        else if (t < .76) { const u = (t - .68) / .08; k = target * (1 + .1 * ease(u)); lean = 7 + 5 * u; slit = .3; mouth = .5 + .5 * u; } // Satz + Maul auf
-        else if (t < .8) { k = target * 1.1; lean = 12; slit = .3; mouth = 1 - (t - .76) / .04; }  // schnappt zu
-        else { const u = (t - .8) / .2; k = target * 1.1 + (1 - target * 1.1) * ease(u); lean = 12 * (1 - u); slit = .3 + .7 * u; mouth = 0; }
-        big.style.transform = `perspective(900px) rotateX(${lean}deg) scale(${k})`;
-        pupL.setAttribute('rx', .75 * slit); pupR.setAttribute('rx', .75 * slit);
-        maw.setAttribute('opacity', Math.min(1, mouth * 1.4)); fangs.setAttribute('opacity', Math.min(1, mouth * 1.6));
-        maw.setAttribute('d', `M7.5 20.5 Q15 ${20.5 + 11 * mouth} 22.5 20.5 Q15 22.5 7.5 20.5 Z`);
-        if (t > .82) dim.classList.remove('on');
-        if (t < 1) requestAnimationFrame(step);
-        else { big.classList.remove('go'); cat.classList.remove('cat-hidden'); busy = false; }
-      })(t0);
+      // Loch im Abdunkeln genau um die Augen
+      const m = cat.getScreenCTM(), c = new DOMPoint(15, 12).matrixTransform(m), e = new DOMPoint(25, 12).matrixTransform(m);
+      const root = document.documentElement.style;
+      root.setProperty('--ex', `${c.x}px`); root.setProperty('--ey', `${c.y}px`); root.setProperty('--eh', `${(e.x - c.x) * 1.1}px`);
+      cat.classList.add('stare');                                   // Kopf dreht sich zu dir
+      await wait(1000);
+      cat.classList.add('red');                                     // Augen werden rot
+      await wait(500);
+      fires.forEach(f => { f.classList.remove('relit'); f.classList.add('out'); });  // Lichter gehen aus
+      dim.classList.add('on');
+      await wait(2600);                                             // Stille
+      dim.classList.remove('on');
+      cat.classList.remove('red');
+      fires.forEach(f => { f.classList.remove('out'); f.classList.add('relit'); });  // flackert wieder an
+      await wait(900);
+      cat.classList.remove('stare');                                // schaut wieder weg
+      await wait(1300);
+      fires.forEach(f => f.classList.remove('relit'));
+      busy = false;
     });
   })();
 
