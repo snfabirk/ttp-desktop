@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Neon City - Animated shop theme (Theme Lab)</title>
+<!-- Theme Lab (nicht im Installationspaket): Shop-Theme "Neon City"
+     (Animated). Zaun bei Nacht: Skyline in drei Ebenen (leichte Tiefe, wenn
+     man die Maus bewegt), beleuchtete Fenster, flackernde Neonschilder,
+     Regen, Spiegelungen in den Pfuetzen, Dampf, ab und zu ein Gleiter.
+     Easter Egg: das kaputte "OPEN 24/7"-Schild 3x anklicken -> Stromausfall,
+     danach galoppiert ein Neon-Pony ueber die Daecher. -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0816; --panel-bg: rgba(14, 9, 28, .6); --input-bg: #160f2a;
+    --border: #3a2458; --gold: #ff4fb8; --text: #f2e9ff; --text-dim: #b3a2cc; --text-faint: #6f5f8a;
+  }
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: Georgia, serif; color: var(--text); }
+  html { background: linear-gradient(180deg, #0a0614 0%, #1a0c2c 45%, #2a1036 70%, #12081c 100%); }
+  #city { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+  .nav { position: fixed; top: 18px; left: 24px; display: flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel-bg); backdrop-filter: blur(10px); z-index: 2; }
+  .nav span { padding: 5px 11px; border-radius: 14px; font-family: 'Cinzel', serif; font-size: .78rem; letter-spacing: .5px; color: var(--text-dim); }
+  .nav span.on { background: var(--gold); color: var(--bg); }
+  .stage { position: relative; z-index: 1; pointer-events: none; }
+  .stage > * { pointer-events: auto; }
+  header { text-align: center; padding-top: 34px; }
+  h1 { margin: 0; font-family: 'Cinzel', serif; font-weight: 900; font-size: 3rem; letter-spacing: 3px; color: var(--gold); text-shadow: 0 0 18px rgba(255, 79, 184, .6), 0 0 40px rgba(80, 220, 255, .25); }
+  .subtitle { margin: 6px 0 0; color: var(--text-dim); font-style: italic; letter-spacing: 6px; text-transform: uppercase; }
+  .wrap { max-width: 1000px; margin: 34px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 26px; padding: 0 30px; }
+  .card { background: var(--panel-bg); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; box-shadow: 0 4px 16px rgba(0,0,0,.35); }
+  .card h3 { margin: 0 0 8px; color: var(--gold); font-family: 'Cinzel', serif; font-size: 1rem; letter-spacing: 1px; }
+  .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(58, 36, 88, .6); font-size: .9rem; }
+  .row:last-child { border-bottom: none; }
+  .xp { color: var(--gold); }
+  .muted { color: var(--text-dim); font-size: .9rem; }
+  .tag { display: inline-block; margin-bottom: 8px; padding: 1px 8px; border: 1px dashed var(--text-faint); border-radius: 9px; color: var(--text-faint); font-size: .7rem; letter-spacing: 1px; text-transform: uppercase; }
+  .hint { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 2; color: var(--text-faint); font-size: 13px; background: rgba(8, 4, 16, .65); padding: 6px 14px; border-radius: 14px; border: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<canvas id="city"></canvas>
+<div class="nav"><span class="on">⌂ Overview</span><span>Profile</span><span>Challenge</span><span>Pass</span><span>Trophies</span><span>Shop</span></div>
+<div class="stage">
+  <header><h1>League of Legends</h1><p class="subtitle">Three-Trick-Pony</p></header>
+  <div class="wrap">
+    <div>
+      <span class="tag">Shop theme · Animated</span>
+      <div class="card">
+        <h3>Today</h3>
+        <div class="row"><span>First Win of the Day</span><span class="xp">+400 XP</span></div>
+        <div class="row"><span>Champion of the Day</span><span class="xp">+500 XP</span></div>
+        <div class="row"><span>In the Thick of It</span><span class="xp">+300 XP</span></div>
+      </div>
+    </div>
+    <div>
+      <span class="tag">Readability check</span>
+      <div class="card">
+        <h3>Last game</h3>
+        <div class="row"><span>Ekko · Jungle</span><span class="xp">Victory</span></div>
+        <div class="row"><span>KDA</span><span>8 / 2 / 11</span></div>
+        <div class="muted" style="margin-top:8px">+725 XP · LP Bank 64 / 100</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="hint">Move your mouse for depth · psst... that broken "OPEN 24/7" sign has seen better days</div>
+
+<script>
+const cv = document.getElementById('city'), cx = cv.getContext('2d');
+let W = 0, H = 0;
+const rand = (a, b) => a + Math.random() * (b - a);
+// fester Zufall pro Aufbau, damit die Skyline beim Resize gleich bleibt
+function seeded(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+const NEON = ['#ff4fb8', '#3ff0ff', '#b46bff', '#ffd23f', '#5dff9a', '#ff6a3d'];
+let layers = [], signs = [], ground = 0;
+
+function build() {
+  const r = seeded(7);
+  ground = H * .86;
+  layers = [
+    { depth: .25, color: '#170d28', win: .06, minH: .22, maxH: .5, minW: 40, maxW: 90, b: [] },
+    { depth: .55, color: '#120a20', win: .12, minH: .18, maxH: .42, minW: 60, maxW: 130, b: [] },
+    { depth: 1, color: '#0a0613', win: .2, minH: .12, maxH: .32, minW: 90, maxW: 180, b: [] }
+  ];
+  layers.forEach(L => {
+    let x = -60;
+    while (x < W + 60) {
+      const w = L.minW + r() * (L.maxW - L.minW), h = H * (L.minH + r() * (L.maxH - L.minH));
+      const wins = [];
+      for (let wy = 14; wy < h - 10; wy += 14) for (let wx = 8; wx < w - 8; wx += 12) if (r() < L.win) wins.push({ x: wx, y: wy, warm: r() < .7, flick: r() < .04, ph: r() * 6 });
+      L.b.push({ x, w, h, wins, antenna: r() < .3, roof: r() < .4 });
+      x += w + 2 + r() * 10;
+    }
+  });
+  // Neonschilder an den vorderen Gebaeuden
+  const texts = ['ZAUN', 'HEXTECH', 'NOODLES', 'BAR', 'CHEMTECH', 'ARCADE'];
+  signs = [];
+  const near = layers[2].b.filter(b => b.x > W * .03 && b.x + b.w < W * .97);
+  near.forEach((b, i) => {
+    if (i % 2) return;
+    const vertical = r() < .45;
+    const t = texts[signs.length % texts.length];
+    signs.push({ b, layer: 2, text: t, vertical, color: NEON[Math.floor(r() * NEON.length)], x: b.x + b.w * (vertical ? .15 : .5), y: ground - b.h + 30 + r() * 40, flick: r() < .3, ph: r() * 6 });
+  });
+  // das kaputte Schild fuer das Easter Egg - mittig gut sichtbar
+  const host = near.reduce((best, b) => Math.abs(b.x + b.w / 2 - W * .62) < Math.abs(best.x + best.w / 2 - W * .62) ? b : best, near[0]);
+  signs = signs.filter(sg => sg.b !== host);
+  signs.push({ b: host, layer: 2, text: 'OPEN 24/7', vertical: false, color: '#5dff9a', x: host.x + host.w / 2, y: ground - host.h + 34, broken: true, ph: 0 });
+}
+
+function resize() {
+  const dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight;
+  cv.width = W * dpr; cv.height = H * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  build();
+}
+addEventListener('resize', resize); resize();
+
+const mouse = { x: .5, y: .5, sx: .5, sy: .5 };
+addEventListener('mousemove', e => { mouse.x = e.clientX / W; mouse.y = e.clientY / H; });
+const rain = Array.from({ length: 320 }, () => ({ x: rand(0, W), y: rand(0, H), l: rand(10, 22), v: rand(650, 950), a: rand(.12, .32) }));
+const splashes = [];
+const steam = Array.from({ length: 5 }, () => ({ x: rand(0, W), y: ground + rand(0, H * .1), r: rand(40, 90), ph: rand(0, 6) }));
+let glider = null, nextGlider = 4;
+
+// Easter Egg
+const egg = { clicks: 0, reset: null, t: -1 };
+let power = 1; // 0 = Stromausfall
+
+function signGlow(sg, t) {
+  if (sg.broken) {
+    // kaputtes Schild: "E" ist dauernd aus, der Rest flackert unregelmaessig
+    return (Math.sin(t * 13) > -.2 && Math.sin(t * 2.3 + 1) > -.6) ? 1 : .15;
+  }
+  if (!sg.flick) return 1;
+  const f = Math.sin(t * 7 + sg.ph) * Math.sin(t * 2.1 + sg.ph * 2);
+  return f > .85 ? .25 : 1;
+}
+
+function drawSign(sg, t, ox) {
+  const g = signGlow(sg, t) * power;
+  cx.save();
+  cx.font = `700 ${sg.vertical ? 16 : 20}px 'Cinzel', serif`;
+  cx.textAlign = 'center'; cx.textBaseline = 'middle';
+  const x = sg.x + ox, y = sg.y;
+  const chars = sg.vertical ? sg.text.split('') : [sg.text];
+  const w = sg.vertical ? 28 : cx.measureText(sg.text).width + 26, h = sg.vertical ? chars.length * 20 + 12 : 34;
+  // Rahmen
+  cx.strokeStyle = sg.color; cx.globalAlpha = .2 + .8 * g; cx.lineWidth = 2;
+  cx.shadowColor = sg.color; cx.shadowBlur = 18 * g;
+  cx.strokeRect(x - w / 2, y - (sg.vertical ? 6 : h / 2), w, h);
+  cx.fillStyle = sg.color;
+  if (sg.vertical) chars.forEach((c, i) => cx.fillText(c, x, y + 10 + i * 20));
+  else if (sg.broken) {
+    // Buchstabe fuer Buchstabe, damit das "E" ausfallen kann
+    const full = sg.text; let cxp = x - cx.measureText(full).width / 2;
+    for (const ch of full) {
+      const cw = cx.measureText(ch).width;
+      cx.globalAlpha = ch === 'E' ? .12 : .2 + .8 * g;
+      cx.fillText(ch, cxp + cw / 2, y);
+      cxp += cw;
+    }
+  } else cx.fillText(sg.text, x, y);
+  cx.restore();
+  sg.hit = { x: x - w / 2, y: y - (sg.vertical ? 6 : h / 2), w, h };
+}
+
+function drawCity(t, reflect) {
+  layers.forEach((L, li) => {
+    const ox = (mouse.sx - .5) * -40 * L.depth, oy = (mouse.sy - .5) * -10 * L.depth;
+    L.b.forEach(b => {
+      const top = ground - b.h + oy;
+      cx.fillStyle = L.color; cx.fillRect(b.x + ox, top, b.w, b.h + 2);
+      if (b.antenna) { cx.fillRect(b.x + ox + b.w * .5, top - 26, 2, 26); if (Math.sin(t * 3 + b.x) > .6) { cx.fillStyle = `rgba(255, 60, 60, ${.9 * power})`; cx.fillRect(b.x + ox + b.w * .5 - 1, top - 28, 4, 4); } }
+      // Fenster
+      b.wins.forEach(wn => {
+        let a = (wn.warm ? .55 : .45) * power;
+        if (wn.flick && Math.sin(t * 5 + wn.ph) > .7) a *= .2;
+        cx.fillStyle = wn.warm ? `rgba(255, 200, 120, ${a})` : `rgba(120, 220, 255, ${a})`;
+        cx.fillRect(b.x + ox + wn.x, top + wn.y, 5, 7);
+      });
+    });
+    if (li === 2 && !reflect) signs.forEach(sg => drawSign(sg, t, ox));
+  });
+}
+
+function frame(now) {
+  const t = now / 1000;
+  const dt = Math.min(.05, t - (frame.last || t)); frame.last = t;
+  mouse.sx += (mouse.x - mouse.sx) * Math.min(1, dt * 3); mouse.sy += (mouse.y - mouse.sy) * Math.min(1, dt * 3);
+  cx.clearRect(0, 0, W, H);
+
+  // Dunst ueber der Stadt
+  const haze = cx.createLinearGradient(0, H * .3, 0, ground);
+  haze.addColorStop(0, 'rgba(255, 79, 184, 0)'); haze.addColorStop(1, `rgba(255, 79, 184, ${.16 * power})`);
+  cx.fillStyle = haze; cx.fillRect(0, H * .3, W, ground - H * .3);
+
+  drawCity(t, false);
+
+  // Strasse + Pfuetzen-Spiegelung: Stadt gespiegelt, gestaucht, gewellt
+  cx.fillStyle = '#07040d'; cx.fillRect(0, ground, W, H - ground);
+  cx.save();
+  cx.beginPath(); cx.rect(0, ground, W, H - ground); cx.clip();
+  cx.globalAlpha = .35;
+  cx.translate(0, ground * 2 + Math.sin(t * 2) * 1.5); cx.scale(1, -1);
+  drawCity(t, true);
+  signs.forEach(sg => { const ox = (mouse.sx - .5) * -40; cx.save(); cx.globalAlpha = .25 * signGlow(sg, t) * power; cx.fillStyle = sg.color; cx.shadowColor = sg.color; cx.shadowBlur = 30; cx.fillRect(sg.x + ox - 30, sg.y - 8, 60, 16); cx.restore(); });
+  cx.restore();
+  cx.fillStyle = 'rgba(7, 4, 13, .45)'; cx.fillRect(0, ground, W, H - ground);
+  // Wellenlinien auf dem Wasser
+  cx.strokeStyle = 'rgba(255, 120, 220, .08)'; cx.lineWidth = 1;
+  for (let k = 0; k < 6; k++) { const y = ground + 8 + k * (H - ground) / 6; cx.beginPath(); cx.moveTo(0, y); for (let x = 0; x <= W; x += 40) cx.lineTo(x, y + Math.sin(x * .02 + t * 2 + k) * 1.5); cx.stroke(); }
+
+  // Dampf
+  steam.forEach(s => {
+    const y = s.y - ((t * 14 + s.ph * 30) % 120);
+    const g = cx.createRadialGradient(s.x, y, 0, s.x, y, s.r);
+    g.addColorStop(0, 'rgba(200, 180, 230, .07)'); g.addColorStop(1, 'rgba(200, 180, 230, 0)');
+    cx.fillStyle = g; cx.beginPath(); cx.arc(s.x, y, s.r, 0, 7); cx.fill();
+  });
+
+  // Gleiter mit Lichtspur
+  nextGlider -= dt;
+  if (!glider && nextGlider <= 0) { const dir = Math.random() < .5 ? 1 : -1; glider = { dir, x: dir > 0 ? -80 : W + 80, y: rand(H * .25, H * .55), v: rand(260, 380) * dir }; }
+  if (glider) {
+    glider.x += glider.v * dt;
+    const tr = cx.createLinearGradient(glider.x, 0, glider.x - glider.dir * 160, 0);
+    tr.addColorStop(0, 'rgba(255, 240, 200, .7)'); tr.addColorStop(1, 'rgba(255, 79, 184, 0)');
+    cx.strokeStyle = tr; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(glider.x, glider.y); cx.lineTo(glider.x - glider.dir * 160, glider.y); cx.stroke();
+    cx.fillStyle = '#fff6dc'; cx.shadowColor = '#ffd27a'; cx.shadowBlur = 12; cx.beginPath(); cx.arc(glider.x, glider.y, 2.5, 0, 7); cx.fill(); cx.shadowBlur = 0;
+    if (glider.x < -120 || glider.x > W + 120) { glider = null; nextGlider = rand(6, 14); }
+  }
+
+  // Regen + Spritzer
+  cx.strokeStyle = 'rgba(190, 200, 255, .25)'; cx.lineWidth = 1;
+  cx.beginPath();
+  rain.forEach(d => {
+    d.y += d.v * dt; d.x += d.v * .18 * dt;
+    if (d.y > ground + rand(0, H - ground)) { if (Math.random() < .3) splashes.push({ x: d.x, y: d.y, life: 1 }); d.y = rand(-40, 0); d.x = rand(-60, W); }
+    cx.moveTo(d.x, d.y); cx.lineTo(d.x - d.l * .18, d.y - d.l);
+  });
+  cx.stroke();
+  for (let i = splashes.length - 1; i >= 0; i--) {
+    const s = splashes[i]; s.life -= dt * 3; if (s.life <= 0) { splashes.splice(i, 1); continue; }
+    cx.strokeStyle = `rgba(200, 210, 255, ${.3 * s.life})`; cx.beginPath(); cx.ellipse(s.x, s.y, (1 - s.life) * 6, (1 - s.life) * 2, 0, 0, 7); cx.stroke();
+  }
+
+  drawEgg(t, dt);
+  requestAnimationFrame(frame);
+}
+
+// ----- Easter Egg: Stromausfall, dann ein Neon-Pony ueber den Daechern -----
+function ponyPath(phase) {
+  // Pferd als Neon-Leuchtreklame: Kopf mit Ohr und Maul, geschwungener Hals,
+  // Maehne, wehender Schweif, Beine mit Gelenken im Galopp. Hufe auf y = 0.
+  const p = new Path2D();
+  p.moveTo(-30, -36);
+  p.quadraticCurveTo(-10, -40, 12, -36);          // Ruecken bis Widerrist
+  p.quadraticCurveTo(22, -44, 27, -56);           // Halsbogen
+  p.lineTo(29, -63); p.lineTo(33, -57);           // Ohr
+  p.quadraticCurveTo(43, -54, 50, -45);           // Stirn bis Nuester
+  p.quadraticCurveTo(51, -40, 45, -40);           // Maul
+  p.quadraticCurveTo(36, -43, 31, -40);           // Ganasche
+  p.quadraticCurveTo(26, -31, 19, -25);           // Kehle bis Brust
+  p.quadraticCurveTo(0, -19, -24, -22);           // Bauch
+  p.quadraticCurveTo(-38, -24, -38, -31);         // Hinterhand
+  p.closePath();
+  // Maehne: drei wehende Straehnen
+  for (let k = 0; k < 3; k++) {
+    const bx = 25 - k * 5, by = -54 + k * 5;
+    p.moveTo(bx, by); p.quadraticCurveTo(bx - 8, by + 2 + Math.sin(phase + k) * 2, bx - 13, by + 8);
+  }
+  // Schweif
+  p.moveTo(-37, -33); p.bezierCurveTo(-48, -36, -54, -26 + Math.sin(phase * .5) * 3, -60, -18 + Math.sin(phase * .5 + 1) * 4);
+  // Beine mit Knie: a = Schwungphase
+  const leg = (x, y, a, back) => {
+    const kx = x + Math.sin(a) * 7, ky = y + 10;
+    const hx = kx + Math.sin(a + (back ? -.9 : .9)) * 7, hy = Math.min(0, ky + 12 - Math.max(0, Math.sin(a)) * 3);
+    p.moveTo(x, y); p.lineTo(kx, ky); p.lineTo(hx, hy);
+  };
+  leg(16, -25, phase, false); leg(10, -23, phase + 1.2, false);
+  leg(-26, -23, phase + 2.6, true); leg(-32, -25, phase + 3.8, true);
+  return p;
+}
+function drawEgg(t, dt) {
+  if (egg.t < 0) { power += (1 - power) * Math.min(1, dt * 2); return; }
+  egg.t += dt;
+  const e = egg.t;
+  // 0-0.9 Flackern + Ausfall, 0.9-1.6 dunkel, ab 1.6 Pony galoppiert ueber die Daecher, 5.5 Strom zurueck
+  if (e < .9) power = Math.random() < .5 ? .1 : .6;
+  else if (e < 5.2) power = .05;
+  if (e > 1.6 && e < 5.4) {
+    const u = (e - 1.6) / 3.6;
+    const host = layers[2].b;
+    const x = -80 + u * (W + 160);
+    // Dachhoehe an der aktuellen Position (vordere Ebene)
+    const ox = (mouse.sx - .5) * -40;
+    const b = host.find(bb => x >= bb.x + ox && x <= bb.x + ox + bb.w);
+    const roof = b ? ground - b.h : ground;
+    egg.y = egg.y === undefined ? roof : egg.y + (roof - egg.y) * Math.min(1, dt * 8);
+    const hop = Math.abs(Math.sin(e * 9)) * 10;
+    cx.save();
+    cx.translate(x, egg.y - 2 - hop); cx.scale(1.6, 1.6);
+    const path = ponyPath(e * 18);
+    cx.strokeStyle = '#ff4fb8'; cx.lineWidth = 2.2; cx.lineJoin = 'round'; cx.lineCap = 'round';
+    cx.shadowColor = '#ff4fb8'; cx.shadowBlur = 22; cx.stroke(path);
+    cx.strokeStyle = '#ffd6f0'; cx.lineWidth = .9; cx.shadowBlur = 6; cx.stroke(path);
+    cx.restore();
+    // Funkenspur
+    for (let k = 0; k < 2; k++) egg.sparks.push({ x: x - 40, y: egg.y - 20 - hop + rand(-6, 6), vx: rand(-60, -20), vy: rand(-30, 30), life: 1 });
+  }
+  for (let i = egg.sparks.length - 1; i >= 0; i--) {
+    const s = egg.sparks[i]; s.life -= dt * 1.5; if (s.life <= 0) { egg.sparks.splice(i, 1); continue; }
+    s.x += s.vx * dt; s.y += s.vy * dt;
+    cx.fillStyle = `rgba(255, 120, 210, ${s.life * .8})`; cx.beginPath(); cx.arc(s.x, s.y, 1.6, 0, 7); cx.fill();
+  }
+  if (e > 5.2) power = Math.min(1, power + dt * .9 * (Math.random() < .3 ? 0 : 1)); // flackert wieder an
+  if (e > 6.6 && !egg.sparks.length) { egg.t = -1; egg.y = undefined; }
+}
+
+addEventListener('click', e => {
+  if (egg.t >= 0) return;
+  if (e.target.closest('.card, .nav, .hint')) return;
+  const sg = signs.find(s => s.broken);
+  if (!sg || !sg.hit) return;
+  const h = sg.hit;
+  if (e.clientX < h.x - 6 || e.clientX > h.x + h.w + 6 || e.clientY < h.y - 6 || e.clientY > h.y + h.h + 6) return;
+  egg.clicks++; clearTimeout(egg.reset); egg.reset = setTimeout(() => { egg.clicks = 0; }, 3000);
+  if (egg.clicks >= 3) { egg.clicks = 0; egg.t = 0; egg.sparks = []; }
+});
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
