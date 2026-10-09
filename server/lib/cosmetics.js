@@ -32,6 +32,26 @@ const PRICES = {
 const priceOf = c => (PRICES[c.rarity] || PRICES.refined)[c.type] || 0;
 
 const COSMETICS = [
+  // ----- Basic (v5.17.0): zu jedem Grund-Theme eine schlichte Border + ein
+  // schlichter Rahmen in dessen Farben. Hat jeder (base: true), frei
+  // kombinierbar mit jedem Theme (Nutzerwunsch: alles mit allem). -----
+  { id: 'border-base-classic', type: 'border', name: 'Classic Ring', rarity: 'basic', base: true },
+  { id: 'frame-base-classic', type: 'frame', name: 'Classic Frame', rarity: 'basic', base: true },
+  { id: 'border-base-graphite', type: 'border', name: 'Graphite Ring', rarity: 'basic', base: true },
+  { id: 'frame-base-graphite', type: 'frame', name: 'Graphite Frame', rarity: 'basic', base: true },
+  { id: 'border-base-light', type: 'border', name: 'Light Ring', rarity: 'basic', base: true },
+  { id: 'frame-base-light', type: 'frame', name: 'Light Frame', rarity: 'basic', base: true },
+  { id: 'border-base-hextech', type: 'border', name: 'Hextech Ring', rarity: 'basic', base: true },
+  { id: 'frame-base-hextech', type: 'frame', name: 'Hextech Frame', rarity: 'basic', base: true },
+  { id: 'border-base-arcane', type: 'border', name: 'Arcane Ring', rarity: 'basic', base: true },
+  { id: 'frame-base-arcane', type: 'frame', name: 'Arcane Frame', rarity: 'basic', base: true },
+  { id: 'border-base-noxus', type: 'border', name: 'Noxus Ring', rarity: 'basic', base: true },
+  { id: 'frame-base-noxus', type: 'frame', name: 'Noxus Frame', rarity: 'basic', base: true },
+  { id: 'border-base-freljord', type: 'border', name: 'Freljord Ring', rarity: 'basic', base: true },
+  { id: 'frame-base-freljord', type: 'frame', name: 'Freljord Frame', rarity: 'basic', base: true },
+  { id: 'border-base-ionia', type: 'border', name: 'Ionia Ring', rarity: 'basic', base: true },
+  { id: 'frame-base-ionia', type: 'frame', name: 'Ionia Frame', rarity: 'basic', base: true },
+
   // ----- Oktober 2026: Halloween (schwarz / grau / orange) -----
   { id: 'border-2026-10-pumpkin', type: 'border', name: 'Pumpkin Ring', rarity: 'refined', passMonth: '2026-10', tier: 5 },
   { id: 'frame-2026-10-cobweb', type: 'frame', name: 'Cobweb', rarity: 'refined', passMonth: '2026-10', tier: 10 },

@@ -1203,22 +1203,28 @@
       const rarTag = c => c.id && c.rarity ? `<small class="rar rar-${c.rarity}">${RAR[c.rarity]}</small>` : '';
       const lockAttr = c => `class="inv-item locked" title="Locked - ${esc(c.source || 'not collected yet')}" aria-disabled="true"`;
       if (invTab === 'border') {
-        const items = [{ id: null, name: 'Default' }, ...ofType('border')];
-        list.innerHTML = countLine(counts.border) + `<div class="inv-grid">${items.map(c => {
+        const cell = c => {
           const has = !c.id || ownedIds.has(c.id);
           return `<div ${has ? `class="inv-item${(c.id || 'none') === editState.border ? ' equipped' : ''}" data-equip="${c.id || 'none'}"` : lockAttr(c)}>
             <span class="cos-border cos-${c.id || 'none'}"><span class="cos-fill"></span></span>${esc(c.name)}${rarTag(c)}
           </div>`;
-        }).join('')}</div>`;
+        };
+        const special = ofType('border').filter(c => !c.base), basic = ofType('border').filter(c => c.base);
+        list.innerHTML = countLine(counts.border) +
+          (special.length ? `<div class="inv-sub">Monthly Pass</div><div class="inv-grid">${special.map(cell).join('')}</div>` : '') +
+          `<div class="inv-sub">Basic</div><div class="inv-grid">${[{ id: null, name: 'Default' }, ...basic].map(cell).join('')}</div>`;
       } else if (invTab === 'frame') {
-        const items = [{ id: null, name: 'No frame' }, ...ofType('frame')];
         const sel = owned.find(c => c.id === editState.frame);
-        list.innerHTML = countLine(counts.frame) + `<div class="inv-grid">${items.map(c => {
+        const cell = c => {
           const has = !c.id || ownedIds.has(c.id);
           return `<div ${has ? `class="inv-item${(c.id || 'none') === editState.frame ? ' equipped' : ''}" data-frame="${c.id || 'none'}"` : lockAttr(c)}>
             ${c.id ? `<span class="mini-frame mini-frame-${c.id}"></span>` : '<span class="mini-frame mini-none"></span>'}${esc(c.name)}${rarTag(c)}
           </div>`;
-        }).join('')}</div>` +
+        };
+        const special = ofType('frame').filter(c => !c.base), basic = ofType('frame').filter(c => c.base);
+        list.innerHTML = countLine(counts.frame) +
+          (special.length ? `<div class="inv-sub">Monthly Pass</div><div class="inv-grid">${special.map(cell).join('')}</div>` : '') +
+          `<div class="inv-sub">Basic</div><div class="inv-grid">${[{ id: null, name: 'No frame' }, ...basic].map(cell).join('')}</div>` +
           (sel && sel.hasBackground
             ? `<label class="inv-toggle"><input type="checkbox" id="frameBgToggle"${editState.frameBg ? ' checked' : ''}> Show profile background</label>`
             : '');

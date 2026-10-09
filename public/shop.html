@@ -151,6 +151,27 @@
   .spin-result { font-family: 'Cinzel', Georgia, serif; color: var(--gold); font-size: 1.3rem; min-height: 1.6em; text-shadow: 0 0 14px color-mix(in srgb, var(--gold) 50%, transparent); }
   .spin-hint { color: var(--text-faint); font-size: 0.78rem; }
 
+  /* "?" mit Preisen und Wahrscheinlichkeiten */
+  .info-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--border); color: var(--text-dim); font-size: 0.75rem; line-height: 1; flex-shrink: 0; }
+  .hint { position: relative; display: inline-flex; align-items: center; margin-left: 8px; vertical-align: 3px; color: var(--text-faint); font-family: Georgia, serif; font-size: 0.75rem; font-weight: normal; letter-spacing: 0; text-transform: none; cursor: help; outline: none; }
+  .hint:hover .info-icon, .hint:focus-within .info-icon { border-color: var(--gold); color: var(--gold); }
+  .hint-pop {
+    position: absolute; top: calc(100% + 8px); left: -10px; z-index: 30; width: 360px;
+    padding: 12px 16px; color: var(--text-dim); line-height: 1.45; text-align: left;
+    background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    opacity: 0; visibility: hidden; transition: opacity 0.12s ease;
+  }
+  .hint:hover .hint-pop, .hint:focus-within .hint-pop { opacity: 1; visibility: visible; }
+  .shop-card:has(.hint:hover, .hint:focus-within) { position: relative; z-index: 40; }
+  .hint-pop h4 { margin: 10px 0 6px; color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-size: 0.78rem; letter-spacing: 1px; }
+  .hint-pop h4:first-child { margin-top: 0; }
+  .hint-pop table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+  .hint-pop th, .hint-pop td { padding: 3px 4px; text-align: right; }
+  .hint-pop th:first-child, .hint-pop td:first-child { text-align: left; }
+  .hint-pop th { color: var(--text-faint); font-weight: normal; }
+  .hint-pop tr + tr td { border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent); }
+  .hint-pop p { margin: 8px 0 0; font-size: 0.72rem; color: var(--text-faint); }
   .shop-note { color: var(--text-faint); font-size: 0.78rem; text-align: center; margin-top: 12px; font-style: italic; }
   /* (privat) - unsichtbar, Mauszeiger bleibt normal */
   .corner-spot { position: fixed; left: 0; bottom: 0; width: 64px; height: 64px; z-index: 50; cursor: default; background: transparent; }
@@ -173,7 +194,7 @@
   <div class="shop">
     <div>
       <section class="shop-card">
-        <div class="sc-head"><h3>Weekly Highlights</h3><span class="sc-reset" id="weeklyReset"></span></div>
+        <div class="sc-head"><h3>Weekly Highlights<span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop" id="shopHelp"></span></span></h3><span class="sc-reset" id="weeklyReset"></span></div>
         <div class="offers weekly" id="weeklyOffers"></div>
       </section>
       <section class="shop-card">
@@ -255,7 +276,23 @@
       st.textContent = shop.wheel.canSpin ? 'Free spin available!' : `Next free spin in ${until(shop.wheel.nextSpinAt)}`;
     }
 
+    // "?" - Preise nach Seltenheit + Grund-Wahrscheinlichkeiten pro Angebotsplatz
+    function renderHelp() {
+      if (!shop.prices || !shop.odds) return;
+      const R = ['basic', 'refined', 'fancy', 'animated'];
+      const price = v => v ? fmtNum(v) : 'Free';
+      const pct = (w, r) => { const sum = Object.values(w).reduce((a, b) => a + b, 0); return w[r] ? `${Math.round(w[r] / sum * 100)}%` : '–'; };
+      document.getElementById('shopHelp').innerHTML =
+        `<h4>Prices</h4><table><tr><th></th><th>Border</th><th>Frame</th><th>Theme</th></tr>` +
+        R.map(r => `<tr><td class="rar rar-${r}">${RARITY_LABEL[r]}</td><td>${price(shop.prices[r].border)}</td><td>${price(shop.prices[r].frame)}</td><td>${price(shop.prices[r].theme)}</td></tr>`).join('') +
+        `</table><h4>Chances per offer</h4><table><tr><th></th><th>Daily</th><th>Weekly</th></tr>` +
+        R.map(r => `<tr><td class="rar rar-${r}">${RARITY_LABEL[r]}</td><td>${pct(shop.odds.daily, r)}</td><td>${pct(shop.odds.weekly, r)}</td></tr>`).join('') +
+        `<tr><td>Earlier pass cosmetic</td><td>${Math.round(shop.odds.pastPass.daily * 100)}%</td><td>${Math.round(shop.odds.pastPass.weekly * 100)}%</td></tr></table>` +
+        `<p>Earlier pass cosmetics only show up while you are still missing some of them. Your shop never offers you something you already own.</p>`;
+    }
+
     function render() {
+      renderHelp();
       document.getElementById('coinBalance').textContent = `🪙 ${fmtNum(shop.coins)}`;
       document.getElementById('weeklyOffers').innerHTML = offersHtml(shop.weekly);
       document.getElementById('dailyOffers').innerHTML = offersHtml(shop.daily);

@@ -1,5 +1,20 @@
 # Internal Changelog
 
+## 5.17.0 — 2026-10-09
+
+- Quests live (XP only, no coins): runSummaryBatch stores per-game quest
+  stats (role, duration, cs, damage, dragons, epic monsters, solo kills,
+  vision, control wards, kill participation) in the ledger and calls
+  progression.creditQuests; getOverview evaluates + credits too (only with
+  role/champion context). questLedger keys `d:<day>:<id>` / `w:<week>:<id>`
+  make every quest count once per period; done quests can't be rerolled.
+  Older ledger entries have no stats -> stat quests can't be met by them.
+- 16 Basic cosmetics (`border-base-<theme>`, `frame-base-<theme>`, base:
+  true): owned by everyone (ownsCosmetic/ownedList), simple ring gradient /
+  frame in the theme's colours; editor groups Monthly Pass vs Basic.
+- Shop "?" (Weekly Highlights header): price table + base chances per
+  offer (from /api/shop `prices` / `odds`).
+
 ## 5.16.0 — 2026-10-09
 
 - Rarities Basic / Refined / Fancy / Animated (cosmetics.js `rarity`,

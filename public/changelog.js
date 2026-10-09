@@ -25,6 +25,17 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.17.0',
+      date: '2026-10-09',
+      notable: [
+        'Quests are live: finished daily and weekly quests now give XP for your level and the pass.',
+        'New Basic borders and frames matching each of the 8 basic themes - free for everyone and combinable with any theme.',
+        'Shop: the "?" next to Weekly Highlights shows all prices and the chances for each offer.'
+      ],
+      refinements: 1,
+      bugfixes: 0
+    },
+    {
       version: '5.16.0',
       date: '2026-10-09',
       notable: [

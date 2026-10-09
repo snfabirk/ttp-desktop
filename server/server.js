@@ -420,7 +420,20 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
         deaths: me.deaths,
         assists: me.assists,
         champId: cat.champs[myKey].id,
-        champName: cat.champs[myKey].name
+        champName: cat.champs[myKey].name,
+        // fuer die Quests (v5.17.0)
+        stats: {
+          role: me.teamPosition || '',
+          duration: match.info.gameDuration || 0,
+          cs: (me.totalMinionsKilled || 0) + (me.neutralMinionsKilled || 0),
+          damage: me.totalDamageDealtToChampions || 0,
+          dragons: me.dragonKills || 0,
+          epic: (me.baronKills || 0) + ((me.challenges && me.challenges.riftHeraldTakedowns) || 0) + ((me.challenges && me.challenges.voidMonsterKill) || 0),
+          soloKills: (me.challenges && me.challenges.soloKills) || 0,
+          vision: me.visionScore || 0,
+          controlWards: me.visionWardsBoughtInGame || 0,
+          kp: (me.challenges && me.challenges.killParticipation) || 0
+        }
       });
 
       const bucket = buckets[myKey];
@@ -473,6 +486,14 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
     let xpCredited = [];
     try {
       xpCredited = progression.creditMatches(xpGames);
+      // Quests (v5.17.0): erledigte Daily/Weekly Quests bringen XP (keine Coins)
+      progression.creditQuests({
+        role: mainRole,
+        champions: champions.map(c => {
+          const info = championByKey.get(String(c.key));
+          return { id: info ? info.id : (c.id || ''), name: info ? info.name : (c.name || '') };
+        })
+      });
       if (rank.current) {
         const startSnapshot = findSnapshotAtOrBefore(readHistory(puuid), startTime * 1000);
         progression.creditLp({

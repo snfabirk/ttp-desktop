@@ -565,6 +565,10 @@
       font-style: italic;
       white-space: nowrap;
     }
+    /* Erledigte Quest (v5.17.0, XP wurde gutgeschrieben) */
+    .quest.done { border-color: color-mix(in srgb, var(--gold) 55%, var(--border)); }
+    .quest.done .quest-title { color: var(--gold); }
+    .quest.done .quest-xp { color: var(--green); }
     .quest-list {
       display: flex;
       flex-direction: column;
@@ -1068,7 +1072,7 @@
       <div>
         <div class="prog-card">
           <div class="prog-card-head">
-            <h3>Daily Quests <span class="provisional-tag">Preview</span></h3>
+            <h3>Daily Quests</h3>
             <span class="reset-in" id="dailyResetIn"></span>
           </div>
           <div class="games-today" id="gamesToday"></div>
@@ -1744,17 +1748,18 @@
       const icon = q.champId
         ? `<span class="quest-icon"><img src="https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${q.champId}.png" alt=""></span>`
         : `<span class="quest-icon">${q.id === 'firstwin' ? '☀' : '◆'}</span>`;
+      const canReroll = q.rerollable && !q.done;
       const rerollBtn = reroll
-        ? `<button type="button" class="quest-reroll" data-reroll="${q.id}" title="${q.rerollable ? 'Reroll this quest (1x per day)' : 'Reroll already used today'}"${q.rerollable ? '' : ' disabled'}>⟲</button>`
+        ? `<button type="button" class="quest-reroll" data-reroll="${q.id}" title="${q.done ? 'Already done' : q.rerollable ? 'Reroll this quest (1x per day)' : 'Reroll already used today'}"${canReroll ? '' : ' disabled'}>⟲</button>`
         : '';
       const breakdown = q.breakdown && q.breakdown.length
         ? `<div class="quest-breakdown">${q.breakdown.map(b => `<span>${b.name} ${b.progress}/${b.target}</span>`).join('')}</div>`
         : '';
-      return `<div class="quest">
+      return `<div class="quest${q.done ? ' done' : ''}">
         <div class="quest-top">
           ${icon}
           <span class="quest-text"><span class="quest-title">${q.title}</span><span class="quest-desc">${q.desc}</span></span>
-          <span class="quest-xp">+${fmtNum(q.xp)} XP</span>
+          <span class="quest-xp">${q.done ? '✓ ' : ''}+${fmtNum(q.xp)} XP</span>
           ${rerollBtn}
         </div>
         <div class="quest-bottom">

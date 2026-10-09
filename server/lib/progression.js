@@ -1,14 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 const { dataSubdir } = require('./dataPaths');
-const { COSMETICS, priceOf, getCosmetic, passCosmetic } = require('./cosmetics');
+const { COSMETICS, PRICES, priceOf, getCosmetic, passCosmetic } = require('./cosmetics');
 
 // XP-/Level-System (v5.0.0, PROVISORISCH): Profil-Level (laeuft fuer immer,
 // jedes Level etwas teurer), Monats-Pass (seit v5.3.0: ein Pass pro
 // Kalendermonat, 30 Stufen + endlose 30+-Leiste, Coins + Cosmetics),
 // Daily/Weekly Quests. Seit v5.1.0 bringen gespielte Spiele (creditMatches)
 // und gewonnene LP (creditLp, "LP-Konto") echte XP - beides aufgerufen vom
-// Match-Scan in runSummaryBatch; Quests und Trophies vergeben noch nichts.
+// Match-Scan in runSummaryBatch; seit v5.17.0 auch erledigte Quests (nur
+// XP, keine Coins - Nutzerentscheidung). Trophies vergeben noch nichts.
 // Alle Zahlen hier sind Platzhalter.
 //
 // Bewusst KEIN Multiplikator (Schwierigkeit/LP-Abstand) mehr: der war beim
@@ -164,6 +165,100 @@ function buildDailies(state, { role, champions }, now) {
   return quests.map(q => ({ ...q, progress: 0, done: false }));
 }
 
+// ----- Quest-Fortschritt (v5.17.0) -----
+// Jede Quest gilt fuer ihren Zeitraum (Tag ab 06:00 / Woche ab Montag 06:00)
+// und wird pro Zeitraum genau EINMAL gutgeschrieben (state.questLedger).
+const qs = g => g.stats || {};
+const csPerMin = g => qs(g).duration ? qs(g).cs / (qs(g).duration / 60) : 0;
+const DAILY_CHECKS = {
+  firstwin: g => g.win,
+  kp60: g => qs(g).kp >= 0.6,
+  ka15: g => (g.kills || 0) + (g.assists || 0) >= 15,
+  fastwin: g => g.win && qs(g).duration > 0 && qs(g).duration < 25 * 60,
+  top_cs: g => csPerMin(g) >= 7,
+  top_dmg: g => qs(g).damage >= 25000,
+  jgl_drakes: g => qs(g).dragons >= 2,
+  jgl_epic: g => qs(g).epic >= 1,
+  mid_cs: g => csPerMin(g) >= 7.5,
+  mid_solo: g => qs(g).soloKills >= 1,
+  bot_cs: g => csPerMin(g) >= 8,
+  bot_dmg: g => qs(g).damage >= 25000,
+  sup_vision: g => qs(g).vision >= 60,
+  sup_assists: g => (g.assists || 0) >= 15,
+  sup_wards: g => qs(g).controlWards >= 3
+};
+
+function weekStartOf(now) {
+  const d = nextWeeklyReset(now);
+  d.setDate(d.getDate() - 7);
+  return d;
+}
+
+function evaluateDaily(q, games) {
+  let progress;
+  if (q.id === 'play3') progress = games.length;
+  else if (q.champId) progress = games.some(g => g.win && g.champId === q.champId) ? 1 : 0;
+  else progress = games.some(DAILY_CHECKS[q.id] || (() => false)) ? 1 : 0;
+  progress = Math.min(q.target, progress);
+  return { ...q, progress, done: progress >= q.target };
+}
+
+function evaluateWeekly(q, games, state, since) {
+  let progress = 0;
+  if (q.id === 'win2each') {
+    const breakdown = q.breakdown.map(b => ({ ...b, progress: Math.min(b.target, games.filter(g => g.win && g.champId === b.champId).length) }));
+    progress = breakdown.reduce((a, b) => a + b.progress, 0);
+    return { ...q, breakdown, progress: Math.min(q.target, progress), done: breakdown.length > 0 && breakdown.every(b => b.progress >= b.target) };
+  }
+  if (q.id === 'streak3') {
+    let run = 0;
+    [...games].sort((a, b) => a.gameCreation - b.gameCreation).forEach(g => { run = g.win ? run + 1 : 0; progress = Math.max(progress, run); });
+  }
+  if (q.id === 'climb75') {
+    progress = state.lpBank.events.filter(e => new Date(e.at) >= since).reduce((a, e) => a + (e.gained || 0), 0);
+  }
+  progress = Math.min(q.target, progress);
+  return { ...q, progress, done: progress >= q.target };
+}
+
+function questsWithProgress(state, context, now) {
+  const today = dayKey(now);
+  const weekFrom = weekStartOf(now);
+  const todays = state.ledger.filter(g => g.day === today);
+  const weeks = state.ledger.filter(g => new Date(g.gameCreation) >= weekFrom);
+  const credited = state.questLedger || {};
+  const dailies = buildDailies(state, context, now).map(q => evaluateDaily(q, todays))
+    .map(q => ({ ...q, credited: !!credited[`d:${today}:${q.id}`] }));
+  const weekKeyStr = weekKey(now);
+  const weeklies = buildWeeklies(state, context).map(q => evaluateWeekly(q, weeks, state, weekFrom))
+    .map(q => ({ ...q, credited: !!credited[`w:${weekKeyStr}:${q.id}`] }));
+  return { dailies, weeklies, today, weekKeyStr };
+}
+
+// Schreibt erledigte, noch nicht gutgeschriebene Quests gut (Level + Pass).
+function creditQuestsInState(state, context, now) {
+  const { dailies, weeklies, today, weekKeyStr } = questsWithProgress(state, context, now);
+  state.questLedger = state.questLedger || {};
+  let added = 0;
+  const credit = (key, q) => {
+    if (!q.done || state.questLedger[key]) return;
+    state.questLedger[key] = { xp: q.xp, at: now.toISOString() };
+    state.totalXp += q.xp;
+    addPassXp(state, monthKey(now), q.xp);
+    added += q.xp;
+  };
+  dailies.forEach(q => credit(`d:${today}:${q.id}`, q));
+  weeklies.forEach(q => credit(`w:${weekKeyStr}:${q.id}`, q));
+  return added;
+}
+
+function creditQuests(context) {
+  const state = readState();
+  const added = creditQuestsInState(state, context || {}, new Date());
+  if (added) writeState(state);
+  return added;
+}
+
 function buildWeeklies(_state, { champions }) {
   const champs = (champions || []).filter(c => c && c.name);
   return [
@@ -268,11 +363,16 @@ function getPassOverview(state, now) {
 }
 
 // ----- Cosmetics / Coins -----
+// Besitz = Inventar + alle Basic-Grund-Cosmetics (die hat jeder)
+const BASE_IDS = COSMETICS.filter(c => c.base).map(c => c.id);
+const ownsCosmetic = (state, id) => BASE_IDS.includes(id) || state.inventory.includes(id);
+const ownedList = state => [...BASE_IDS, ...state.inventory].map(getCosmetic).filter(Boolean);
+
 function getCosmeticsState() {
   const state = readState();
   return {
     coins: state.coins,
-    owned: state.inventory.map(getCosmetic).filter(Boolean),
+    owned: ownedList(state),
     equipped: state.equipped
   };
 }
@@ -288,7 +388,7 @@ function equipCosmetic(type, id) {
   if (id) {
     const cosmetic = getCosmetic(id);
     if (!cosmetic || cosmetic.type !== type) return { ok: false, error: 'Unknown cosmetic.' };
-    if (!state.inventory.includes(id)) return { ok: false, error: 'You do not own this cosmetic yet.' };
+    if (!ownsCosmetic(state, id)) return { ok: false, error: 'You do not own this cosmetic yet.' };
   }
   state.equipped = { ...state.equipped, [type]: id || null };
   writeState(state);
@@ -360,7 +460,7 @@ function readState() {
       if (c && !state.inventory.includes(c.id)) state.inventory.push(c.id);
     }
   });
-  ['border', 'frame'].forEach(t => { if (state.equipped[t] && !state.inventory.includes(state.equipped[t])) state.equipped[t] = null; });
+  ['border', 'frame'].forEach(t => { if (state.equipped[t] && !ownsCosmetic(state, state.equipped[t])) state.equipped[t] = null; });
   // v5.1/5.2 -> v5.3: der Pass hing an der Challenge (passXp). Monats-Paesse
   // aus dem Ledger (Spielzeitpunkt) + LP-Bank-Events (Zeitpunkt) neu aufbauen.
   if (!raw.passes) {
@@ -413,7 +513,8 @@ function creditMatches(games) {
       const entry = {
         matchId: g.matchId, gameCreation: g.gameCreation, day, gameOfDay,
         category: g.category, win: !!g.win, kills: g.kills || 0, deaths: g.deaths || 0, assists: g.assists || 0,
-        champId: g.champId || '', champName: g.champName || '', base, halved, xp
+        champId: g.champId || '', champName: g.champName || '', base, halved, xp,
+        stats: g.stats || null
       };
       state.ledger.push(entry);
       state.totalXp += xp;
@@ -490,10 +591,10 @@ function getLifetimeStats() {
     lpBankFills: state.lpBank.fills,
     coins: state.coins,
     equipped: state.equipped,
-    owned: state.inventory.map(getCosmetic).filter(Boolean),
+    owned: ownedList(state),
     // Alle Cosmetics, die es gibt (Sammelansicht im Profil-Editor: fehlende
     // ausgegraut mit Schloss + "x / y gesammelt", Nutzerwunsch v5.15.0)
-    catalog: COSMETICS.map(c => ({ ...c, source: c.passMonth ? `${monthLabel(c.passMonth)} Pass · tier ${c.tier}` : 'Shop' })),
+    catalog: COSMETICS.map(c => ({ ...c, source: c.passMonth ? `${monthLabel(c.passMonth)} Pass · tier ${c.tier}` : c.base ? 'Basic' : 'Shop' })),
     profileLayout: state.profileLayout,
     // Fuer weitere Profil-Widgets (v5.6.0)
     pass: (({ label, tier, tiers, xpIntoTier, xpPerTier }) => ({ label, tier, tiers, xpIntoTier, xpPerTier }))(getPassOverview(state, new Date())),
@@ -513,6 +614,8 @@ function rerollDaily(context) {
   if (state.rerolls[day]) return { ok: false, error: 'Reroll already used today.' };
   const pool = DAILY_POOL.filter(q => !q.role || q.role === context.role);
   const current = pool[seededIndex(`${day}:role`, pool.length)];
+  // Schon erledigte Quest kann nicht mehr getauscht werden (sonst XP doppelt)
+  if (evaluateDaily(current, state.ledger.filter(g => g.day === day)).done) return { ok: false, error: 'This quest is already done.' };
   const others = pool.filter(q => q.id !== current.id);
   if (!others.length) return { ok: false, error: 'No other quest available.' };
   state.rerolls = { [day]: others[Math.floor(Math.random() * others.length)].id };
@@ -674,6 +777,10 @@ function getShopState() {
   return {
     provisional: true,
     coins: state.coins,
+    // Fuer das "?" im Shop: Preise + GRUND-Wahrscheinlichkeiten (die steigende
+    // Chance bleibt bewusst unerwaehnt, Nutzerwunsch)
+    prices: PRICES,
+    odds: { daily: SHOP_DAILY_WEIGHTS, weekly: SHOP_WEEKLY_WEIGHTS, pastPass: PAST_PASS_CHANCE },
     daily: state.shop.daily.map(id => offerView(id, owned)).filter(Boolean),
     weekly: state.shop.weekly.map(id => offerView(id, owned)).filter(Boolean),
     dailyResetAt: nextDailyReset(now).toISOString(),
@@ -705,6 +812,11 @@ function spinWheel() {
 function getOverview(context) {
   const now = new Date();
   const state = readState();
+  // Ohne Rolle/Champions (z.B. champion.html) nichts gutschreiben - die
+  // Rollen-Quest des Tages haengt von der Rolle ab.
+  const hasCtx = context && (context.role || (context.champions || []).length);
+  if (hasCtx && creditQuestsInState(state, context, now)) writeState(state);
+  const quests = questsWithProgress(state, context || {}, now);
   return {
     provisional: true,
     level: levelFromXp(state.totalXp),
@@ -712,8 +824,8 @@ function getOverview(context) {
     gamesToday: state.ledger.filter(e => e.day === dayKey(now)).length,
     recentGames: [...state.ledger].sort((a, b) => b.gameCreation - a.gameCreation).slice(0, 5),
     fullXpGamesPerDay: FULL_XP_GAMES_PER_DAY,
-    dailies: buildDailies(state, context, now),
-    weeklies: buildWeeklies(state, context),
+    dailies: quests.dailies,
+    weeklies: quests.weeklies,
     dailyResetAt: nextDailyReset(now).toISOString(),
     weeklyResetAt: nextWeeklyReset(now).toISOString(),
     pass: getPassOverview(state, now),
@@ -747,6 +859,7 @@ module.exports = {
   equipCosmetic,
   saveProfileLayout,
   rerollDaily,
+  creditQuests,
   getShopState,
   spinWheel,
   resetState
