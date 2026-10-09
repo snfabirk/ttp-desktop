@@ -436,6 +436,14 @@
       font-size: 0.8rem;
       cursor: pointer;
     }
+    .inv-sub {
+      margin: 12px 0 6px;
+      color: var(--text-faint);
+      font-size: 0.68rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .inv-sub:first-child { margin-top: 0; }
     .inv-note { margin: 10px 0 0; color: var(--text-faint); font-size: 0.72rem; font-style: italic; }
     .inv-anim { display: block; color: var(--gold); font-size: 0.62rem; }
     .inv-item .mini-frame { width: 40px; height: 30px; }
@@ -1116,12 +1124,25 @@
     });
 
     // ===== Panels =====
-    let invTab = 'border';
+    // Reihenfolge nach Nutzerwunsch: Themes (das Praegnanteste) zuerst.
+    let invTab = 'theme';
     const INV_TABS = [
+      { id: 'theme', label: 'Themes' },
       { id: 'border', label: 'Borders' },
       { id: 'frame', label: 'Frames' },
-      { id: 'theme', label: 'Themes' },
       { id: 'sticker', label: 'Stickers' }
+    ];
+    // Die 8 Grund-Themes hat jeder (seit v5.11.0 nur noch hier waehlbar,
+    // nicht mehr in den Einstellungen); Farben fuer die Vorschau-Kreise.
+    const BASE_THEMES = [
+      { themeKey: 'classic', name: 'Classic', c: ['#0a1428', '#c8aa6e', '#785a28'] },
+      { themeKey: 'graphite', name: 'Graphite', c: ['#18181b', '#b4b8c0', '#3f3f46'] },
+      { themeKey: 'light', name: 'Light', c: ['#f4f0e6', '#8b6914', '#c9b892'] },
+      { themeKey: 'hextech', name: 'Hextech', c: ['#071a1f', '#0ac8b9', '#0e4f57'] },
+      { themeKey: 'arcane', name: 'Arcane', c: ['#150d26', '#b088ff', '#4a2f7a'] },
+      { themeKey: 'noxus', name: 'Noxus', c: ['#170a0a', '#d1373f', '#6e1f1f'] },
+      { themeKey: 'freljord', name: 'Freljord', c: ['#0d1b2a', '#e8935a', '#2c4a63'] },
+      { themeKey: 'ionia', name: 'Ionia', c: ['#0f1f1a', '#ff8fb1', '#2c5245'] }
     ];
 
     function miniGrid([w, h]) {
@@ -1163,14 +1184,16 @@
       } else if (invTab === 'theme') {
         // Themes sind persoenlich (nur die eigene App), daher sofort aktiv
         // und nicht Teil von Speichern/Abbrechen.
-        const themes = owned.filter(c => c.type === 'theme');
+        const passThemes = owned.filter(c => c.type === 'theme');
         const active = currentThemeKey();
-        list.innerHTML = themes.length
-          ? `<div class="inv-grid">${[{ themeKey: 'classic', name: 'Classic' }, ...themes].map(c => `
-              <div class="inv-item${c.themeKey === active ? ' equipped' : ''}" data-theme-key="${c.themeKey}">
-                <span class="mini-theme mini-theme-${c.themeKey}"></span>${esc(c.name)}${c.animated ? '<small class="inv-anim">✦ animated</small>' : ''}
-              </div>`).join('')}</div><p class="inv-note">Only you see your theme. More themes in Settings.</p>`
-          : '<p class="inv-empty">No pass themes yet - they unlock on tiers 15 and 30 of the monthly pass.</p>';
+        const item = c => `
+          <div class="inv-item${c.themeKey === active ? ' equipped' : ''}" data-theme-key="${c.themeKey}">
+            ${c.c ? `<span class="mini-theme" style="background:conic-gradient(${c.c[0]} 0 50%, ${c.c[1]} 50% 75%, ${c.c[2]} 75%);border:1px solid ${c.c[1]}"></span>` : `<span class="mini-theme mini-theme-${c.themeKey}"></span>`}${esc(c.name)}${c.animated ? '<small class="inv-anim">✦ animated</small>' : ''}
+          </div>`;
+        list.innerHTML =
+          (passThemes.length ? `<div class="inv-sub">Monthly Pass</div><div class="inv-grid">${passThemes.map(item).join('')}</div>` : '') +
+          `<div class="inv-sub">Basic</div><div class="inv-grid">${BASE_THEMES.map(item).join('')}</div>` +
+          '<p class="inv-note">Only you see your theme.</p>';
       } else {
         list.innerHTML = '<p class="inv-empty">Coming soon.</p>';
       }

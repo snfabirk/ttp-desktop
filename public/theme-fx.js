@@ -1,3 +1,8 @@
+// Animationen der Cosmetics (v5.11.0): steuert zusaetzlich zu den animierten
+// Themes auch die CSS-Animationen von Profilbild-Rahmen und Profil-Rahmen -
+// <html> bekommt 'fx-off' (Einstellung Aus) bzw. 'fx-paused' (Nur bei
+// Benutzung + gerade inaktiv), siehe cosmetics.css.
+//
 // Animierte Pass-Themes (v5.10.0) - z.B. "Haunted Night" (Oktober-Pass,
 // Stufe 30): schwebende Geister, ab und zu eine Fledermaus, Nebel am Boden.
 // Gezeichnet auf einer Canvas-Flaeche HINTER dem Inhalt (z-index -1, siehe
@@ -99,19 +104,29 @@
     rafId = requestAnimationFrame(frame);
   }
 
+  // CSS-Animationen (Borders/Frames) folgen derselben Einstellung.
+  function syncCssState() {
+    const m = mode();
+    const root = document.documentElement;
+    const active = pointerInside || Date.now() - lastInteraction < IDLE_MS;
+    root.classList.toggle('fx-off', m === 'off');
+    root.classList.toggle('fx-paused', m === 'active' && !active);
+  }
+
   // ----- Aktivitaet -----
-  const touch = () => { lastInteraction = Date.now(); pointerInside = true; wake(); };
+  const touch = () => { lastInteraction = Date.now(); pointerInside = true; syncCssState(); wake(); };
   ['mousemove', 'mousedown', 'keydown', 'wheel'].forEach(ev => window.addEventListener(ev, touch, { passive: true }));
   document.addEventListener('mouseleave', () => { pointerInside = false; lastInteraction = Date.now(); });
   document.addEventListener('mouseenter', touch);
   window.addEventListener('blur', () => { pointerInside = false; });
   document.addEventListener('visibilitychange', wake);
   window.addEventListener('resize', resize);
-  window.addEventListener('storage', e => { if (e.key === ANIM_KEY || e.key === 'ttp_theme') { setTimeout(syncTheme, 0); wake(); } });
+  window.addEventListener('storage', e => { if (e.key === ANIM_KEY || e.key === 'ttp_theme') { setTimeout(syncTheme, 0); syncCssState(); wake(); } });
   new MutationObserver(syncTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   // "Nur bei Benutzung": nach 5s ohne Eingabe ausblenden - die Schleife
   // laeuft dabei weiter, bis level 0 erreicht ist, und schlaeft dann.
-  setInterval(() => { if (scene) wake(); }, 1000);
+  setInterval(() => { syncCssState(); if (scene) wake(); }, 1000);
+  syncCssState();
 
   if (document.body) syncTheme();
   else document.addEventListener('DOMContentLoaded', syncTheme);

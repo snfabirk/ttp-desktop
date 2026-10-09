@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.11.0',
+      date: '2026-10-09',
+      notable: [
+        'Themes are now cosmetics: pick them in your profile editor under Themes (first tab), together with borders and frames.',
+        'The Animations setting now also covers animated borders and profile frames (always, only while you use the app, or off).'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.10.0',
       date: '2026-10-09',
       notable: [

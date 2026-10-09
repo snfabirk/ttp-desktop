@@ -227,3 +227,20 @@
   to { transform: rotate(360deg); }
 }
 
+
+/* Einstellung "Animations" (theme-fx.js setzt die Klassen auf <html>):
+   Aus = alle Cosmetic-Animationen stehen, inaktiv = pausiert. */
+html.fx-off .cos-border,
+html.fx-off .cos-border::before,
+html.fx-off .cos-border::after,
+html.fx-off .pframe *,
+html.fx-off .pframe-bg::after {
+  animation: none !important;
+}
+html.fx-paused .cos-border,
+html.fx-paused .cos-border::before,
+html.fx-paused .cos-border::after,
+html.fx-paused .pframe *,
+html.fx-paused .pframe-bg::after {
+  animation-play-state: paused !important;
+}

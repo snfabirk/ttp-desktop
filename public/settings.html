@@ -78,29 +78,6 @@
       color-scheme: dark;
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    /* Animation fuer animierte Pass-Themes (theme-fx.js) - kompakt in einer
-       Zeile, das Fenster darf nicht scrollen. */
-    .anim-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 6px;
-    }
-    .anim-row label {
-      margin: 0;
-      flex-shrink: 0;
-      font-size: 0.8rem;
-      color: var(--text-dim);
-      letter-spacing: 0;
-      text-transform: none;
-      font-family: Georgia, serif;
-    }
-    .anim-row select {
-      flex: 1;
-      padding-top: 3px;
-      padding-bottom: 3px;
-      font-size: 0.82rem;
-    }
     .checkbox-row {
       display: flex;
       align-items: center;
@@ -335,26 +312,15 @@
     </div>
   </div>
 
+  <!-- Themes sind seit v5.11.0 Cosmetics (Profil -> Edit profile -> Themes).
+       Hier bleibt nur, ob animierte Cosmetics sich bewegen. -->
   <div class="setting-group">
-    <label for="themeSelect">Color Theme</label>
-    <select id="themeSelect">
-      <option value="classic">Classic (Blue &amp; Gold)</option>
-      <option value="graphite">Graphite (Dark Gray)</option>
-      <option value="light">Light</option>
-      <option value="hextech">Hextech (Teal)</option>
-      <option value="arcane">Arcane (Purple)</option>
-      <option value="noxus">Noxus (Crimson &amp; Black)</option>
-      <option value="freljord">Freljord (Frost &amp; Ember)</option>
-      <option value="ionia">Ionia (Jade &amp; Blossom)</option>
+    <label for="animSelect">Animations</label>
+    <select id="animSelect" title="Animated themes, profile picture borders and profile frames">
+      <option value="active">While using the app</option>
+      <option value="always">Always</option>
+      <option value="off">Off</option>
     </select>
-    <div class="anim-row">
-      <label for="animSelect">Theme animation</label>
-      <select id="animSelect" title="Only affects animated pass themes (e.g. Haunted Night)">
-        <option value="active">While using the app</option>
-        <option value="always">Always</option>
-        <option value="off">Off</option>
-      </select>
-    </div>
   </div>
 
   <div class="setting-group">
@@ -389,7 +355,6 @@
     const widthInput = document.getElementById('widthInput');
     const heightSlider = document.getElementById('heightSlider');
     const heightInput = document.getElementById('heightInput');
-    const themeSelect = document.getElementById('themeSelect');
     const animSelect = document.getElementById('animSelect');
     const ANIM_KEY = 'ttp_theme_anim';
     const applyBtn = document.getElementById('applyBtn');
@@ -524,18 +489,6 @@
       heightSlider.value = v;
     });
 
-    // Themewechsel wird direkt in diesem Fenster als Vorschau gezeigt, aber
-    // erst bei Klick auf "Apply" in localStorage geschrieben und damit an
-    // das Hauptfenster synchronisiert - fuehlt sich bewusst wie eine
-    // Einstellung an, die man "anwendet", statt sich still im Hintergrund
-    // zu aendern.
-    themeSelect.addEventListener('change', () => {
-      if (themeSelect.value === 'classic') {
-        document.documentElement.removeAttribute('data-theme');
-      } else {
-        document.documentElement.setAttribute('data-theme', themeSelect.value);
-      }
-    });
 
     // Apply uebernimmt Groesse + Theme sofort, laesst das Fenster aber offen
     // (damit man z.B. mehrere Themes nacheinander durchprobieren kann) -
@@ -550,7 +503,6 @@
 
       if (window.ttpSettings) window.ttpSettings.setWindowSize(widthPx, heightPx);
 
-      try { localStorage.setItem(THEME_KEY, themeSelect.value); } catch (e) {}
       try { localStorage.setItem(ANIM_KEY, animSelect.value); } catch (e) {}
 
       // Kurze "Applied"-Bestaetigung neben dem Button, damit klar ist, dass
@@ -596,7 +548,7 @@
         const res = await fetch('/api/progression/reset', { method: 'POST' });
         if (!res.ok) throw new Error(`status ${res.status}`);
         accountResetBtn.textContent = 'Account Progress Reset ✓';
-        loadPassThemes();
+        ensureOwnedTheme();
       } catch (e) {
         accountResetBtn.disabled = false;
         accountResetBtn.textContent = 'Reset Account Progress';
@@ -604,48 +556,26 @@
       }
     });
 
-    // Pass-Themes (z.B. All Hallows, Haunted Night) erscheinen erst, wenn man
-    // sie im Monats-Pass freigeschaltet hat. Ein gespeichertes Theme, das man
-    // nicht (mehr) besitzt (z.B. nach Reset Account Progress), faellt auf
-    // Classic zurueck.
-    async function loadPassThemes() {
-      themeSelect.querySelectorAll('optgroup.pass-themes').forEach(g => g.remove());
-      let owned = [];
-      try {
-        const res = await fetch('/api/profile-stats');
-        const d = await res.json();
-        owned = (d.owned || []).filter(c => c.type === 'theme' && c.themeKey);
-      } catch (e) {}
-      if (owned.length) {
-        const group = document.createElement('optgroup');
-        group.className = 'pass-themes';
-        group.label = 'Monthly Pass';
-        owned.forEach(c => {
-          const o = document.createElement('option');
-          o.value = c.themeKey;
-          o.textContent = `${c.name}${c.animated ? ' ✦ animated' : ''}`;
-          group.appendChild(o);
-        });
-        themeSelect.appendChild(group);
-      }
+    // Nach "Reset Account Progress" besitzt man keine Pass-Themes mehr - ein
+    // aktives Pass-Theme faellt dann auf Classic zurueck.
+    async function ensureOwnedTheme() {
       let stored = 'classic';
       try { stored = localStorage.getItem(THEME_KEY) || 'classic'; } catch (e) {}
-      if (![...themeSelect.options].some(o => o.value === stored)) {
-        stored = 'classic';
-        try { localStorage.setItem(THEME_KEY, 'classic'); } catch (e) {}
-        document.documentElement.removeAttribute('data-theme');
-      }
-      themeSelect.value = stored;
+      try {
+        const d = await (await fetch('/api/profile-stats')).json();
+        const owned = new Set((d.owned || []).filter(c => c.type === 'theme').map(c => c.themeKey));
+        const passKeys = new Set(['hallows', 'haunted']);
+        if (passKeys.has(stored) && !owned.has(stored)) {
+          localStorage.setItem(THEME_KEY, 'classic');
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (e) {}
     }
 
     (async function init() {
       try {
-        themeSelect.value = localStorage.getItem(THEME_KEY) || 'classic';
         animSelect.value = localStorage.getItem(ANIM_KEY) || 'active';
-      } catch (e) {
-        themeSelect.value = 'classic';
-      }
-      loadPassThemes();
+      } catch (e) {}
 
       refreshApiKeyStatus();
 

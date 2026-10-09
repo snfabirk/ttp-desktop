@@ -1,5 +1,15 @@
 # Internal Changelog
 
+## 5.11.0 — 2026-10-09
+
+- Theme picker removed from Settings; all themes (8 basic + owned pass
+  themes) live in the profile editor's inventory, tab order Themes /
+  Borders / Frames / Stickers. Settings keeps "Animations" (off / while
+  using / always) + ensureOwnedTheme after an account reset; settings
+  window 772 -> 750px.
+- theme-fx.js also toggles `html.fx-off` / `html.fx-paused`, cosmetics.css
+  stops / pauses all border + frame CSS animations accordingly.
+
 ## 5.10.0 — 2026-10-09
 
 - New monthly structure (user design): tiers 5/20 = profile picture border
