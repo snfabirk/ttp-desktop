@@ -99,7 +99,7 @@
 
   /* Stufe 5: Pumpkin Ring - Kuerbisschale mit weichen Rippen, Stiel + Ranke oben,
      innen warmes Kerzenlicht, das leicht flackert */
-  .avatar { display: flex; align-items: center; gap: 18px; position: relative; z-index: 3; }
+  .avatar { display: flex; align-items: center; gap: 18px; }
   .pring { --s: 86px; position: relative; width: var(--s); height: var(--s); flex-shrink: 0; margin: 0 10px; }
   .pring img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
   .pring .candle { position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
@@ -118,9 +118,10 @@
   .cobweb { position: relative; padding: 18px; border-radius: 14px; border: 1px solid #3b3640;
     background: linear-gradient(180deg, rgba(255,255,255,.025), rgba(0,0,0,.12));
     box-shadow: inset 0 0 0 1px rgba(0,0,0,.55), inset 0 0 28px rgba(0,0,0,.5), 0 0 0 1px rgba(232,118,28,.10), 0 8px 26px rgba(0,0,0,.35); }
-  .cweb { position: absolute; top: 1px; pointer-events: none; overflow: hidden; z-index: 2; border-top-left-radius: 13px; }
+  .cweb { position: absolute; top: 1px; pointer-events: none; overflow: hidden; z-index: 5; border-top-left-radius: 13px; }
   .cweb.l { left: 1px; } .cweb.r { right: 1px; transform: scaleX(-1); }
-  .cweb g, .csag path { fill: none; stroke: #c9c4d0; stroke-linecap: round; }
+  .cweb g, .csag path { fill: none; stroke: #d6d1dc; stroke-linecap: round; }
+  .cweb g { filter: drop-shadow(0 1px 1px rgba(0,0,0,.6)); }
   .cweb g { transform-origin: 0 0; animation: draft 7s ease-in-out infinite alternate; }
   .cweb.r g { animation-duration: 8.5s; animation-delay: -3s; }
   @keyframes draft { from { transform: skew(0deg, 0deg); } to { transform: skew(1.2deg, .8deg); } }
@@ -247,8 +248,8 @@
   <div>
     <span class="tag">Tier 5 border + tier 10 frame</span>
     <div class="cobweb" id="cobweb">
-      <svg class="cweb l" id="webL" width="86" height="86"><g></g></svg>
-      <svg class="cweb r" id="webR" width="72" height="72"><g></g></svg>
+      <svg class="cweb l" id="webL" width="104" height="104"><g></g></svg>
+      <svg class="cweb r" id="webR" width="80" height="80"><g></g></svg>
       <svg class="csag" id="sag" viewBox="0 0 100 40" preserveAspectRatio="none"><path vector-effect="non-scaling-stroke"/></svg>
       <div class="card avatar">
         <div class="pring">
@@ -264,10 +265,9 @@
               <ellipse cx="0" cy="0" rx="25" ry="53" fill="url(#seg)"/>
             </g>
             <ellipse cx="-6" cy="-36" rx="6" ry="10" fill="#fff" opacity=".08"/>
-            <!-- Stiel, Blatt, Ranke -->
+            <!-- Stiel und Ranke -->
             <defs><linearGradient id="stemG" x1="0" x2="1"><stop offset="0" stop-color="#3b2a14"/><stop offset=".5" stop-color="#6b5428"/><stop offset="1" stop-color="#2e2110"/></linearGradient></defs>
-            <path d="M-8 -49 Q-20 -58 -32 -52 Q-25 -49 -21 -44 Q-14 -45 -8 -49 Z" fill="#3e5320"/><path d="M-8 -49 Q-18 -50 -28 -50" stroke="#24310f" stroke-width=".8" fill="none"/>
-            <path d="M-4 -49 Q-5 -58 -1 -64 Q3 -66 6 -63 Q3 -57 5 -49 Q0 -46 -4 -49 Z" fill="url(#stemG)"/>
+                        <path d="M-4 -49 Q-5 -58 -1 -64 Q3 -66 6 -63 Q3 -57 5 -49 Q0 -46 -4 -49 Z" fill="url(#stemG)"/>
             <path d="M5 -52 Q14 -60 22 -55 Q28 -50 23 -45 Q19 -42 16 -46 Q14 -49 18 -50" stroke="#4d6327" stroke-width="1.3" fill="none" stroke-linecap="round"/>
           </svg>
           <img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" onerror="this.src='https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Evelynn.png'" alt="">
@@ -328,7 +328,7 @@
     const f = v => v.toFixed(1), R = Math.min(W, H) - 4, n = 6;
     const ang = [...Array(n)].map((_, i) => i === 0 ? 0 : i === n - 1 ? Math.PI / 2 : (i + (r() - .5) * .35) / (n - 1) * Math.PI / 2);
     const len = ang.map((a, i) => R * (i === 0 || i === n - 1 ? 1.05 : .85 + r() * .2));
-    ang.forEach((a, i) => d += `<path d="M0 0 L${f(Math.cos(a) * len[i])} ${f(Math.sin(a) * len[i])}" stroke-width="1.1" stroke-opacity=".6"/>`);
+    ang.forEach((a, i) => d += `<path d="M0 0 L${f(Math.cos(a) * len[i])} ${f(Math.sin(a) * len[i])}" stroke-width="1.3" stroke-opacity=".8"/>`);
     for (let k = 1; k <= rings; k++) {
       const rad = R * k / (rings + .4);
       const pts = ang.map(a => { const q = rad * (1 + (r() - .5) * .08); return [Math.cos(a) * q, Math.sin(a) * q]; });
@@ -337,7 +337,7 @@
         const a = (ang[i - 1] + ang[i]) / 2, sagR = rad * (.78 + r() * .06);
         path += ` Q${f(Math.cos(a) * sagR)} ${f(Math.sin(a) * sagR)} ${f(pts[i][0])} ${f(pts[i][1])}`;
       }
-      d += `<path d="${path}" stroke-width="${k === rings ? .9 : 1}" stroke-opacity="${(.62 - k * .04).toFixed(2)}"/>`;
+      d += `<path d="${path}" stroke-width="${k === rings ? 1.1 : 1.25}" stroke-opacity="${(.82 - k * .04).toFixed(2)}"/>`;
     }
     svg.querySelector('g').innerHTML = d;
   }
