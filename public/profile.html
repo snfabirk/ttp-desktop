@@ -708,7 +708,7 @@
                 <div class="id-name">${a ? esc(`${a.gameName}#${a.tagLine}`) : 'No summoner loaded yet'}</div>
                 ${col ? '' : `<span class="coin-pill" title="Coins from the monthly pass">🪙 ${fmtNum(s ? s.coins : 0)}</span>`}
               </div>
-              ${w.w >= 6 || col ? `<div class="id-since">${s && s.challenges.firstStarted ? `Challenger since ${fmtDate(s.challenges.firstStarted)}` : ''}</div>` : ''}
+              ${w.w >= 6 || col ? `<div class="id-since">${s && s.challenges.firstStarted ? `Pony since ${fmtDate(s.challenges.firstStarted)}` : ''}</div>` : ''}
               <div class="level-line" title="Profile level - keeps growing across all challenges">
                 <span class="level-pill">Level ${lvl.level}</span>
                 <div class="xp-bar"><div class="xp-bar-fill" style="width:${(lvl.xpIntoLevel / lvl.xpForNextLevel) * 100}%"></div></div>

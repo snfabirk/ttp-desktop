@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 5.11.1 — 2026-10-09
+
+- Profile identity widget: "Challenger since" -> "Pony since" (Challenger reads like the LoL rank).
+
 ## 5.11.0 — 2026-10-09
 
 - Theme picker removed from Settings; all themes (8 basic + owned pass
