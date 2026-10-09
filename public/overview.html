@@ -97,6 +97,43 @@
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
       transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
     }
+    /* 2x2-Kacheln: Icon + Titel oben, Kurzinfo darunter; die ganze Kachel ist
+       klickbar, deshalb kein "More →". */
+    .tile-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .tile-grid .trophies-card {
+      margin-bottom: 0;
+      flex-wrap: wrap;
+      row-gap: 6px;
+      align-content: center;
+      min-height: 86px;
+      box-sizing: border-box;
+    }
+    .tile-grid .trophies-icon,
+    .tile-grid .role-breakdown-chart-wrap {
+      width: 34px;
+      display: flex;
+      justify-content: center;
+    }
+    .tile-grid .trophies-progress {
+      flex-basis: 100%;
+      padding-left: 48px;
+      text-align: left;
+    }
+    .tile-grid .role-breakdown-more { display: none; }
+    .shop-card {
+      cursor: default;
+      opacity: 0.6;
+    }
+    .shop-card:hover {
+      border-color: var(--border) !important;
+      transform: none !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+    }
     .trophies-card:hover {
       border-color: var(--gold);
       transform: translateY(-2px);
@@ -908,25 +945,34 @@
       <span class="role-breakdown-more profile-card-more" aria-hidden="true">View profile →</span>
     </a>
 
-    <a href="challenge.html" class="trophies-card challenge-pass-card" id="challengePassCard" title="Challenge details, quests and Challenge Pass">
-      <span class="trophies-icon">🎖️</span>
-      <span class="trophies-label">Challenge &amp; Pass</span>
-      <span class="trophies-progress" id="challengePassSummary">–</span>
-      <span class="role-breakdown-more" aria-hidden="true">More →</span>
-    </a>
+    <!-- 2x2-Raster unter der Profilkarte (Nutzerwunsch 2026-10-09): Challenge &
+         Pass, Trophies, Roles & Picks, Shop. -->
+    <div class="tile-grid">
+      <a href="challenge.html" class="trophies-card challenge-pass-card" id="challengePassCard" title="Challenge details, quests and Challenge Pass">
+        <span class="trophies-icon">🎖️</span>
+        <span class="trophies-label">Challenge &amp; Pass</span>
+        <span class="trophies-progress" id="challengePassSummary">–</span>
+        <span class="role-breakdown-more" aria-hidden="true">More →</span>
+      </a>
 
-    <a href="trophies.html" class="trophies-card" id="trophiesCard">
-      <span class="trophies-icon">🏆</span>
-      <span class="trophies-label">Trophies</span>
-      <span class="trophies-progress" id="trophiesProgress">0%</span>
-    </a>
+      <a href="trophies.html" class="trophies-card" id="trophiesCard">
+        <span class="trophies-icon">🏆</span>
+        <span class="trophies-label">Trophies</span>
+        <span class="trophies-progress" id="trophiesProgress">0%</span>
+      </a>
 
-    <a href="role.html" class="trophies-card role-breakdown-card" id="roleBreakdownCard">
-      <span class="role-breakdown-chart-wrap" id="roleBreakdownChartWrap"><svg viewBox="0 0 33 34" class="role-breakdown-svg" aria-hidden="true"><rect x="0" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/><rect x="9" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/><rect x="18" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/><rect x="27" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/></svg></span>
-      <span class="trophies-label">Roles &amp; Picks</span>
-      <span class="trophies-progress" id="roleBreakdownSummary">–</span>
-      <span class="role-breakdown-more" aria-hidden="true">More →</span>
-    </a>
+      <a href="role.html" class="trophies-card role-breakdown-card" id="roleBreakdownCard">
+        <span class="role-breakdown-chart-wrap" id="roleBreakdownChartWrap"><svg viewBox="0 0 33 34" class="role-breakdown-svg" aria-hidden="true"><rect x="0" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/><rect x="9" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/><rect x="18" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/><rect x="27" y="24" width="6" height="10" rx="1" fill="var(--text-faint)" opacity="0.75"/></svg></span>
+        <span class="trophies-label">Roles &amp; Picks</span>
+        <span class="trophies-progress" id="roleBreakdownSummary">–</span>
+        <span class="role-breakdown-more" aria-hidden="true">More →</span>
+      </a>
+      <div class="trophies-card shop-card" id="shopCard" title="Spend your pass coins on cosmetics - coming soon">
+        <span class="trophies-icon">🛒</span>
+        <span class="trophies-label">Shop</span>
+        <span class="trophies-progress">Coming soon</span>
+      </div>
+    </div>
 
     <h2 class="panel-heading">Opponent Analysis</h2>
     <p class="panel-sub">

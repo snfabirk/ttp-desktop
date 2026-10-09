@@ -1,5 +1,10 @@
 # Internal Changelog
 
+## 5.3.1 — 2026-10-09
+
+- Overview: profile card stays full width, Challenge & Pass / Trophies /
+  Roles & Picks / Shop (placeholder, "Coming soon") now a 2x2 tile grid.
+
 ## 5.3.0 — 2026-10-09
 
 - Monthly pass (progression.js): `state.passes['YYYY-MM'] = { xp, claimedTier,
