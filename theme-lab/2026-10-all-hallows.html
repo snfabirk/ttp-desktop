@@ -49,27 +49,15 @@
   .tail { transform-box: fill-box; transform-origin: 0% 100%; }
   .cat.twitch .tail { animation: twitch .35s ease-in-out; }
   @keyframes twitch { 30% { transform: rotate(-14deg); } 70% { transform: rotate(8deg); } }
-  .dim { position: fixed; inset: 0; background: rgba(0, 0, 0, 0); pointer-events: none; transition: background .6s ease; z-index: 8; }
-  .dim.on { background: rgba(0, 0, 0, .45); }
-  .shadow-cat { position: fixed; z-index: 9; pointer-events: none; height: 42vh; aspect-ratio: 1 / 1.05; transform-origin: 50% 100%; opacity: 0; }
-  /* Waechst gleichmaessig immer weiter auf dich zu (komplett schwarz), macht auf
-     Endgroesse einen letzten Satz und schnappt zu, dann zieht er sich zurueck. */
-  .shadow-cat.go { animation: loom 3.8s linear forwards; }
-  @keyframes loom {
-    0% { opacity: 0; transform: translateX(-50%) scale(.12); animation-timing-function: ease-out; }
-    6% { opacity: 1; transform: translateX(-50%) scale(.2); animation-timing-function: cubic-bezier(.45,0,.9,.6); }
-    70% { opacity: 1; transform: translateX(-50%) scale(1.06); animation-timing-function: ease-out; }
-    77% { opacity: 1; transform: translateX(-50%) scale(1.2) translateY(-3%); }   /* Satz nach vorne */
-    84% { opacity: 1; transform: translateX(-50%) scale(1.16); animation-timing-function: ease-in; }
-    100% { opacity: 0; transform: translateX(-50%) scale(.12); }
-  }
-  .shadow-cat .jaw { transform-box: fill-box; transform-origin: 50% 0%; transform: scaleY(.15); }
-  .shadow-cat.go .jaw { animation: jaw 3.8s linear forwards; }
-  /* Maul geht langsam immer weiter auf, beim Satz schnappt es zu */
-  @keyframes jaw { 0%, 10% { transform: scaleY(.15); } 72% { transform: scaleY(1); } 77% { transform: scaleY(1.1); } 81%, 100% { transform: scaleY(.08); } }
-  .shadow-cat .slit { transform-box: fill-box; transform-origin: center; }
-  .shadow-cat.go .slit { animation: slit 3.8s ease forwards; }
-  @keyframes slit { 0%, 40% { transform: scaleX(1); } 55%, 80% { transform: scaleX(.35); } 100% { transform: scaleX(1); } }
+  .dim { position: fixed; inset: 0; pointer-events: none; z-index: 8; opacity: 0; transition: opacity .8s ease;
+    background: radial-gradient(ellipse at var(--cx, 70%) 100%, rgba(0,0,0,.15), rgba(0,0,0,.7) 70%); }
+  .dim.on { opacity: 1; }
+  /* Die SELBE Katze waechst von ihren Pfoten aus nach oben (startet deckungsgleich
+     mit der kleinen Katze), beugt sich vor, Augen werden boese, am Ende Maul auf. */
+  .big-cat { position: fixed; z-index: 9; pointer-events: none; overflow: visible; display: none; }
+  .big-cat.go { display: block; }
+  .big-cat .eye-glow { transition: opacity .4s; }
+  .cat-hidden { opacity: 0; }
   .web { position: fixed; width: 150px; height: 150px; pointer-events: none; opacity: .35; }
   .web.tl { top: 0; left: 0; } .web.br { bottom: 0; right: 0; transform: rotate(180deg); }
 
@@ -186,21 +174,41 @@
 </div>
 
 <div class="dim" id="dim"></div>
-<!-- Riesiger Katzenschatten (Easter Egg) -->
-<svg class="shadow-cat" id="shadowCat" viewBox="0 0 200 210">
+<!-- Easter Egg: dieselbe Katze in gross (gleiche Form wie die kleine auf dem Zaun) -->
+<svg class="big-cat" id="bigCat" viewBox="-12 -14 64 54">
   <defs>
-    <radialGradient id="eyeG"><stop offset="0" stop-color="#fff3a0"/><stop offset=".5" stop-color="#f5d041"/><stop offset="1" stop-color="#f5a623" stop-opacity="0"/></radialGradient>
+    <!-- Fell: leicht unruhige Kanten -->
+    <filter id="fur" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="0.9" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <!-- Gegenlicht vom orangen Horizont -->
+    <filter id="rim" x="-30%" y="-30%" width="160%" height="160%">
+      <feMorphology in="SourceAlpha" operator="dilate" radius="0.45" result="d"/>
+      <feGaussianBlur in="d" stdDeviation="0.9" result="b"/>
+      <feFlood flood-color="#ff7a18" flood-opacity=".75"/>
+      <feComposite in2="b" operator="in" result="glow"/>
+      <feMerge><feMergeNode in="glow"/></feMerge>
+    </filter>
+    <radialGradient id="vol" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#1c1621"/><stop offset=".55" stop-color="#0a080c"/><stop offset="1" stop-color="#000"/></radialGradient>
+    <radialGradient id="evil" cx=".5" cy=".5" r=".6"><stop offset="0" stop-color="#fff6a8"/><stop offset=".45" stop-color="#ffd23a"/><stop offset="1" stop-color="#ff7a10"/></radialGradient>
+    <clipPath id="catClip"><path d="M0 36 Q-4 14 6 6 L4 -6 L11 2 Q15 0 19 2 L26 -6 L24 6 Q34 14 30 36 Z"/></clipPath>
   </defs>
-  <g fill="#000">
-    <path d="M20 210 Q4 120 40 78 L30 4 L78 52 Q100 44 122 52 L170 4 L160 78 Q196 120 180 210 Z"/>
-  </g>
-  <!-- gluehende Schlitzaugen -->
-  <ellipse cx="72" cy="104" rx="20" ry="14" fill="url(#eyeG)"/><ellipse cx="128" cy="104" rx="20" ry="14" fill="url(#eyeG)"/>
-  <ellipse class="slit" cx="72" cy="104" rx="3.5" ry="12" fill="#120a02"/><ellipse class="slit" cx="128" cy="104" rx="3.5" ry="12" fill="#120a02"/>
-  <!-- Maul mit Zaehnen -->
-  <g class="jaw">
-    <path d="M70 138 Q100 196 130 138 Z" fill="#3a0b12"/>
-    <path d="M74 138 L80 156 L86 138 Z M114 138 L120 156 L126 138 Z M90 138 L94 147 L98 138 Z M102 138 L106 147 L110 138 Z" fill="#efe6d8"/>
+  <g id="bigBody">
+    <g filter="url(#rim)"><path d="M0 36 Q-4 14 6 6 L4 -6 L11 2 Q15 0 19 2 L26 -6 L24 6 Q34 14 30 36 Z"/><path d="M28 32 Q46 30 44 10 Q43 4 40 6 Q42 26 26 28 Z"/></g>
+    <g filter="url(#fur)" fill="url(#vol)"><path d="M0 36 Q-4 14 6 6 L4 -6 L11 2 Q15 0 19 2 L26 -6 L24 6 Q34 14 30 36 Z"/><path d="M28 32 Q46 30 44 10 Q43 4 40 6 Q42 26 26 28 Z"/></g>
+    <!-- Maul (erst am Ende sichtbar), innerhalb des Koerpers -->
+    <g clip-path="url(#catClip)">
+      <path id="maw" d="M7.5 20.5 Q15 31 22.5 20.5 Q15 22.5 7.5 20.5 Z" fill="#3a0812" opacity="0"/>
+      <path id="fangs" d="M9 21 L10.4 25.2 L11.8 21.5 Z M18.2 21.5 L19.6 25.2 L21 21 Z M13 21.9 L13.8 23.6 L14.6 22 Z M15.4 22 L16.2 23.6 L17 21.9 Z" fill="#f2e8d8" opacity="0"/>
+    </g>
+    <!-- boese Augen: schraeg zulaufend (Lid faellt zur Nase ab), Schlitzpupillen -->
+    <g class="eye-glow" id="eyes">
+      <path d="M6.4 12.6 Q9 9.6 12.6 11.6 Q10 14.6 6.4 12.6 Z" fill="url(#evil)" style="filter:drop-shadow(0 0 .8px #ffb000)"/>
+      <path d="M23.6 12.6 Q21 9.6 17.4 11.6 Q20 14.6 23.6 12.6 Z" fill="url(#evil)" style="filter:drop-shadow(0 0 .8px #ffb000)"/>
+      <ellipse id="pupL" cx="9.6" cy="12.2" rx=".75" ry="1.5" fill="#140800"/>
+      <ellipse id="pupR" cx="20.4" cy="12.2" rx=".75" ry="1.5" fill="#140800"/>
+    </g>
   </g>
 </svg>
 <div class="nav"><span class="on">⌂ Overview</span><span>Profile</span><span>Challenge</span><span>Pass</span><span>Trophies</span><span>Shop</span></div>
@@ -232,23 +240,48 @@
   </div>
 </div>
 <script>
-  // Easter Egg: 5x auf die Katze klicken (Zaehler setzt sich nach 8s ohne Klick zurueck)
+  // Easter Egg: 5x auf die Katze klicken -> dieselbe Katze waechst nach oben,
+  // beugt sich vor, Augen werden boese, am Ende Maul auf und schnappt zu.
   (function () {
-    const cat = document.getElementById('cat'), sc = document.getElementById('shadowCat'), dim = document.getElementById('dim');
+    const cat = document.getElementById('cat'), big = document.getElementById('bigCat'), dim = document.getElementById('dim');
+    const maw = document.getElementById('maw'), fangs = document.getElementById('fangs');
+    const pupL = document.getElementById('pupL'), pupR = document.getElementById('pupR');
     let clicks = 0, reset = null, busy = false;
+    const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const easeIn = t => t * t * t;
     cat.addEventListener('click', () => {
       if (busy) return;
       cat.classList.remove('twitch'); void cat.getBoundingClientRect(); cat.classList.add('twitch');
       clicks++; clearTimeout(reset); reset = setTimeout(() => { clicks = 0; }, 8000);
       if (clicks < 5) return;
       clicks = 0; busy = true;
-      const r = cat.getBoundingClientRect();
-      sc.style.left = `${Math.min(innerWidth - 120, Math.max(120, r.left + r.width / 2))}px`;
-      sc.style.top = `${r.bottom - innerHeight * .42}px`;
-      dim.classList.add('on');
-      sc.classList.remove('go'); void sc.getBoundingClientRect(); sc.classList.add('go');
-      setTimeout(() => dim.classList.remove('on'), 3100);
-      setTimeout(() => { sc.classList.remove('go'); busy = false; }, 3900);
+      // Grosse Katze exakt deckungsgleich ueber die kleine legen (gleiche viewBox-Region)
+      const m = cat.getScreenCTM();
+      const p0 = new DOMPoint(-12, -14).matrixTransform(m), p1 = new DOMPoint(52, 40).matrixTransform(m);
+      const w = p1.x - p0.x, h = p1.y - p0.y;
+      Object.assign(big.style, { left: `${p0.x}px`, top: `${p0.y}px`, width: `${w}px`, height: `${h}px` });
+      const footX = (15 + 12) / 64 * 100, footY = (36 + 14) / 54 * 100; // Pfoten = Drehpunkt
+      big.style.transformOrigin = `${footX}% ${footY}%`;
+      const target = Math.min(innerHeight * .62 / h, innerWidth * .55 / w); // Endgroesse wie die Version davor
+      document.documentElement.style.setProperty('--cx', `${(p0.x + w * footX / 100) / innerWidth * 100}%`);
+      big.classList.add('go'); cat.classList.add('cat-hidden'); dim.classList.add('on');
+      const T = 4200, t0 = performance.now();
+      (function step(now) {
+        const t = Math.min(1, (now - t0) / T);
+        let k, lean = 0, mouth = 0, slit = 1;
+        if (t < .08) { k = 1; slit = 1 - t / .08 * .6; }                       // Augen verengen sich
+        else if (t < .68) { const u = (t - .08) / .6; k = 1 + (target - 1) * ease(u); lean = ease(u) * 7; slit = .4; mouth = Math.max(0, (u - .7) / .3) * .5; }
+        else if (t < .76) { const u = (t - .68) / .08; k = target * (1 + .1 * ease(u)); lean = 7 + 5 * u; slit = .3; mouth = .5 + .5 * u; } // Satz + Maul auf
+        else if (t < .8) { k = target * 1.1; lean = 12; slit = .3; mouth = 1 - (t - .76) / .04; }  // schnappt zu
+        else { const u = (t - .8) / .2; k = target * 1.1 + (1 - target * 1.1) * ease(u); lean = 12 * (1 - u); slit = .3 + .7 * u; mouth = 0; }
+        big.style.transform = `perspective(900px) rotateX(${lean}deg) scale(${k})`;
+        pupL.setAttribute('rx', .75 * slit); pupR.setAttribute('rx', .75 * slit);
+        maw.setAttribute('opacity', Math.min(1, mouth * 1.4)); fangs.setAttribute('opacity', Math.min(1, mouth * 1.6));
+        maw.setAttribute('d', `M7.5 20.5 Q15 ${20.5 + 11 * mouth} 22.5 20.5 Q15 22.5 7.5 20.5 Z`);
+        if (t > .82) dim.classList.remove('on');
+        if (t < 1) requestAnimationFrame(step);
+        else { big.classList.remove('go'); cat.classList.remove('cat-hidden'); busy = false; }
+      })(t0);
     });
   })();
 
