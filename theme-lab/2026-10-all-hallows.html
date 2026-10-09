@@ -53,29 +53,27 @@
   /* Kopf schaut normalerweise zur Seite, beim Easter Egg langsam zu dir */
   .cat-look { transform: translateX(3.2px); transition: transform .9s cubic-bezier(.5, 0, .2, 1); }
   .cat.stare .cat-look { transform: translateX(0); }
-  .cat-eye { transition: fill .6s ease; }
+  .cat-eye { transition: fill 1s ease-in-out; }
   .cat.red .cat-eye { fill: #e01e12; animation: none; }
   .cat-slit { opacity: 0; transition: opacity .6s ease; }
   .cat.red .cat-slit { opacity: 1; }
   .cat-eyes { transition: filter .6s ease; }
   .cat.red .cat-eyes { filter: drop-shadow(0 0 3px rgba(230, 20, 10, .9)); }
   /* Lichter: erst flackern, dann aus - und spaeter wieder an */
-  .fire.out { animation: fireOut .7s ease-in forwards; animation-delay: var(--d, 0s); }
-  .fire.relit { animation: fireOn 1.1s ease-out both; animation-delay: var(--d, 0s); }
-  @keyframes fireOut { 0% { opacity: 1; } 25% { opacity: .35; } 40% { opacity: .9; } 60% { opacity: .2; } 100% { opacity: 0; } }
-  @keyframes fireOn { 0% { opacity: 0; } 15% { opacity: .7; } 25% { opacity: .05; } 45% { opacity: .85; } 55% { opacity: .3; } 100% { opacity: 1; } }
+  .fire.out { animation: fireOut 1.6s ease-in-out forwards; animation-delay: var(--d, 0s); }
+  .fire.relit { animation: fireOn 2s ease-in-out both; animation-delay: var(--d, 0s); }
+  @keyframes fireOut { 0% { opacity: 1; } 30% { opacity: .55; } 45% { opacity: .8; } 100% { opacity: 0; } }
+  @keyframes fireOn { 0% { opacity: 0; } 30% { opacity: .5; } 45% { opacity: .3; } 100% { opacity: 1; } }
   /* Abdunkeln - Loch um die Augen, damit nur die roten Augen bleiben */
   .dim { position: fixed; inset: 0; pointer-events: none; z-index: 8; opacity: 0; background: #020103;
-    transition: opacity 1.4s ease;
+    transition: opacity 2s ease-in-out;
     -webkit-mask: radial-gradient(circle at var(--ex, 80%) var(--ey, 90%), transparent calc(var(--eh, 14px) * .7), #000 calc(var(--eh, 14px) * 1.5));
             mask: radial-gradient(circle at var(--ex, 80%) var(--ey, 90%), transparent calc(var(--eh, 14px) * .7), #000 calc(var(--eh, 14px) * 1.5)); }
   /* Boese Kuerbisgesichter: eigene Ebene UEBER dem Abdunkeln, gleiche Geometrie wie .scene */
   .scene.evil { z-index: 9; }
-  .evil-face { opacity: 0; filter: drop-shadow(0 0 4px rgba(255, 40, 10, .85)); }
-  .evil-face.on { animation: evilOn 1s ease-out forwards; animation-delay: var(--d, 0s); }
-  .evil-face.off { opacity: 0; transition: opacity .25s ease; }
-  @keyframes evilOn { 0% { opacity: 0; } 20% { opacity: .6; } 30% { opacity: .1; } 55% { opacity: .9; } 65% { opacity: .5; } 100% { opacity: 1; } }
-  .dim.on { opacity: .9; transition: opacity .9s ease .25s; }
+  .evil-face { opacity: 0; filter: drop-shadow(0 0 4px rgba(255, 40, 10, .85)); transition: opacity 1.1s ease-in-out; }
+  .evil-face.on { opacity: 1; transition: opacity 1.6s ease-in-out var(--d, 0s); }
+  .dim.on { opacity: .9; transition: opacity 1.6s ease-in-out .2s; }
   .web { position: fixed; width: 150px; height: 150px; pointer-events: none; opacity: .35; }
   .web.tl { top: 0; left: 0; } .web.br { bottom: 0; right: 0; transform: rotate(180deg); }
 
@@ -257,18 +255,18 @@
       await wait(500);
       fires.forEach(f => { f.classList.remove('relit'); f.classList.add('out'); });  // Lichter gehen aus
       dim.classList.add('on');
-      await wait(1100);                                             // Stille ...
-      evil.forEach(f => { f.classList.remove('off'); f.classList.add('on'); });     // ... dann grinsen die Kuerbisse boese
-      await wait(2300);
-      evil.forEach(f => { f.classList.remove('on'); f.classList.add('off'); });
-      await wait(300);
+      await wait(1600);                                             // Stille ...
+      evil.forEach(f => f.classList.add('on'));                     // ... dann grinsen die Kuerbisse boese
+      await wait(3200);
+      evil.forEach(f => f.classList.remove('on'));
+      await wait(900);
       dim.classList.remove('on');
       cat.classList.remove('red');
       fires.forEach(f => { f.classList.remove('out'); f.classList.add('relit'); });  // flackert wieder an
-      await wait(900);
+      await wait(1400);
       cat.classList.remove('stare');                                // schaut wieder weg
-      await wait(1300);
-      fires.forEach(f => f.classList.remove('relit')); evil.forEach(f => f.classList.remove('off'));
+      await wait(1200);
+      fires.forEach(f => f.classList.remove('relit'));
       busy = false;
     });
   })();
