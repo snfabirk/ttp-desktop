@@ -226,7 +226,17 @@
       color: var(--gold);
     }
     .challenge-pass-card .trophies-progress {
+      display: inline-flex;
+      align-items: center;
       white-space: nowrap;
+    }
+    /* Deutliche Trennung zwischen Pass-Stufe und LP Bank (ein Punkt war zu
+       wenig, Nutzerfeedback). */
+    .challenge-pass-card .cp-sep {
+      width: 1px;
+      height: 1.1em;
+      margin: 0 14px;
+      background: var(--border);
     }
     .profile-card:hover .profile-card-more {
       color: var(--gold);
@@ -2001,8 +2011,10 @@
         const data = await parseApiResponse(res);
         if (!res.ok) return;
         document.getElementById('profileCardLevel').textContent = `Lv ${data.level.level}`;
-        document.getElementById('challengePassSummary').textContent =
-          `Tier ${data.pass.tier} / ${data.pass.tiers} · LP Bank ${data.lpBank.progress}/${data.lpBank.size}`;
+        document.getElementById('challengePassSummary').innerHTML =
+          `<span class="cp-seg">Tier ${data.pass.tier} / ${data.pass.tiers}</span>` +
+          `<span class="cp-sep" aria-hidden="true"></span>` +
+          `<span class="cp-seg">LP Bank ${data.lpBank.progress} / ${data.lpBank.size}</span>`;
       } catch (e) {}
     }
 

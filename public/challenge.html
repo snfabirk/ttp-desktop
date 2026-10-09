@@ -320,10 +320,21 @@
       display: grid;
       grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
       gap: 14px;
-      align-items: start;
+      /* Beide Spalten gleich lang (Nutzerwunsch): Spalten strecken sich auf
+         die Zeilenhoehe, die jeweils letzte Karte fuellt den Rest. */
+      align-items: stretch;
+    }
+    .progression-grid > div {
+      display: flex;
+      flex-direction: column;
+    }
+    .progression-grid > div > .prog-card:last-child {
+      flex: 1;
+      margin-bottom: 0;
     }
     @media (max-width: 900px) {
       .progression-grid { grid-template-columns: minmax(0, 1fr); }
+      .progression-grid > div > .prog-card:last-child { margin-bottom: 14px; }
     }
     .prog-card {
       background: var(--panel-bg);

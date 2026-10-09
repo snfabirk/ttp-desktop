@@ -1,5 +1,12 @@
 # Internal Changelog
 
+## 5.2.2 — 2026-10-09
+
+- Overview "Challenge & Pass" card: tier and LP Bank separated by a thin
+  vertical divider instead of a dot (user: dot not enough).
+- challenge.html: both progression columns stretch to equal height, the last
+  card in each column fills the remaining space.
+
 ## 5.2.1 — 2026-10-09
 
 - Level curve: `xpForLevel` = min(4000, 2000 + 100 x (level-1)) instead of
