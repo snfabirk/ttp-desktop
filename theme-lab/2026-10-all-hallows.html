@@ -97,15 +97,37 @@
   .tile { display: flex; flex-direction: column; gap: 6px; }
   .tile b { font-family: 'Cinzel', serif; color: var(--gold); letter-spacing: 1px; }
 
-  /* Stufe 5: Pumpkin Ring */
-  .avatar { display: flex; align-items: center; gap: 16px; }
-  .ring { width: 74px; height: 74px; border-radius: 50%; padding: 4px; box-sizing: border-box; background: repeating-conic-gradient(#f08a2c 0deg 14deg, #c4560f 14deg 18deg); box-shadow: 0 0 10px rgba(232, 118, 28, .35); flex-shrink: 0; }
-  .ring img { width: 100%; height: 100%; border-radius: 50%; display: block; object-fit: cover; }
+  /* Stufe 5: Pumpkin Ring - Kuerbisschale mit weichen Rippen, Stiel + Ranke oben,
+     innen warmes Kerzenlicht, das leicht flackert */
+  .avatar { display: flex; align-items: center; gap: 18px; }
+  .pring { --s: 86px; position: relative; width: var(--s); height: var(--s); flex-shrink: 0; margin: 0 10px; }
+  .pring img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+  .pring .candle { position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+    box-shadow: inset 0 0 14px 2px rgba(255, 140, 40, .6), inset 0 0 3px 1px rgba(255, 190, 110, .6);
+    animation: candle 3.4s ease-in-out infinite; }
+  @keyframes candle { 0%, 100% { opacity: .75; } 18% { opacity: .95; } 24% { opacity: .7; } 41% { opacity: 1; } 63% { opacity: .82; } 71% { opacity: .96; } }
+  /* Kuerbis liegt hinter dem Bild; nur Stiel/Blatt/Ranke liegen davor */
+  .pring .pk-shell { position: absolute; left: -32%; top: -24%; width: 164%; height: 148%; overflow: visible; pointer-events: none; z-index: -0; }
+  .pring .pk-shell { filter: drop-shadow(0 0 8px rgba(255, 120, 30, .25)); }
+  .pring img, .pring .candle { z-index: 1; }
+  .pring .lip { position: absolute; inset: -2px; border-radius: 50%; z-index: 1; pointer-events: none;
+    box-shadow: 0 0 0 2px #f2b765, 0 0 0 3px rgba(120, 50, 10, .7), 0 0 6px 3px rgba(255, 150, 50, .35); animation: candle 3.4s ease-in-out infinite; }
   .name { font-family: 'Cinzel', serif; font-size: 1.4rem; color: var(--gold); letter-spacing: 1px; }
-  /* Stufe 10: Cobweb-Rahmen um die Profilflaeche */
-  .cobweb { position: relative; padding: 16px; border-radius: 16px; border: 2px solid #34343a; box-shadow: inset 0 0 0 1px rgba(232,118,28,.35); }
-  .cobweb::before, .cobweb::after { content: ''; position: absolute; width: 60px; height: 60px; background: var(--web) no-repeat center / contain; opacity: .8; }
-  .cobweb::before { top: -2px; left: -2px; } .cobweb::after { bottom: -2px; right: -2px; transform: rotate(180deg); }
+  /* Stufe 10: Cobweb-Rahmen - verwitterter dunkler Rand, natuerliche Dachboden-Spinnweben
+     in den oberen Ecken + ein durchhaengender Faden, alles schwingt leicht wie im Luftzug */
+  .cobweb { position: relative; padding: 18px; border-radius: 14px; border: 1px solid #3b3640;
+    background: linear-gradient(180deg, rgba(255,255,255,.025), rgba(0,0,0,.12));
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.55), inset 0 0 28px rgba(0,0,0,.5), 0 0 0 1px rgba(232,118,28,.10), 0 8px 26px rgba(0,0,0,.35); }
+  .cweb { position: absolute; top: 1px; pointer-events: none; overflow: hidden; z-index: 2; border-top-left-radius: 13px; }
+  .cweb.l { left: 1px; } .cweb.r { right: 1px; transform: scaleX(-1); }
+  .cweb g, .csag path { fill: none; stroke: #c9c4d0; stroke-linecap: round; }
+  .cweb g { transform-origin: 0 0; animation: draft 7s ease-in-out infinite alternate; }
+  .cweb.r g { animation-duration: 8.5s; animation-delay: -3s; }
+  @keyframes draft { from { transform: skew(0deg, 0deg); } to { transform: skew(1.2deg, .8deg); } }
+  .csag { position: absolute; top: -1px; left: 0; width: 100%; height: 40px; pointer-events: none; overflow: visible; z-index: 2; }
+  .csag path { animation: sag 6s ease-in-out infinite alternate; transform-box: view-box; transform-origin: 50% 0; }
+  @keyframes sag { from { transform: scaleY(1); } to { transform: scaleY(1.25); } }
+  .dew { fill: #f2d9b8; opacity: .55; }
   .tag { display: inline-block; margin-bottom: 8px; padding: 1px 8px; border: 1px dashed var(--text-faint); border-radius: 9px; color: var(--text-faint); font-size: .7rem; letter-spacing: 1px; text-transform: uppercase; }
 </style>
 </head>
@@ -225,8 +247,33 @@
   <div>
     <span class="tag">Tier 5 border + tier 10 frame</span>
     <div class="cobweb" id="cobweb">
+      <svg class="cweb l" id="webL" width="150" height="120"><g></g></svg>
+      <svg class="cweb r" id="webR" width="96" height="84"><g></g></svg>
+      <svg class="csag" id="sag" viewBox="0 0 100 40" preserveAspectRatio="none"><path vector-effect="non-scaling-stroke"/></svg>
       <div class="card avatar">
-        <div class="ring"><img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" onerror="this.src='https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Evelynn.png'" alt=""></div>
+        <div class="pring">
+          <!-- Kuerbiskoerper: ueberlappende Segmente, Bild sitzt im ausgeschnittenen Fenster -->
+          <svg class="pk-shell" viewBox="-70 -64 140 128">
+            <defs>
+              <radialGradient id="seg" cx=".42" cy=".32" r=".75"><stop offset="0" stop-color="#f6a24a"/><stop offset=".55" stop-color="#df701d"/><stop offset="1" stop-color="#9c430b"/></radialGradient>
+              <radialGradient id="segD" cx=".5" cy=".35" r=".8"><stop offset="0" stop-color="#d9681a"/><stop offset=".6" stop-color="#b9540f"/><stop offset="1" stop-color="#7a3307"/></radialGradient>
+            </defs>
+            <g stroke="#7a3307" stroke-width="1.1">
+              <ellipse cx="-38" cy="5" rx="26" ry="43" fill="url(#segD)"/><ellipse cx="38" cy="5" rx="26" ry="43" fill="url(#segD)"/>
+              <ellipse cx="-22" cy="3" rx="29" ry="50" fill="url(#seg)"/><ellipse cx="22" cy="3" rx="29" ry="50" fill="url(#seg)"/>
+              <ellipse cx="0" cy="2" rx="25" ry="53" fill="url(#seg)"/>
+            </g>
+            <ellipse cx="-6" cy="-36" rx="6" ry="10" fill="#fff" opacity=".08"/>
+            <!-- Stiel, Blatt, Ranke -->
+            <defs><linearGradient id="stemG" x1="0" x2="1"><stop offset="0" stop-color="#3b2a14"/><stop offset=".5" stop-color="#6b5428"/><stop offset="1" stop-color="#2e2110"/></linearGradient></defs>
+            <path d="M-8 -49 Q-20 -58 -32 -52 Q-25 -49 -21 -44 Q-14 -45 -8 -49 Z" fill="#3e5320"/><path d="M-8 -49 Q-18 -50 -28 -50" stroke="#24310f" stroke-width=".8" fill="none"/>
+            <path d="M-4 -49 Q-5 -58 -1 -64 Q3 -66 6 -63 Q3 -57 5 -49 Q0 -46 -4 -49 Z" fill="url(#stemG)"/>
+            <path d="M5 -52 Q14 -60 22 -55 Q28 -50 23 -45 Q19 -42 16 -46 Q14 -49 18 -50" stroke="#4d6327" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+          </svg>
+          <img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" onerror="this.src='https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Evelynn.png'" alt="">
+          <div class="candle"></div>
+          <div class="lip"></div>
+        </div>
         <div><div class="name">LUCKSHOT</div><div class="muted">Level 17 · 🪙 2,400</div></div>
       </div>
       <div class="card" style="margin-top:12px"><h3>About me</h3><span class="muted">Trick or treat, gank or feed.</span></div>
@@ -273,9 +320,34 @@
     });
   })();
 
-  // Spinnennetz-Ecke fuer den Cobweb-Rahmen (gleiches Netz wie oben)
-  const web = document.querySelector('.web.tl').outerHTML.replace('class="web tl"', 'xmlns="http://www.w3.org/2000/svg"').replace(/\s+/g, ' ');
-  document.getElementById('cobweb').style.setProperty('--web', `url("data:image/svg+xml,${encodeURIComponent(web)}")`);
+  // Cobweb-Rahmen: Dachboden-Spinnweben in den oberen Ecken (fester Seed).
+  // Faeden spannen sich zwischen oberer und seitlicher Kante und haengen durch die Schwerkraft durch.
+  function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function cornerWeb(svg, seed, n) {
+    const W = +svg.getAttribute('width'), H = +svg.getAttribute('height'), r = rng(seed), R = Math.min(W, H) * 1.15; let d = '';
+    const f = v => v.toFixed(1);
+    const line = (x1, y1, cx, cy, x2, y2, o, w) => d += `<path d="M${f(x1)} ${f(y1)} Q${f(cx)} ${f(cy)} ${f(x2)} ${f(y2)}" stroke-opacity="${o.toFixed(2)}" stroke-width="${w.toFixed(2)}"/>`;
+    // ein paar Haltefaeden aus der Ecke heraus
+    for (const a of [.12, .45, .78, 1.15, 1.42]) { const L = R * (.55 + r() * .4); line(0, 0, Math.cos(a) * L * .5, Math.sin(a) * L * .5 + 3, Math.cos(a) * L, Math.sin(a) * L, .16 + r() * .12, .45); }
+    // viele kurze, durchhaengende Wisps, dicht in der Ecke, nach aussen duenner
+    for (let i = 0; i < n; i++) {
+      const u = Math.pow(r(), 1.5), dist = 6 + u * R, th = (.1 + r() * .8) * Math.PI / 2;
+      const cx = Math.cos(th) * dist, cy = Math.sin(th) * dist * (H / W) * 1.1;
+      const dir = th + Math.PI / 2 + (r() - .5) * .9, L = 10 + r() * 26 * (1 - u * .4);
+      const dx = Math.cos(dir) * L / 2, dy = Math.sin(dir) * L / 2;
+      line(cx - dx, cy - dy, cx, cy + L * (.12 + r() * .2), cx + dx, cy + dy, .1 + (1 - u) * .38 * (.4 + r() * .6), .35 + r() * .45);
+    }
+    for (let i = 0; i < 2; i++) {                       // lose herabhaengende Faeden
+      const x = 14 + r() * W * .45, len = 12 + r() * 22;
+      line(x, 0, x + 3 - r() * 6, len * .6, x + 2 - r() * 4, len, .16 + r() * .14, .4);
+    }
+    svg.querySelector('g').innerHTML = d;
+  }
+  cornerWeb(document.getElementById('webL'), 21, 70);
+  cornerWeb(document.getElementById('webR'), 7, 38);
+  // durchhaengender Faden entlang der oberen Kante (von der linken Ecke bis ca. zur Mitte)
+  document.querySelector('#sag path').setAttribute('d', 'M12 0 Q30 22 52 0');
+  document.querySelector('#sag path').setAttribute('style', 'stroke-opacity:.32;stroke-width:.6px');
 </script>
 </body>
 </html>
