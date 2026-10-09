@@ -289,6 +289,10 @@
     }
     .edit-toggle:hover { color: var(--gold); }
     body.editing .edit-toggle { display: none; }
+    /* Im Bearbeitungsmodus passt die Flaeche immer zwischen die beiden
+       Seitenleisten (je 20px Rand + 230px Breite + 20px Luft) - die Zellen
+       skalieren ueber die Container-Einheiten mit. */
+    body.editing .content { max-width: min(900px, calc(100vw - 540px)); padding: 0; }
 
     /* ----- Bearbeitungsmodus ----- */
     body.editing .widget { cursor: grab; user-select: none; }

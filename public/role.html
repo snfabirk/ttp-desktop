@@ -420,9 +420,9 @@
       let champions = [];
       try { champions = JSON.parse(ls('ttp_selected_champs') || '[]'); } catch (e) {}
 
-      if (!since) { statusEl.textContent = 'Start a challenge on the Champion Selection page first.'; return; }
+      if (!since) { statusEl.textContent = 'Start a challenge on the Setup page first.'; return; }
       const parts = summonerName.split('#');
-      if (parts.length !== 2 || !parts[0] || !parts[1]) { statusEl.textContent = 'No valid summoner set - please set one on the Champion Selection page.'; return; }
+      if (parts.length !== 2 || !parts[0] || !parts[1]) { statusEl.textContent = 'No valid summoner set - please set one on the Setup page.'; return; }
       if (!champions.length) { statusEl.textContent = 'No champion pool set yet.'; return; }
 
       // Geruest sofort zeigen (statt leerer Karte + "Loading …"), die echten

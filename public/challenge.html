@@ -1540,7 +1540,7 @@
       startEl.innerHTML = startPoint ? rankLabelHtml(startPoint.tier, startPoint.rank, startPoint.leaguePoints) : '–';
       endEl.innerHTML = goalTier ? rankLabelHtml(goalTier, goalDiv, goalLp) : 'No goal set';
       if (!goalTier || !startPoint || !current) {
-        subEl.textContent = goalTier ? '' : 'Set an LP goal on the Champion Selection page.';
+        subEl.textContent = goalTier ? '' : 'Set an LP goal on the Setup page.';
         return;
       }
       const start = comparableLP(startPoint.tier, startPoint.rank, startPoint.leaguePoints);
@@ -1646,7 +1646,7 @@
       if (since) startChallengeTimer(since);
 
       const parts = summonerName.split('#');
-      if (parts.length !== 2 || !parts[0] || !parts[1]) { statusEl.textContent = 'No valid summoner set - please set one on the Champion Selection page.'; return; }
+      if (parts.length !== 2 || !parts[0] || !parts[1]) { statusEl.textContent = 'No valid summoner set - please set one on the Setup page.'; return; }
 
       try {
         statusEl.textContent = 'Loading …';
@@ -1655,7 +1655,7 @@
         if (!accountRes.ok) throw new Error(account.error || 'Could not find summoner.');
         renderAccountIdentity(account);
 
-        if (!since) { statusEl.textContent = 'Start a challenge on the Champion Selection page to see your stats.'; return; }
+        if (!since) { statusEl.textContent = 'Start a challenge on the Setup page to see your stats.'; return; }
         const keyed = champions.filter(c => c.key);
         if (!keyed.length) { statusEl.textContent = 'No champion pool set yet.'; return; }
 

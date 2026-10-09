@@ -437,7 +437,17 @@
     .last-game .res { font-family: 'Cinzel', Georgia, serif; font-size: 1.2rem; }
     .last-game .info { flex: 1; color: var(--text); }
     .last-game .info .s { color: var(--text-dim); font-size: 0.8rem; }
-    .last-game .xp { color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-size: 1.05rem; white-space: nowrap; }
+    /* Eigenes Schild, damit die XP auch ueber hellen Splash-Arts (z.B. im
+       hellen Theme) lesbar bleiben. */
+    .last-game .xp {
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 1.05rem;
+      white-space: nowrap;
+      padding: 2px 10px;
+      border-radius: 12px;
+      background: rgba(var(--bg-rgb), 0.85);
+    }
     .mini-bar-line { display: flex; align-items: center; gap: 10px; color: var(--text-dim); font-size: 0.78rem; }
     .mini-bar { flex: 1; height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--text-faint) 18%, transparent); border: 1px solid var(--border); overflow: hidden; }
     .mini-bar > div { height: 100%; background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, transparent), var(--gold)); }
@@ -453,6 +463,7 @@
     }
     .feed-row .ic { width: 22px; text-align: center; flex-shrink: 0; }
     .feed-row .t { flex: 1; min-width: 0; }
+    .feed-who { color: var(--gold); font-weight: normal; }
     .feed-row .when { color: var(--text-faint); font-size: 0.72rem; white-space: nowrap; }
     .friends-soon {
       margin-top: 10px;
@@ -572,6 +583,7 @@
     }
 
     let puuid = '';
+    let playerName = ''; // Riot-Name ohne #Tag, fuer den Aktivitaets-Feed
     let byChampion = {}; // aus dem Match-Scan, fuer die Live-Matchups
 
     // ===== Kopfzeile, Profilkarte, Kacheln =====
@@ -644,18 +656,22 @@
         </div>` + bank;
     }
 
-    // Eigene Aktivitaet aus lokalen Daten (Spiele + LP-Bank); Freunde folgen mit Supabase.
+    // Eigene Aktivitaet aus lokalen Daten (Spiele + LP-Bank); Freunde folgen mit
+    // Supabase - deshalb steht der Spielername immer mit dabei (ohne #Tag).
+    let lastProgression = null;
     function renderFeed(d) {
+      lastProgression = d;
+      const who = `<strong class="feed-who">${esc(playerName || 'You')}</strong>`;
       const items = [
         ...(d.recentGames || []).map(g => ({
           at: g.gameCreation,
           ic: g.win ? '🏅' : '⚔️',
-          t: `${g.win ? 'Won' : 'Lost'} with ${esc(g.champName || g.champId)} · <span style="color:var(--gold)">+${fmtNum(g.xp)} XP</span>`
+          t: `${who} <span class="${g.win ? 'pos' : 'neg'}">${g.win ? 'won' : 'lost'}</span> with ${esc(g.champName || g.champId)} · <span style="color:var(--gold)">+${fmtNum(g.xp)} XP</span>`
         })),
         ...((d.lpBank && d.lpBank.recent) || []).map(e => ({
           at: e.at,
           ic: '📈',
-          t: e.filled ? `LP Bank filled · <span style="color:var(--gold)">+${fmtNum(e.xp)} XP</span>` : `Gained +${e.gained} LP`
+          t: e.filled ? `${who} filled the LP Bank · <span style="color:var(--gold)">+${fmtNum(e.xp)} XP</span>` : `${who} gained <span class="pos">+${e.gained} LP</span>`
         }))
       ].sort((a, b) => b.at - a.at).slice(0, 6);
       document.getElementById('feed').innerHTML = items.length
@@ -792,7 +808,9 @@
         const a = await parseApiResponse(res);
         if (!res.ok) throw new Error(a.error || 'Could not find summoner.');
         puuid = a.puuid;
+        playerName = a.gameName;
         document.getElementById('accountOverviewName').textContent = `${a.gameName}#${a.tagLine}`;
+        if (lastProgression) renderFeed(lastProgression);
         if (a.profileIconId != null) {
           const img = document.getElementById('accountOverviewIcon');
           img.onload = () => img.classList.add('loaded');

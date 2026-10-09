@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.7.1',
+      date: '2026-10-09',
+      notable: [
+        'Sub-pages (Trophies, Roles & Picks, Champion) have a back button to the Challenge page again.',
+        'The activity feed shows who did what (your name for now, your friends later) and colors wins and losses.'
+      ],
+      refinements: 3,
+      bugfixes: 2
+    },
+    {
       version: '5.7.0',
       date: '2026-10-09',
       notable: [

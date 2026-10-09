@@ -346,7 +346,7 @@
     <button type="button" id="factoryResetBtn">Reset to Factory Settings</button>
     <p class="danger-hint">Deletes all local challenge data, trophy progress, account level and app settings on this device - as if freshly installed. Your Riot API key is kept. This cannot be undone.</p>
     <button type="button" id="accountResetBtn">Reset Account Progress</button>
-    <p class="danger-hint">Only resets your profile level, XP, quests and challenge pass. Your challenge, trophies and settings stay. This cannot be undone.</p>
+    <p class="danger-hint">Resets your level, XP, quests, pass, coins, borders and profile layout. Your challenge, trophies and settings stay. Cannot be undone.</p>
   </div>
 
   <div class="apply-row">
@@ -559,7 +559,7 @@
     const accountResetBtn = document.getElementById('accountResetBtn');
     accountResetBtn.addEventListener('click', async () => {
       const confirmed = window.confirm(
-        'Reset your account progress?\n\nThis sets your profile level, XP, quests and challenge pass back to zero. Your challenge, trophies and settings are kept. This cannot be undone.'
+        'Reset your account progress?\n\nThis sets your profile level, XP, quests, monthly pass and coins back to zero and removes your unlocked borders and profile layout. Your challenge, trophies and settings are kept. This cannot be undone.'
       );
       if (!confirmed) return;
       accountResetBtn.disabled = true;

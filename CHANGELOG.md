@@ -1,5 +1,27 @@
 # Internal Changelog
 
+## 5.7.1 — 2026-10-09
+
+- Activity feed: player name (gameName without #tag, ready for friends) +
+  colored won/lost / gained LP.
+- nav.js: `PARENTS` map adds a "← Challenge" back link under the nav on
+  trophies/role/champion (`.sub-back`).
+- Full test pass (all 8 pages + settings window: no JS errors, no failed
+  requests; reset+start challenge, changelog panel, quest reroll,
+  opponent analysis + search, favorite champion widget, cancel, light
+  theme, narrow widths). Fixes from it:
+  - Bug: nav overlapped the page title between ~1150 and ~1450px width (and
+    the trophies title, which sat over the left column only) -> nav goes
+    static above the title below 1460px; trophies h1/subtitle span the
+    full header grid.
+  - Bug: in profile edit mode the side panels covered the board below
+    ~1300px -> board shrinks to fit between the panels.
+  - "Champion Selection page" texts renamed to "Setup page".
+  - Last Game XP gets a backdrop (unreadable over bright splash art in the
+    light theme).
+  - Settings "Reset Account Progress" text now mentions coins, borders and
+    profile layout (still fits without scrolling: 723/723px).
+
 ## 5.7.0 — 2026-10-09
 
 - Old overview.html (pony selector, record, matchups, last 10, Load button

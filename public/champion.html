@@ -494,7 +494,7 @@
       line-height: 1.4;
       margin-bottom: 16px;
       /* Reserviert 2 Zeilen (der laengste Statustext - "Start a challenge
-         on the Champion Selection page first..." - braucht 2) - sonst
+         on the Setup page first..." - braucht 2) - sonst
          schiebt sich beim Laden/Suchen alles darunter (Progress-Bar,
          Detail-Bereich) auf und ab. */
       min-height: 2.8em;
@@ -1566,7 +1566,7 @@
       // in loadAllSummaries() oben (verhindert unscoped Match-Scans, die im
       // Hintergrund weiterlaufen koennten).
       if (!since) {
-        statusMsg.textContent = 'Start a challenge on the Champion Selection page first - loading match data requires an active challenge.';
+        statusMsg.textContent = 'Start a challenge on the Setup page first - loading match data requires an active challenge.';
         return;
       }
 
@@ -1662,7 +1662,7 @@
       // gescopten Daten der neu gestarteten Challenge. Ohne Challenge wird
       // jetzt also gar kein Match-Scan mehr gestartet.
       if (!since) {
-        statusMsg.textContent = 'Start a challenge on the Champion Selection page first - loading match data requires an active challenge.';
+        statusMsg.textContent = 'Start a challenge on the Setup page first - loading match data requires an active challenge.';
         return;
       }
 
@@ -1932,7 +1932,7 @@
       const raw = currentSummoner.trim();
       const parts = raw.split('#');
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
-        statusMsg.textContent = 'No valid summoner set. Please enter it in the format Name#Tag on the Champion Selection page (e.g. ShacoHater#EUW).';
+        statusMsg.textContent = 'No valid summoner set. Please enter it in the format Name#Tag on the Setup page (e.g. ShacoHater#EUW).';
         return;
       }
       const [gameName, tagLine] = parts;

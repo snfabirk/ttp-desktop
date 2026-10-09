@@ -38,6 +38,13 @@
     grid-column: 1;
     text-align: center;
   }
+  /* Seitentitel mittig ueber der ganzen Seite wie ueberall sonst (sonst
+     schiebt er sich unter die Hauptleiste oben links, v5.7.0); nur die
+     "Trophies"-Ueberschrift bleibt ueber der Trophy-Spalte. */
+  .site-header > h1,
+  .site-header > .subtitle {
+    grid-column: 1 / -1;
+  }
   .content {
     width: 100%;
     max-width: 1320px;
@@ -785,7 +792,7 @@
         <div class="history-list" id="historyList"></div>
         <div class="history-scroll-hint" id="historyScrollHint" aria-hidden="true">▾</div>
       </div>
-      <p class="history-empty" id="historyEmpty">No challenges yet - start one on the Champion Selection page.</p>
+      <p class="history-empty" id="historyEmpty">No challenges yet - start one on the Setup page.</p>
     </aside>
   </div>
 
@@ -871,7 +878,7 @@
       { id: 'consistency', icon: 'chartUp', name: 'Consistency', desc: 'Keep a {target} winrate across the challenge',
         detail: 'Your overall win/loss ratio across the whole challenge must reach {target} (set by your Challenge Level). Shows as "Provisional" if you\'re already above target - it only becomes permanent once you\'ve reached your LP Goal AND your winrate is still above target at that point. If it isn\'t yet, keep playing - it stays checkable after every game until it is.' },
       { id: 'goal-reached', icon: 'target', name: 'Goal Reached', desc: 'Reach the exact rank/LP you set as your goal',
-        detail: 'Unlocks the moment your current rank + LP matches or passes the LP Goal you set on the Champion Selection page - the whole point of the challenge.' }
+        detail: 'Unlocks the moment your current rank + LP matches or passes the LP Goal you set on the Setup page - the whole point of the challenge.' }
     ];
 
     // ----- 5 rollenspezifische Trophies je Rolle - immer genau 5 werden
@@ -1009,9 +1016,9 @@
 
     buildTrophyGrid(role);
     if (role && ROLE_TROPHIES[role]) {
-      roleNote.innerHTML = `Showing role trophies for <strong>${ROLE_LABELS[role]}</strong> (dashed border) - pick a different role on the Champion Selection page to see a different set.`;
+      roleNote.innerHTML = `Showing role trophies for <strong>${ROLE_LABELS[role]}</strong> (dashed border) - pick a different role on the Setup page to see a different set.`;
     } else {
-      roleNote.textContent = 'Select a role on the Champion Selection page to unlock your 5 role-specific trophies.';
+      roleNote.textContent = 'Select a role on the Setup page to unlock your 5 role-specific trophies.';
     }
     const liveRoleNoteHtml = roleNote.innerHTML;
 
@@ -1162,7 +1169,7 @@
       if (result.rulesUpToDate === false) {
         rulesStatusEl.classList.remove('current');
         rulesStatusEl.classList.add('outdated');
-        rulesStatusEl.textContent = '⚠ The trophy rules changed since some of these were confirmed - reset your challenge on the Champion Selection page to recalculate them under the current rules.';
+        rulesStatusEl.textContent = '⚠ The trophy rules changed since some of these were confirmed - reset your challenge on the Setup page to recalculate them under the current rules.';
       } else {
         rulesStatusEl.classList.remove('outdated');
         rulesStatusEl.classList.add('current');
@@ -1189,13 +1196,13 @@
         const lpGoalLp = localStorage.getItem('ttp_lp_goal_lp') || '0';
 
         if (!since) {
-          setLiveStatus('Start a challenge on the Champion Selection page to track trophy progress.');
+          setLiveStatus('Start a challenge on the Setup page to track trophy progress.');
           return;
         }
 
         const parts = summonerName.split('#');
         if (parts.length !== 2 || !parts[0] || !parts[1]) {
-          setLiveStatus('No valid summoner set - please set one on the Champion Selection page.');
+          setLiveStatus('No valid summoner set - please set one on the Setup page.');
           return;
         }
 

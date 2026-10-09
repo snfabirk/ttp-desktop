@@ -12,6 +12,14 @@
     { href: 'profile.html', label: 'Profile' }
   ];
 
+  // Unterseiten bekommen zusaetzlich einen Zurueck-Knopf zur uebergeordneten
+  // Seite (Nutzerwunsch: fuehlt sich dort intuitiver an als nur die Leiste).
+  const PARENTS = {
+    'trophies.html': { href: 'challenge.html', label: 'Challenge' },
+    'role.html': { href: 'challenge.html', label: 'Challenge' },
+    'champion.html': { href: 'challenge.html', label: 'Challenge' }
+  };
+
   const file = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
   const isPass = file === 'challenge.html' && new URLSearchParams(location.search).get('view') === 'pass';
 
@@ -29,6 +37,15 @@
       `<a href="${item.href}" class="top-nav-link${isActive(item) ? ' active' : ''}"${item.title ? ` title="${item.title}"` : ''}>${item.label}</a>`
     ).join('');
     document.body.prepend(nav);
+    const parent = PARENTS[file];
+    if (parent) {
+      const back = document.createElement('a');
+      back.className = 'sub-back';
+      back.href = parent.href;
+      back.textContent = `← ${parent.label}`;
+      back.title = `Back to ${parent.label}`;
+      nav.after(back);
+    }
   }
 
   if (document.body) build();
