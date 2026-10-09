@@ -153,7 +153,8 @@ const draws = [];
 
 // ======================= BORDERS =======================
 document.querySelectorAll('.border').forEach(el => {
-  const S = el.offsetWidth, C = S * 2, c = setup(el.querySelector('canvas'), C, C), R = S / 2, kind = el.dataset.kind;
+  const S = el.offsetWidth, C = S * 2;
+  let c = setup(el.querySelector('canvas'), C, C), R = S / 2, kind = el.dataset.kind;
   const embers = [];
   draws.push((t, dt) => {
     c.clearRect(0, 0, C, C); c.save(); c.translate(C / 2, C / 2);
@@ -197,12 +198,21 @@ document.querySelectorAll('.border').forEach(el => {
           c.fillStyle = gl; c.beginPath(); c.arc(p[0], p[1], R * .16, 0, 7); c.fill();
         }
       });
-      // hintere Haelften zuerst, ausserhalb des Bilds UND seines Rands (vorher
-      // lagen sie kurz ueber dem tuerkisen Rand und waren dann hart abgeschnitten)
-      c.save(); c.beginPath(); c.rect(-C, -C, C * 2, C * 2); c.arc(0, 0, R * 1.07, 0, 7, true); c.clip('evenodd'); drawRings(false); c.restore();
-      // weicher Schatten am Bildrand, damit das Abtauchen hinter das Bild wie Tiefe wirkt
-      const sh = c.createRadialGradient(0, 0, R * .98, 0, 0, R * 1.2); sh.addColorStop(0, 'rgba(5, 10, 20, .7)'); sh.addColorStop(1, 'rgba(5, 10, 20, 0)');
-      c.fillStyle = sh; c.beginPath(); c.arc(0, 0, R * 1.2, 0, 7); c.arc(0, 0, R * .98, 0, 7, true); c.fill('evenodd');
+      // Hintere Haelften: auf einer eigenen Ebene zeichnen und zur Bildmitte hin
+      // WEICH ausblenden (nicht hart abschneiden - die schmale Ellipse ragt sonst
+      // oben links aus dem Bild und endet wie abgehackt). Hinter dem Bild bleiben
+      // sie leicht durchscheinend sichtbar, wie hinter Glas.
+      if (!el._back) { el._back = document.createElement('canvas'); el._back.width = C * DPR; el._back.height = C * DPR; el._bc = el._back.getContext('2d'); }
+      const bc = el._bc;
+      bc.setTransform(1, 0, 0, 1, 0, 0); bc.clearRect(0, 0, el._back.width, el._back.height);
+      bc.setTransform(DPR, 0, 0, DPR, C / 2 * DPR, C / 2 * DPR);
+      const main = c; c = bc; drawRings(false); c = main;
+      bc.globalCompositeOperation = 'destination-out';
+      const fade = bc.createRadialGradient(0, 0, R * .85, 0, 0, R * 1.22);
+      fade.addColorStop(0, 'rgba(0,0,0,.8)'); fade.addColorStop(1, 'rgba(0,0,0,0)');
+      bc.fillStyle = fade; bc.beginPath(); bc.arc(0, 0, R * 1.3, 0, 7); bc.fill();
+      bc.globalCompositeOperation = 'source-over';
+      c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(el._back, 0, 0); c.restore();
       c.strokeStyle = 'rgba(10, 200, 185, .8)'; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, R * 1.02, 0, 7); c.stroke();
       drawRings(true);
     } else if (kind === 'chemtech') {
