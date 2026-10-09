@@ -178,7 +178,6 @@ document.querySelectorAll('.border').forEach(el => {
     } else if (kind === 'gyro') {
       // zwei Hextech-Ringe kreisen schraeg in 3D um das Bild (Gyroskop); hinten
       // laufen sie HINTER dem Bild durch (dort wird die Bildflaeche ausgespart)
-      c.strokeStyle = 'rgba(10, 200, 185, .8)'; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, R * 1.02, 0, 7); c.stroke();
       const rings = [{ tilt: 1.2, spin: t * .9, rr: R * 1.32 }, { tilt: 1.25, spin: -t * .7 + 1.6, rr: R * 1.22 }];
       const N = 72;
       const proj = (g, th) => { const x = Math.cos(th) * g.rr, y0 = Math.sin(th) * g.rr; const y = y0 * Math.cos(g.tilt), z = y0 * Math.sin(g.tilt); return [x * Math.cos(g.spin) - y * Math.sin(g.spin), x * Math.sin(g.spin) + y * Math.cos(g.spin), z]; };
@@ -198,8 +197,13 @@ document.querySelectorAll('.border').forEach(el => {
           c.fillStyle = gl; c.beginPath(); c.arc(p[0], p[1], R * .16, 0, 7); c.fill();
         }
       });
-      // hintere Haelften: ausserhalb des Bilds zeichnen (Bild verdeckt sie)
-      c.save(); c.beginPath(); c.rect(-C, -C, C * 2, C * 2); c.arc(0, 0, R, 0, 7, true); c.clip('evenodd'); drawRings(false); c.restore();
+      // hintere Haelften zuerst, ausserhalb des Bilds UND seines Rands (vorher
+      // lagen sie kurz ueber dem tuerkisen Rand und waren dann hart abgeschnitten)
+      c.save(); c.beginPath(); c.rect(-C, -C, C * 2, C * 2); c.arc(0, 0, R * 1.07, 0, 7, true); c.clip('evenodd'); drawRings(false); c.restore();
+      // weicher Schatten am Bildrand, damit das Abtauchen hinter das Bild wie Tiefe wirkt
+      const sh = c.createRadialGradient(0, 0, R * .98, 0, 0, R * 1.2); sh.addColorStop(0, 'rgba(5, 10, 20, .7)'); sh.addColorStop(1, 'rgba(5, 10, 20, 0)');
+      c.fillStyle = sh; c.beginPath(); c.arc(0, 0, R * 1.2, 0, 7); c.arc(0, 0, R * .98, 0, 7, true); c.fill('evenodd');
+      c.strokeStyle = 'rgba(10, 200, 185, .8)'; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, R * 1.02, 0, 7); c.stroke();
       drawRings(true);
     } else if (kind === 'chemtech') {
       // Glasring voll giftgruener Chemtech-Fluessigkeit: schwappt, blubbert, leuchtet
