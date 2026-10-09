@@ -105,6 +105,25 @@
   if (document.body) syncTheme();
   else document.addEventListener('DOMContentLoaded', syncTheme);
 
+  // Pass-/Shop-Themes nur, solange man sie besitzt oder per "Try It On"
+  // geliehen hat - nach Ablauf zurueck auf Classic (v5.18.0).
+  const BASE_THEME_KEYS = ['', 'classic', 'graphite', 'light', 'hextech', 'arcane', 'noxus', 'freljord', 'ionia'];
+  async function checkThemeAccess() {
+    const key = currentTheme();
+    if (BASE_THEME_KEYS.includes(key)) return;
+    try {
+      const res = await fetch('/api/theme-access');
+      if (!res.ok) return;
+      const { themes } = await res.json();
+      if (Array.isArray(themes) && !themes.includes(key)) {
+        try { localStorage.setItem('ttp_theme', 'classic'); } catch (e) {}
+        document.documentElement.removeAttribute('data-theme');
+      }
+    } catch (e) {}
+  }
+  checkThemeAccess();
+  setInterval(checkThemeAccess, 60000);
+
   // ===================== Szene: All Hallows (Stufe 15) =====================
   function hallowsScene() {
     let bg = null;

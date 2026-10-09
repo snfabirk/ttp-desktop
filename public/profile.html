@@ -466,6 +466,7 @@
     .inv-note { margin: 10px 0 0; color: var(--text-faint); font-size: 0.72rem; font-style: italic; }
     .inv-anim { display: block; color: var(--gold); font-size: 0.62rem; }
     .inv-item .rar { display: block; margin-top: -3px; }
+    .inv-trial { display: block; color: var(--gold); font-size: 0.6rem; }
     .inv-item .mini-frame { width: 40px; height: 30px; }
     .inv-item .mini-theme { width: 34px; height: 34px; }
     .mini-frame.mini-none { border: 1px dashed var(--text-faint); }
@@ -1187,7 +1188,11 @@
       // "x / y gesammelt". Standard-Border/kein Rahmen zaehlen nicht mit,
       // die 8 Grund-Themes schon (die hat jeder).
       const owned = S() ? S().owned : [];
-      const ownedIds = new Set(owned.map(c => c.id));
+      // Per "Try It On" geliehene Sachen (rentedUntil) sind nutzbar, zaehlen
+      // aber nicht als gesammelt
+      const ownedIds = new Set(owned.filter(c => !c.rentedUntil).map(c => c.id));
+      const usableIds = new Set(owned.map(c => c.id));
+      const rentedIds = new Set(owned.filter(c => c.rentedUntil).map(c => c.id));
       const catalog = (S() && S().catalog) || owned;
       const ofType = type => catalog.filter(c => c.type === type);
       const counts = {
@@ -1200,11 +1205,11 @@
       const list = document.getElementById('invList');
       const countLine = ([have, all]) => `<div class="inv-count"><span>Collected <b>${have} / ${all}</b></span><span class="bar"><i style="width:${all ? have / all * 100 : 0}%"></i></span></div>`;
       const RAR = { basic: 'Basic', refined: 'Refined', fancy: 'Fancy', animated: 'Animated' };
-      const rarTag = c => c.id && c.rarity ? `<small class="rar rar-${c.rarity}">${RAR[c.rarity]}</small>` : '';
+      const rarTag = c => (c.id && c.rarity ? `<small class="rar rar-${c.rarity}">${RAR[c.rarity]}</small>` : '') + (rentedIds.has(c.id) ? '<small class="inv-trial">⏳ Trial</small>' : '');
       const lockAttr = c => `class="inv-item locked" title="Locked - ${esc(c.source || 'not collected yet')}" aria-disabled="true"`;
       if (invTab === 'border') {
         const cell = c => {
-          const has = !c.id || ownedIds.has(c.id);
+          const has = !c.id || usableIds.has(c.id);
           return `<div ${has ? `class="inv-item${(c.id || 'none') === editState.border ? ' equipped' : ''}" data-equip="${c.id || 'none'}"` : lockAttr(c)}>
             <span class="cos-border cos-${c.id || 'none'}"><span class="cos-fill"></span></span>${esc(c.name)}${rarTag(c)}
           </div>`;
@@ -1216,7 +1221,7 @@
       } else if (invTab === 'frame') {
         const sel = owned.find(c => c.id === editState.frame);
         const cell = c => {
-          const has = !c.id || ownedIds.has(c.id);
+          const has = !c.id || usableIds.has(c.id);
           return `<div ${has ? `class="inv-item${(c.id || 'none') === editState.frame ? ' equipped' : ''}" data-frame="${c.id || 'none'}"` : lockAttr(c)}>
             ${c.id ? `<span class="mini-frame mini-frame-${c.id}"></span>` : '<span class="mini-frame mini-none"></span>'}${esc(c.name)}${rarTag(c)}
           </div>`;
@@ -1234,7 +1239,7 @@
         const passThemes = ofType('theme');
         const active = currentThemeKey();
         const item = c => {
-          const has = !c.id || ownedIds.has(c.id);
+          const has = !c.id || usableIds.has(c.id);
           return `<div ${has ? `class="inv-item${c.themeKey === active ? ' equipped' : ''}" data-theme-key="${c.themeKey}"` : lockAttr(c)}>
             ${c.c ? `<span class="mini-theme" style="background:conic-gradient(${c.c[0]} 0 50%, ${c.c[1]} 50% 75%, ${c.c[2]} 75%);border:1px solid ${c.c[1]}"></span>` : `<span class="mini-theme mini-theme-${c.themeKey}"></span>`}${esc(c.name)}${rarTag(c.id ? c : { id: 'base', rarity: 'basic' })}
           </div>`;

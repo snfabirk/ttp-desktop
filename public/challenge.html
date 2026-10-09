@@ -566,6 +566,9 @@
       white-space: nowrap;
     }
     /* Erledigte Quest (v5.17.0, XP wurde gutgeschrieben) */
+    /* Bonus-Quest aus dem Consumable-Laden: gleiche Zeile, nur gestrichelt + Schild */
+    .quest.bonus { border-style: dashed; }
+    .quest-bonus-tag { margin-left: 6px; padding: 0 6px; border: 1px solid var(--gold); border-radius: 8px; color: var(--gold); font-size: 0.6rem; letter-spacing: 1px; text-transform: uppercase; vertical-align: 2px; }
     .quest.done { border-color: color-mix(in srgb, var(--gold) 55%, var(--border)); }
     .quest.done .quest-title { color: var(--gold); }
     .quest.done .quest-xp { color: var(--green); }
@@ -1755,10 +1758,10 @@
       const breakdown = q.breakdown && q.breakdown.length
         ? `<div class="quest-breakdown">${q.breakdown.map(b => `<span>${b.name} ${b.progress}/${b.target}</span>`).join('')}</div>`
         : '';
-      return `<div class="quest${q.done ? ' done' : ''}">
+      return `<div class="quest${q.done ? ' done' : ''}${q.bonus ? ' bonus' : ''}">
         <div class="quest-top">
           ${icon}
-          <span class="quest-text"><span class="quest-title">${q.title}</span><span class="quest-desc">${q.desc}</span></span>
+          <span class="quest-text"><span class="quest-title">${q.title}${q.bonus ? ' <span class="quest-bonus-tag">Bonus</span>' : ''}</span><span class="quest-desc">${q.desc}</span></span>
           <span class="quest-xp">${q.done ? '✓ ' : ''}+${fmtNum(q.xp)} XP</span>
           ${rerollBtn}
         </div>
@@ -1898,7 +1901,7 @@
         document.getElementById('dailyResetIn').textContent = `resets in ${timeUntil(data.dailyResetAt)}`;
         document.getElementById('weeklyResetIn').textContent = `resets in ${timeUntil(data.weeklyResetAt)}`;
         document.getElementById('dailyQuests').innerHTML = data.dailies
-          .map(q => questHtml(q, { reroll: q.id !== 'firstwin' && !q.champId }))
+          .map(q => questHtml(q, { reroll: q.id !== 'firstwin' && !q.champId && !q.bonus }))
           .join('');
         document.getElementById('weeklyQuests').innerHTML = data.weeklies.map(q => questHtml(q)).join('');
         renderPass(data.pass, data.coins);

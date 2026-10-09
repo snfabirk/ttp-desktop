@@ -770,6 +770,16 @@ app.get('/api/profile-stats', (req, res) => {
 app.get('/api/shop', (req, res) => {
   res.json(progression.getShopState());
 });
+// Consumables (v5.18.0): Tagesplatz kaufen = sofort einsetzen
+app.post('/api/shop/consumable', (req, res) => {
+  const { slot, choice } = req.body || {};
+  const result = progression.buyConsumable(Number(slot), choice || null, progressionContext(req.body || {}));
+  res.status(result.ok ? 200 : 400).json(result);
+});
+app.get('/api/theme-access', (req, res) => {
+  res.json(progression.themeAccess());
+});
+
 app.post('/api/shop/spin', (req, res) => {
   const result = progression.spinWheel();
   res.status(result.ok ? 200 : 400).json(result);

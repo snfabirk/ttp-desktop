@@ -1,5 +1,20 @@
 # Internal Changelog
 
+## 5.18.0 — 2026-10-09
+
+- Consumables (progression.js CONSUMABLES): 2 daily slots under the wheel
+  (30% each empty, no duplicates), bought = used immediately, one buff per
+  kind at a time, buffs expire (`state.buffs`, pruned on read):
+  Double XP (+100% LEVEL XP only, next 3 games, `ledger.levelBonus`),
+  LP Bank Booster (+50% on the next full bank, level + pass), Fresh Stock /
+  New Highlights (reroll daily/weekly offers, pity untouched), Bonus Quest /
+  Bonus Weekly (`state.bonusQuests`, BONUS_WEEKLY_POOL, rendered as a dashed
+  "Bonus" row), 20% Coupon (buff, applied once buying exists), Mystery
+  Cosmetic (random unowned, not basic, not the running pass), Try It On
+  (24h rental, auto-equipped; rented items usable but not counted as
+  collected; /api/theme-access + theme-fx.js revert expired trial themes).
+- POST /api/shop/consumable {slot, choice}; two-click "Use now?" confirm.
+
 ## 5.17.2 — 2026-10-09
 
 - Shop: the "?" now reads "Prices & rates ?" (like "How to earn XP ?" on the pass page), right-aligned in the Weekly Highlights header.

@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.18.0',
+      date: '2026-10-09',
+      notable: [
+        'Daily Goods in the shop: two consumables per day, e.g. Double XP, LP Bank Booster, Fresh Stock, Bonus Quests, a 20% coupon, Mystery Cosmetic or Try It On (wear something for 24 hours).',
+        'Consumables are used right away - active ones show up as buffs with their remaining time.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.17.2',
       date: '2026-10-09',
       notable: [],

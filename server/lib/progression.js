@@ -217,6 +217,11 @@ function evaluateWeekly(q, games, state, since) {
   if (q.id === 'climb75') {
     progress = state.lpBank.events.filter(e => new Date(e.at) >= since).reduce((a, e) => a + (e.gained || 0), 0);
   }
+  // Bonus-Weeklies (Consumable)
+  if (q.id === 'bw_win5') progress = games.filter(g => g.win).length;
+  if (q.id === 'bw_play10') progress = games.length;
+  if (q.id === 'bw_kills50') progress = games.reduce((a, g) => a + (g.kills || 0), 0);
+  if (q.id === 'bw_lpfill2') progress = state.lpBank.events.filter(e => new Date(e.at) >= since).reduce((a, e) => a + (e.filled || 0), 0);
   progress = Math.min(q.target, progress);
   return { ...q, progress, done: progress >= q.target };
 }
@@ -227,11 +232,17 @@ function questsWithProgress(state, context, now) {
   const todays = state.ledger.filter(g => g.day === today);
   const weeks = state.ledger.filter(g => new Date(g.gameCreation) >= weekFrom);
   const credited = state.questLedger || {};
-  const dailies = buildDailies(state, context, now).map(q => evaluateDaily(q, todays))
-    .map(q => ({ ...q, credited: !!credited[`d:${today}:${q.id}`] }));
   const weekKeyStr = weekKey(now);
-  const weeklies = buildWeeklies(state, context).map(q => evaluateWeekly(q, weeks, state, weekFrom))
-    .map(q => ({ ...q, credited: !!credited[`w:${weekKeyStr}:${q.id}`] }));
+  const bq = state.bonusQuests || {};
+  const dailyList = buildDailies(state, context, now);
+  if (bq.daily && bq.daily.day === today) dailyList.push({ ...bq.daily.quest, bonus: true, rerollable: false, progress: 0, done: false });
+  const weeklyList = buildWeeklies(state, context);
+  if (bq.weekly && bq.weekly.week === weekKeyStr) weeklyList.push({ ...bq.weekly.quest, bonus: true, progress: 0, done: false });
+  const qKey = (p, period, q) => `${p}:${period}:${q.bonus ? 'bonus:' : ''}${q.id}`;
+  const dailies = dailyList.map(q => evaluateDaily(q, todays))
+    .map(q => ({ ...q, key: qKey('d', today, q) })).map(q => ({ ...q, credited: !!credited[q.key] }));
+  const weeklies = weeklyList.map(q => evaluateWeekly(q, weeks, state, weekFrom))
+    .map(q => ({ ...q, key: qKey('w', weekKeyStr, q) })).map(q => ({ ...q, credited: !!credited[q.key] }));
   return { dailies, weeklies, today, weekKeyStr };
 }
 
@@ -247,8 +258,8 @@ function creditQuestsInState(state, context, now) {
     addPassXp(state, monthKey(now), q.xp);
     added += q.xp;
   };
-  dailies.forEach(q => credit(`d:${today}:${q.id}`, q));
-  weeklies.forEach(q => credit(`w:${weekKeyStr}:${q.id}`, q));
+  dailies.forEach(q => credit(q.key, q));
+  weeklies.forEach(q => credit(q.key, q));
   return added;
 }
 
@@ -366,7 +377,12 @@ function getPassOverview(state, now) {
 // Besitz = Inventar + alle Basic-Grund-Cosmetics (die hat jeder)
 const BASE_IDS = COSMETICS.filter(c => c.base).map(c => c.id);
 const ownsCosmetic = (state, id) => BASE_IDS.includes(id) || state.inventory.includes(id);
-const ownedList = state => [...BASE_IDS, ...state.inventory].map(getCosmetic).filter(Boolean);
+const ownedList = state => [
+  ...[...BASE_IDS, ...state.inventory].map(getCosmetic).filter(Boolean),
+  // per "Try It On" geliehen (24 h) - mit rentedUntil fuer die Anzeige
+  ...(state.buffs || []).filter(b => b.kind === 'rental' && new Date(b.expiresAt).getTime() > Date.now() && !state.inventory.includes(b.cosmeticId))
+    .map(b => getCosmetic(b.cosmeticId) && { ...getCosmetic(b.cosmeticId), rentedUntil: b.expiresAt }).filter(Boolean)
+];
 
 function getCosmeticsState() {
   const state = readState();
@@ -388,7 +404,7 @@ function equipCosmetic(type, id) {
   if (id) {
     const cosmetic = getCosmetic(id);
     if (!cosmetic || cosmetic.type !== type) return { ok: false, error: 'Unknown cosmetic.' };
-    if (!ownsCosmetic(state, id)) return { ok: false, error: 'You do not own this cosmetic yet.' };
+    if (!ownsOrRents(state, id)) return { ok: false, error: 'You do not own this cosmetic yet.' };
   }
   state.equipped = { ...state.equipped, [type]: id || null };
   writeState(state);
@@ -435,7 +451,13 @@ function emptyState() {
     // Gluecksrad im Shop: einmal pro Tag (Tageswechsel wie die Quests)
     wheel: { lastSpinDay: null, spins: 0 },
     // Persoenlicher Shop: Angebote werden pro Tag/Woche einmal ausgewuerfelt
-    shop: { dayKey: null, daily: [], weekKey: null, weekly: [], pityDaily: 0, pityWeekly: 0 }
+    shop: { dayKey: null, daily: [], weekKey: null, weekly: [], pityDaily: 0, pityWeekly: 0 },
+    // Consumables (v5.18.0): 2 Tagesplaetze im Shop, gekauft = sofort eingesetzt
+    consumables: { dayKey: null, slots: [null, null], sold: [false, false] },
+    // Aktive Buffs mit Ablaufdatum: { kind, id, startedAt, expiresAt, gamesLeft?, cosmeticId? }
+    buffs: [],
+    // Bonus-Quests aus Consumables: { daily: { day, quest }, weekly: { week, quest } }
+    bonusQuests: { daily: null, weekly: null }
   };
 }
 
@@ -460,7 +482,7 @@ function readState() {
       if (c && !state.inventory.includes(c.id)) state.inventory.push(c.id);
     }
   });
-  ['border', 'frame'].forEach(t => { if (state.equipped[t] && !ownsCosmetic(state, state.equipped[t])) state.equipped[t] = null; });
+  ['border', 'frame'].forEach(t => { if (state.equipped[t] && !ownsOrRents(state, state.equipped[t])) state.equipped[t] = null; });
   // v5.1/5.2 -> v5.3: der Pass hing an der Challenge (passXp). Monats-Paesse
   // aus dem Ledger (Spielzeitpunkt) + LP-Bank-Events (Zeitpunkt) neu aufbauen.
   if (!raw.passes) {
@@ -510,14 +532,24 @@ function creditMatches(games) {
       };
       const raw = base.game + base.win + base.kills + base.assists;
       const xp = Math.round(raw * (halved ? 0.5 : 1));
+      // Consumable "Double XP": +100 % NUR aufs Level (der Pass bekommt die
+      // normalen XP), fuer die naechsten 3 Spiele nach dem Kauf
+      let levelBonus = 0;
+      const boost = activeBuff(state, 'xpLevel', g.gameCreation);
+      if (boost && boost.gamesLeft > 0) {
+        levelBonus = xp;
+        boost.gamesLeft -= 1;
+        if (boost.gamesLeft <= 0) state.buffs = state.buffs.filter(b => b !== boost);
+      }
       const entry = {
         matchId: g.matchId, gameCreation: g.gameCreation, day, gameOfDay,
         category: g.category, win: !!g.win, kills: g.kills || 0, deaths: g.deaths || 0, assists: g.assists || 0,
         champId: g.champId || '', champName: g.champName || '', base, halved, xp,
+        levelBonus,
         stats: g.stats || null
       };
       state.ledger.push(entry);
-      state.totalXp += xp;
+      state.totalXp += xp + levelBonus;
       addPassXp(state, monthKey(new Date(g.gameCreation)), xp);
       added.push(entry);
     });
@@ -554,7 +586,13 @@ function creditLp({ puuid, currentLP, baselineLP }) {
       bank.progress -= LP_BANK_SIZE;
       filled++;
     }
-    const xp = filled * XP_PER_LP_BANK;
+    let xp = filled * XP_PER_LP_BANK;
+    // Consumable "LP Bank Booster": die naechste volle Bank gibt +50 % (Level + Pass)
+    const lpBoost = filled ? activeBuff(state, 'lpBank', Date.now()) : null;
+    if (lpBoost) {
+      xp += Math.round(XP_PER_LP_BANK * 0.5);
+      state.buffs = state.buffs.filter(b => b !== lpBoost);
+    }
     bank.fills += filled;
     state.totalXp += xp;
     if (xp) addPassXp(state, monthKey(new Date()), xp);
@@ -751,6 +789,174 @@ function refreshShop(state, now) {
   return changed;
 }
 
+// ----- Consumables (v5.18.0) -----
+// Nutzerdesign 2026-10-09: unter dem Gluecksrad 2 Tagesplaetze, jeder mit
+// 30 % leer ("der Haendler hat hier nichts"). Gekauft = SOFORT eingesetzt,
+// nichts kann aufgehoben werden ("wir unterstuetzen Sammler, keine Horter").
+// Was eine Dauer hat, wird ein Buff mit Ablaufdatum; pro Buff-Art ist immer
+// nur einer gleichzeitig aktiv. Preise/Gewichte sind Startwerte.
+const CONSUMABLE_EMPTY_CHANCE = 0.3;
+const CONSUMABLES = {
+  xp_double: { name: 'Double XP', desc: '+100% level XP for your next 3 games', price: 100, weight: 15, icon: '⚡', buff: { kind: 'xpLevel', days: 3, games: 3 } },
+  lp_boost: { name: 'LP Bank Booster', desc: 'Your next full LP Bank gives +50% XP', price: 150, weight: 12, icon: '📈', buff: { kind: 'lpBank', days: 7 } },
+  shop_reroll: { name: 'Fresh Stock', desc: 'New daily offers in your shop, right now', price: 75, weight: 15, icon: '🔄' },
+  week_reroll: { name: 'New Highlights', desc: 'New weekly highlights in your shop, right now', price: 200, weight: 8, icon: '✨' },
+  bonus_daily: { name: 'Bonus Quest', desc: 'One extra daily quest for today', price: 100, weight: 15, icon: '📜' },
+  bonus_weekly: { name: 'Bonus Weekly', desc: 'One extra weekly quest for this week', price: 250, weight: 8, icon: '📜' },
+  coupon: { name: '20% Coupon', desc: '20% off the next shop item you buy', price: 150, weight: 8, icon: '🏷️', buff: { kind: 'coupon', days: 7 } },
+  mystery: { name: 'Mystery Cosmetic', desc: 'A random cosmetic you do not own yet', price: 700, weight: 7, icon: '🎁' },
+  try_on: { name: 'Try It On', desc: 'Use any cosmetic you do not own for 24 hours', price: 150, weight: 12, icon: '👗', buff: { kind: 'rental', hours: 24 } }
+};
+const BUFF_LABEL = { xpLevel: 'Double XP', lpBank: 'LP Bank Booster', coupon: '20% Coupon', rental: 'Try It On' };
+const MYSTERY_WEIGHTS = { refined: 75, fancy: 22, animated: 3 };
+const BONUS_WEEKLY_POOL = [
+  { id: 'bw_win5', title: 'Winning Week', desc: 'Win 5 ranked games this week', target: 5, xp: 1500 },
+  { id: 'bw_play10', title: 'Regular', desc: 'Play 10 ranked games this week', target: 10, xp: 1500 },
+  { id: 'bw_kills50', title: 'Headhunter', desc: 'Get 50 kills this week', target: 50, xp: 1500 },
+  { id: 'bw_lpfill2', title: 'Double Deposit', desc: 'Fill your LP Bank twice this week', target: 2, xp: 2000 }
+];
+
+function activeBuff(state, kind, at = Date.now()) {
+  const t = typeof at === 'number' ? at : new Date(at).getTime();
+  return (state.buffs || []).find(b => b.kind === kind && new Date(b.startedAt).getTime() <= t && new Date(b.expiresAt).getTime() > Date.now()) || null;
+}
+function pruneBuffs(state) {
+  const before = (state.buffs || []).length;
+  state.buffs = (state.buffs || []).filter(b => new Date(b.expiresAt).getTime() > Date.now());
+  // abgelaufene Probe-Cosmetics wieder ablegen
+  ['border', 'frame'].forEach(t => { if (state.equipped[t] && !ownsOrRents(state, state.equipped[t])) state.equipped[t] = null; });
+  return before !== state.buffs.length;
+}
+const rentedIds = state => (state.buffs || []).filter(b => b.kind === 'rental' && new Date(b.expiresAt).getTime() > Date.now()).map(b => b.cosmeticId);
+const ownsOrRents = (state, id) => ownsCosmetic(state, id) || rentedIds(state).includes(id);
+
+// Cosmetics fuer Mystery/Try It On: echte Designs, nicht Basic, nicht der
+// laufende Pass (Nutzer: den vorher testen waere unfair), noch nicht besessen
+function lootableCosmetics(state) {
+  const current = monthKey(new Date());
+  return COSMETICS.filter(c => !c.base && c.passMonth !== current && !state.inventory.includes(c.id));
+}
+
+function consumableUnavailable(state, id) {
+  const c = CONSUMABLES[id];
+  if (c.buff && activeBuff(state, c.buff.kind)) return 'Already active';
+  if (id === 'bonus_daily' && state.bonusQuests.daily && state.bonusQuests.daily.day === dayKey(new Date())) return 'Already active';
+  if (id === 'bonus_weekly' && state.bonusQuests.weekly && state.bonusQuests.weekly.week === weekKey(new Date())) return 'Already active';
+  if ((id === 'mystery' || id === 'try_on') && !lootableCosmetics(state).filter(c => id === 'mystery' || !rentedIds(state).includes(c.id)).length) return 'Nothing left';
+  return null;
+}
+
+function refreshConsumables(state, now) {
+  const today = dayKey(now);
+  const cs = { ...emptyState().consumables, ...(state.consumables || {}) };
+  if (cs.dayKey === today) { state.consumables = cs; return false; }
+  // nur anbieten, was gerade ueberhaupt sinnvoll ist (z.B. Mystery nur, wenn es etwas gibt)
+  const pool = Object.keys(CONSUMABLES).filter(id => !((id === 'mystery' || id === 'try_on') && !lootableCosmetics(state).length));
+  const slots = [];
+  for (let i = 0; i < 2; i++) {
+    if (Math.random() < CONSUMABLE_EMPTY_CHANCE) { slots.push(null); continue; }
+    const left = pool.filter(id => !slots.includes(id));
+    const total = left.reduce((a, id) => a + CONSUMABLES[id].weight, 0);
+    let roll = Math.random() * total, pick = left[left.length - 1];
+    for (const id of left) { if (roll < CONSUMABLES[id].weight) { pick = id; break; } roll -= CONSUMABLES[id].weight; }
+    slots.push(pick || null);
+  }
+  state.consumables = { dayKey: today, slots, sold: [false, false] };
+  return true;
+}
+
+function consumablesView(state) {
+  return state.consumables.slots.map((id, i) => {
+    if (!id) return null;
+    const c = CONSUMABLES[id];
+    return { id, slot: i, name: c.name, desc: c.desc, price: c.price, icon: c.icon, sold: !!state.consumables.sold[i], unavailable: state.consumables.sold[i] ? null : consumableUnavailable(state, id) };
+  });
+}
+
+function buffsView(state) {
+  return (state.buffs || []).map(b => {
+    const cos = b.cosmeticId ? getCosmetic(b.cosmeticId) : null;
+    return {
+      kind: b.kind, label: BUFF_LABEL[b.kind] || b.kind, expiresAt: b.expiresAt,
+      detail: b.kind === 'xpLevel' ? `${b.gamesLeft} game${b.gamesLeft === 1 ? '' : 's'} left`
+        : b.kind === 'rental' && cos ? cos.name
+        : b.kind === 'lpBank' ? 'next full bank' : b.kind === 'coupon' ? 'next shop item' : ''
+    };
+  });
+}
+
+function pickWeightedRarity(list) {
+  const byR = {};
+  list.forEach(c => { (byR[c.rarity] = byR[c.rarity] || []).push(c); });
+  const entries = Object.entries(MYSTERY_WEIGHTS).filter(([r]) => byR[r]);
+  if (!entries.length) return list[Math.floor(Math.random() * list.length)];
+  let roll = Math.random() * entries.reduce((a, [, w]) => a + w, 0);
+  for (const [r, w] of entries) { if (roll < w) return byR[r][Math.floor(Math.random() * byR[r].length)]; roll -= w; }
+  const last = byR[entries[entries.length - 1][0]];
+  return last[Math.floor(Math.random() * last.length)];
+}
+
+// Kauf = sofort einsetzen. choice = Cosmetic-id bei "Try It On".
+function buyConsumable(slot, choice, context) {
+  const state = readState();
+  const now = new Date();
+  pruneBuffs(state);
+  refreshConsumables(state, now);
+  const id = state.consumables.slots[slot];
+  if (!id) return { ok: false, error: 'The merchant has nothing here today.' };
+  if (state.consumables.sold[slot]) return { ok: false, error: 'Already bought today.' };
+  const c = CONSUMABLES[id];
+  const blocked = consumableUnavailable(state, id);
+  if (blocked) return { ok: false, error: blocked };
+  if (state.coins < c.price) return { ok: false, error: 'Not enough coins.' };
+  const result = { ok: true, id };
+  const until = ms => new Date(now.getTime() + ms).toISOString();
+  if (c.buff) {
+    const buff = { kind: c.buff.kind, id, startedAt: now.toISOString(), expiresAt: until(c.buff.hours ? c.buff.hours * 3600e3 : c.buff.days * 86400e3) };
+    if (c.buff.games) buff.gamesLeft = c.buff.games;
+    if (c.buff.kind === 'rental') {
+      const target = lootableCosmetics(state).find(x => x.id === choice);
+      if (!target || rentedIds(state).includes(target.id)) return { ok: false, error: 'Pick a cosmetic you do not own yet.' };
+      buff.cosmeticId = target.id;
+      result.cosmetic = { id: target.id, name: target.name, type: target.type, themeKey: target.themeKey || null };
+    }
+    state.buffs.push(buff);
+  } else if (id === 'shop_reroll') {
+    refreshShop(state, now);
+    state.shop.daily = rollOffers(state, 3, shopWeights(SHOP_DAILY_WEIGHTS, state.shop.pityDaily, PITY_DAILY_STEP), 'daily', state.shop.weekly);
+  } else if (id === 'week_reroll') {
+    refreshShop(state, now);
+    state.shop.weekly = rollOffers(state, 2, shopWeights(SHOP_WEEKLY_WEIGHTS, state.shop.pityWeekly, PITY_WEEKLY_STEP), 'weekly', state.shop.daily);
+  } else if (id === 'bonus_daily') {
+    const role = (context && context.role) || '';
+    const today = dayKey(now);
+    const shownId = (buildDailies(state, context || {}, now).find(q => q.rerollable !== undefined && DAILY_POOL.some(p => p.id === q.id)) || {}).id;
+    const pool = DAILY_POOL.filter(q => (!q.role || q.role === role) && q.id !== shownId);
+    state.bonusQuests.daily = { day: today, quest: pool[Math.floor(Math.random() * pool.length)] };
+  } else if (id === 'bonus_weekly') {
+    state.bonusQuests.weekly = { week: weekKey(now), quest: BONUS_WEEKLY_POOL[Math.floor(Math.random() * BONUS_WEEKLY_POOL.length)] };
+  } else if (id === 'mystery') {
+    const won = pickWeightedRarity(lootableCosmetics(state));
+    state.inventory.push(won.id);
+    result.cosmetic = { id: won.id, name: won.name, type: won.type, rarity: won.rarity };
+  }
+  state.coins -= c.price;
+  state.consumables.sold[slot] = true;
+  writeState(state);
+  result.coins = state.coins;
+  return result;
+}
+
+// Fuer theme-fx.js: welche Pass-/Shop-Themes darf dieses Profil gerade nutzen
+// (besessen oder per "Try It On" geliehen)?
+function themeAccess() {
+  const state = readState();
+  if (pruneBuffs(state)) writeState(state);
+  const keys = new Set();
+  [...state.inventory, ...rentedIds(state)].map(getCosmetic).filter(c => c && c.type === 'theme').forEach(c => keys.add(c.themeKey));
+  return { themes: [...keys] };
+}
+
 // Gluecksrad - vom Nutzer so abgenommen (2026-10-09): Schnitt ~25 Coins pro
 // Tag. Die Chancen werden bewusst NICHT angezeigt (Ueberraschungsmoment).
 const WHEEL_SEGMENTS = [
@@ -773,7 +979,10 @@ function getShopState() {
   const now = new Date();
   const state = readState();
   const today = dayKey(now);
-  if (refreshShop(state, now)) writeState(state);
+  const shopChanged = refreshShop(state, now);
+  const consChanged = refreshConsumables(state, now);
+  const buffsChanged = pruneBuffs(state);
+  if (shopChanged || consChanged || buffsChanged) writeState(state);
   const owned = new Set(state.inventory);
   return {
     provisional: true,
@@ -782,6 +991,10 @@ function getShopState() {
     // Chance bleibt bewusst unerwaehnt, Nutzerwunsch)
     prices: PRICES,
     odds: { daily: SHOP_DAILY_WEIGHTS, weekly: SHOP_WEEKLY_WEIGHTS, pastPass: PAST_PASS_CHANCE },
+    consumables: consumablesView(state),
+    consumablesResetAt: nextDailyReset(now).toISOString(),
+    buffs: buffsView(state),
+    tryOn: lootableCosmetics(state).filter(c => !rentedIds(state).includes(c.id)).map(c => ({ id: c.id, name: c.name, type: c.type, rarity: c.rarity, themeKey: c.themeKey || null })),
     daily: state.shop.daily.map(id => offerView(id, owned)).filter(Boolean),
     weekly: state.shop.weekly.map(id => offerView(id, owned)).filter(Boolean),
     dailyResetAt: nextDailyReset(now).toISOString(),
@@ -861,6 +1074,8 @@ module.exports = {
   saveProfileLayout,
   rerollDaily,
   creditQuests,
+  buyConsumable,
+  themeAccess,
   getShopState,
   spinWheel,
   resetState

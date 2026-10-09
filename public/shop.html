@@ -177,6 +177,49 @@
   .hint-pop .rates-intro { margin: -2px 0 6px; }
   .hint-pop table.rates { margin-top: 2px; }
   .hint-pop table.rates th:first-child { text-align: left; }
+  /* ----- Consumables: 2 Tagesplaetze + Buff-Leiste ----- */
+  .goods { display: grid; gap: 10px; }
+  .good {
+    display: grid; grid-template-columns: 38px 1fr; gap: 4px 12px; align-items: center;
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+    background: color-mix(in srgb, var(--input-bg) 55%, transparent); text-align: left;
+  }
+  .good-icon { grid-row: span 2; font-size: 1.6rem; text-align: center; }
+  .good-name { font-family: 'Cinzel', Georgia, serif; color: var(--text); font-size: 0.88rem; letter-spacing: 0.5px; }
+  .good-desc { color: var(--text-dim); font-size: 0.75rem; line-height: 1.35; }
+  .good-buy {
+    grid-column: 1 / -1; justify-self: stretch; margin-top: 6px;
+    padding: 5px 12px; border-radius: 14px; border: 1px solid var(--gold); background: transparent;
+    color: var(--gold); font-family: inherit; font-size: 0.82rem; cursor: pointer;
+  }
+  .good-buy:hover { background: color-mix(in srgb, var(--gold) 14%, transparent); }
+  .good-buy.confirm { background: var(--gold); color: var(--bg); }
+  .good-buy:disabled { border-color: var(--border); color: var(--text-faint); background: transparent; cursor: default; }
+  .good.empty { display: flex; align-items: center; justify-content: center; min-height: 64px; color: var(--text-faint); font-style: italic; font-size: 0.8rem; border-style: dashed; }
+  .good.sold { opacity: 0.6; }
+  .good-msg { grid-column: 1 / -1; color: var(--gold); font-size: 0.78rem; min-height: 0; }
+  .buffs-head { margin: 14px 0 6px; color: var(--text-faint); font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase; }
+  .buffs { display: flex; flex-direction: column; gap: 6px; }
+  .buff {
+    display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--border)); background: color-mix(in srgb, var(--gold) 8%, transparent);
+    font-size: 0.78rem; color: var(--text);
+  }
+  .buff small { color: var(--text-dim); }
+  .buff .buff-time { margin-left: auto; color: var(--text-faint); font-size: 0.72rem; white-space: nowrap; }
+  .buffs-none { color: var(--text-faint); font-size: 0.78rem; font-style: italic; }
+  /* Try It On: Auswahl */
+  .pick-overlay { position: fixed; inset: 0; z-index: 600; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; }
+  .pick-box { width: min(520px, 92vw); max-height: 80vh; overflow: auto; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--border); background: var(--input-bg); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); }
+  .pick-box h3 { margin: 0 0 4px; color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-size: 1rem; }
+  .pick-box p { margin: 0 0 12px; color: var(--text-dim); font-size: 0.8rem; }
+  .pick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .pick-item { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-dim); font-family: inherit; font-size: 0.75rem; cursor: pointer; }
+  .pick-item:hover { border-color: var(--gold); color: var(--text); }
+  .pick-item .cos-border { width: 40px; height: 40px; }
+  .pick-item .mini-frame { width: 44px; height: 32px; }
+  .pick-item .mini-theme { width: 36px; height: 36px; }
+  .pick-cancel { margin-top: 14px; padding: 5px 16px; border-radius: 14px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-family: inherit; cursor: pointer; }
   .shop-note { color: var(--text-faint); font-size: 0.78rem; text-align: center; margin-top: 12px; font-style: italic; }
   /* (privat) - unsichtbar, Mauszeiger bleibt normal */
   .corner-spot { position: fixed; left: 0; bottom: 0; width: 64px; height: 64px; z-index: 50; cursor: default; background: transparent; }
@@ -213,6 +256,12 @@
         <div class="sc-head"><h3>Lucky Wheel</h3><span class="coin-balance" id="coinBalance">🪙 –</span></div>
         <div class="wheel-small" id="wheelSmall" title="Open the wheel"></div>
         <div class="wheel-status" id="wheelStatus"></div>
+      </section>
+      <section class="shop-card">
+        <div class="sc-head"><h3>Daily Goods</h3><span class="sc-reset" id="goodsReset"></span></div>
+        <div class="goods" id="goods"></div>
+        <div class="buffs-head">Active buffs</div>
+        <div class="buffs" id="buffs"></div>
       </section>
     </aside>
   </div>
@@ -301,8 +350,100 @@
         `<p>Your shop never offers you something you already own.</p>`;
     }
 
+    // ----- Consumables -----
+    function ls(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+    function progressionContext() {
+      let champions = [];
+      try { champions = JSON.parse(ls('ttp_selected_champs') || '[]'); } catch (e) {}
+      return { role: ls('ttp_pool_role') || '', champions: JSON.stringify(champions.map(c => ({ id: c.id, name: c.name }))) };
+    }
+    const confirming = new Set();
+    const goodMsg = {};
+    function renderGoods() {
+      document.getElementById('goodsReset').textContent = `new in ${until(shop.consumablesResetAt)}`;
+      document.getElementById('goods').innerHTML = (shop.consumables || [null, null]).map((g, i) => {
+        if (!g) return '<div class="good empty">The merchant has nothing here today.</div>';
+        const label = g.sold ? 'Used' : g.unavailable ? g.unavailable : confirming.has(i) ? `Use now? 🪙 ${fmtNum(g.price)}` : `Buy & use · 🪙 ${fmtNum(g.price)}`;
+        const disabled = g.sold || !!g.unavailable || shop.coins < g.price;
+        return `<div class="good${g.sold ? ' sold' : ''}">
+          <span class="good-icon">${g.icon}</span>
+          <span class="good-name">${esc(g.name)}</span>
+          <span class="good-desc">${esc(g.desc)}</span>
+          <button type="button" class="good-buy${confirming.has(i) ? ' confirm' : ''}" data-slot="${i}"${disabled ? ' disabled' : ''}>${!g.sold && !g.unavailable && shop.coins < g.price ? 'Not enough coins' : label}</button>
+          ${goodMsg[i] ? `<span class="good-msg">${esc(goodMsg[i])}</span>` : ''}
+        </div>`;
+      }).join('');
+      const buffs = shop.buffs || [];
+      document.getElementById('buffs').innerHTML = buffs.length
+        ? buffs.map(b => `<div class="buff"><span>${esc(b.label)}${b.detail ? ` <small>· ${esc(b.detail)}</small>` : ''}</span><span class="buff-time">⏳ ${until(b.expiresAt)}</span></div>`).join('')
+        : '<div class="buffs-none">No active buffs.</div>';
+    }
+
+    async function buyGood(slot, choice) {
+      let result;
+      try {
+        const res = await fetch('/api/shop/consumable', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slot, choice, ...progressionContext() })
+        });
+        result = await res.json();
+      } catch (e) { result = { ok: false, error: 'Could not reach the app server.' }; }
+      if (!result.ok) { goodMsg[slot] = result.error || 'Something went wrong.'; renderGoods(); return; }
+      // Probe-Cosmetic gleich anlegen ("anprobieren")
+      if (result.id === 'try_on' && result.cosmetic) {
+        const c = result.cosmetic;
+        if (c.type === 'theme') {
+          try { localStorage.setItem('ttp_theme', c.themeKey); } catch (e) {}
+          document.documentElement.setAttribute('data-theme', c.themeKey);
+        } else {
+          try { await fetch('/api/cosmetics/equip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: c.type, id: c.id }) }); } catch (e) {}
+        }
+        goodMsg[slot] = `${c.name} is yours for 24 hours - already equipped.`;
+      } else if (result.id === 'mystery' && result.cosmetic) {
+        goodMsg[slot] = `You got ${result.cosmetic.name}! It's in your collection.`;
+      } else {
+        goodMsg[slot] = 'Done!';
+      }
+      await load();
+    }
+
+    function openTryOn(slot) {
+      const opts = shop.tryOn || [];
+      const ov = document.createElement('div');
+      ov.className = 'pick-overlay';
+      const prev = c => c.type === 'border' ? `<span class="cos-border cos-${c.id}"><span class="cos-fill"></span></span>`
+        : c.type === 'frame' ? `<span class="mini-frame mini-frame-${c.id}"></span>` : `<span class="mini-theme mini-theme-${c.themeKey}"></span>`;
+      ov.innerHTML = `<div class="pick-box"><h3>Try It On</h3><p>Pick something you don't own yet - it's yours for 24 hours.</p>
+        <div class="pick-grid">${opts.map(c => `<button type="button" class="pick-item" data-pick="${c.id}">${prev(c)}${esc(c.name)}<small class="rar rar-${c.rarity}">${RARITY_LABEL[c.rarity] || ''}</small></button>`).join('')}</div>
+        <button type="button" class="pick-cancel">Cancel</button></div>`;
+      document.body.appendChild(ov);
+      ov.addEventListener('click', e => {
+        const p = e.target.closest('[data-pick]');
+        if (p) { ov.remove(); buyGood(slot, p.dataset.pick); return; }
+        if (e.target === ov || e.target.closest('.pick-cancel')) ov.remove();
+      });
+    }
+
+    document.getElementById('goods').addEventListener('click', e => {
+      const b = e.target.closest('.good-buy');
+      if (!b || b.disabled) return;
+      const slot = Number(b.dataset.slot);
+      // Zwei Klicks: erst "Use now?", dann kaufen (sofort eingesetzt, nicht aufhebbar)
+      if (!confirming.has(slot)) {
+        confirming.add(slot);
+        renderGoods();
+        setTimeout(() => { if (confirming.delete(slot)) renderGoods(); }, 4000);
+        return;
+      }
+      confirming.delete(slot);
+      const good = shop.consumables[slot];
+      if (good && good.id === 'try_on') openTryOn(slot);
+      else buyGood(slot);
+    });
+
     function render() {
       renderHelp();
+      renderGoods();
       document.getElementById('coinBalance').textContent = `🪙 ${fmtNum(shop.coins)}`;
       document.getElementById('weeklyOffers').innerHTML = offersHtml(shop.weekly);
       document.getElementById('dailyOffers').innerHTML = offersHtml(shop.daily);
