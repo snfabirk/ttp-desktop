@@ -47,75 +47,183 @@
 /* Kein Cosmetic ausgeruestet: schlichter Gold-Rand wie bisher. */
 .cos-none::before { background: var(--gold); }
 
-/* ----- Oktober-Pass 2026 ----- */
+/* ----- Oktober-Pass 2026: Halloween ----- */
 
-/* Stufe 5: Bronze Ring - matter Metall-Verlauf */
-.cos-border-2026-10-bronze::before {
-  background: linear-gradient(135deg, #5e3716 0%, #c98b4f 30%, #f0c08c 45%, #8a5a2b 65%, #d6995c 85%, #5e3716 100%);
-}
-
-/* Stufe 10: Ember - Glut, pulsierendes Leuchten */
-.cos-border-2026-10-ember {
-  animation: cos-ember-glow 2.4s ease-in-out infinite;
-}
-.cos-border-2026-10-ember::before {
-  background: conic-gradient(from 0deg, #ff4d1a, #ffb347, #ff6a00, #c41e00, #ff9a3c, #ff4d1a);
-  animation: cos-spin 9s linear infinite;
-}
-@keyframes cos-ember-glow {
-  0%, 100% { box-shadow: 0 0 6px 1px rgba(255, 106, 0, 0.45); }
-  50% { box-shadow: 0 0 16px 4px rgba(255, 140, 40, 0.75); }
-}
-
-/* Stufe 15: Frostbite - eisiger Verlauf mit Schimmer */
-.cos-border-2026-10-frost {
-  box-shadow: 0 0 10px rgba(140, 210, 255, 0.45);
-}
-.cos-border-2026-10-frost::before {
-  background: linear-gradient(120deg, #2a6fa8 0%, #bfe9ff 25%, #ffffff 32%, #7fc8f0 45%, #2a6fa8 60%, #e8f7ff 80%, #2a6fa8 100%);
-  background-size: 200% 200%;
-  animation: cos-shimmer 4s ease-in-out infinite;
-}
-@keyframes cos-shimmer {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-/* Stufe 20: Verdant - doppelter gruener Ring */
-.cos-border-2026-10-verdant {
-  box-shadow: 0 0 0 2px #14301a, 0 0 0 4px #5fbf6f, 0 0 10px 4px rgba(95, 191, 111, 0.35);
-}
-.cos-border-2026-10-verdant::before {
-  background: linear-gradient(160deg, #1f6b33, #8be09a 40%, #2e8a45 70%, #b9f0c2);
-}
-
-/* Stufe 25: Void Rift - drehender violetter Strudel */
-.cos-border-2026-10-void {
-  box-shadow: 0 0 14px 2px rgba(150, 70, 255, 0.55);
-}
-.cos-border-2026-10-void::before {
-  background: conic-gradient(from 0deg, #12002a, #8a2be2, #e0b3ff, #3d0a7a, #b14bff, #12002a);
-  animation: cos-spin 5s linear infinite;
-}
-
-/* Stufe 30: Golden Pony - drehendes Gold mit pulsierendem Glanz */
-.cos-border-2026-10-crown {
+/* Stufe 5: Pumpkin Ring - Kuerbis-Rillen (simpel) */
+.cos-border-2026-10-pumpkin {
   --cos-width: 4px;
-  animation: cos-crown-glow 2.8s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(232, 118, 28, 0.35);
 }
-.cos-border-2026-10-crown::before {
-  background: conic-gradient(from 0deg, #7a5a12, #ffe28a, #c8962c, #fff6cf, #a87a1c, #ffd257, #7a5a12);
-  animation: cos-spin 6s linear infinite;
+.cos-border-2026-10-pumpkin::before {
+  background: repeating-conic-gradient(from 0deg, #f08a2c 0deg 14deg, #c4560f 14deg 18deg);
 }
-@keyframes cos-crown-glow {
-  0%, 100% { box-shadow: 0 0 8px 2px rgba(255, 210, 90, 0.5); }
-  50% { box-shadow: 0 0 20px 6px rgba(255, 226, 138, 0.85); }
+
+/* Stufe 20: Haunted Halo - drehender Spuk-Wirbel + flackernder Kerzenschein (fancy) */
+.cos-border-2026-10-haunted {
+  --cos-width: 4px;
+  animation: cos-candle 3.2s steps(1, end) infinite;
 }
+.cos-border-2026-10-haunted::before {
+  background: conic-gradient(from 0deg, #0d0d10, #ff7a18, #2a1838, #ffb347, #0d0d10, #7a3cff, #ff7a18, #0d0d10);
+  animation: cos-spin 7s linear infinite;
+}
+.cos-border-2026-10-haunted::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: inset 0 0 10px rgba(255, 140, 40, 0.55);
+  animation: cos-candle-inner 2.1s ease-in-out infinite;
+}
+@keyframes cos-candle {
+  0% { box-shadow: 0 0 10px 2px rgba(255, 122, 24, 0.55); }
+  13% { box-shadow: 0 0 16px 4px rgba(255, 150, 50, 0.8); }
+  21% { box-shadow: 0 0 8px 1px rgba(255, 110, 20, 0.45); }
+  47% { box-shadow: 0 0 14px 3px rgba(255, 140, 40, 0.7); }
+  62% { box-shadow: 0 0 6px 1px rgba(255, 100, 20, 0.4); }
+  78% { box-shadow: 0 0 18px 5px rgba(255, 160, 60, 0.85); }
+}
+@keyframes cos-candle-inner {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* ===== Profil-Rahmen (pframe) um die ganze Widget-Flaeche ===== */
+.pframe {
+  position: relative;
+  padding: 18px;
+  border-radius: 18px;
+  isolation: isolate;
+}
+.pframe .pf-corner {
+  position: absolute;
+  pointer-events: none;
+  z-index: 3;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+.pframe-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Stufe 10: Cobweb - dunkler Rahmen, Spinnennetz-Ecken (simpel) */
+.pframe-frame-2026-10-cobweb {
+  border: 2px solid #34343a;
+  box-shadow: inset 0 0 0 1px rgba(232, 118, 28, 0.35), 0 6px 22px rgba(0, 0, 0, 0.35);
+  background: rgba(10, 10, 12, 0.25);
+}
+.pframe-frame-2026-10-cobweb .pf-corner {
+  width: 64px;
+  height: 64px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60' fill='none' stroke='%239a9aa3' stroke-width='0.9' stroke-linecap='round'%3E%3Cpath d='M0 0 L60 0 M0 0 L0 60 M0 0 L52 22 M0 0 L38 38 M0 0 L22 52'/%3E%3Cpath d='M14 0 Q12 6 13 5.5 Q8 9 5.5 13 Q6 12 0 14' /%3E%3Cpath d='M28 0 Q24 10 25.5 11 Q17 17 11 25.5 Q10 24 0 28' /%3E%3Cpath d='M42 0 Q37 14 38.5 17 Q27 27 17 38.5 Q14 37 0 42' /%3E%3Cpath d='M54 0 Q49 18 51 22 Q37 37 22 51 Q18 49 0 54' opacity='0.6'/%3E%3C/svg%3E");
+  opacity: 0.8;
+}
+.pframe-frame-2026-10-cobweb .pf-corner.tl { top: -2px; left: -2px; }
+.pframe-frame-2026-10-cobweb .pf-corner.br { bottom: -2px; right: -2px; transform: rotate(180deg); }
+.pframe-frame-2026-10-cobweb .pf-corner.tr,
+.pframe-frame-2026-10-cobweb .pf-corner.bl { display: none; }
+
+/* Stufe 25: Haunted Manor - Eisenrahmen mit Gluehlinie, leuchtende Kuerbis-
+   Ecken; beim Oeffnen zeichnet sich die Linie einmal ein (fancy). */
+.pframe-frame-2026-10-manor {
+  border: 3px solid #1a1a1f;
+  box-shadow: 0 0 0 1px #3b2a1a, 0 0 26px rgba(255, 122, 24, 0.18), 0 8px 26px rgba(0, 0, 0, 0.45);
+  background: rgba(8, 8, 12, 0.35);
+}
+.pframe-frame-2026-10-manor .pf-line {
+  position: absolute;
+  inset: 5px;
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
+  z-index: 2;
+  pointer-events: none;
+  overflow: visible;
+}
+.pframe-frame-2026-10-manor .pf-line rect {
+  fill: none;
+  stroke: #ff8a2a;
+  stroke-width: 1.5;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 3px rgba(255, 138, 42, 0.8));
+}
+.pframe-frame-2026-10-manor.intro .pf-line rect { animation: pf-draw 1.3s ease-out both; }
+@keyframes pf-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.pframe-frame-2026-10-manor .pf-corner {
+  width: 46px;
+  height: 46px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 9 q1-5 5-6' stroke='%233f6b2a' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='20' cy='24' rx='17' ry='13' fill='%23e8761c'/%3E%3Cellipse cx='20' cy='24' rx='9' ry='13' fill='%23f28a2e'/%3E%3Cpath d='M3.5 24 Q20 10 36.5 24' fill='none' stroke='%23b9540d' stroke-width='1'/%3E%3Cpath d='M11 21 l4 -4 l3 4 z M22 21 l4 -4 l3 4 z' fill='%231b1208'/%3E%3Cpath d='M9 27 q11 9 22 0 l-3 1 l-2 -2 l-2 3 l-3 -2 l-3 2 l-2 -3 l-2 2 z' fill='%231b1208'/%3E%3C/svg%3E");
+  filter: drop-shadow(0 0 6px rgba(255, 140, 40, 0.75));
+  animation: pf-flicker 4s steps(1, end) infinite;
+}
+.pframe-frame-2026-10-manor .pf-corner.tl { top: -20px; left: -20px; }
+.pframe-frame-2026-10-manor .pf-corner.tr { top: -20px; right: -20px; }
+.pframe-frame-2026-10-manor .pf-corner.bl { bottom: -20px; left: -20px; }
+.pframe-frame-2026-10-manor .pf-corner.br { bottom: -20px; right: -20px; }
+.pframe-frame-2026-10-manor.intro .pf-corner { animation: pf-pop 0.45s ease-out 1.05s both, pf-flicker 4s steps(1, end) 1.5s infinite; }
+.pframe-frame-2026-10-manor.pulse .pf-corner { animation: pf-pulse 0.6s ease-out, pf-flicker 4s steps(1, end) infinite; }
+@keyframes pf-pop { from { transform: scale(0); opacity: 0; } 70% { transform: scale(1.2); } to { transform: scale(1); opacity: 1; } }
+@keyframes pf-pulse { 50% { transform: scale(1.18); filter: drop-shadow(0 0 14px rgba(255, 160, 60, 1)); } }
+@keyframes pf-flicker {
+  0% { filter: drop-shadow(0 0 6px rgba(255, 140, 40, 0.75)); }
+  9% { filter: drop-shadow(0 0 10px rgba(255, 160, 60, 0.95)); }
+  15% { filter: drop-shadow(0 0 4px rgba(255, 120, 30, 0.55)); }
+  52% { filter: drop-shadow(0 0 8px rgba(255, 150, 50, 0.85)); }
+  70% { filter: drop-shadow(0 0 3px rgba(255, 110, 20, 0.5)); }
+}
+/* Optionaler Profil-Hintergrund: Nachthimmel, Mond, Graeber, kahler Baum, Nebel */
+.pframe-bg.bg-frame-2026-10-manor {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 160' preserveAspectRatio='none'%3E%3Cpath d='M0 160 L0 120 Q60 100 120 118 T260 112 Q330 96 400 116 T600 108 L600 160 Z' fill='%230a0a0e'/%3E%3Cpath d='M60 160 L60 128 Q66 118 72 128 L72 160 Z M90 160 L90 132 L100 132 L100 160 Z M470 160 L470 124 Q478 112 486 124 L486 160 Z M505 160 L505 132 L513 132 L513 160 Z' fill='%23141419'/%3E%3Cpath d='M520 160 L522 70 M522 92 L498 76 M522 84 L546 66 M522 104 L540 96 M498 76 L490 68 M546 66 L556 60' stroke='%230d0d12' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") bottom / 100% 34% no-repeat,
+    radial-gradient(circle at 84% 14%, #fff5d6 0 2.6%, rgba(255, 220, 150, 0.35) 3.2%, transparent 9%),
+    radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent), radial-gradient(1px 1px at 27% 9%, #ddd 50%, transparent),
+    radial-gradient(1px 1px at 46% 21%, #fff 50%, transparent), radial-gradient(1px 1px at 63% 7%, #ccc 50%, transparent),
+    radial-gradient(1.5px 1.5px at 71% 27%, #fff 50%, transparent), radial-gradient(1px 1px at 92% 34%, #ddd 50%, transparent),
+    linear-gradient(180deg, #07070d 0%, #151021 55%, #231428 100%);
+}
+.pframe-bg.bg-frame-2026-10-manor::after {
+  content: '';
+  position: absolute;
+  left: -40%;
+  right: -40%;
+  bottom: 0;
+  height: 30%;
+  background: radial-gradient(ellipse at 30% 100%, rgba(190, 190, 210, 0.16), transparent 60%),
+              radial-gradient(ellipse at 75% 100%, rgba(190, 190, 210, 0.12), transparent 55%);
+  animation: pf-fog 18s ease-in-out infinite alternate;
+}
+@keyframes pf-fog { from { transform: translateX(-8%); } to { transform: translateX(8%); } }
+
+/* ===== Mini-Vorschauen (Pass-Kacheln, Inventar) ===== */
+.mini-frame {
+  position: relative;
+  display: inline-block;
+  width: 26px;
+  height: 20px;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+.mini-frame-frame-2026-10-cobweb { border: 2px solid #4a4a52; box-shadow: inset 0 0 0 1px rgba(232, 118, 28, 0.5); background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60' fill='none' stroke='%239a9aa3' stroke-width='0.9' stroke-linecap='round'%3E%3Cpath d='M0 0 L60 0 M0 0 L0 60 M0 0 L52 22 M0 0 L38 38 M0 0 L22 52'/%3E%3Cpath d='M14 0 Q12 6 13 5.5 Q8 9 5.5 13 Q6 12 0 14' /%3E%3Cpath d='M28 0 Q24 10 25.5 11 Q17 17 11 25.5 Q10 24 0 28' /%3E%3Cpath d='M42 0 Q37 14 38.5 17 Q27 27 17 38.5 Q14 37 0 42' /%3E%3Cpath d='M54 0 Q49 18 51 22 Q37 37 22 51 Q18 49 0 54' opacity='0.6'/%3E%3C/svg%3E") top left / 14px no-repeat; }
+.mini-frame-frame-2026-10-manor { border: 2px solid #1a1a1f; box-shadow: 0 0 0 1px #ff8a2a, 0 0 6px rgba(255, 122, 24, 0.6); background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 9 q1-5 5-6' stroke='%233f6b2a' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='20' cy='24' rx='17' ry='13' fill='%23e8761c'/%3E%3Cellipse cx='20' cy='24' rx='9' ry='13' fill='%23f28a2e'/%3E%3Cpath d='M3.5 24 Q20 10 36.5 24' fill='none' stroke='%23b9540d' stroke-width='1'/%3E%3Cpath d='M11 21 l4 -4 l3 4 z M22 21 l4 -4 l3 4 z' fill='%231b1208'/%3E%3Cpath d='M9 27 q11 9 22 0 l-3 1 l-2 -2 l-2 3 l-3 -2 l-3 2 l-2 -3 l-2 2 z' fill='%231b1208'/%3E%3C/svg%3E") center / 12px no-repeat, #151021; }
+.mini-theme {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.mini-theme-hallows { background: conic-gradient(#0e0e10 0 50%, #ff7a18 50% 75%, #6b6b72 75%); border: 1px solid #ff7a18; }
+.mini-theme-haunted { background: radial-gradient(circle at 35% 35%, #fff 0 8%, transparent 9%), conic-gradient(#120d1a 0 50%, #ff7a18 50% 70%, #7a3cff 70%); border: 1px solid #ff9a3c; box-shadow: 0 0 6px rgba(255, 122, 24, 0.7); }
+
 
 @keyframes cos-spin {
   to { transform: rotate(360deg); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .cos-border, .cos-border::before { animation: none !important; }
-}

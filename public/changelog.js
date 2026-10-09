@@ -25,6 +25,17 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.10.0',
+      date: '2026-10-09',
+      notable: [
+        'The October pass is now a Halloween pass: two profile picture borders, two profile frames (the fancy one draws itself in and comes with a haunted night background) and two app themes.',
+        'Haunted Night is the first animated theme - ghosts drift behind your boxes and bats fly by. Choose in Settings whether it animates always, only while you use the app, or never.',
+        'Hover hints ("?") no longer disappear behind the next box.'
+      ],
+      refinements: 0,
+      bugfixes: 1
+    },
+    {
       version: '5.9.0',
       date: '2026-10-09',
       notable: [

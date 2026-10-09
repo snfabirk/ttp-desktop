@@ -78,10 +78,28 @@
       color-scheme: dark;
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .theme-hint {
-      margin: 5px 0 0;
-      font-size: 0.75rem;
-      color: var(--text-faint);
+    /* Animation fuer animierte Pass-Themes (theme-fx.js) - kompakt in einer
+       Zeile, das Fenster darf nicht scrollen. */
+    .anim-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .anim-row label {
+      margin: 0;
+      flex-shrink: 0;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      letter-spacing: 0;
+      text-transform: none;
+      font-family: Georgia, serif;
+    }
+    .anim-row select {
+      flex: 1;
+      padding-top: 3px;
+      padding-bottom: 3px;
+      font-size: 0.82rem;
     }
     .checkbox-row {
       display: flex;
@@ -329,7 +347,14 @@
       <option value="freljord">Freljord (Frost &amp; Ember)</option>
       <option value="ionia">Ionia (Jade &amp; Blossom)</option>
     </select>
-    <p class="theme-hint">Preview shows here - click Apply to use it everywhere.</p>
+    <div class="anim-row">
+      <label for="animSelect">Theme animation</label>
+      <select id="animSelect" title="Only affects animated pass themes (e.g. Haunted Night)">
+        <option value="active">While using the app</option>
+        <option value="always">Always</option>
+        <option value="off">Off</option>
+      </select>
+    </div>
   </div>
 
   <div class="setting-group">
@@ -365,6 +390,8 @@
     const heightSlider = document.getElementById('heightSlider');
     const heightInput = document.getElementById('heightInput');
     const themeSelect = document.getElementById('themeSelect');
+    const animSelect = document.getElementById('animSelect');
+    const ANIM_KEY = 'ttp_theme_anim';
     const applyBtn = document.getElementById('applyBtn');
     const closeBtn = document.getElementById('closeBtn');
     const applyConfirmedText = document.getElementById('applyConfirmedText');
@@ -524,6 +551,7 @@
       if (window.ttpSettings) window.ttpSettings.setWindowSize(widthPx, heightPx);
 
       try { localStorage.setItem(THEME_KEY, themeSelect.value); } catch (e) {}
+      try { localStorage.setItem(ANIM_KEY, animSelect.value); } catch (e) {}
 
       // Kurze "Applied"-Bestaetigung neben dem Button, damit klar ist, dass
       // der Klick tatsaechlich etwas bewirkt hat - blendet nach 2s wieder aus.
@@ -568,6 +596,7 @@
         const res = await fetch('/api/progression/reset', { method: 'POST' });
         if (!res.ok) throw new Error(`status ${res.status}`);
         accountResetBtn.textContent = 'Account Progress Reset ✓';
+        loadPassThemes();
       } catch (e) {
         accountResetBtn.disabled = false;
         accountResetBtn.textContent = 'Reset Account Progress';
@@ -575,12 +604,48 @@
       }
     });
 
+    // Pass-Themes (z.B. All Hallows, Haunted Night) erscheinen erst, wenn man
+    // sie im Monats-Pass freigeschaltet hat. Ein gespeichertes Theme, das man
+    // nicht (mehr) besitzt (z.B. nach Reset Account Progress), faellt auf
+    // Classic zurueck.
+    async function loadPassThemes() {
+      themeSelect.querySelectorAll('optgroup.pass-themes').forEach(g => g.remove());
+      let owned = [];
+      try {
+        const res = await fetch('/api/profile-stats');
+        const d = await res.json();
+        owned = (d.owned || []).filter(c => c.type === 'theme' && c.themeKey);
+      } catch (e) {}
+      if (owned.length) {
+        const group = document.createElement('optgroup');
+        group.className = 'pass-themes';
+        group.label = 'Monthly Pass';
+        owned.forEach(c => {
+          const o = document.createElement('option');
+          o.value = c.themeKey;
+          o.textContent = `${c.name}${c.animated ? ' ✦ animated' : ''}`;
+          group.appendChild(o);
+        });
+        themeSelect.appendChild(group);
+      }
+      let stored = 'classic';
+      try { stored = localStorage.getItem(THEME_KEY) || 'classic'; } catch (e) {}
+      if (![...themeSelect.options].some(o => o.value === stored)) {
+        stored = 'classic';
+        try { localStorage.setItem(THEME_KEY, 'classic'); } catch (e) {}
+        document.documentElement.removeAttribute('data-theme');
+      }
+      themeSelect.value = stored;
+    }
+
     (async function init() {
       try {
         themeSelect.value = localStorage.getItem(THEME_KEY) || 'classic';
+        animSelect.value = localStorage.getItem(ANIM_KEY) || 'active';
       } catch (e) {
         themeSelect.value = 'classic';
       }
+      loadPassThemes();
 
       refreshApiKeyStatus();
 

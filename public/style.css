@@ -839,3 +839,107 @@ html, body {
   0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 60%, transparent); }
   50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--gold) 0%, transparent); }
 }
+
+
+/* ===== Pass-Themes (nur wer sie im Monats-Pass freigeschaltet hat) ===== */
+
+/* Oktober 2026, Stufe 15: All Hallows - Schwarz/Grau/Orange mit Akzenten */
+html[data-theme="hallows"] {
+  --bg: #0f0e10;
+  --bg-rgb: 15, 14, 16;
+  --input-bg: #1c1a1d;
+  --border: #3d3530;
+  --border-hover: #ff7a18;
+  --gold: #ff7a18;
+  --text: #ece6e0;
+  --text-dim: #a59d96;
+  --text-faint: #6b645f;
+  --red: #ff4d4d;
+  --green: #6fbf73;
+  --live-accent: #6fbf73;
+  --history-view-accent: #e0a458;
+  --scrollbar: #3d3530;
+  --scrollbar-hover: #ff7a18;
+}
+
+/* Oktober 2026, Stufe 30: Haunted Night - tiefer, violett-schwarz, mit
+   Animation (theme-fx.js). Der Hintergrund liegt hier auf <html>, damit die
+   Animationsflaeche (z-index -1) zwischen Hintergrund und Inhalt passt. */
+html[data-theme="haunted"] {
+  --bg: #0b0a10;
+  --bg-rgb: 11, 10, 16;
+  --input-bg: #1a1622;
+  --border: #3a2d45;
+  --border-hover: #ff8a2a;
+  --gold: #ff8a2a;
+  --text: #efe9f5;
+  --text-dim: #a99fb8;
+  --text-faint: #6c6478;
+  --red: #ff4d6a;
+  --green: #6fcf8a;
+  --live-accent: #6fcf8a;
+  --history-view-accent: #e0a458;
+  --scrollbar: #3a2d45;
+  --scrollbar-hover: #ff8a2a;
+  background:
+    radial-gradient(circle at 88% 6%, rgba(255, 236, 190, 0.10), transparent 22%),
+    radial-gradient(ellipse at 20% 110%, rgba(122, 60, 255, 0.10), transparent 45%),
+    linear-gradient(180deg, #08070c 0%, #0f0b16 60%, #140d1b 100%);
+  background-attachment: fixed;
+}
+html[data-theme="haunted"] body { background: transparent; }
+
+/* Akzente beider Halloween-Themes: gluehender Titel, Spinnennetz unten
+   rechts, kleiner Kuerbis unten links (rein dekorativ, nie klickbar). */
+html[data-theme="hallows"] .site-header h1,
+html[data-theme="haunted"] .site-header h1 {
+  text-shadow: 0 0 22px rgba(255, 122, 24, 0.35);
+}
+html[data-theme="haunted"] .site-header h1 {
+  text-shadow: 0 0 22px rgba(255, 138, 42, 0.4), 0 0 46px rgba(122, 60, 255, 0.25);
+}
+html[data-theme="hallows"] body::after,
+html[data-theme="haunted"] body::after {
+  content: '';
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  width: 150px;
+  height: 150px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60' fill='none' stroke='%238a8a93' stroke-width='0.8' stroke-linecap='round'%3E%3Cpath d='M60 60 L0 60 M60 60 L60 0 M60 60 L8 38 M60 60 L22 22 M60 60 L38 8'/%3E%3Cpath d='M46 60 Q48 54 47 54.5 Q52 51 54.5 47 Q54 48 60 46'/%3E%3Cpath d='M32 60 Q36 50 34.5 49 Q43 43 49 34.5 Q50 36 60 32'/%3E%3Cpath d='M18 60 Q23 46 21.5 43 Q33 33 43 21.5 Q46 23 60 18'/%3E%3C/svg%3E") bottom right / contain no-repeat;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 1;
+}
+html[data-theme="hallows"] body::before,
+html[data-theme="haunted"] body::before {
+  content: '';
+  position: fixed;
+  left: 18px;
+  bottom: 14px;
+  width: 34px;
+  height: 34px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 9 q1-5 5-6' stroke='%233f6b2a' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='20' cy='24' rx='17' ry='13' fill='%23e8761c'/%3E%3Cellipse cx='20' cy='24' rx='9' ry='13' fill='%23f28a2e'/%3E%3Cpath d='M11 21 l4 -4 l3 4 z M22 21 l4 -4 l3 4 z' fill='%231b1208'/%3E%3Cpath d='M9 27 q11 9 22 0 l-3 1 l-2 -2 l-2 3 l-3 -2 l-3 2 l-2 -3 l-2 2 z' fill='%231b1208'/%3E%3C/svg%3E") center / contain no-repeat;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 6px rgba(255, 122, 24, 0.55));
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Animationsflaeche (theme-fx.js) - hinter allem Inhalt */
+.theme-fx-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* "?"-Hinweise: Glas-Boxen (backdrop-filter) bilden eigene Ebenen - die Box
+   mit dem offenen Hinweis muss deshalb ueber ihre Nachbarn gehoben werden,
+   sonst verschwindet das Popup hinter der naechsten Box (Nutzer-Bugreport). */
+:is(.prog-card, .dash-card, .card, .widget):has(.hint:hover, .hint:focus-within) {
+  position: relative;
+  z-index: 40;
+}

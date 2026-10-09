@@ -5,18 +5,28 @@
 // rotierenden Shop.
 //
 // Neuen Monat anlegen: 6 Eintraege mit passMonth 'YYYY-MM' + tier 5..30
-// hinzufuegen und die passenden CSS-Klassen in public/cosmetics.css bauen
-// (Klasse = "cos-" + id). Hat ein Monat (noch) keine Cosmetics, gibt es auf
+// hinzufuegen und die passenden CSS-Klassen bauen: Borders/Frames in
+// public/cosmetics.css (Klasse = "cos-" + id bzw. "pframe-" + id), Themes
+// als html[data-theme="<themeKey>"] in public/style.css (+ Animation in
+// public/theme-fx.js). Hat ein Monat (noch) keine Cosmetics, gibt es auf
 // diesen Stufen stattdessen Coins (FALLBACK_COSMETIC_COINS in progression.js).
 
+// Aufbau pro Monat (Nutzerdesign 2026-10-09):
+//   Stufe  5 / 20 = Profilbild-Rahmen (border)  - simpel / fancy
+//   Stufe 10 / 25 = Profil-Rahmen um alle Widgets (frame) - simpel / fancy
+//                   (fancy: kurze Einzeichnen-Animation + optionaler
+//                   Profil-Hintergrund, im Editor ein-/ausschaltbar)
+//   Stufe 15 / 30 = App-Theme (theme) - simpel mit Akzenten / fancy mit
+//                   Animation (Einstellung: Aus / Nur bei Benutzung / Immer)
+// Rahmen sieht jeder auf dem Profil, das Theme ist rein persoenlich.
 const COSMETICS = [
-  // ----- Oktober-Pass 2026 (Test-Borders) -----
-  { id: 'border-2026-10-bronze', type: 'border', name: 'Bronze Ring', passMonth: '2026-10', tier: 5 },
-  { id: 'border-2026-10-ember', type: 'border', name: 'Ember', passMonth: '2026-10', tier: 10 },
-  { id: 'border-2026-10-frost', type: 'border', name: 'Frostbite', passMonth: '2026-10', tier: 15 },
-  { id: 'border-2026-10-verdant', type: 'border', name: 'Verdant', passMonth: '2026-10', tier: 20 },
-  { id: 'border-2026-10-void', type: 'border', name: 'Void Rift', passMonth: '2026-10', tier: 25 },
-  { id: 'border-2026-10-crown', type: 'border', name: 'Golden Pony', passMonth: '2026-10', tier: 30 }
+  // ----- Oktober 2026: Halloween (schwarz / grau / orange) -----
+  { id: 'border-2026-10-pumpkin', type: 'border', name: 'Pumpkin Ring', passMonth: '2026-10', tier: 5 },
+  { id: 'frame-2026-10-cobweb', type: 'frame', name: 'Cobweb', passMonth: '2026-10', tier: 10 },
+  { id: 'theme-2026-10-hallows', type: 'theme', name: 'All Hallows', passMonth: '2026-10', tier: 15, themeKey: 'hallows' },
+  { id: 'border-2026-10-haunted', type: 'border', name: 'Haunted Halo', passMonth: '2026-10', tier: 20 },
+  { id: 'frame-2026-10-manor', type: 'frame', name: 'Haunted Manor', passMonth: '2026-10', tier: 25, hasBackground: true },
+  { id: 'theme-2026-10-haunted', type: 'theme', name: 'Haunted Night', passMonth: '2026-10', tier: 30, themeKey: 'haunted', animated: true }
 ];
 
 const byId = new Map(COSMETICS.map(c => [c.id, c]));

@@ -1,5 +1,33 @@
 # Internal Changelog
 
+## 5.10.0 — 2026-10-09
+
+- New monthly structure (user design): tiers 5/20 = profile picture border
+  (simple/fancy), 10/25 = profile frame around the widget board
+  (simple/fancy; fancy draws in once on open, pulses on click, optional
+  background toggle), 15/30 = app theme (simple accents / animated).
+  October 2026 = Halloween: Pumpkin Ring, Cobweb, All Hallows, Haunted
+  Halo, Haunted Manor (+ night background), Haunted Night (animated).
+  The old test borders are gone; readState re-grants the current
+  cosmetic of every already-claimed cosmetic tier (idempotent) and drops
+  unknown ids from inventory/equipped.
+- `public/theme-fx.js` (loaded via nav.js): canvas at z-index -1 behind the
+  content (haunted theme moves the page background to <html>, body
+  transparent); ghosts, occasional bat, fog; 30fps; setting
+  `ttp_theme_anim` off / active (mouse in window or < 5s since last input)
+  / always, smooth fade in/out, nothing while hidden. Deliberately NOT
+  tied to OS prefers-reduced-motion (the user's Windows has it on, which
+  had silently disabled ALL cosmetic animations, incl. spinning borders).
+- Settings: owned pass themes as "Monthly Pass" optgroup (fallback to
+  Classic if not owned), "Theme animation" select replaces the hint line;
+  settings window 760 -> 772px (fits 735/735).
+- Profile editor inventory: Borders / Frames (+ "Show profile background")
+  / Themes (personal, applied immediately) / Stickers (soon).
+  equip types frame + frameBg. Pass tiles show frame/theme previews.
+- Bug: "?" hint popups vanished behind the next glass box (each
+  backdrop-filter box is its own stacking context) -> box with an open
+  hint gets z-index 40 via :has().
+
 ## 5.9.0 — 2026-10-09
 
 - Welcome popup (nav.js `maybeWelcome`): only if `ttp_welcome_seen`,

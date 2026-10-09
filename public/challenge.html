@@ -804,6 +804,7 @@
       height: 22px;
       opacity: 0.75;
     }
+    .pass-tier .mini-frame.tier-cos { width: 26px; height: 20px; }
     .pass-tier.unlocked .tier-cos { opacity: 1; }
     .pass-tier .tier-check {
       position: absolute;
@@ -1784,10 +1785,15 @@
         const unlocked = t <= pass.tier;
         const current = t === pass.tier + 1;
         const progress = current ? `<span class="tier-progress" style="width:${(pass.xpIntoTier / pass.xpPerTier) * 100}%"></span>` : '';
-        const reward = r.type === 'cosmetic'
-          ? `<span class="cos-border cos-${r.id} tier-cos"><span class="cos-fill"></span></span>`
-          : `<span class="tier-reward">🪙 ${r.amount}</span>`;
-        const label = r.type === 'cosmetic' ? `${r.name} (${r.cosmeticType})` : `${r.amount} coins`;
+        const COS_LABEL = { border: 'profile picture border', frame: 'profile frame', theme: 'app theme' };
+        const reward = r.type !== 'cosmetic'
+          ? `<span class="tier-reward">🪙 ${r.amount}</span>`
+          : r.cosmeticType === 'frame'
+            ? `<span class="mini-frame mini-frame-${r.id} tier-cos"></span>`
+            : r.cosmeticType === 'theme'
+              ? `<span class="mini-theme mini-theme-${r.themeKey} tier-cos"></span>`
+              : `<span class="cos-border cos-${r.id} tier-cos"><span class="cos-fill"></span></span>`;
+        const label = r.type === 'cosmetic' ? `${r.name} (${COS_LABEL[r.cosmeticType] || r.cosmeticType}${r.animated ? ', animated' : ''})` : `${r.amount} coins`;
         html += `<div class="pass-tier${milestone ? ' milestone' : ''}${unlocked ? ' unlocked' : ''}${current ? ' current' : ''}" title="Tier ${t} - ${label}${unlocked ? ' - unlocked' : ''}${current ? ` (${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP)` : ''}">` +
           `<span class="tier-num">${t}</span>${reward}${unlocked ? '<span class="tier-check">✓</span>' : ''}${progress}</div>`;
       });

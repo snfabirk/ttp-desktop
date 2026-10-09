@@ -157,6 +157,11 @@
   function init() {
     build();
     maybeWelcome();
+    // Animierte Pass-Themes (z.B. Haunted Night) - schlaeft, solange kein
+    // animiertes Theme aktiv ist.
+    const fx = document.createElement('script');
+    fx.src = 'theme-fx.js';
+    document.head.appendChild(fx);
   }
 
   if (document.body) init();

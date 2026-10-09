@@ -427,6 +427,20 @@
     .inv-item:hover { border-color: var(--border-hover); color: var(--text); }
     .inv-item.equipped { border-color: var(--gold); color: var(--gold); background: color-mix(in srgb, var(--gold) 12%, transparent); }
     .inv-item .cos-border { width: 40px; height: 40px; }
+    .inv-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .inv-note { margin: 10px 0 0; color: var(--text-faint); font-size: 0.72rem; font-style: italic; }
+    .inv-anim { display: block; color: var(--gold); font-size: 0.62rem; }
+    .inv-item .mini-frame { width: 40px; height: 30px; }
+    .inv-item .mini-theme { width: 34px; height: 34px; }
+    .mini-frame.mini-none { border: 1px dashed var(--text-faint); }
     .inv-empty { color: var(--text-faint); font-size: 0.8rem; font-style: italic; line-height: 1.4; }
 
     .status {
@@ -964,6 +978,7 @@
       });
       setRows();
       canvas.innerHTML = html;
+      applyFrame();
       if (editState) renderPanels();
     }
 
@@ -1104,9 +1119,9 @@
     let invTab = 'border';
     const INV_TABS = [
       { id: 'border', label: 'Borders' },
-      { id: 'background', label: 'Backgrounds' },
-      { id: 'sticker', label: 'Stickers' },
-      { id: 'theme', label: 'Themes' }
+      { id: 'frame', label: 'Frames' },
+      { id: 'theme', label: 'Themes' },
+      { id: 'sticker', label: 'Stickers' }
     ];
 
     function miniGrid([w, h]) {
@@ -1135,8 +1150,29 @@
           <div class="inv-item${(c.id || 'none') === editState.border ? ' equipped' : ''}" data-equip="${c.id || 'none'}">
             <span class="cos-border cos-${c.id || 'none'}"><span class="cos-fill"></span></span>${esc(c.name)}
           </div>`).join('')}</div>`;
+      } else if (invTab === 'frame') {
+        const items = [{ id: null, name: 'No frame' }, ...owned.filter(c => c.type === 'frame')];
+        const sel = owned.find(c => c.id === editState.frame);
+        list.innerHTML = `<div class="inv-grid">${items.map(c => `
+          <div class="inv-item${(c.id || 'none') === editState.frame ? ' equipped' : ''}" data-frame="${c.id || 'none'}">
+            ${c.id ? `<span class="mini-frame mini-frame-${c.id}"></span>` : '<span class="mini-frame mini-none"></span>'}${esc(c.name)}
+          </div>`).join('')}</div>` +
+          (sel && sel.hasBackground
+            ? `<label class="inv-toggle"><input type="checkbox" id="frameBgToggle"${editState.frameBg ? ' checked' : ''}> Show profile background</label>`
+            : '');
+      } else if (invTab === 'theme') {
+        // Themes sind persoenlich (nur die eigene App), daher sofort aktiv
+        // und nicht Teil von Speichern/Abbrechen.
+        const themes = owned.filter(c => c.type === 'theme');
+        const active = currentThemeKey();
+        list.innerHTML = themes.length
+          ? `<div class="inv-grid">${[{ themeKey: 'classic', name: 'Classic' }, ...themes].map(c => `
+              <div class="inv-item${c.themeKey === active ? ' equipped' : ''}" data-theme-key="${c.themeKey}">
+                <span class="mini-theme mini-theme-${c.themeKey}"></span>${esc(c.name)}${c.animated ? '<small class="inv-anim">✦ animated</small>' : ''}
+              </div>`).join('')}</div><p class="inv-note">Only you see your theme. More themes in Settings.</p>`
+          : '<p class="inv-empty">No pass themes yet - they unlock on tiers 15 and 30 of the monthly pass.</p>';
       } else {
-        list.innerHTML = '<p class="inv-empty">Nothing here yet - these will come from the monthly pass and the shop.</p>';
+        list.innerHTML = '<p class="inv-empty">Coming soon.</p>';
       }
     }
 
@@ -1146,11 +1182,69 @@
       invTab = t.dataset.invtab;
       renderPanels();
     });
+    function currentThemeKey() {
+      try { return localStorage.getItem('ttp_theme') || 'classic'; } catch (e) { return 'classic'; }
+    }
     document.getElementById('invList').addEventListener('click', e => {
-      const it = e.target.closest('[data-equip]');
-      if (!it) return;
-      editState.border = it.dataset.equip;
-      render();
+      const b = e.target.closest('[data-equip]');
+      const f = e.target.closest('[data-frame]');
+      const t = e.target.closest('[data-theme-key]');
+      if (b) { editState.border = b.dataset.equip; render(); }
+      if (f) { editState.frame = f.dataset.frame; render(); }
+      if (t) {
+        const key = t.dataset.themeKey;
+        try { localStorage.setItem('ttp_theme', key); } catch (err) {}
+        if (key === 'classic') document.documentElement.removeAttribute('data-theme');
+        else document.documentElement.setAttribute('data-theme', key);
+        renderPanels();
+      }
+    });
+    document.getElementById('invList').addEventListener('change', e => {
+      if (e.target.id === 'frameBgToggle') { editState.frameBg = e.target.checked; applyFrame(); }
+    });
+
+    // ===== Profil-Rahmen um die Widget-Flaeche =====
+    // Sichtbar fuer alle (anders als das Theme). Fancy-Rahmen zeichnen sich
+    // beim Oeffnen einmal ein und pulsieren kurz bei einem Klick.
+    let introPlayed = false;
+    let introUntil = 0; // Intro-Klasse ueberlebt Neu-Renders (Daten laden nach)
+    function applyFrame() {
+      const wrap = document.querySelector('.canvas-wrap');
+      const eq = (S() && S().equipped) || {};
+      const frameId = editState ? (editState.frame === 'none' ? null : editState.frame) : eq.frame;
+      const bgOn = editState ? editState.frameBg : eq.frameBg !== false;
+      const cos = frameId && S() ? S().owned.find(c => c.id === frameId) : null;
+      wrap.querySelectorAll(':scope > .pframe-bg, :scope > .pf-corner, :scope > .pf-line').forEach(n => n.remove());
+      wrap.className = 'canvas-wrap' + (cos ? ` pframe pframe-${cos.id}` : '') + (Date.now() < introUntil ? ' intro' : '');
+      if (!cos) return;
+      if (cos.hasBackground && bgOn) {
+        const bg = document.createElement('div');
+        bg.className = `pframe-bg bg-${cos.id}`;
+        wrap.prepend(bg);
+      }
+      ['tl', 'tr', 'bl', 'br'].forEach(pos => {
+        const c = document.createElement('span');
+        c.className = `pf-corner ${pos}`;
+        wrap.appendChild(c);
+      });
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      line.setAttribute('class', 'pf-line');
+      line.innerHTML = '<rect x="0.5%" y="0.5%" width="99%" height="99%" rx="12" ry="12" pathLength="1"></rect>';
+      wrap.appendChild(line);
+      if (!introPlayed && !editState) {
+        introPlayed = true;
+        introUntil = Date.now() + 2200;
+        wrap.classList.add('intro');
+        setTimeout(() => wrap.classList.remove('intro'), 2200);
+      }
+    }
+    document.querySelector('.canvas-wrap').addEventListener('click', e => {
+      const wrap = e.currentTarget;
+      if (editState || !wrap.classList.contains('pframe')) return;
+      wrap.classList.remove('pulse');
+      void wrap.offsetWidth;
+      wrap.classList.add('pulse');
+      setTimeout(() => wrap.classList.remove('pulse'), 700);
     });
 
     // ===== Modus wechseln / Speichern =====
@@ -1166,7 +1260,9 @@
     async function enterEdit() {
       editState = {
         snapshot: JSON.parse(JSON.stringify(layout)),
-        border: (S() && S().equipped && S().equipped.border) || 'none'
+        border: (S() && S().equipped && S().equipped.border) || 'none',
+        frame: (S() && S().equipped && S().equipped.frame) || 'none',
+        frameBg: !S() || !S().equipped || S().equipped.frameBg !== false
       };
       document.body.classList.add('editing');
       render();
@@ -1200,13 +1296,17 @@
         });
         const out = await parseApiResponse(res);
         if (!res.ok) throw new Error(out.error || 'Unknown error');
-        const newBorder = editState.border === 'none' ? null : editState.border;
-        const oldBorder = (S() && S().equipped && S().equipped.border) || null;
-        if (newBorder !== oldBorder) {
+        const eq = (S() && S().equipped) || {};
+        const changes = [
+          ['border', editState.border === 'none' ? null : editState.border, eq.border || null],
+          ['frame', editState.frame === 'none' ? null : editState.frame, eq.frame || null],
+          ['frameBg', editState.frameBg ? 'on' : 'off', eq.frameBg === false ? 'off' : 'on']
+        ].filter(([, now, before]) => now !== before);
+        for (const [type, id] of changes) {
           const r2 = await fetch('/api/cosmetics/equip', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'border', id: newBorder })
+            body: JSON.stringify({ type, id })
           });
           const o2 = await parseApiResponse(r2);
           if (!r2.ok) throw new Error(o2.error || 'Unknown error');

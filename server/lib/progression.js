@@ -203,7 +203,7 @@ function passProgress(xp) {
 function tierReward(month, tier) {
   if (tier % 5 === 0) {
     const cosmetic = passCosmetic(month, tier);
-    if (cosmetic) return { type: 'cosmetic', id: cosmetic.id, name: cosmetic.name, cosmeticType: cosmetic.type };
+    if (cosmetic) return { type: 'cosmetic', id: cosmetic.id, name: cosmetic.name, cosmeticType: cosmetic.type, themeKey: cosmetic.themeKey, animated: !!cosmetic.animated };
     return { type: 'coins', amount: FALLBACK_COSMETIC_COINS };
   }
   return { type: 'coins', amount: coinsForTier(tier) };
@@ -269,6 +269,12 @@ function getCosmeticsState() {
 
 function equipCosmetic(type, id) {
   const state = readState();
+  // Profil-Hintergrund des Rahmens an/aus (nur fuer Rahmen mit Hintergrund)
+  if (type === 'frameBg') {
+    state.equipped = { ...state.equipped, frameBg: id === 'on' };
+    writeState(state);
+    return { ok: true, equipped: state.equipped };
+  }
   if (id) {
     const cosmetic = getCosmetic(id);
     if (!cosmetic || cosmetic.type !== type) return { ok: false, error: 'Unknown cosmetic.' };
@@ -309,7 +315,7 @@ function emptyState() {
   return {
     version: 2, totalXp: 0, ledger: [], rerolls: {},
     // passes['YYYY-MM'] = { xp, claimedTier, claimedOverflow }
-    passes: {}, coins: 0, inventory: [], equipped: { border: null },
+    passes: {}, coins: 0, inventory: [], equipped: { border: null, frame: null, frameBg: true },
     // Profil-Layout (Widget-Raster auf profile.html), null = Standard-Layout
     // des Clients. [{ id, type, x, y, w, h, config }]
     profileLayout: null,
@@ -327,6 +333,20 @@ function readState() {
     return emptyState();
   }
   const state = { ...emptyState(), ...raw };
+  // Cosmetics, die es nicht (mehr) gibt (z.B. die Test-Borders des ersten
+  // Oktober-Passes), fallen still aus Inventar und Ausruestung.
+  state.inventory = (state.inventory || []).filter(id => getCosmetic(id));
+  state.equipped = { ...emptyState().equipped, ...(state.equipped || {}) };
+  // Zu jeder schon erreichten Cosmetic-Stufe gehoert das AKTUELLE Cosmetic
+  // dieses Monats ins Inventar (idempotent) - so bekommt auch, wer die Stufe
+  // vor einer Katalog-Aenderung geholt hat, die neue Belohnung.
+  Object.entries(state.passes || {}).forEach(([month, pass]) => {
+    for (let t = 5; t <= Math.min(pass.claimedTier || 0, PASS_TIERS); t += 5) {
+      const c = passCosmetic(month, t);
+      if (c && !state.inventory.includes(c.id)) state.inventory.push(c.id);
+    }
+  });
+  ['border', 'frame'].forEach(t => { if (state.equipped[t] && !state.inventory.includes(state.equipped[t])) state.equipped[t] = null; });
   // v5.1/5.2 -> v5.3: der Pass hing an der Challenge (passXp). Monats-Paesse
   // aus dem Ledger (Spielzeitpunkt) + LP-Bank-Events (Zeitpunkt) neu aufbauen.
   if (!raw.passes) {
