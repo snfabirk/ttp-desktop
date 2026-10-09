@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="cosmetics.css">
   <script src="theme.js"></script>
   <script src="update-indicator.js"></script>
   <script src="changelog.js"></script>
@@ -171,14 +172,11 @@
        Spielerprofil (profile.html). Darunter die Challenge-&-Pass-Karte ->
        challenge.html (volle Account-Karte, Quests, Pass). Gleicher
        Kartenstil wie Trophies. */
+    /* Rahmen = ausgeruesteter Border (cosmetics.css), rund wie im Profil */
     .profile-card-icon-wrap {
-      flex-shrink: 0;
       width: 40px;
       height: 40px;
-      border-radius: 6px;
-      border: 2px solid var(--gold);
-      background: rgba(200, 170, 110, 0.08);
-      overflow: hidden;
+      --cos-width: 2px;
     }
     .profile-card-icon {
       width: 100%;
@@ -903,7 +901,7 @@
   <div class="split-left">
   <div class="content">
     <a href="profile.html" class="trophies-card profile-card" id="profileCard" title="View profile">
-      <span class="profile-card-icon-wrap"><img id="accountOverviewIcon" class="profile-card-icon" src="" alt=""></span>
+      <span class="cos-border cos-none profile-card-icon-wrap" id="profileCardFrame"><img id="accountOverviewIcon" class="profile-card-icon" src="" alt=""></span>
       <span class="profile-card-name" id="accountOverviewName">No summoner loaded yet</span>
       <span class="profile-card-level" id="profileCardLevel" title="Profile level">Lv 1</span>
       <span class="profile-card-wl" id="accountWL">–</span>
@@ -2011,6 +2009,8 @@
         const data = await parseApiResponse(res);
         if (!res.ok) return;
         document.getElementById('profileCardLevel').textContent = `Lv ${data.level.level}`;
+        document.getElementById('profileCardFrame').className =
+          `cos-border profile-card-icon-wrap cos-${(data.equipped && data.equipped.border) || 'none'}`;
         document.getElementById('challengePassSummary').innerHTML =
           `<span class="cp-seg">Tier ${data.pass.tier} / ${data.pass.tiers}</span>` +
           `<span class="cp-sep" aria-hidden="true"></span>` +

@@ -25,6 +25,17 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.3.0',
+      date: '2026-10-09',
+      notable: [
+        'The pass is now a monthly pass: a new one starts every month, and your progress no longer resets when you reset a challenge.',
+        'Pass rewards: tiers 5, 10, 15, 20, 25 and 30 unlock this month’s exclusive profile borders (yours forever), all other tiers give coins. After tier 30 you keep earning coins every 2,500 XP.',
+        'Equip your borders on your profile - they also show on the Overview.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.2.2',
       date: '2026-10-09',
       notable: [],

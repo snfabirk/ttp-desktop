@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="cosmetics.css">
   <script src="theme.js"></script>
   <script src="update-indicator.js"></script>
   <script src="changelog.js"></script>
@@ -533,14 +534,54 @@
       margin: 6px 0 4px;
       font-variant-numeric: tabular-nums;
     }
+    /* Pass-Box fuellt (als letzte Karte der rechten Spalte) den Platz bis zur
+       Hoehe der linken Spalte: die Stufen-Reihen und die 30+-Leiste teilen
+       sich die Hoehe gleichmaessig, statt unten Leerraum zu lassen. */
+    .pass-card {
+      display: flex;
+      flex-direction: column;
+    }
     .pass-grid {
+      flex: 1;
       display: grid;
       grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-rows: repeat(5, minmax(48px, 1fr));
       gap: 6px;
       margin-top: 8px;
     }
+    .pass-overflow {
+      flex: 0 0 auto;
+      min-height: 48px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+      border-radius: 7px;
+      background: color-mix(in srgb, var(--input-bg) 55%, transparent);
+      font-family: Georgia, serif;
+      cursor: help;
+    }
+    .pass-overflow.locked { opacity: 0.55; }
+    .pass-overflow .of-label {
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.85rem;
+    }
+    .pass-overflow .xp-bar { flex: 1; height: 8px; }
+    .pass-overflow .of-info {
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .coin-balance {
+      color: var(--gold);
+      cursor: help;
+    }
     .pass-tier {
-      aspect-ratio: 1.4;
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -557,8 +598,22 @@
       font-size: 0.65rem;
     }
     .pass-tier .tier-reward {
-      font-size: 0.85rem;
-      opacity: 0.55;
+      font-size: 0.72rem;
+      opacity: 0.6;
+      white-space: nowrap;
+    }
+    .pass-tier .tier-cos {
+      width: 22px;
+      height: 22px;
+      opacity: 0.75;
+    }
+    .pass-tier.unlocked .tier-cos { opacity: 1; }
+    .pass-tier .tier-check {
+      position: absolute;
+      top: 2px;
+      right: 5px;
+      font-size: 0.65rem;
+      color: var(--gold);
     }
     .pass-tier.milestone {
       border-color: color-mix(in srgb, var(--gold) 55%, transparent);
@@ -830,16 +885,19 @@
             <span id="lpBankReward">+1,000 XP when full</span>
           </div>
         </div>
-        <div class="prog-card">
+        <div class="prog-card pass-card">
           <div class="prog-card-head">
-            <h3>Challenge Pass <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Resets with every new challenge. Rewards are cosmetic profile extras (still to be decided). Every game, quest and trophy only ever counts once - resetting and restarting a challenge doesn't earn anything twice.</span></span></h3>
+            <h3><span id="passTitle">Monthly Pass</span> <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">A new pass starts every month. Tiers 5, 10, 15, 20, 25 and 30 unlock this month's exclusive cosmetics (yours forever), all other tiers give coins for the shop. After tier 30 you keep earning coins every 2,500 XP. Every reward is given once per tier - resetting a challenge doesn't reset the pass.</span></span></h3>
+            <span class="reset-in" id="passEndsIn"></span>
           </div>
           <div class="xp-bar"><div class="xp-bar-fill" id="passXpFill"></div></div>
           <div class="pass-summary">
             <span id="passTierText">Tier 0 / 30</span>
+            <span class="coin-balance" id="coinBalance" title="Coins - spend them in the shop (coming soon)">🪙 0</span>
             <span id="passXpText">0 / 1,500 XP</span>
           </div>
           <div class="pass-grid" id="passGrid"></div>
+          <div class="pass-overflow" id="passOverflow"></div>
         </div>
       </div>
     </div>
@@ -1380,19 +1438,41 @@
       </div>`;
     }
 
-    function renderPass(pass) {
+    // Monats-Pass (server/lib/progression.js): Stufen 5/10/../30 = Cosmetics
+    // dieses Monats, sonst Coins; darunter die endlose 30+-Leiste.
+    function renderPass(pass, coins) {
+      document.getElementById('passTitle').textContent = `${pass.label.split(' ')[0]} Pass`;
+      document.getElementById('passEndsIn').textContent = `ends in ${timeUntil(pass.endsAt)}`;
       document.getElementById('passTierText').textContent = `Tier ${pass.tier} / ${pass.tiers}`;
-      document.getElementById('passXpText').textContent = `${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP`;
+      document.getElementById('coinBalance').textContent = `🪙 ${fmtNum(coins)}`;
+      document.getElementById('passXpText').textContent = pass.tier >= pass.tiers
+        ? 'Pass complete'
+        : `${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP`;
       document.getElementById('passXpFill').style.width = `${(pass.tier / pass.tiers) * 100}%`;
       let html = '';
-      for (let t = 1; t <= pass.tiers; t++) {
-        const milestone = t % 5 === 0;
+      pass.rewards.forEach(r => {
+        const t = r.tier;
+        const milestone = r.type === 'cosmetic' || t % 5 === 0;
+        const unlocked = t <= pass.tier;
         const current = t === pass.tier + 1;
         const progress = current ? `<span class="tier-progress" style="width:${(pass.xpIntoTier / pass.xpPerTier) * 100}%"></span>` : '';
-        html += `<div class="pass-tier${milestone ? ' milestone' : ''}${t <= pass.tier ? ' unlocked' : ''}${current ? ' current' : ''}" title="Tier ${t} - reward to be decided${current ? ` (${pass.xpIntoTier} / ${pass.xpPerTier} XP)` : ''}">` +
-          `<span class="tier-num">${t}</span><span class="tier-reward">${t <= pass.tier ? '✓' : milestone ? '★' : '🔒'}</span>${progress}</div>`;
-      }
+        const reward = r.type === 'cosmetic'
+          ? `<span class="cos-border cos-${r.id} tier-cos"><span class="cos-fill"></span></span>`
+          : `<span class="tier-reward">🪙 ${r.amount}</span>`;
+        const label = r.type === 'cosmetic' ? `${r.name} (${r.cosmeticType})` : `${r.amount} coins`;
+        html += `<div class="pass-tier${milestone ? ' milestone' : ''}${unlocked ? ' unlocked' : ''}${current ? ' current' : ''}" title="Tier ${t} - ${label}${unlocked ? ' - unlocked' : ''}${current ? ` (${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP)` : ''}">` +
+          `<span class="tier-num">${t}</span>${reward}${unlocked ? '<span class="tier-check">✓</span>' : ''}${progress}</div>`;
+      });
       document.getElementById('passGrid').innerHTML = html;
+
+      const of = pass.overflow;
+      const done = pass.tier >= pass.tiers;
+      const el = document.getElementById('passOverflow');
+      el.classList.toggle('locked', !done);
+      el.title = `After tier ${pass.tiers}: +${of.coinsPerStep} coins every ${fmtNum(of.xpPerStep)} XP, as often as you like`;
+      el.innerHTML = `<span class="of-label">30+</span>` +
+        `<div class="xp-bar"><div class="xp-bar-fill" style="width:${done ? (of.xpInto / of.xpPerStep) * 100 : 0}%"></div></div>` +
+        `<span class="of-info">${done ? `${fmtNum(of.xpInto)} / ${fmtNum(of.xpPerStep)} XP · ${of.count}× claimed` : `🪙 +${of.coinsPerStep} every ${fmtNum(of.xpPerStep)} XP`}</span>`;
     }
 
     // LP-Konto (server/lib/progression.js creditLp): Gewinne fuellen 0-100,
@@ -1487,7 +1567,7 @@
           .map(q => questHtml(q, { reroll: q.id !== 'firstwin' && !q.champId }))
           .join('');
         document.getElementById('weeklyQuests').innerHTML = data.weeklies.map(q => questHtml(q)).join('');
-        renderPass(data.pass);
+        renderPass(data.pass, data.coins);
         renderRecentXp(data.recentGames || []);
         renderXpSources(data.xpSources, data.fullXpGamesPerDay);
         renderLpBank(data.lpBank);

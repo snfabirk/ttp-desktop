@@ -1,9 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 const { dataSubdir } = require('./dataPaths');
+const { getCosmetic, passCosmetic } = require('./cosmetics');
 
 // XP-/Level-System (v5.0.0, PROVISORISCH): Profil-Level (laeuft fuer immer,
-// jedes Level etwas teurer), Challenge-Pass (30 Stufen, pro Challenge neu),
+// jedes Level etwas teurer), Monats-Pass (seit v5.3.0: ein Pass pro
+// Kalendermonat, 30 Stufen + endlose 30+-Leiste, Coins + Cosmetics),
 // Daily/Weekly Quests. Seit v5.1.0 bringen gespielte Spiele (creditMatches)
 // und gewonnene LP (creditLp, "LP-Konto") echte XP - beides aufgerufen vom
 // Match-Scan in runSummaryBatch; Quests und Trophies vergeben noch nichts.
@@ -18,11 +20,11 @@ const { dataSubdir } = require('./dataPaths');
 // dataPaths.js). Factory Reset loescht es mit, "Reset Account Progress" in
 // den Settings NUR das hier.
 //
-// Anti-Abuse fuer den Challenge-Pass (Nutzerwunsch): XP kommen spaeter aus
-// einem Ledger, in dem jedes Match (matchId) und jede Quest/Trophy nur EINMAL
-// gutgeschrieben wird - unabhaengig von der Challenge. Wer nach einem Spiel
-// resettet und neu startet, bekommt fuer dasselbe Spiel nichts zweimal, und
-// Pass-Belohnungen werden pro Stufe nur einmal dauerhaft freigeschaltet.
+// Anti-Abuse (Nutzerwunsch): jedes Match (matchId) und jede Quest/Trophy
+// wird nur EINMAL gutgeschrieben (Ledger), und der Pass-Fortschritt haengt am
+// Kalendermonat, NICHT an der Challenge - ein Challenge-Reset setzt nichts
+// zurueck, es gibt also nichts, was man durch Reset+Neustart farmen koennte.
+// Jede Pass-Stufe vergibt ihre Belohnung pro Monat genau einmal.
 
 const XP_PER_GAME = {
   poolChamp: 500,       // einer der 1-3 gewaehlten Champions
@@ -45,6 +47,14 @@ const XP_PER_LP_BANK = 1000;
 
 const PASS_TIERS = 30;
 const PASS_XP_PER_TIER = 1500;
+// Pass-Belohnungen (Nutzerdesign 2026-10-09): Stufen 5/10/../30 = die 6
+// Cosmetics DIESES Monats (cosmetics.js), alle anderen Stufen = Coins. Nach
+// Stufe 30 gibt es endlos weiter Coins, aber jede 30+-Stufe kostet mehr XP,
+// damit der Coin-Grind langsamer ist als der Pass selbst.
+const COINS_PER_TIER = 100;
+const FALLBACK_COSMETIC_COINS = 300; // Monat ohne angelegte Cosmetics
+const OVERFLOW_XP_PER_STEP = 2500;
+const COINS_PER_OVERFLOW_STEP = 100;
 
 // XP fuer Level n -> n+1: jedes Level 100 XP teurer, ab Level 21 fix 4.000
 // (Nutzerentscheidung 2026-10-09 - vorher +250 ohne Deckel, viel zu steil).
@@ -159,6 +169,111 @@ function buildWeeklies(_state, { champions }) {
   ].map(q => ({ ...q, progress: 0, done: false }));
 }
 
+// ----- Monats-Pass -----
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function monthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+function monthLabel(key) {
+  const [y, m] = key.split('-').map(Number);
+  return `${MONTH_NAMES[m - 1]} ${y}`;
+}
+function monthEnd(key) {
+  const [y, m] = key.split('-').map(Number);
+  return new Date(y, m, 1, 0, 0, 0, 0); // 1. des Folgemonats, Ortszeit
+}
+
+function passProgress(xp) {
+  const tier = Math.min(PASS_TIERS, Math.floor(xp / PASS_XP_PER_TIER));
+  const overflowXp = Math.max(0, xp - PASS_TIERS * PASS_XP_PER_TIER);
+  return {
+    tier,
+    xpIntoTier: tier >= PASS_TIERS ? PASS_XP_PER_TIER : xp % PASS_XP_PER_TIER,
+    overflowCount: Math.floor(overflowXp / OVERFLOW_XP_PER_STEP),
+    overflowXpInto: overflowXp % OVERFLOW_XP_PER_STEP
+  };
+}
+
+function tierReward(month, tier) {
+  if (tier % 5 === 0) {
+    const cosmetic = passCosmetic(month, tier);
+    if (cosmetic) return { type: 'cosmetic', id: cosmetic.id, name: cosmetic.name, cosmeticType: cosmetic.type };
+    return { type: 'coins', amount: FALLBACK_COSMETIC_COINS };
+  }
+  return { type: 'coins', amount: COINS_PER_TIER };
+}
+
+// Vergibt alle Belohnungen bis zur aktuell erreichten Stufe, die in diesem
+// Monat noch nicht vergeben wurden. Cosmetics bleiben fuer immer im Inventar.
+function claimPassRewards(state, month) {
+  const pass = state.passes[month];
+  const prog = passProgress(pass.xp);
+  for (let t = pass.claimedTier + 1; t <= prog.tier; t++) {
+    const reward = tierReward(month, t);
+    if (reward.type === 'coins') state.coins += reward.amount;
+    else if (!state.inventory.includes(reward.id)) state.inventory.push(reward.id);
+  }
+  pass.claimedTier = Math.max(pass.claimedTier, prog.tier);
+  if (prog.overflowCount > pass.claimedOverflow) {
+    state.coins += (prog.overflowCount - pass.claimedOverflow) * COINS_PER_OVERFLOW_STEP;
+    pass.claimedOverflow = prog.overflowCount;
+  }
+}
+
+function addPassXp(state, month, xp) {
+  if (!state.passes[month]) state.passes[month] = { xp: 0, claimedTier: 0, claimedOverflow: 0 };
+  state.passes[month].xp += xp;
+  claimPassRewards(state, month);
+}
+
+function getPassOverview(state, now) {
+  const month = monthKey(now);
+  const pass = state.passes[month] || { xp: 0 };
+  const prog = passProgress(pass.xp);
+  const rewards = [];
+  for (let t = 1; t <= PASS_TIERS; t++) rewards.push({ tier: t, ...tierReward(month, t) });
+  return {
+    month,
+    label: monthLabel(month),
+    endsAt: monthEnd(month).toISOString(),
+    tiers: PASS_TIERS,
+    xpPerTier: PASS_XP_PER_TIER,
+    xp: pass.xp,
+    tier: prog.tier,
+    xpIntoTier: prog.xpIntoTier,
+    rewards,
+    overflow: {
+      xpPerStep: OVERFLOW_XP_PER_STEP,
+      coinsPerStep: COINS_PER_OVERFLOW_STEP,
+      count: prog.overflowCount,
+      xpInto: prog.overflowXpInto
+    }
+  };
+}
+
+// ----- Cosmetics / Coins -----
+function getCosmeticsState() {
+  const state = readState();
+  return {
+    coins: state.coins,
+    owned: state.inventory.map(getCosmetic).filter(Boolean),
+    equipped: state.equipped
+  };
+}
+
+function equipCosmetic(type, id) {
+  const state = readState();
+  if (id) {
+    const cosmetic = getCosmetic(id);
+    if (!cosmetic || cosmetic.type !== type) return { ok: false, error: 'Unknown cosmetic.' };
+    if (!state.inventory.includes(id)) return { ok: false, error: 'You do not own this cosmetic yet.' };
+  }
+  state.equipped = { ...state.equipped, [type]: id || null };
+  writeState(state);
+  return { ok: true, equipped: state.equipped };
+}
+
 // ----- Speicherung -----
 function filePath() {
   return path.join(dataSubdir('progression'), 'progression.json');
@@ -166,7 +281,9 @@ function filePath() {
 
 function emptyState() {
   return {
-    version: 1, totalXp: 0, ledger: [], rerolls: {}, passXp: 0, passChallengeStart: null,
+    version: 2, totalXp: 0, ledger: [], rerolls: {},
+    // passes['YYYY-MM'] = { xp, claimedTier, claimedOverflow }
+    passes: {}, coins: 0, inventory: [], equipped: { border: null },
     // lastLP: zuletzt gesehener LP-Stand (vergleichbar ueber Tiers hinweg,
     // siehe rankHistory.toComparableLP), progress: 0-99 auf dem Konto.
     lpBank: { puuid: null, lastLP: null, progress: 0, fills: 0, events: [] }
@@ -174,11 +291,23 @@ function emptyState() {
 }
 
 function readState() {
+  let raw;
   try {
-    return { ...emptyState(), ...JSON.parse(fs.readFileSync(filePath(), 'utf-8')) };
+    raw = JSON.parse(fs.readFileSync(filePath(), 'utf-8'));
   } catch (e) {
     return emptyState();
   }
+  const state = { ...emptyState(), ...raw };
+  // v5.1/5.2 -> v5.3: der Pass hing an der Challenge (passXp). Monats-Paesse
+  // aus dem Ledger (Spielzeitpunkt) + LP-Bank-Events (Zeitpunkt) neu aufbauen.
+  if (!raw.passes) {
+    delete state.passXp;
+    delete state.passChallengeStart;
+    state.ledger.forEach(g => addPassXp(state, monthKey(new Date(g.gameCreation)), g.xp));
+    state.lpBank.events.forEach(e => { if (e.xp) addPassXp(state, monthKey(new Date(e.at)), e.xp); });
+    state.version = 2;
+  }
+  return state;
 }
 
 function writeState(state) {
@@ -193,19 +322,10 @@ function resetState() {
 // aus dem Match-Scan seit Challenge-Start: [{ matchId, gameCreation,
 // category, win, kills, assists, champId }]. Jedes matchId landet genau
 // einmal im Ledger - ein erneuter Scan, ein Reset oder ein Neustart der
-// Challenge bringt fuer dasselbe Spiel nichts zweimal. Der Pass zaehlt nur
-// XP, die waehrend der aktuellen Challenge (challengeStart) gutgeschrieben
-// wurden.
-function syncPassChallenge(state, challengeStart) {
-  if (challengeStart && state.passChallengeStart !== challengeStart) {
-    state.passChallengeStart = challengeStart;
-    state.passXp = 0;
-  }
-}
-
-function creditMatches(games, { challengeStart }) {
+// Challenge bringt fuer dasselbe Spiel nichts zweimal. Die XP gehen in den
+// Pass des Monats, in dem das Spiel gespielt wurde.
+function creditMatches(games) {
   const state = readState();
-  syncPassChallenge(state, challengeStart);
   const credited = new Set(state.ledger.map(e => e.matchId));
   const gamesPerDay = {};
   state.ledger.forEach(e => { gamesPerDay[e.day] = (gamesPerDay[e.day] || 0) + 1; });
@@ -234,7 +354,7 @@ function creditMatches(games, { challengeStart }) {
       };
       state.ledger.push(entry);
       state.totalXp += xp;
-      state.passXp += xp;
+      addPassXp(state, monthKey(new Date(g.gameCreation)), xp);
       added.push(entry);
     });
 
@@ -249,10 +369,9 @@ function creditMatches(games, { challengeStart }) {
 // alle 15 Minuten gescannt wird, liegt meist hoechstens ein Spiel dazwischen
 // - lief die App mehrere Spiele lang nicht, wird nur der Netto-Gewinn dieser
 // Spiele gezaehlt. Account-Wechsel: neuer Ausgangspunkt, nichts gutgeschrieben.
-function creditLp({ puuid, currentLP, baselineLP, challengeStart }) {
+function creditLp({ puuid, currentLP, baselineLP }) {
   if (!puuid || typeof currentLP !== 'number' || Number.isNaN(currentLP)) return null;
   const state = readState();
-  syncPassChallenge(state, challengeStart);
   const bank = state.lpBank;
 
   if (bank.puuid !== puuid || bank.lastLP === null) {
@@ -274,7 +393,7 @@ function creditLp({ puuid, currentLP, baselineLP, challengeStart }) {
     const xp = filled * XP_PER_LP_BANK;
     bank.fills += filled;
     state.totalXp += xp;
-    state.passXp += xp;
+    if (xp) addPassXp(state, monthKey(new Date()), xp);
     event = { at: Date.now(), gained, filled, xp };
     bank.events.push(event);
     if (bank.events.length > 50) bank.events.splice(0, bank.events.length - 50);
@@ -306,6 +425,9 @@ function getLifetimeStats() {
     topChamps: Object.values(champCounts).sort((a, b) => b.games - a.games || b.wins - a.wins).slice(0, 3),
     lpGained: state.lpBank.events.reduce((n, e) => n + e.gained, 0),
     lpBankFills: state.lpBank.fills,
+    coins: state.coins,
+    equipped: state.equipped,
+    owned: state.inventory.map(getCosmetic).filter(Boolean),
     trackedSince: games.length ? Math.min(...games.map(g => g.gameCreation)) : null
   };
 }
@@ -326,8 +448,6 @@ function rerollDaily(context) {
 function getOverview(context) {
   const now = new Date();
   const state = readState();
-  const passXp = state.passXp;
-  const passTier = Math.min(PASS_TIERS, Math.floor(passXp / PASS_XP_PER_TIER));
   return {
     provisional: true,
     level: levelFromXp(state.totalXp),
@@ -339,12 +459,9 @@ function getOverview(context) {
     weeklies: buildWeeklies(state, context),
     dailyResetAt: nextDailyReset(now).toISOString(),
     weeklyResetAt: nextWeeklyReset(now).toISOString(),
-    pass: {
-      tiers: PASS_TIERS,
-      xpPerTier: PASS_XP_PER_TIER,
-      tier: passTier,
-      xpIntoTier: passTier >= PASS_TIERS ? PASS_XP_PER_TIER : passXp % PASS_XP_PER_TIER
-    },
+    pass: getPassOverview(state, now),
+    coins: state.coins,
+    equipped: state.equipped,
     lpBank: {
       size: LP_BANK_SIZE,
       progress: state.lpBank.progress,
@@ -369,6 +486,8 @@ module.exports = {
   creditMatches,
   creditLp,
   getLifetimeStats,
+  getCosmeticsState,
+  equipCosmetic,
   rerollDaily,
   resetState
 };

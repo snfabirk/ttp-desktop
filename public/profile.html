@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="cosmetics.css">
   <script src="theme.js"></script>
   <script src="update-indicator.js"></script>
   <script src="changelog.js"></script>
@@ -59,15 +60,11 @@
       gap: 20px;
       padding: 18px 24px;
     }
-    .hero-icon-wrap {
-      flex-shrink: 0;
+    /* Profilbild im ausgeruesteten Border (cosmetics.css). */
+    .hero-frame {
       width: 92px;
       height: 92px;
-      border-radius: 50%;
-      border: 3px solid var(--gold);
-      background: color-mix(in srgb, var(--gold) 8%, transparent);
-      box-shadow: 0 0 16px color-mix(in srgb, var(--gold) 25%, transparent);
-      overflow: hidden;
+      --cos-width: 4px;
     }
     .hero-icon {
       width: 100%;
@@ -82,7 +79,25 @@
       flex: 1;
       min-width: 0;
     }
+    .hero-top {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .coin-pill {
+      flex-shrink: 0;
+      margin-left: auto;
+      padding: 2px 10px;
+      border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent);
+      border-radius: 11px;
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.85rem;
+      font-variant-numeric: tabular-nums;
+      cursor: help;
+    }
     .hero-name {
+      min-width: 0;
       color: var(--gold);
       font-family: 'Cinzel', Georgia, serif;
       font-size: 1.6rem;
@@ -206,20 +221,46 @@
       font-size: 0.82rem;
       font-style: italic;
     }
-    .cosmetic-slots {
-      display: flex;
-      gap: 10px;
+    .cos-list {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
     }
-    .cosmetic-slot {
-      flex: 1;
-      height: 64px;
-      border: 1px dashed var(--text-faint);
+    .cos-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 4px;
+      border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
       border-radius: 8px;
+      background: color-mix(in srgb, var(--input-bg) 55%, transparent);
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.72rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+    .cos-item:hover { border-color: var(--border-hover); color: var(--text); }
+    .cos-item.equipped {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: color-mix(in srgb, var(--gold) 12%, transparent);
+    }
+    .cos-item .cos-border { width: 38px; height: 38px; }
+    .cos-item.locked {
+      cursor: help;
+      border-style: dashed;
+      color: var(--text-faint);
+    }
+    .cos-item.locked .lock {
+      width: 38px;
+      height: 38px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--text-faint);
-      font-size: 1.2rem;
+      font-size: 1.1rem;
     }
 
     /* "?"-Hinweis wie auf challenge.html */
@@ -288,9 +329,12 @@
 
   <div class="content">
     <div class="card hero">
-      <div class="hero-icon-wrap" title="Profile borders unlock through the Challenge Pass (coming soon)"><img id="heroIcon" class="hero-icon" src="" alt=""></div>
+      <span class="cos-border cos-none hero-frame" id="heroFrame"><img id="heroIcon" class="hero-icon" src="" alt=""></span>
       <div class="hero-main">
-        <div class="hero-name" id="heroName">No summoner loaded yet</div>
+        <div class="hero-top">
+          <div class="hero-name" id="heroName">No summoner loaded yet</div>
+          <span class="coin-pill" id="coinPill" title="Coins from the monthly pass - spend them in the shop (coming soon)">🪙 0</span>
+        </div>
         <div class="hero-since" id="heroSince"></div>
         <div class="level-line" title="Profile level - keeps growing across all challenges">
           <span class="level-pill" id="levelPill">Level 1</span>
@@ -328,12 +372,8 @@
         <div id="topChamps"><p class="empty">No games yet.</p></div>
       </div>
       <div class="card">
-        <h3>Cosmetics <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Borders and other profile extras will unlock through the Challenge Pass. Coming soon.</span></span></h3>
-        <div class="cosmetic-slots">
-          <div class="cosmetic-slot" title="Border - locked">🔒</div>
-          <div class="cosmetic-slot" title="Banner - locked">🔒</div>
-          <div class="cosmetic-slot" title="Title - locked">🔒</div>
-        </div>
+        <h3>Borders <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Click a border to equip it. Borders unlock on tiers 5, 10, 15, 20, 25 and 30 of the monthly pass and stay yours forever. More cosmetics and a shop are coming.</span></span></h3>
+        <div class="cos-list" id="cosList"></div>
       </div>
     </div>
     <p class="status" id="status"></p>
@@ -352,11 +392,51 @@
       try { return JSON.parse(text); } catch (e) { return { error: text || `HTTP ${res.status}` }; }
     }
 
+    // Borders: "Default" + alle eigenen; Klick = ausruesten.
+    function applyBorder(id) {
+      document.getElementById('heroFrame').className = `cos-border hero-frame cos-${id || 'none'}`;
+    }
+
+    function renderBorders(owned, equippedId) {
+      const borders = owned.filter(c => c.type === 'border');
+      const items = [{ id: null, name: 'Default' }, ...borders];
+      document.getElementById('cosList').innerHTML = items.map(c => `
+        <div class="cos-item${(c.id || null) === (equippedId || null) ? ' equipped' : ''}" data-equip="${c.id || ''}" title="${c.id ? `Equip ${c.name}` : 'Plain gold border'}">
+          <span class="cos-border cos-${c.id || 'none'}"><span class="cos-fill"></span></span>
+          <span>${c.name}</span>
+        </div>`).join('') +
+        (borders.length < 6 ? `<div class="cos-item locked" title="Unlock more borders in the monthly pass"><span class="lock">🔒</span><span>More in the pass</span></div>` : '');
+    }
+
+    document.getElementById('cosList').addEventListener('click', async e => {
+      const item = e.target.closest('[data-equip]');
+      if (!item || item.classList.contains('equipped')) return;
+      const id = item.dataset.equip || null;
+      try {
+        const res = await fetch('/api/cosmetics/equip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'border', id })
+        });
+        const data = await parseApiResponse(res);
+        if (!res.ok) throw new Error(data.error || 'Unknown error');
+        applyBorder(data.equipped.border);
+        document.querySelectorAll('#cosList .cos-item').forEach(el => {
+          el.classList.toggle('equipped', el.dataset.equip !== undefined && (el.dataset.equip || null) === (data.equipped.border || null));
+        });
+      } catch (err) {
+        statusEl.textContent = `Could not equip: ${err.message}`;
+      }
+    });
+
     function renderStats(d) {
       const { level, xpIntoLevel, xpForNextLevel } = d.level;
       setText('levelPill', `Level ${level}`);
       document.getElementById('levelFill').style.width = `${(xpIntoLevel / xpForNextLevel) * 100}%`;
       setText('levelText', `${fmtNum(xpIntoLevel)} / ${fmtNum(xpForNextLevel)} XP`);
+      setText('coinPill', `🪙 ${fmtNum(d.coins)}`);
+      applyBorder(d.equipped && d.equipped.border);
+      renderBorders(d.owned || [], d.equipped && d.equipped.border);
 
       const c = d.challenges;
       setText('stChallenges', c.started);

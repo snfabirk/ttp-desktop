@@ -1,0 +1,121 @@
+/* Profil-Cosmetics (v5.3.0) - gemeinsam von profile.html, overview.html und
+   challenge.html genutzt. Klasse = "cos-" + Cosmetic-id aus
+   server/lib/cosmetics.js.
+
+   Aufbau: <span class="cos-border cos-..."><img ...></span>. Der Rahmen ist
+   der sichtbare Rand (padding) des Wrappers; der Hintergrund liegt auf
+   ::before, damit er sich (bei den animierten) drehen kann, ohne das Bild
+   mitzudrehen. Die Form (rund/eckig) bestimmt der Wrapper per border-radius. */
+
+.cos-border {
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+  padding: var(--cos-width, 3px);
+  border-radius: 50%;
+  overflow: hidden;
+  isolation: isolate;
+  flex-shrink: 0;
+}
+.cos-border > img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+/* Platzhalter-Fuellung statt Bild (Mini-Vorschau im Pass, Inventar). */
+.cos-border > .cos-fill {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--input-bg);
+}
+.cos-border::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  z-index: 0;
+  background: var(--gold);
+}
+
+/* Kein Cosmetic ausgeruestet: schlichter Gold-Rand wie bisher. */
+.cos-none::before { background: var(--gold); }
+
+/* ----- Oktober-Pass 2026 ----- */
+
+/* Stufe 5: Bronze Ring - matter Metall-Verlauf */
+.cos-border-2026-10-bronze::before {
+  background: linear-gradient(135deg, #5e3716 0%, #c98b4f 30%, #f0c08c 45%, #8a5a2b 65%, #d6995c 85%, #5e3716 100%);
+}
+
+/* Stufe 10: Ember - Glut, pulsierendes Leuchten */
+.cos-border-2026-10-ember {
+  animation: cos-ember-glow 2.4s ease-in-out infinite;
+}
+.cos-border-2026-10-ember::before {
+  background: conic-gradient(from 0deg, #ff4d1a, #ffb347, #ff6a00, #c41e00, #ff9a3c, #ff4d1a);
+  animation: cos-spin 9s linear infinite;
+}
+@keyframes cos-ember-glow {
+  0%, 100% { box-shadow: 0 0 6px 1px rgba(255, 106, 0, 0.45); }
+  50% { box-shadow: 0 0 16px 4px rgba(255, 140, 40, 0.75); }
+}
+
+/* Stufe 15: Frostbite - eisiger Verlauf mit Schimmer */
+.cos-border-2026-10-frost {
+  box-shadow: 0 0 10px rgba(140, 210, 255, 0.45);
+}
+.cos-border-2026-10-frost::before {
+  background: linear-gradient(120deg, #2a6fa8 0%, #bfe9ff 25%, #ffffff 32%, #7fc8f0 45%, #2a6fa8 60%, #e8f7ff 80%, #2a6fa8 100%);
+  background-size: 200% 200%;
+  animation: cos-shimmer 4s ease-in-out infinite;
+}
+@keyframes cos-shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Stufe 20: Verdant - doppelter gruener Ring */
+.cos-border-2026-10-verdant {
+  box-shadow: 0 0 0 2px #14301a, 0 0 0 4px #5fbf6f, 0 0 10px 4px rgba(95, 191, 111, 0.35);
+}
+.cos-border-2026-10-verdant::before {
+  background: linear-gradient(160deg, #1f6b33, #8be09a 40%, #2e8a45 70%, #b9f0c2);
+}
+
+/* Stufe 25: Void Rift - drehender violetter Strudel */
+.cos-border-2026-10-void {
+  box-shadow: 0 0 14px 2px rgba(150, 70, 255, 0.55);
+}
+.cos-border-2026-10-void::before {
+  background: conic-gradient(from 0deg, #12002a, #8a2be2, #e0b3ff, #3d0a7a, #b14bff, #12002a);
+  animation: cos-spin 5s linear infinite;
+}
+
+/* Stufe 30: Golden Pony - drehendes Gold mit pulsierendem Glanz */
+.cos-border-2026-10-crown {
+  --cos-width: 4px;
+  animation: cos-crown-glow 2.8s ease-in-out infinite;
+}
+.cos-border-2026-10-crown::before {
+  background: conic-gradient(from 0deg, #7a5a12, #ffe28a, #c8962c, #fff6cf, #a87a1c, #ffd257, #7a5a12);
+  animation: cos-spin 6s linear infinite;
+}
+@keyframes cos-crown-glow {
+  0%, 100% { box-shadow: 0 0 8px 2px rgba(255, 210, 90, 0.5); }
+  50% { box-shadow: 0 0 20px 6px rgba(255, 226, 138, 0.85); }
+}
+
+@keyframes cos-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cos-border, .cos-border::before { animation: none !important; }
+}

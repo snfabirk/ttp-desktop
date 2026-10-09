@@ -1,5 +1,22 @@
 # Internal Changelog
 
+## 5.3.0 — 2026-10-09
+
+- Monthly pass (progression.js): `state.passes['YYYY-MM'] = { xp, claimedTier,
+  claimedOverflow }`, XP goes to the month of the game (LP bank: month of the
+  fill). No challenge reset anymore. Tiers 5/10/../30 = that month's
+  cosmetics from the new `server/lib/cosmetics.js` (fallback 300 coins if a
+  month has none), other tiers 100 coins, 30+ = 100 coins per 2,500 XP.
+  Rewards claimed once per tier per month. Old `passXp` state is migrated
+  by rebuilding passes from the ledger + LP bank events.
+- Coins, inventory, equipped border in progression state;
+  `POST /api/cosmetics/equip`. 6 test borders for October 2026 in
+  `public/cosmetics.css` (class `cos-<id>`, wrapper `.cos-border`).
+- challenge.html: pass box shows month, ends-in, coin balance, reward per
+  tier, 30+ bar; box fills the column height evenly (rows 1fr).
+- profile.html: border shown on the profile icon, coin pill, "Borders" list
+  to equip; overview profile card shows the equipped border.
+
 ## 5.2.2 — 2026-10-09
 
 - Overview "Challenge & Pass" card: tier and LP Bank separated by a thin

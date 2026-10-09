@@ -472,14 +472,13 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
     // einmal (Ledger in progression.js), egal wie oft gescannt wird.
     let xpCredited = [];
     try {
-      xpCredited = progression.creditMatches(xpGames, { challengeStart: since });
+      xpCredited = progression.creditMatches(xpGames);
       if (rank.current) {
         const startSnapshot = findSnapshotAtOrBefore(readHistory(puuid), startTime * 1000);
         progression.creditLp({
           puuid,
           currentLP: toComparableLP(rank.current.tier, rank.current.rank, rank.current.leaguePoints),
-          baselineLP: startSnapshot ? toComparableLP(startSnapshot.tier, startSnapshot.rank, startSnapshot.leaguePoints) : null,
-          challengeStart: since
+          baselineLP: startSnapshot ? toComparableLP(startSnapshot.tier, startSnapshot.rank, startSnapshot.leaguePoints) : null
         });
       }
     } catch (e) {
@@ -743,6 +742,14 @@ app.get('/api/profile-stats', (req, res) => {
       firstStarted: entries.length ? entries[entries.length - 1].since : null // listEntries: neueste zuerst
     }
   });
+});
+
+// Cosmetics ausruesten (nur eigene) - id null = ablegen.
+app.post('/api/cosmetics/equip', (req, res) => {
+  const { type, id } = req.body || {};
+  if (!type) return res.status(400).json({ error: 'type is required.' });
+  const result = progression.equipCosmetic(type, id || null);
+  res.status(result.ok ? 200 : 400).json(result);
 });
 
 // "Reset Account Progress" in den Settings - NUR Level/XP/Quests/Pass,
