@@ -44,8 +44,8 @@
   <div class="item"><div class="theme" id="starfall"><canvas></canvas>
     <div class="mock" style="background:rgba(10,15,42,.55);border:1px solid #2c3a6e;color:#e8ecff"><h4 style="color:#ffd86b">Today</h4><div><span>First Win of the Day</span><span style="color:#ffd86b">+400 XP</span></div><div><span>Champion of the Day</span><span style="color:#ffd86b">+500 XP</span></div></div></div>
     <b>Starfall</b><small>Theme · Fancy</small></div>
-  <div class="item"><div class="theme" id="koi"><canvas></canvas>
-    <div class="mock" style="background:rgba(10,30,26,.55);border:1px solid #2c5245;color:#eaf6ef"><h4 style="color:#ff9a6b">Today</h4><div><span>First Win of the Day</span><span style="color:#ff9a6b">+400 XP</span></div><div><span>Champion of the Day</span><span style="color:#ff9a6b">+500 XP</span></div></div></div>
+  <div class="item"><div class="theme" id="koi" style="border-color:#5a5d63"><canvas></canvas>
+    <div class="mock" style="background:rgba(26,26,28,.6);border:1px solid #5a5d63;color:#f2f2f2"><h4 style="color:#e0303a">Today</h4><div><span>First Win of the Day</span><span style="color:#e0303a">+400 XP</span></div><div><span>Champion of the Day</span><span style="color:#e0303a">+500 XP</span></div></div></div>
     <b>Koi Garden</b><small>Theme · Fancy</small></div>
 </div>
 
@@ -106,15 +106,15 @@ const draws = [];
 // ======================= THEME: Koi Garden =======================
 (() => {
   const el = document.getElementById('koi'), W = el.offsetWidth, H = el.offsetHeight, c = setup(el.querySelector('canvas'), W, H);
-  const koi = Array.from({ length: 6 }, (_, i) => ({ x: rand(0, W), y: rand(0, H), a: rand(0, 6.28), v: rand(18, 32), turn: rand(-.3, .3), len: rand(34, 52), col: i % 3 === 0 ? ['#f4f1ea', '#e8481c'] : i % 3 === 1 ? ['#f09030', '#f8e6c8'] : ['#f4f1ea', '#1a1a1a'], ph: rand(0, 6) }));
+  const koi = Array.from({ length: 6 }, (_, i) => ({ x: rand(0, W), y: rand(0, H), a: rand(0, 6.28), v: rand(18, 32), turn: rand(-.3, .3), len: rand(34, 52), col: i % 3 === 0 ? ['#f4f4f2', '#d0222c'] : i % 3 === 1 ? ['#c81f28', '#f4f4f2'] : ['#ececea', '#1c1c1e'], ph: rand(0, 6) }));
   const pads = Array.from({ length: 7 }, () => ({ x: rand(0, W), y: rand(0, H), r: rand(16, 30), rot: rand(0, 6), flower: Math.random() < .35 }));
   const ripples = [];
   draws.push((t, dt) => {
-    const g = c.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * .7); g.addColorStop(0, '#13403a'); g.addColorStop(1, '#071a17');
+    const g = c.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * .7); g.addColorStop(0, '#55595f'); g.addColorStop(1, '#1b1c1f');
     c.fillStyle = g; c.fillRect(0, 0, W, H);
     // Lichtflecken auf dem Wasser
     c.save(); c.globalCompositeOperation = 'lighter';
-    for (let k = 0; k < 8; k++) { const x = (k * 97 + t * 8) % (W + 80) - 40, y = (k * 53) % H; c.fillStyle = 'rgba(120, 200, 170, .03)'; c.beginPath(); c.ellipse(x, y, 60, 14, .4, 0, 7); c.fill(); }
+    for (let k = 0; k < 8; k++) { const x = (k * 97 + t * 8) % (W + 80) - 40, y = (k * 53) % H; c.fillStyle = 'rgba(255, 255, 255, .03)'; c.beginPath(); c.ellipse(x, y, 60, 14, .4, 0, 7); c.fill(); }
     c.restore();
     // Kois: schwimmen, wackeln mit dem Schwanz, wenden an den Raendern
     koi.forEach(k => {
@@ -141,13 +141,13 @@ const draws = [];
     // Seerosenblaetter (ueber den Fischen)
     pads.forEach(p => {
       c.save(); c.translate(p.x + Math.sin(t * .3 + p.rot) * 2, p.y); c.rotate(p.rot + Math.sin(t * .2 + p.r) * .05);
-      c.fillStyle = '#2f6b3c'; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, p.r, .25, Math.PI * 2 - .05); c.closePath(); c.fill();
-      c.strokeStyle = 'rgba(160, 220, 150, .25)'; c.lineWidth = 1; for (let k = 0; k < 6; k++) { const a = .5 + k * 1; c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(a) * p.r * .9, Math.sin(a) * p.r * .9); c.stroke(); }
-      if (p.flower) { c.fillStyle = '#ffd0e0'; for (let k = 0; k < 6; k++) { c.save(); c.rotate(k * Math.PI / 3 + t * .05); c.beginPath(); c.ellipse(p.r * .1, 0, p.r * .32, p.r * .12, 0, 0, 7); c.fill(); c.restore(); } c.fillStyle = '#ffd86b'; c.beginPath(); c.arc(0, 0, p.r * .12, 0, 7); c.fill(); }
+      c.fillStyle = '#34363b'; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, p.r, .25, Math.PI * 2 - .05); c.closePath(); c.fill();
+      c.strokeStyle = 'rgba(255, 255, 255, .14)'; c.lineWidth = 1; for (let k = 0; k < 6; k++) { const a = .5 + k * 1; c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(a) * p.r * .9, Math.sin(a) * p.r * .9); c.stroke(); }
+      if (p.flower) { c.fillStyle = '#f6f6f4'; for (let k = 0; k < 6; k++) { c.save(); c.rotate(k * Math.PI / 3 + t * .05); c.beginPath(); c.ellipse(p.r * .1, 0, p.r * .32, p.r * .12, 0, 0, 7); c.fill(); c.restore(); } c.fillStyle = '#d0222c'; c.beginPath(); c.arc(0, 0, p.r * .12, 0, 7); c.fill(); }
       c.restore();
     });
     // Ringe auf dem Wasser
-    for (let i = ripples.length - 1; i >= 0; i--) { const r = ripples[i]; r.r += dt * 26; r.life -= dt * .7; if (r.life <= 0) { ripples.splice(i, 1); continue; } c.strokeStyle = `rgba(200, 240, 220, ${.35 * r.life})`; c.lineWidth = 1; c.beginPath(); c.arc(r.x, r.y, r.r, 0, 7); c.stroke(); }
+    for (let i = ripples.length - 1; i >= 0; i--) { const r = ripples[i]; r.r += dt * 26; r.life -= dt * .7; if (r.life <= 0) { ripples.splice(i, 1); continue; } c.strokeStyle = `rgba(245, 245, 245, ${.35 * r.life})`; c.lineWidth = 1; c.beginPath(); c.arc(r.x, r.y, r.r, 0, 7); c.stroke(); }
   });
 })();
 
