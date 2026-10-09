@@ -365,7 +365,8 @@ async function readChallengeStateFromRenderer() {
         challengeLevel: localStorage.getItem('ttp_challenge_level') || '',
         lpGoalTier: localStorage.getItem('ttp_lp_goal_tier') || '',
         lpGoalDivision: localStorage.getItem('ttp_lp_goal_division') || '',
-        lpGoalLp: localStorage.getItem('ttp_lp_goal_lp') || ''
+        lpGoalLp: localStorage.getItem('ttp_lp_goal_lp') || '',
+        xpMultiplierRaw: localStorage.getItem('ttp_xp_multiplier') || ''
       })
     `);
     return JSON.parse(raw);
@@ -406,7 +407,9 @@ async function backgroundStatsRefresh() {
         champions: champsWithKeys,
         since: state.since,
         mainRole: state.role,
-        secondRole: state.secondRole
+        secondRole: state.secondRole,
+        xpMultiplier: (() => { try { return (JSON.parse(state.xpMultiplierRaw || 'null') || {}).total || null; } catch (e) { return null; } })(),
+        challengeLevel: state.challengeLevel
       })
     });
     const startData = await startRes.json();

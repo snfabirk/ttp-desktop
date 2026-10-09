@@ -1,5 +1,20 @@
 # Internal Changelog
 
+## 5.1.0 — 2026-10-09
+
+- Games now actually award XP (first real XP source). `progression.creditMatches()`
+  is called at the end of every `runSummaryBatch` scan (Overview/Profile/Role
+  page + 15-min background refresh) with every non-remake ranked game since
+  challenge start. Per game: category XP (pool 500 / main other 300 / second
+  250 / off 50) + win 150 + 10 per kill + 5 per assist, x locked challenge
+  multiplier (fallback: difficulty only), halved from game 6 of the quest
+  day (06:00 reset). Each matchId credited once ever (ledger), so the user's
+  pre-existing games since challenge start get their XP retroactively.
+- Pass XP resets when the challenge start changes; level XP never does.
+- Profile: new "Recent XP" card (last 5 credited games, breakdown in tooltip),
+  "games today" pips now real, kill/assist rows split in "How to Earn XP".
+  Quests and trophies still don't award XP.
+
 ## 5.0.3 — 2026-10-08
 
 - Removed the temporary pass demo again (`DEMO_PASS_XP` gone). The v5.0.2

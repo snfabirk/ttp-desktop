@@ -337,7 +337,7 @@ async function buildRankOverview(puuid, sinceMs) {
 // Hintergrund-Job, damit das Frontend per Polling einen echten
 // Live-Fortschritt anzeigen kann, statt auf einen einzigen, potenziell
 // minutenlangen Request zu warten.
-async function runSummaryBatch(jobId, { puuid, champions, since, startTime, mainRole, secondRole }) {
+async function runSummaryBatch(jobId, { puuid, champions, since, startTime, mainRole, secondRole, xpMultiplier }) {
   try {
     const matchIds = await getAllMatchIds(
       puuid,
@@ -381,6 +381,7 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
       off: { wins: 0, losses: 0, champs: {} }
     };
     const riotId = await resolveRiotId(puuid, config.apiKey);
+    const xpGames = []; // fuer progression.creditMatches() am Ende
 
     for (const matchId of matchIds) {
       const match = await getMatch(matchId, config.apiKey, REGION);
@@ -409,6 +410,17 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
         cat.champs[myKey] = { key: myKey, id: info ? info.id : '', name: info ? info.name : (me.championName || myKey), wins: 0, losses: 0 };
       }
       if (me.win) cat.champs[myKey].wins += 1; else cat.champs[myKey].losses += 1;
+
+      xpGames.push({
+        matchId,
+        gameCreation: match.info.gameCreation,
+        category: { mainPony: 'poolChamp', mainOther: 'sameRoleOther', second: 'secondRole', off: 'offRole' }[category],
+        win: me.win,
+        kills: me.kills,
+        deaths: me.deaths,
+        assists: me.assists,
+        champId: cat.champs[myKey].id
+      });
 
       const bucket = buckets[myKey];
       if (!bucket) continue; // nicht einer der gesuchten Champions
@@ -455,6 +467,15 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
 
     const streaks = computeStreaks(overallGames);
 
+    // XP erst nach dem vollstaendigen Scan gutschreiben - jedes Spiel nur
+    // einmal (Ledger in progression.js), egal wie oft gescannt wird.
+    let xpCredited = [];
+    try {
+      xpCredited = progression.creditMatches(xpGames, { challengeStart: since, multiplier: xpMultiplier });
+    } catch (e) {
+      console.error('XP credit failed:', e.message);
+    }
+
     // Champs pro Kategorie als Liste, meistgespielt zuerst (bei Gleichstand
     // mehr Wins zuerst).
     for (const cat of Object.values(roleStats)) {
@@ -470,6 +491,7 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
       streaks,
       roleBreakdown,
       roleStats,
+      xpCredited,
       overall: {
         wins: overallWins,
         losses: overallLosses,
@@ -483,7 +505,7 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
 }
 
 app.post('/api/summary-batch/start', requireApiKey, (req, res) => {
-  const { puuid, champions, since, mainRole, secondRole } = req.body || {};
+  const { puuid, champions, since, mainRole, secondRole, xpMultiplier, challengeLevel } = req.body || {};
   if (!puuid || !champions) {
     return res.status(400).json({ error: 'puuid and champions are required.' });
   }
@@ -519,7 +541,10 @@ app.post('/api/summary-batch/start', requireApiKey, (req, res) => {
     since,
     startTime,
     mainRole: mainRole || '',
-    secondRole: secondRole || ''
+    secondRole: secondRole || '',
+    // Beim Challenge-Start festgeschriebener Multiplikator; Challenges von
+    // vor v5.0 haben keinen -> nur die Schwierigkeit (wie auf profile.html).
+    xpMultiplier: Number(xpMultiplier) || progression.DIFFICULTY_MULTIPLIER[challengeLevel] || 1
   });
   res.json({ jobId });
 });

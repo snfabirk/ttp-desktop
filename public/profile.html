@@ -623,6 +623,56 @@
       font-family: 'Cinzel', Georgia, serif;
       font-size: 1.05rem;
     }
+    .recent-xp-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: help;
+    }
+    .recent-xp-row:last-child { border-bottom: none; }
+    .recent-xp-icon {
+      width: 30px;
+      height: 30px;
+      flex: 0 0 30px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .recent-xp-icon img { width: 100%; height: 100%; display: block; }
+    .recent-xp-text {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      font-family: Georgia, serif;
+    }
+    .recent-xp-title { font-size: 0.85rem; color: var(--text); }
+    .recent-xp-title .win { color: var(--green); }
+    .recent-xp-title .loss { color: var(--red); }
+    .recent-xp-desc { font-size: 0.75rem; color: var(--text-dim); }
+    .recent-xp-tags { display: flex; gap: 4px; }
+    .xp-tag {
+      padding: 1px 6px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: Georgia, serif;
+      font-size: 0.68rem;
+      color: var(--text-dim);
+    }
+    .recent-xp-amount {
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+    .recent-xp-empty {
+      margin: 0;
+      font-family: Georgia, serif;
+      font-size: 0.8rem;
+      color: var(--text-faint);
+    }
     .provisional-tag {
       display: inline-block;
       margin-left: 8px;
@@ -735,6 +785,13 @@
         </div>
         <div class="prog-card">
           <div class="prog-card-head">
+            <h3>Recent XP</h3>
+            <span class="reset-in">last 5 games</span>
+          </div>
+          <div class="recent-xp" id="recentXp"></div>
+        </div>
+        <div class="prog-card">
+          <div class="prog-card-head">
             <h3>How to Earn XP</h3>
           </div>
           <table class="xp-sources" id="xpSources"></table>
@@ -748,6 +805,10 @@
   </div>
 
   <script>
+    function lockedXpMultiplier() {
+      try { return (JSON.parse(localStorage.getItem('ttp_xp_multiplier') || 'null') || {}).total || null; } catch (e) { return null; }
+    }
+
     const DDRAGON_VERSION = '16.17.1';
     const statusEl = document.getElementById('profileStatus');
     const accountOverviewIcon = document.getElementById('accountOverviewIcon');
@@ -1197,7 +1258,11 @@
             champions: keyed.map(c => ({ key: c.key, role: c.role || '' })),
             since,
             mainRole: ls('ttp_pool_role'),
-            secondRole: ls('ttp_pool_second_role')
+            secondRole: ls('ttp_pool_second_role'),
+            // XP-Gutschrift (server/lib/progression.js): beim Start
+            // festgeschriebener Multiplikator, sonst nur die Schwierigkeit.
+            xpMultiplier: lockedXpMultiplier(),
+            challengeLevel: (() => { try { return localStorage.getItem('ttp_challenge_level') || ''; } catch (e) { return ''; } })()
           })
         });
         const startData = await parseApiResponse(startRes);
@@ -1215,6 +1280,8 @@
 
         statusEl.textContent = '';
         renderAccountOverview(result);
+        // Der Scan hat eventuell neue Spiele gutgeschrieben -> XP neu laden.
+        loadProgression();
         loadLpGraph(account.puuid, since, result.rank);
       } catch (e) {
         statusEl.textContent = `Could not load profile: ${e.message}`;
@@ -1313,6 +1380,46 @@
       }
     }
 
+    const CATEGORY_LABELS = {
+      poolChamp: 'Pool champion',
+      sameRoleOther: 'Main role, other champ',
+      secondRole: 'Second role',
+      offRole: 'Off-role'
+    };
+
+    // Letzte gutgeschriebene Spiele mit Aufschluesselung im Tooltip.
+    function renderRecentXp(games) {
+      const el = document.getElementById('recentXp');
+      if (!games.length) {
+        el.innerHTML = '<p class="recent-xp-empty">No games credited yet - XP is added automatically after each ranked game (with the next refresh).</p>';
+        return;
+      }
+      el.innerHTML = games.map(g => {
+        const b = g.base;
+        const tip = [
+          `${CATEGORY_LABELS[g.category] || g.category}: +${b.game}`,
+          b.win ? `Win bonus: +${b.win}` : null,
+          `${g.kills} kills: +${b.kills}`,
+          `${g.assists} assists: +${b.assists}`,
+          `Multiplier: ×${g.multiplier.toFixed(2)}`,
+          g.halved ? `Game ${g.gameOfDay} of the day: ½ XP` : null
+        ].filter(Boolean).join('&#10;');
+        const icon = g.champId
+          ? `<img src="https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${g.champId}.png" alt="">`
+          : '';
+        const when = new Date(g.gameCreation).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+        return `<div class="recent-xp-row" title="${tip}">
+          <span class="recent-xp-icon">${icon}</span>
+          <span class="recent-xp-text">
+            <span class="recent-xp-title"><span class="${g.win ? 'win' : 'loss'}">${g.win ? 'Win' : 'Loss'}</span> · ${CATEGORY_LABELS[g.category] || g.category}</span>
+            <span class="recent-xp-desc">${g.kills} / ${g.deaths} / ${g.assists} · ${when}</span>
+          </span>
+          <span class="recent-xp-tags">${g.multiplier !== 1 ? `<span class="xp-tag">×${g.multiplier.toFixed(2)}</span>` : ''}${g.halved ? '<span class="xp-tag">½</span>' : ''}</span>
+          <span class="recent-xp-amount">+${fmtNum(g.xp)} XP</span>
+        </div>`;
+      }).join('');
+    }
+
     function renderXpSources(src, fullXpGames) {
       const rows = [
         ['Game with one of your pool champions', src.perGame.poolChamp],
@@ -1320,7 +1427,8 @@
         ['Game in your second role', src.perGame.secondRole],
         ['Off-role game', src.perGame.offRole],
         ['Win bonus (any game)', src.winBonus],
-        ['Per kill + assist', src.perKillParticipation],
+        ['Per kill', src.perKill],
+        ['Per assist', src.perAssist],
         ['Trophy unlocked (temporary ones excluded)', src.perTrophy],
         [`After ${fullXpGames} games a day`, '½ XP']
       ];
@@ -1349,6 +1457,7 @@
           .join('');
         document.getElementById('weeklyQuests').innerHTML = data.weeklies.map(q => questHtml(q)).join('');
         renderPass(data.pass);
+        renderRecentXp(data.recentGames || []);
         renderXpSources(data.xpSources, data.fullXpGamesPerDay);
         renderMultiplier(data.multiplier);
       } catch (e) {

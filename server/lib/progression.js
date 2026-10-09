@@ -4,9 +4,9 @@ const { dataSubdir } = require('./dataPaths');
 
 // XP-/Level-System (v5.0.0, PROVISORISCH): Profil-Level (laeuft fuer immer,
 // jedes Level etwas teurer), Challenge-Pass (30 Stufen, pro Challenge neu),
-// Daily/Weekly Quests. In dieser Version wird noch KEINE XP vergeben - alles
-// wird nur mit Stand 0 angezeigt, damit Aufbau und Zahlen besprochen werden
-// koennen. Alle Zahlen hier sind Platzhalter.
+// Daily/Weekly Quests. Seit v5.1.0 bringen gespielte Spiele echte XP
+// (creditMatches, aufgerufen vom Match-Scan in runSummaryBatch); Quests und
+// Trophies vergeben noch nichts. Alle Zahlen hier sind Platzhalter.
 //
 // Gespeichert in userData/ttp-data/progression (update-fest, siehe
 // dataPaths.js). Factory Reset loescht es mit, "Reset Account Progress" in
@@ -25,7 +25,8 @@ const XP_PER_GAME = {
   offRole: 50           // alles andere (Fill)
 };
 const XP_WIN_BONUS = 150;            // zusaetzlich bei Sieg, egal welche Kategorie
-const XP_PER_KILL_PARTICIPATION = 10; // pro Kill + Assist
+const XP_PER_KILL = 10;
+const XP_PER_ASSIST = 5;
 const FULL_XP_GAMES_PER_DAY = 5;      // ab dem 6. Spiel des Tages: alle XP halbiert
 const XP_PER_TROPHY = 750;            // temporaere Trophaeen zaehlen nicht
 
@@ -173,6 +174,56 @@ function resetState() {
   fs.rmSync(filePath(), { force: true });
 }
 
+// Schreibt XP fuer alle noch nicht gutgeschriebenen Spiele gut. games kommt
+// aus dem Match-Scan seit Challenge-Start: [{ matchId, gameCreation,
+// category, win, kills, assists, champId }]. Jedes matchId landet genau
+// einmal im Ledger - ein erneuter Scan, ein Reset oder ein Neustart der
+// Challenge bringt fuer dasselbe Spiel nichts zweimal. Der Pass zaehlt nur
+// XP, die waehrend der aktuellen Challenge (challengeStart) gutgeschrieben
+// wurden.
+function creditMatches(games, { challengeStart, multiplier }) {
+  const state = readState();
+  if (challengeStart && state.passChallengeStart !== challengeStart) {
+    state.passChallengeStart = challengeStart;
+    state.passXp = 0;
+  }
+  const mult = Number(multiplier) > 0 ? Number(multiplier) : 1;
+  const credited = new Set(state.ledger.map(e => e.matchId));
+  const gamesPerDay = {};
+  state.ledger.forEach(e => { gamesPerDay[e.day] = (gamesPerDay[e.day] || 0) + 1; });
+
+  const added = [];
+  [...games]
+    .filter(g => g && g.matchId && !credited.has(g.matchId) && XP_PER_GAME[g.category] !== undefined)
+    .sort((a, b) => a.gameCreation - b.gameCreation)
+    .forEach(g => {
+      const day = dayKey(new Date(g.gameCreation));
+      const gameOfDay = (gamesPerDay[day] || 0) + 1;
+      gamesPerDay[day] = gameOfDay;
+      const halved = gameOfDay > FULL_XP_GAMES_PER_DAY;
+      const base = {
+        game: XP_PER_GAME[g.category],
+        win: g.win ? XP_WIN_BONUS : 0,
+        kills: (g.kills || 0) * XP_PER_KILL,
+        assists: (g.assists || 0) * XP_PER_ASSIST
+      };
+      const raw = base.game + base.win + base.kills + base.assists;
+      const xp = Math.round(raw * mult * (halved ? 0.5 : 1));
+      const entry = {
+        matchId: g.matchId, gameCreation: g.gameCreation, day, gameOfDay,
+        category: g.category, win: !!g.win, kills: g.kills || 0, deaths: g.deaths || 0, assists: g.assists || 0,
+        champId: g.champId || '', base, multiplier: mult, halved, xp
+      };
+      state.ledger.push(entry);
+      state.totalXp += xp;
+      state.passXp += xp;
+      added.push(entry);
+    });
+
+  writeState(state);
+  return added;
+}
+
 function rerollDaily(context) {
   const state = readState();
   const day = dayKey(new Date());
@@ -196,7 +247,8 @@ function getOverview(context) {
     provisional: true,
     level: levelFromXp(state.totalXp),
     totalXp: state.totalXp,
-    gamesToday: 0,
+    gamesToday: state.ledger.filter(e => e.day === dayKey(now)).length,
+    recentGames: [...state.ledger].sort((a, b) => b.gameCreation - a.gameCreation).slice(0, 5),
     fullXpGamesPerDay: FULL_XP_GAMES_PER_DAY,
     dailies: buildDailies(state, context, now),
     weeklies: buildWeeklies(state, context),
@@ -212,7 +264,8 @@ function getOverview(context) {
     xpSources: {
       perGame: XP_PER_GAME,
       winBonus: XP_WIN_BONUS,
-      perKillParticipation: XP_PER_KILL_PARTICIPATION,
+      perKill: XP_PER_KILL,
+      perAssist: XP_PER_ASSIST,
       perTrophy: XP_PER_TROPHY
     }
   };
@@ -222,6 +275,7 @@ module.exports = {
   DIFFICULTY_MULTIPLIER,
   lpDistanceMultiplier,
   getOverview,
+  creditMatches,
   rerollDaily,
   resetState
 };

@@ -1009,6 +1009,10 @@
   </div>
 
   <script>
+    function lockedXpMultiplier() {
+      try { return (JSON.parse(localStorage.getItem('ttp_xp_multiplier') || 'null') || {}).total || null; } catch (e) { return null; }
+    }
+
     const DDRAGON_VERSION = '16.17.1';
     const MAX_CHAMPS = 3;
     const STORAGE_KEY = 'ttp_selected_champs';
@@ -1648,7 +1652,11 @@
             champions: champsWithKeys.map(x => ({ key: x.key, role: x.champ.role || '' })),
             since,
             mainRole,
-            secondRole
+            secondRole,
+            // XP-Gutschrift (server/lib/progression.js): beim Start
+            // festgeschriebener Multiplikator, sonst nur die Schwierigkeit.
+            xpMultiplier: lockedXpMultiplier(),
+            challengeLevel: (() => { try { return localStorage.getItem('ttp_challenge_level') || ''; } catch (e) { return ''; } })()
           })
         });
         const startData = await parseApiResponse(startRes);

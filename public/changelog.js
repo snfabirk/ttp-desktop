@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.1.0',
+      date: '2026-10-09',
+      notable: [
+        'Your ranked games now earn XP: based on champion/role, +150 for a win, +10 per kill and +5 per assist, times your challenge multiplier. Games since your challenge start are credited retroactively.',
+        'New "Recent XP" box on your profile shows what each game gave you (hover for the breakdown).'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.0.3',
       date: '2026-10-08',
       notable: [],
