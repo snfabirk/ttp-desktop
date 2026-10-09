@@ -24,12 +24,13 @@
   .w h4 { margin: 0 0 6px; color: var(--yellow); letter-spacing: 2px; text-transform: uppercase; font-size: .85rem; }
   .w .big { font-size: 1.6rem; font-weight: 700; }
   .w .muted { color: var(--dim); font-size: .85rem; font-family: 'Share Tech Mono', monospace; }
-  .w.wide { grid-column: span 3; display: flex; align-items: center; gap: 30px; min-height: 0; padding: 18px 24px; }
+  /* Profilzeile ohne clip-path, sonst schneidet sie die Border-Effekte ab; Ecke per Verlauf */
+  .w.wide { clip-path: none; overflow: visible; position: relative; z-index: 2; background: linear-gradient(225deg, transparent 10px, rgba(10, 12, 18, .72) 10px); border-color: transparent; box-shadow: inset 0 0 0 1px rgba(94, 240, 240, .2); grid-column: span 3; display: flex; align-items: center; gap: 30px; min-height: 0; padding: 18px 24px; }
   .name { font-size: 1.6rem; font-weight: 700; letter-spacing: 2px; color: var(--yellow); }
   /* Border */
   .optic { position: relative; width: 96px; height: 96px; flex-shrink: 0; cursor: default; }
   .optic img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-  .optic canvas { position: absolute; left: -100%; top: -100%; width: 300%; height: 300%; pointer-events: none; }
+  .optic canvas { position: absolute; left: -170%; top: -170%; width: 440%; height: 440%; pointer-events: none; }
   .scan-out:empty { display: none; }
   .scan-out { position: absolute; left: 360px; top: -4px; padding: 8px 12px; z-index: 3; background: rgba(6, 8, 12, .92); border: 1px solid rgba(94, 240, 240, .4); border-left: 3px solid var(--yellow); width: 260px; font-family: 'Share Tech Mono', monospace; font-size: .78rem; color: var(--cyan); white-space: pre; pointer-events: none; text-shadow: 0 0 6px rgba(94, 240, 240, .6); }
   .scan-out b { color: var(--yellow); font-weight: normal; }
@@ -66,7 +67,7 @@ const RED = '255, 74, 74', CYAN = '94, 240, 240', YEL = '232, 212, 58', DEEP = '
 
 // ===================== Border: Optic Scan =====================
 const optic = document.getElementById('optic'), oc = optic.querySelector('canvas'), ox = oc.getContext('2d');
-const OS = optic.offsetWidth, OC = OS * 3; oc.width = OC * D; oc.height = OC * D; ox.setTransform(D, 0, 0, D, 0, 0);
+const OS = optic.offsetWidth, OC = OS * 4.4; oc.width = OC * D; oc.height = OC * D; ox.setTransform(D, 0, 0, D, 0, 0);
 let scan = null, oClicks = 0, oReset = null;
 function drawOptic(t, dt) {
   const R = OS / 2; ox.clearRect(0, 0, OC, OC); ox.save(); ox.translate(OC / 2, OC / 2);
@@ -84,6 +85,36 @@ function drawOptic(t, dt) {
   ox.strokeStyle = `rgba(${CYAN}, .55)`; ox.lineWidth = 1;
   for (let k = 0; k < 60; k++) { const a = k / 60 * 6.283, l = k % 5 === 0 ? R * .09 : R * .04; ox.beginPath(); ox.moveTo(Math.cos(a) * R * 1.27, Math.sin(a) * R * 1.27); ox.lineTo(Math.cos(a) * (R * 1.27 + l), Math.sin(a) * (R * 1.27 + l)); ox.stroke(); }
   ox.restore();
+  // ---- mehr Schmackes (v2): Puls-Welle, Leuchtring, Code-Ring, Klammer-Boegen, Bild-Glitch ----
+  // Puls: alle ~2.6s laeuft eine gelbe Welle vom Ring nach aussen
+  const pu = (t / 2.6) % 1;
+  ox.strokeStyle = `rgba(${YEL}, ${(1 - pu) * .7})`; ox.lineWidth = R * .05 * (1 - pu) + .5;
+  ox.beginPath(); ox.arc(0, 0, R * (1.05 + pu * .55), 0, 7); ox.stroke();
+  // geshadeter, leuchtender Hauptring (Gelb mit Bloom), atmet leicht
+  const breath = .75 + .25 * Math.sin(t * 2.4);
+  const rg = ox.createLinearGradient(-R, -R, R, R); rg.addColorStop(0, '#f2e24a'); rg.addColorStop(.5, '#9a8a18'); rg.addColorStop(1, '#e8d43a');
+  ox.save(); ox.shadowColor = `rgba(${YEL}, ${breath})`; ox.shadowBlur = R * .3 * breath;
+  ox.strokeStyle = rg; ox.lineWidth = R * .06; ox.beginPath(); ox.arc(0, 0, R * 1.04, 0, 7); ox.stroke(); ox.restore();
+  // rotierender Code-Ring (Hex-Text laeuft ums Bild)
+  if (!drawOptic.code) drawOptic.code = Array.from({ length: 28 }, () => Math.floor(Math.random() * 256).toString(16).toUpperCase().padStart(2, '0'));
+  if (Math.random() < .08) drawOptic.code[Math.floor(Math.random() * 28)] = Math.floor(Math.random() * 256).toString(16).toUpperCase().padStart(2, '0');
+  ox.save(); ox.rotate(t * .35); ox.font = `${Math.round(R * .13)}px "Share Tech Mono", monospace`; ox.textAlign = 'center'; ox.textBaseline = 'middle';
+  drawOptic.code.forEach((c, i) => { ox.save(); ox.rotate(i / 28 * 6.283); ox.fillStyle = `rgba(${CYAN}, ${i % 7 === 0 ? .95 : .45})`; ox.fillText(c, 0, -R * 1.52); ox.restore(); });
+  ox.restore();
+  // drei Klammer-Boegen auf verschiedenen Radien, gegenlaeufig und unterschiedlich schnell
+  [[1.66, 1.1, .9, YEL], [1.78, -.7, .6, CYAN], [1.9, .45, 1.3, RED]].forEach(([rr, sp, len, col], k) => {
+    ox.save(); ox.rotate(t * sp + k);
+    ox.strokeStyle = `rgba(${col}, .85)`; ox.lineWidth = k === 2 ? 1.2 : 2;
+    for (let j = 0; j < 2; j++) { ox.beginPath(); ox.arc(0, 0, R * rr, j * Math.PI, j * Math.PI + len); ox.stroke();
+      const a = j * Math.PI + len; ox.beginPath(); ox.moveTo(Math.cos(a) * R * (rr - .06), Math.sin(a) * R * (rr - .06)); ox.lineTo(Math.cos(a) * R * (rr + .06), Math.sin(a) * R * (rr + .06)); ox.stroke(); }
+    ox.restore();
+  });
+  // gelegentlicher Glitch auf dem Bild selbst (RGB-Versatz)
+  const img = optic.querySelector('img');
+  if (!scan && Math.random() < dt * .4) drawOptic.gl = .25;
+  drawOptic.gl = Math.max(0, (drawOptic.gl || 0) - dt);
+  img.style.filter = drawOptic.gl > 0 ? `drop-shadow(${3}px 0 rgba(255,74,74,.9)) drop-shadow(${-3}px 0 rgba(94,240,240,.9)) contrast(1.2)` : '';
+  img.style.transform = drawOptic.gl > 0 ? `translateX(${(Math.random() - .5) * 4}px)` : '';
   // Scan-Strahl laeuft im Kreis
   const sa = t * 2.2;
   const sg = ox.createRadialGradient(0, 0, R, 0, 0, R * 1.4);
