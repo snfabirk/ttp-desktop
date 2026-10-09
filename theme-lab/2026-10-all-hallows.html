@@ -44,6 +44,29 @@
   .lantern-glow { animation: lglow 3.2s ease-in-out infinite; }
   @keyframes lglow { 0%, 100% { opacity: .55; } 50% { opacity: .85; } }
   .bats { position: fixed; top: 6%; left: 14.5%; width: 190px; height: 95px; pointer-events: none; opacity: .95; filter: drop-shadow(0 0 6px rgba(255, 210, 150, .25)); }
+  /* ----- Easter Egg: 5x auf die Katze -> ihr Schatten waechst und schnappt zu ----- */
+  .scene .cat { pointer-events: auto; cursor: pointer; }
+  .tail { transform-box: fill-box; transform-origin: 0% 100%; }
+  .cat.twitch .tail { animation: twitch .35s ease-in-out; }
+  @keyframes twitch { 30% { transform: rotate(-14deg); } 70% { transform: rotate(8deg); } }
+  .dim { position: fixed; inset: 0; background: rgba(0, 0, 0, 0); pointer-events: none; transition: background .6s ease; z-index: 8; }
+  .dim.on { background: rgba(0, 0, 0, .45); }
+  .shadow-cat { position: fixed; z-index: 9; pointer-events: none; height: 42vh; aspect-ratio: 1 / 1.05; transform-origin: 50% 100%; opacity: 0; }
+  .shadow-cat.go { animation: loom 3.2s cubic-bezier(.3,.7,.3,1) forwards; }
+  @keyframes loom {
+    0% { opacity: 0; transform: translateX(-50%) scale(.15); }
+    28% { opacity: .92; transform: translateX(-50%) scale(1); }
+    48% { transform: translateX(-50%) scale(1); }
+    58% { transform: translateX(-50%) scale(1.16) translateY(-2%); }   /* schnappt zu */
+    78% { opacity: .92; transform: translateX(-50%) scale(1.08); }
+    100% { opacity: 0; transform: translateX(-50%) scale(.15); }
+  }
+  .shadow-cat .jaw { transform-box: fill-box; transform-origin: 50% 0%; transform: scaleY(.15); }
+  .shadow-cat.go .jaw { animation: jaw 3.2s ease forwards; }
+  @keyframes jaw { 0%, 45% { transform: scaleY(.15); } 56%, 76% { transform: scaleY(1); } 90%, 100% { transform: scaleY(.15); } }
+  .shadow-cat .slit { transform-box: fill-box; transform-origin: center; }
+  .shadow-cat.go .slit { animation: slit 3.2s ease forwards; }
+  @keyframes slit { 0%, 40% { transform: scaleX(1); } 55%, 80% { transform: scaleX(.35); } 100% { transform: scaleX(1); } }
   .web { position: fixed; width: 150px; height: 150px; pointer-events: none; opacity: .35; }
   .web.tl { top: 0; left: 0; } .web.br { bottom: 0; right: 0; transform: rotate(180deg); }
 
@@ -128,9 +151,10 @@
       <rect x="1170" y="186" width="166" height="6" transform="rotate(-2 1250 189)"/><rect x="1170" y="206" width="166" height="6" transform="rotate(1.5 1250 209)"/>
     </g>
     <!-- schwarze Katze auf dem Zaun, blinzelt ab und zu -->
-    <g fill="#070609" transform="translate(1262 150)">
+    <g fill="#070609" transform="translate(1262 150)" class="cat" id="cat">
+      <rect x="-10" y="-14" width="62" height="56" fill="transparent"/>
       <path d="M0 36 Q-4 14 6 6 L4 -6 L11 2 Q15 0 19 2 L26 -6 L24 6 Q34 14 30 36 Z"/>
-      <path d="M28 32 Q46 30 44 10 Q43 4 40 6 Q42 26 26 28 Z"/>
+      <path class="tail" d="M28 32 Q46 30 44 10 Q43 4 40 6 Q42 26 26 28 Z"/>
       <ellipse class="cat-eye" cx="10" cy="12" rx="2.4" ry="2" fill="#f5d041"/>
       <ellipse class="cat-eye" cx="20" cy="12" rx="2.4" ry="2" fill="#f5d041"/>
     </g>
@@ -158,6 +182,24 @@
   </svg>
 </div>
 
+<div class="dim" id="dim"></div>
+<!-- Riesiger Katzenschatten (Easter Egg) -->
+<svg class="shadow-cat" id="shadowCat" viewBox="0 0 200 210">
+  <defs>
+    <radialGradient id="eyeG"><stop offset="0" stop-color="#fff3a0"/><stop offset=".5" stop-color="#f5d041"/><stop offset="1" stop-color="#f5a623" stop-opacity="0"/></radialGradient>
+  </defs>
+  <g fill="rgba(3,2,5,.92)">
+    <path d="M20 210 Q4 120 40 78 L30 4 L78 52 Q100 44 122 52 L170 4 L160 78 Q196 120 180 210 Z"/>
+  </g>
+  <!-- gluehende Schlitzaugen -->
+  <ellipse cx="72" cy="104" rx="20" ry="14" fill="url(#eyeG)"/><ellipse cx="128" cy="104" rx="20" ry="14" fill="url(#eyeG)"/>
+  <ellipse class="slit" cx="72" cy="104" rx="3.5" ry="12" fill="#120a02"/><ellipse class="slit" cx="128" cy="104" rx="3.5" ry="12" fill="#120a02"/>
+  <!-- Maul mit Zaehnen -->
+  <g class="jaw">
+    <path d="M70 138 Q100 196 130 138 Z" fill="#3a0b12"/>
+    <path d="M74 138 L80 156 L86 138 Z M114 138 L120 156 L126 138 Z M90 138 L94 147 L98 138 Z M102 138 L106 147 L110 138 Z" fill="#efe6d8"/>
+  </g>
+</svg>
 <div class="nav"><span class="on">⌂ Overview</span><span>Profile</span><span>Challenge</span><span>Pass</span><span>Trophies</span><span>Shop</span></div>
 <header><h1>League of Legends</h1><p class="subtitle">Three-Trick-Pony</p></header>
 
@@ -187,6 +229,26 @@
   </div>
 </div>
 <script>
+  // Easter Egg: 5x auf die Katze klicken (Zaehler setzt sich nach 8s ohne Klick zurueck)
+  (function () {
+    const cat = document.getElementById('cat'), sc = document.getElementById('shadowCat'), dim = document.getElementById('dim');
+    let clicks = 0, reset = null, busy = false;
+    cat.addEventListener('click', () => {
+      if (busy) return;
+      cat.classList.remove('twitch'); void cat.getBoundingClientRect(); cat.classList.add('twitch');
+      clicks++; clearTimeout(reset); reset = setTimeout(() => { clicks = 0; }, 8000);
+      if (clicks < 5) return;
+      clicks = 0; busy = true;
+      const r = cat.getBoundingClientRect();
+      sc.style.left = `${Math.min(innerWidth - 120, Math.max(120, r.left + r.width / 2))}px`;
+      sc.style.top = `${r.bottom - innerHeight * .42}px`;
+      dim.classList.add('on');
+      sc.classList.remove('go'); void sc.getBoundingClientRect(); sc.classList.add('go');
+      setTimeout(() => dim.classList.remove('on'), 2500);
+      setTimeout(() => { sc.classList.remove('go'); busy = false; }, 3300);
+    });
+  })();
+
   // Spinnennetz-Ecke fuer den Cobweb-Rahmen (gleiches Netz wie oben)
   const web = document.querySelector('.web.tl').outerHTML.replace('class="web tl"', 'xmlns="http://www.w3.org/2000/svg"').replace(/\s+/g, ' ');
   document.getElementById('cobweb').style.setProperty('--web', `url("data:image/svg+xml,${encodeURIComponent(web)}")`);
