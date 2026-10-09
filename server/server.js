@@ -776,6 +776,10 @@ app.post('/api/shop/consumable', (req, res) => {
   const result = progression.buyConsumable(Number(slot), choice || null, progressionContext(req.body || {}));
   res.status(result.ok ? 200 : 400).json(result);
 });
+app.post('/api/shop/buff/discard', (req, res) => {
+  const result = progression.discardBuff((req.body || {}).kind);
+  res.status(result.ok ? 200 : 400).json(result);
+});
 app.get('/api/theme-access', (req, res) => {
   res.json(progression.themeAccess());
 });

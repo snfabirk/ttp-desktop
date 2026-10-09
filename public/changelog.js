@@ -25,6 +25,15 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.18.2',
+      date: '2026-10-09',
+      notable: [
+        'You can remove an active buff (hover it, click the ✕) - the coins are lost, and you can only do this once every 24 hours.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.18.1',
       date: '2026-10-09',
       notable: [

@@ -1,5 +1,11 @@
 # Internal Changelog
 
+## 5.18.2 — 2026-10-09
+
+- Buff removal (user design): ✕ on hover, two-click "Remove? Coins are lost",
+  no refund, 24h cooldown (`state.lastBuffDiscardAt`,
+  POST /api/shop/buff/discard); during the cooldown the ✕ shows the time left.
+
 ## 5.18.1 — 2026-10-09
 
 - Max 3 active buffs (MAX_BUFFS, "Buff slots full"); the buff bar always

@@ -457,7 +457,8 @@ function emptyState() {
     // Aktive Buffs mit Ablaufdatum: { kind, id, startedAt, expiresAt, gamesLeft?, cosmeticId? }
     buffs: [],
     // Bonus-Quests aus Consumables: { daily: { day, quest }, weekly: { week, quest } }
-    bonusQuests: { daily: null, weekly: null }
+    bonusQuests: { daily: null, weekly: null },
+    lastBuffDiscardAt: null
   };
 }
 
@@ -796,6 +797,7 @@ function refreshShop(state, now) {
 // Was eine Dauer hat, wird ein Buff mit Ablaufdatum; pro Buff-Art ist immer
 // nur einer gleichzeitig aktiv. Preise/Gewichte sind Startwerte.
 const CONSUMABLE_EMPTY_CHANCE = 0.3;
+const BUFF_DISCARD_COOLDOWN_MS = 24 * 3600e3; // Buff entfernen: ohne Erstattung, 1x pro 24 h
 const MAX_BUFFS = 3; // Nutzer: hoechstens 3 Buffs gleichzeitig - "man muss smart sein"
 const CONSUMABLES = {
   xp_double: { name: 'Double XP', desc: '+100% level XP for your next 3 games', price: 100, weight: 15, icon: '⚡', buff: { kind: 'xpLevel', days: 3, games: 3 } },
@@ -873,6 +875,24 @@ function consumablesView(state) {
     const c = CONSUMABLES[id];
     return { id, slot: i, name: c.name, desc: c.desc, price: c.price, icon: c.icon, sold: !!state.consumables.sold[i], unavailable: state.consumables.sold[i] ? null : consumableUnavailable(state, id) };
   });
+}
+
+// Buff entfernen (Nutzerdesign): Notausgang, keine Erstattung, danach 24 h Pause
+function discardBuff(kind) {
+  const state = readState();
+  pruneBuffs(state);
+  const buff = state.buffs.find(b => b.kind === kind);
+  if (!buff) return { ok: false, error: 'This buff is not active.' };
+  const next = discardAvailableAt(state);
+  if (next && next > Date.now()) return { ok: false, error: 'You can remove a buff again later.' };
+  state.buffs = state.buffs.filter(b => b !== buff);
+  state.lastBuffDiscardAt = new Date().toISOString();
+  pruneBuffs(state); // abgelegte Probe-Cosmetics wieder ausziehen
+  writeState(state);
+  return { ok: true };
+}
+function discardAvailableAt(state) {
+  return state.lastBuffDiscardAt ? new Date(state.lastBuffDiscardAt).getTime() + BUFF_DISCARD_COOLDOWN_MS : null;
 }
 
 function buffsView(state) {
@@ -995,6 +1015,7 @@ function getShopState() {
     odds: { daily: SHOP_DAILY_WEIGHTS, weekly: SHOP_WEEKLY_WEIGHTS, pastPass: PAST_PASS_CHANCE },
     consumables: consumablesView(state),
     maxBuffs: MAX_BUFFS,
+    discardAvailableAt: (t => t && t > Date.now() ? new Date(t).toISOString() : null)(discardAvailableAt(state)),
     consumablesResetAt: nextDailyReset(now).toISOString(),
     buffs: buffsView(state),
     tryOn: lootableCosmetics(state).filter(c => !rentedIds(state).includes(c.id)).map(c => ({ id: c.id, name: c.name, type: c.type, rarity: c.rarity, themeKey: c.themeKey || null })),
@@ -1078,6 +1099,7 @@ module.exports = {
   rerollDaily,
   creditQuests,
   buyConsumable,
+  discardBuff,
   themeAccess,
   getShopState,
   spinWheel,

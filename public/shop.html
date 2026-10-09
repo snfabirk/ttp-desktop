@@ -217,6 +217,16 @@
   .buff small { color: var(--text-dim); }
   .buff .buff-time { margin-left: auto; color: var(--text-faint); font-size: 0.72rem; white-space: nowrap; }
   .buff { height: 32px; box-sizing: border-box; }
+  .buff { position: relative; }
+  .buff-x {
+    display: none; margin-left: 4px; padding: 0 7px; border-radius: 10px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-faint); font-family: inherit; font-size: 0.72rem; cursor: pointer; white-space: nowrap;
+  }
+  .buff:hover .buff-x, .buff-x.confirm { display: inline-block; }
+  .buff:hover .buff-time:has(+ .buff-x) { display: none; }
+  .buff-x:hover { color: var(--red); border-color: var(--red); }
+  .buff-x.confirm { color: var(--bg); background: var(--red); border-color: var(--red); }
+  .buff-x:disabled { cursor: default; color: var(--text-faint); border-color: var(--border); background: transparent; }
   .buff.free { justify-content: center; border-style: dashed; border-color: var(--border); background: transparent; color: var(--text-faint); font-style: italic; font-size: 0.74rem; }
   /* Try It On: Auswahl */
   .pick-overlay { position: fixed; inset: 0; z-index: 600; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; }
@@ -390,10 +400,32 @@
       document.getElementById('buffs').innerHTML = Array.from({ length: max }, (_, i) => {
         const b = buffs[i];
         return b
-          ? `<div class="buff"><span>${esc(b.label)}${b.detail ? ` <small>· ${esc(b.detail)}</small>` : ''}</span><span class="buff-time">⏳ ${until(b.expiresAt)}</span></div>`
+          ? `<div class="buff"><span>${esc(b.label)}${b.detail ? ` <small>· ${esc(b.detail)}</small>` : ''}</span><span class="buff-time">⏳ ${until(b.expiresAt)}</span>${discardBtn(b)}</div>`
           : '<div class="buff free">Free slot</div>';
       }).join('');
     }
+
+    // Buff entfernen: Notausgang ohne Erstattung, danach 24 h Pause
+    let confirmDiscard = null;
+    function discardBtn(b) {
+      if (shop.discardAvailableAt) return `<button type="button" class="buff-x" disabled title="You can remove a buff again in ${until(shop.discardAvailableAt)}">✕ in ${until(shop.discardAvailableAt)}</button>`;
+      const c = confirmDiscard === b.kind;
+      return `<button type="button" class="buff-x${c ? ' confirm' : ''}" data-discard="${b.kind}" title="Remove this buff - the coins are lost, and you can only do this once every 24 hours">${c ? 'Remove? Coins are lost' : '✕'}</button>`;
+    }
+    document.getElementById('buffs').addEventListener('click', async e => {
+      const b = e.target.closest('[data-discard]');
+      if (!b || b.disabled) return;
+      const kind = b.dataset.discard;
+      if (confirmDiscard !== kind) {
+        confirmDiscard = kind;
+        renderGoods();
+        setTimeout(() => { if (confirmDiscard === kind) { confirmDiscard = null; renderGoods(); } }, 4000);
+        return;
+      }
+      confirmDiscard = null;
+      try { await fetch('/api/shop/buff/discard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind }) }); } catch (err) {}
+      await load();
+    });
 
     async function buyGood(slot, choice) {
       let result;
