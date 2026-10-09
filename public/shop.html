@@ -92,10 +92,28 @@
     margin-top: 4px;
     display: inline-flex; align-items: center; gap: 6px;
     padding: 5px 14px; border-radius: 14px;
-    border: 1px solid var(--border); background: transparent;
-    color: var(--text-faint); font-family: inherit; font-size: 0.85rem;
-    cursor: not-allowed;
+    border: 1px solid var(--gold); background: transparent;
+    color: var(--text); font-family: inherit; font-size: 0.85rem;
+    cursor: pointer;
   }
+  .offer-buy:hover { background: color-mix(in srgb, var(--gold) 14%, transparent); }
+  .offer-buy.confirm { background: var(--gold); color: var(--bg); }
+  .offer-buy.confirm b { color: var(--bg); }
+  .offer-buy:disabled { cursor: default; border-color: var(--border); color: var(--text-faint); background: transparent; }
+  .offer-buy s { color: var(--text-faint); font-size: .75rem; }
+  .offer.owned { opacity: .75; }
+  .offer-msg { font-size: .72rem; color: var(--gold); min-height: 1em; }
+  /* Vorschau-Bereich gleich hoch, egal ob Border, Rahmen oder Theme */
+  .offer-pv { height: 96px; display: flex; align-items: center; justify-content: center; }
+  .weekly .offer-pv { height: 124px; }
+  .offer-pv .cos-border { width: 56px; height: 56px; }
+  .weekly .offer-pv .cos-border { width: 72px; height: 72px; }
+  .offer-pv .pv-frame-live { position: relative; width: 104px; height: 62px; border-radius: 10px; background: rgba(255,255,255,.04); }
+  .weekly .offer-pv .pv-frame-live { width: 140px; height: 84px; }
+  .offer-pv .mini-theme { width: 72px; height: 72px; border-radius: 50%; }
+  .offer-pv canvas.theme-pv { width: 120px; height: 72px; border-radius: 10px; border: 1px solid rgba(255,255,255,.15); }
+  .weekly .offer-pv canvas.theme-pv { width: 170px; height: 100px; }
+  .weekly .offer-pv .mini-theme { width: 96px; height: 96px; }
   .offer-buy b { color: var(--gold); font-weight: normal; }
   .offer-soon { font-size: 0.68rem; color: var(--text-faint); letter-spacing: 1px; text-transform: uppercase; }
   /* Vorschauen der Platzhalter-Artikel */
@@ -240,6 +258,19 @@
   .pick-item .mini-frame { width: 44px; height: 32px; }
   .pick-item .mini-theme { width: 36px; height: 36px; }
   .pick-cancel { margin-top: 14px; padding: 5px 16px; border-radius: 14px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-family: inherit; cursor: pointer; }
+  /* Hover-Vorschau: das eigene Profil mit dem Artikel */
+  .pv-pop { position: fixed; z-index: 700; width: 320px; height: 200px; border-radius: 14px; overflow: visible; pointer-events: none;
+    box-shadow: 0 14px 40px rgba(0,0,0,.55); border: 1px solid var(--border); opacity: 0; transform: translateY(6px); transition: opacity .15s ease, transform .15s ease; }
+  .pv-pop.show { opacity: 1; transform: none; }
+  .pv-pop .pv-bg { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 14px; }
+  .pv-pop .pv-board { position: absolute; left: 34px; right: 34px; top: 30px; bottom: 30px; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box; }
+  .pv-pop .pv-card { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 9px; border: 1px solid; }
+  .pv-pop .pv-card .cos-border { width: 46px; height: 46px; flex-shrink: 0; }
+  .pv-pop .pv-card b { display: block; font-family: 'Cinzel', Georgia, serif; font-size: .85rem; letter-spacing: .5px; }
+  .pv-pop .pv-card small { font-size: .7rem; }
+  .pv-pop .pv-row { display: flex; gap: 8px; flex: 1; }
+  .pv-pop .pv-row span { flex: 1; border-radius: 8px; border: 1px solid; }
+  .pv-pop .pv-label { position: absolute; left: 0; right: 0; bottom: -22px; text-align: center; font-size: .72rem; color: var(--text-dim); font-style: italic; }
   .shop-note { color: var(--text-faint); font-size: 0.78rem; text-align: center; margin-top: 12px; font-style: italic; }
   /* (privat) - unsichtbar, Mauszeiger bleibt normal */
   .corner-spot { position: fixed; left: 0; bottom: 0; width: 64px; height: 64px; z-index: 50; cursor: default; background: transparent; }
@@ -284,7 +315,7 @@
       </section>
     </aside>
   </div>
-  <p class="shop-note">Preview - the shop opens soon. Items and prices are placeholders.</p>
+
   <div class="corner-spot" id="cornerSpot" aria-hidden="true"></div>
 
   <script>
@@ -301,24 +332,46 @@
     }
 
     // Vorschau: Pass-Cosmetics zeigen ihr echtes Aussehen, Platzhalter einen Farbverlauf
+    // Vorschau: Borders und Rahmen werden live gezeichnet (cosmetics-fx.js /
+    // shop-cosmetics.js), Themes als Farbkreis
+    const ICON = 'https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/29.png';
     function previewHtml(o) {
-      if (!o.c) {
-        if (o.type === 'border') return `<span class="cos-border cos-${o.id}" style="width:64px;height:64px"><span class="cos-fill"></span></span>`;
-        if (o.type === 'frame') return `<span class="mini-frame mini-frame-${o.id}" style="width:82px;height:60px"></span>`;
-        return `<span class="mini-theme mini-theme-${o.themeKey}" style="width:64px;height:64px"></span>`;
-      }
-      const kind = o.type === 'theme' ? 'pv-theme' : o.type === 'frame' ? 'pv-frame' : 'pv-border';
-      return `<span class="pv ${kind} ${o.rarity}" style="--a:${o.c[1]};--b:${o.c[0]}"></span>`;
+      let inner;
+      if (o.type === 'border') inner = `<span class="cos-border cos-${o.id}"><img src="${ICON}" alt=""></span>`;
+      else if (o.type === 'frame') inner = `<span class="pv-frame-live pframe pframe-${o.id}" data-pv-frame="${o.id}"></span>`;
+      else inner = `<canvas class="mini-theme theme-pv" data-theme-pv="${o.themeKey}"></canvas>`;
+      return `<div class="offer-pv">${inner}</div>`;
+    }
+    function decorateFramePreviews() {
+      document.querySelectorAll('[data-theme-pv]').forEach(cv => { if (!cv.dataset.done && window.TTPThemePreview && window.TTPThemePreview(cv.dataset.themePv, cv)) cv.dataset.done = '1'; });
+      document.querySelectorAll('[data-pv-frame]').forEach(el => {
+        if (el.dataset.done || !window.TTPCos) return;
+        el.dataset.done = '1'; window.TTPCos.decorateFrame(el, el.dataset.pvFrame);
+      });
+    }
+    setInterval(decorateFramePreviews, 500);
+    const buyConfirm = new Set();
+    const buyMsg = {};
+    function priceLabel(o) {
+      if (!o.price) return '<b>Free</b>';
+      if (shop.couponActive) return `🪙 <s>${fmtNum(o.price)}</s> <b>${fmtNum(Math.round(o.price * 0.8))}</b>`;
+      return `🪙 <b>${fmtNum(o.price)}</b>`;
     }
     function offerHtml(o) {
-      return `<div class="offer rar-${o.rarity}">
+      const eff = shop.couponActive ? Math.round(o.price * 0.8) : o.price;
+      const btn = o.owned
+        ? '<button type="button" class="offer-buy" disabled>✓ Owned</button>'
+        : shop.coins < eff
+          ? `<button type="button" class="offer-buy" disabled title="Not enough coins">${priceLabel(o)}</button>`
+          : `<button type="button" class="offer-buy${buyConfirm.has(o.id) ? ' confirm' : ''}" data-buy="${o.id}">${buyConfirm.has(o.id) ? `Buy for 🪙 <b>${fmtNum(eff)}</b>?` : priceLabel(o)}</button>`;
+      return `<div class="offer rar-${o.rarity}${o.owned ? ' owned' : ''}" data-id="${o.id}">
         <span class="offer-tag rar rar-${o.rarity}">${RARITY_LABEL[o.rarity] || o.rarity}</span>
         ${previewHtml(o)}
         <span class="offer-name">${esc(o.name)}</span>
         <span class="offer-type">${TYPE_LABEL[o.type] || o.type}</span>
         ${o.fromPass ? `<span class="offer-from">from the ${esc(o.fromPass)}</span>` : ''}
-        <button type="button" class="offer-buy" disabled>${o.price ? `🪙 <b>${fmtNum(o.price)}</b>` : '<b>Free</b>'}</button>
-        <span class="offer-soon">Coming soon</span>
+        ${btn}
+        <span class="offer-msg">${buyMsg[o.id] ? esc(buyMsg[o.id]) : ''}</span>
       </div>`;
     }
     const offersHtml = list => list.length ? list.map(offerHtml).join('') : '<div class="offers-empty">You already own everything that could show up here.</div>';
@@ -369,6 +422,87 @@
         `It costs the same as any other cosmetic of its rarity, and only shows up while you are still missing some.</p>` +
         `<p>Your shop never offers you something you already own.</p>`;
     }
+
+    // ----- Hover-Vorschau: so saehe dein Profil mit dem Artikel aus -----
+    // Farben der Themes, die im Shop auftauchen koennen (Shop + alte Paesse)
+    const PALETTE = {
+      abyss: ['#03111c', '#3fd0c9', '#e2f4f6', '#12455a'], neon: ['#0b0816', '#ff4fb8', '#f2e9ff', '#3a2458'],
+      starfall: ['#0a0f2a', '#ffd86b', '#e8ecff', '#2c3a6e'], koi: ['#1b1c1f', '#e0303a', '#f2f2f2', '#5a5d63'],
+      desert: ['#2a1424', '#ffb35c', '#f6ece4', '#7a4a2a'], forest: ['#0a1a12', '#7ee08a', '#eaf6ec', '#2c5a38'],
+      hallows: ['#0f0e10', '#ff7a18', '#ece6e0', '#3d3530'], haunted: ['#0b0a10', '#ff8a2a', '#efe9f5', '#3a2d45']
+    };
+    const me = { icon: ICON, name: 'You', level: 1, border: 'none', frame: null };
+    (async () => {
+      try { const st = await (await fetch('/api/profile-stats')).json(); me.level = (st.level && st.level.level) || me.level; me.border = (st.equipped && st.equipped.border) || 'none'; me.frame = st.equipped && st.equipped.frame; } catch (e) {}
+      const parts = (ls('ttp_summoner_name') || '').trim().split('#');
+      if (parts.length === 2 && parts[0]) {
+        me.name = parts[0];
+        try { const a = await (await fetch(`/api/account?${new URLSearchParams({ gameName: parts[0], tagLine: parts[1] })}`)).json(); if (a.profileIconId != null) me.icon = `https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/${a.profileIconId}.png`; } catch (e) {}
+      }
+    })();
+    let pop = null, popTimer = null;
+    function hidePreview() { clearTimeout(popTimer); if (pop) { const p = pop; pop = null; p.classList.remove('show'); setTimeout(() => p.remove(), 160); } }
+    function showPreview(offerEl, o) {
+      hidePreview();
+      const theme = o.type === 'theme' ? o.themeKey : null;
+      const border = o.type === 'border' ? o.id : me.border;
+      const frame = o.type === 'frame' ? o.id : me.frame;
+      const cs = getComputedStyle(document.documentElement);
+      const [bg, accent, text, line] = theme && PALETTE[theme] ? PALETTE[theme] : ['--bg', '--gold', '--text', '--border'].map(v => cs.getPropertyValue(v).trim());
+      const tile = `background:color-mix(in srgb, ${bg} 70%, transparent);border-color:${line}`;
+      const el = document.createElement('div');
+      el.className = 'pv-pop';
+      el.dataset.for = o.id;
+      el.style.background = bg;
+      el.innerHTML = `${theme ? '<canvas class="pv-bg"></canvas>' : ''}
+        <div class="pv-board${frame ? ` pframe pframe-${frame}` : ''}">
+          <div class="pv-card" style="${tile};color:${text}">
+            <span class="cos-border cos-${border}"><img src="${me.icon}" alt=""></span>
+            <span><b style="color:${accent}">${esc(me.name)}</b><small style="color:${text};opacity:.75">Level ${me.level}</small></span>
+          </div>
+          <div class="pv-row"><span style="${tile}"></span><span style="${tile}"></span></div>
+        </div>
+        <div class="pv-label">Your profile with ${esc(o.name)}</div>`;
+      document.body.appendChild(el);
+      const r = offerEl.getBoundingClientRect();
+      let left = r.left + r.width / 2 - 160, top = r.top - 200 - 34;
+      if (top < 70) top = r.bottom + 14;
+      left = Math.max(12, Math.min(innerWidth - 332, left));
+      Object.assign(el.style, { left: `${left}px`, top: `${top}px` });
+      if (theme && window.TTPThemePreview) window.TTPThemePreview(theme, el.querySelector('.pv-bg'));
+      if (frame && window.TTPCos) window.TTPCos.decorateFrame(el.querySelector('.pv-board'), frame);
+      pop = el;
+      requestAnimationFrame(() => el.classList.add('show'));
+    }
+    document.querySelector('.shop').addEventListener('mouseover', e => {
+      const offerEl = e.target.closest('.offer');
+      if (!offerEl || (pop && pop.dataset.for === offerEl.dataset.id)) return;
+      const o = [...shop.daily, ...shop.weekly].find(x => x.id === offerEl.dataset.id);
+      if (!o) return;
+      clearTimeout(popTimer);
+      popTimer = setTimeout(() => showPreview(offerEl, o), 250);
+    });
+    document.querySelector('.shop').addEventListener('mouseout', e => {
+      const offerEl = e.target.closest('.offer');
+      if (offerEl && !offerEl.contains(e.relatedTarget)) hidePreview();
+    });
+
+    // ----- Kaufen: zwei Klicks (Preis -> "Buy for ...?") -----
+    document.querySelector('.shop').addEventListener('click', async e => {
+      const b = e.target.closest('[data-buy]');
+      if (!b) return;
+      const id = b.dataset.buy;
+      if (!buyConfirm.has(id)) {
+        buyConfirm.clear(); buyConfirm.add(id); render();
+        setTimeout(() => { if (buyConfirm.delete(id)) render(); }, 4000);
+        return;
+      }
+      buyConfirm.clear();
+      let r;
+      try { r = await (await fetch('/api/shop/buy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })).json(); } catch (err) { r = { ok: false, error: 'Could not reach the app server.' }; }
+      buyMsg[id] = r.ok ? `It's yours!${r.usedCoupon ? ' (coupon used)' : ''} Equip it in your profile.` : (r.error || 'Something went wrong.');
+      await load();
+    });
 
     // ----- Consumables -----
     function ls(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }

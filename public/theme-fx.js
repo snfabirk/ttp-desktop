@@ -33,6 +33,15 @@
   let lastInteraction = Date.now();
   let pointerInside = true;
   const pointer = { x: innerWidth / 2, y: innerHeight * 0.55 };
+  // Weitere Szenen (Shop-Themes, shop-scenes.js) melden sich hier an
+  const sceneCtx = { pointer, inside: () => pointerInside };
+  window.TTPThemeFx = {
+    INTERACTIVE: null,
+    register(key, factory) {
+      SCENES[key] = () => factory(sceneCtx);
+      if (currentTheme() === key) { sceneKey = null; syncTheme(); }
+    }
+  };
 
   // Bewusst NICHT an Windows' "Animationen reduzieren" gekoppelt (beim Nutzer
   // war die Option an und die Animation dadurch nie zu sehen).
@@ -44,6 +53,7 @@
   const rand = (a, b) => a + Math.random() * (b - a);
   // Klicks auf Bedienelemente/Boxen zaehlen nie fuer Easter Eggs
   const INTERACTIVE = 'a, button, input, select, textarea, label, summary, [role="button"], [contenteditable], .widget, .card, .dash-card, .prog-card, .top-nav, .side-panel, dialog';
+  window.TTPThemeFx.INTERACTIVE = INTERACTIVE;
 
   function targetLevel() {
     if (!scene || !scene.animated || document.hidden) return 0;

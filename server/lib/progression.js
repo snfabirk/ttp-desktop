@@ -678,26 +678,8 @@ function rerollDaily(context) {
 //  - Tagesangebote und Wochen-Highlights zeigen nie denselben Artikel
 //  - alte Pass-Cosmetics (nicht der laufende Monat) haben eine eigene
 //    Chance pro Platz (Tag 8 %, Woche 20 %), solange man nicht alle hat
-const SHOP_ITEMS = [
-  { id: 'shop-plain-ring', type: 'border', rarity: 'basic', name: 'Plain Ring', c: ['#9aa0a6', '#2a2c30'] },
-  { id: 'shop-ash-ring', type: 'border', rarity: 'basic', name: 'Ash Ring', c: ['#7d7470', '#221e1c'] },
-  { id: 'shop-slate-frame', type: 'frame', rarity: 'basic', name: 'Slate Frame', c: ['#6e7480', '#16181c'] },
-  { id: 'shop-oak-frame', type: 'frame', rarity: 'basic', name: 'Oak Frame', c: ['#8a6a44', '#1e160e'] },
-  { id: 'shop-ember-ring', type: 'border', rarity: 'refined', name: 'Ember Ring', c: ['#ff7a18', '#5a1a08'] },
-  { id: 'shop-frost-rim', type: 'border', rarity: 'refined', name: 'Frost Rim', c: ['#9fd8ff', '#1c3a5a'] },
-  { id: 'shop-moonlit-ring', type: 'border', rarity: 'refined', name: 'Moonlit Ring', c: ['#e9dcc0', '#2a2440'] },
-  { id: 'shop-thorn-ring', type: 'border', rarity: 'refined', name: 'Thorn Ring', c: ['#6fbf73', '#1a2a14'] },
-  { id: 'shop-iron-frame', type: 'frame', rarity: 'refined', name: 'Iron Frame', c: ['#9a9aa3', '#202024'] },
-  { id: 'shop-ivy-frame', type: 'frame', rarity: 'refined', name: 'Ivy Frame', c: ['#4caf7d', '#10241a'] },
-  { id: 'shop-rune-frame', type: 'frame', rarity: 'refined', name: 'Rune Frame', c: ['#b088ff', '#1e1436'] },
-  { id: 'shop-gilded-frame', type: 'frame', rarity: 'refined', name: 'Gilded Frame', c: ['#c8aa6e', '#2a2010'] },
-  { id: 'shop-deep-sea', type: 'theme', rarity: 'refined', name: 'Deep Sea', c: ['#04161f', '#3fd0c9'] },
-  { id: 'shop-dragonfire', type: 'border', rarity: 'fancy', name: 'Dragonfire Ring', c: ['#ff4d1a', '#3a0a04'] },
-  { id: 'shop-void-rift', type: 'frame', rarity: 'fancy', name: 'Void Rift', c: ['#7a3cff', '#0c0618'] },
-  { id: 'shop-starfall', type: 'theme', rarity: 'fancy', name: 'Starfall', c: ['#0a0f2a', '#ffd86b'] },
-  { id: 'shop-storm-crown', type: 'border', rarity: 'animated', name: 'Storm Crown', c: ['#7fd4ff', '#0a1426'] },
-  { id: 'shop-sakura', type: 'theme', rarity: 'animated', name: 'Sakura Garden', c: ['#2a0f1c', '#ff8fb1'] }
-];
+// Shop-Artikel = alle Cosmetics mit source 'shop' (cosmetics.js, seit v5.19.0 echte Designs)
+const SHOP_ITEMS = COSMETICS.filter(c => c.source === 'shop');
 const SHOP_RARITY_ORDER = ['basic', 'refined', 'fancy', 'animated'];
 const SHOP_DAILY_WEIGHTS = { basic: 30, refined: 50, fancy: 18, animated: 2 };
 const SHOP_WEEKLY_WEIGHTS = { fancy: 70, animated: 30 };
@@ -706,7 +688,7 @@ const PITY_WEEKLY_STEP = 20;
 const PAST_PASS_CHANCE = { daily: 0.08, weekly: 0.2 };
 
 function shopItemById(id) {
-  return SHOP_ITEMS.find(i => i.id === id) || getCosmetic(id);
+  return getCosmetic(id);
 }
 
 // Gewichte inkl. steigender Animated-Chance: der Zuwachs wird den anderen
@@ -772,6 +754,9 @@ function refreshShop(state, now) {
   const shop = { ...emptyState().shop, ...(state.shop || {}) };
   const today = dayKey(now), week = weekKey(now);
   let changed = false;
+  // Angebote, die es nicht (mehr) gibt (Platzhalter vor v5.19.0), neu wuerfeln
+  if (shop.weekly.some(id => !getCosmetic(id))) shop.weekKey = null;
+  if (shop.daily.some(id => !getCosmetic(id))) shop.dayKey = null;
   if (shop.weekKey !== week) {
     shop.weekly = rollOffers(state, 2, shopWeights(SHOP_WEEKLY_WEIGHTS, shop.pityWeekly, PITY_WEEKLY_STEP), 'weekly');
     const hit = shop.weekly.some(id => (shopItemById(id) || {}).rarity === 'animated');
@@ -969,6 +954,28 @@ function buyConsumable(slot, choice, context) {
   return result;
 }
 
+// Shop-Kauf (v5.19.0): nur was heute/diese Woche im eigenen Shop angeboten
+// wird; Basic ist gratis; ein aktiver 20%-Gutschein wird dabei verbraucht.
+function buyShopItem(id) {
+  const state = readState();
+  const now = new Date();
+  pruneBuffs(state);
+  refreshShop(state, now);
+  if (!state.shop.daily.includes(id) && !state.shop.weekly.includes(id)) return { ok: false, error: 'This item is not in your shop right now.' };
+  const c = getCosmetic(id);
+  if (!c) return { ok: false, error: 'Unknown item.' };
+  if (state.inventory.includes(id)) return { ok: false, error: 'You already own this.' };
+  let price = priceOf(c);
+  const coupon = price > 0 ? activeBuff(state, 'coupon') : null;
+  if (coupon) price = Math.round(price * 0.8);
+  if (state.coins < price) return { ok: false, error: 'Not enough coins.' };
+  state.coins -= price;
+  state.inventory.push(id);
+  if (coupon) state.buffs = state.buffs.filter(b => b !== coupon);
+  writeState(state);
+  return { ok: true, id, price, usedCoupon: !!coupon, coins: state.coins, cosmetic: { id: c.id, name: c.name, type: c.type, themeKey: c.themeKey || null } };
+}
+
 // Fuer theme-fx.js: welche Pass-/Shop-Themes darf dieses Profil gerade nutzen
 // (besessen oder per "Try It On" geliehen)?
 function themeAccess() {
@@ -1013,6 +1020,7 @@ function getShopState() {
     // Chance bleibt bewusst unerwaehnt, Nutzerwunsch)
     prices: PRICES,
     odds: { daily: SHOP_DAILY_WEIGHTS, weekly: SHOP_WEEKLY_WEIGHTS, pastPass: PAST_PASS_CHANCE },
+    couponActive: !!activeBuff(state, 'coupon'),
     consumables: consumablesView(state),
     maxBuffs: MAX_BUFFS,
     discardAvailableAt: (t => t && t > Date.now() ? new Date(t).toISOString() : null)(discardAvailableAt(state)),
@@ -1099,6 +1107,7 @@ module.exports = {
   rerollDaily,
   creditQuests,
   buyConsumable,
+  buyShopItem,
   discardBuff,
   themeAccess,
   getShopState,

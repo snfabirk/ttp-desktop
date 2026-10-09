@@ -983,3 +983,50 @@ html.fx-paused .hallows-fx :not(.fire, .tail) { animation-play-state: paused !im
   position: relative;
   z-index: 40;
 }
+
+/* ===== Shop-Themes (v5.19.0) - Szenen in shop-scenes.js ===== */
+html[data-theme="abyss"] {
+  --bg: #03111c; --bg-rgb: 3, 17, 28; --input-bg: #072233; --border: #12455a; --border-hover: #3fd0c9; --gold: #3fd0c9;
+  --text: #e2f4f6; --text-dim: #8fb4bd; --text-faint: #4f7883; --red: #ff5a6a; --green: #6fd08a; --live-accent: #6fd08a;
+  --history-view-accent: #3fd0c9; --scrollbar: #12455a; --scrollbar-hover: #3fd0c9;
+  background: linear-gradient(180deg, #06324a 0%, #04223a 22%, #031627 55%, #020b15 80%, #01060c 100%); background-attachment: fixed;
+}
+html[data-theme="abyss"] body { background: transparent; }
+html[data-theme="neon"] {
+  --bg: #0b0816; --bg-rgb: 11, 8, 22; --input-bg: #160f2a; --border: #3a2458; --border-hover: #ff4fb8; --gold: #ff4fb8;
+  --text: #f2e9ff; --text-dim: #b3a2cc; --text-faint: #6f5f8a; --red: #ff5a6a; --green: #6fd08a; --live-accent: #6fd08a;
+  --history-view-accent: #ff4fb8; --scrollbar: #3a2458; --scrollbar-hover: #ff4fb8;
+  background: linear-gradient(180deg, #0a0614 0%, #1a0c2c 45%, #2a1036 70%, #12081c 100%); background-attachment: fixed;
+}
+html[data-theme="neon"] body { background: transparent; }
+html[data-theme="starfall"] {
+  --bg: #0a0f2a; --bg-rgb: 10, 15, 42; --input-bg: #121a3e; --border: #2c3a6e; --border-hover: #ffd86b; --gold: #ffd86b;
+  --text: #e8ecff; --text-dim: #a8b0d8; --text-faint: #5c6494; --red: #ff5a6a; --green: #6fd08a; --live-accent: #6fd08a;
+  --history-view-accent: #ffd86b; --scrollbar: #2c3a6e; --scrollbar-hover: #ffd86b;
+  background: linear-gradient(180deg, #050817 0%, #0a0f2a 60%, #1a1838 100%); background-attachment: fixed;
+}
+html[data-theme="starfall"] body { background: transparent; }
+html[data-theme="koi"] {
+  --bg: #1b1c1f; --bg-rgb: 27, 28, 31; --input-bg: #26282c; --border: #5a5d63; --border-hover: #e0303a; --gold: #e0303a;
+  --text: #f2f2f2; --text-dim: #b4b6ba; --text-faint: #74777c; --red: #ff5a6a; --green: #6fd08a; --live-accent: #6fd08a;
+  --history-view-accent: #e0303a; --scrollbar: #5a5d63; --scrollbar-hover: #e0303a;
+  background: radial-gradient(ellipse at 50% 50%, #55595f 0%, #1b1c1f 75%); background-attachment: fixed;
+}
+html[data-theme="koi"] body { background: transparent; }
+html[data-theme="desert"] {
+  --bg: #2a1424; --bg-rgb: 42, 20, 36; --input-bg: #3a1c2c; --border: #7a4a2a; --border-hover: #ffb35c; --gold: #ffb35c;
+  --text: #f6ece4; --text-dim: #d4b4a4; --text-faint: #8a6a5c; --red: #ff5a6a; --green: #6fd08a; --live-accent: #6fd08a;
+  --history-view-accent: #ffb35c; --scrollbar: #7a4a2a; --scrollbar-hover: #ffb35c;
+  background: linear-gradient(180deg, #2a1838 0%, #a8485a 45%, #f0905a 70%, #f6c27a 100%); background-attachment: fixed;
+}
+html[data-theme="desert"] body { background: transparent; }
+html[data-theme="forest"] {
+  --bg: #0a1a12; --bg-rgb: 10, 26, 18; --input-bg: #12261a; --border: #2c5a38; --border-hover: #7ee08a; --gold: #7ee08a;
+  --text: #eaf6ec; --text-dim: #a4c8ac; --text-faint: #5c7a64; --red: #ff5a6a; --green: #6fd08a; --live-accent: #6fd08a;
+  --history-view-accent: #7ee08a; --scrollbar: #2c5a38; --scrollbar-hover: #7ee08a;
+  background: linear-gradient(180deg, #0e2a1c 0%, #04140c 100%); background-attachment: fixed;
+}
+html[data-theme="forest"] body { background: transparent; }
+.shop-scene { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.shop-scene.front { z-index: 9000; }
+.shop-scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; }

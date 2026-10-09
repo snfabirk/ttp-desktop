@@ -1,5 +1,18 @@
 # Internal Changelog
 
+## 5.19.0 — 2026-10-09
+
+- 33 shop cosmetics (cosmetics.js source 'shop'; designs from theme-lab/shop-*.html):
+  5 Animated (Deep Abyss, Neon City, Storm Crown, Obsidian Crown, Arcane Circuit),
+  8 Fancy, 14 Refined, 6 Basic. Placeholder SHOP_ITEMS removed; stale offers re-rolled.
+- public/shop-cosmetics.js: canvas renderers for shop borders/frames, registered via
+  TTPCos.register (cosmetics-fx.js), one shared loop, honours fx-off/fx-paused.
+- public/shop-scenes.js: theme scenes registered via TTPThemeFx.register (theme-fx.js);
+  TTPThemePreview for small stills. Theme colours appended to style.css.
+- Buying: POST /api/shop/buy (only items in your current offers, 20% coupon consumed),
+  two-click confirm, live previews in offers, hover preview on your own profile.
+- Overview shop tile now links to the shop; editor inventory grouped Pass / Shop / Basic.
+
 ## 5.18.2 — 2026-10-09
 
 - Buff removal (user design): ✕ on hover, two-click "Remove? Coins are lost",

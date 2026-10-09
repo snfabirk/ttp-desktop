@@ -25,6 +25,17 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.19.0',
+      date: '2026-10-09',
+      notable: [
+        'The shop is open! 33 new cosmetics - themes, borders and profile frames from Basic to Animated - and you can buy them with your coins.',
+        'Hover any shop item to preview it on your own profile.',
+        'Every Animated cosmetic hides its own secret. Have fun finding them.'
+      ],
+      refinements: 2,
+      bugfixes: 0
+    },
+    {
       version: '5.18.2',
       date: '2026-10-09',
       notable: [

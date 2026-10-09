@@ -282,6 +282,35 @@ body.editing .pframe-frame-2026-10-manor .bloom { transform: scale(0); }
 
 
 
+
+/* ===== Shop-Cosmetics (v5.19.0): Borders/Rahmen zeichnet shop-cosmetics.js ===== */
+.cos-border[class*="cos-border-shop-"] { padding: 0; overflow: visible; }
+.cos-border[class*="cos-border-shop-"]::before { display: none; }
+.cos-border[class*="cos-border-shop-"] > img, .cos-border[class*="cos-border-shop-"] > .cos-fill { border-radius: 50%; }
+.cb-canvas, .cf-canvas { position: absolute; pointer-events: none; z-index: 2; }
+.pframe[class*="pframe-frame-shop-"] { border-radius: 14px; }
+/* Platz nach oben, damit Deko ueber der Kante (Manometer, Leiterbahnen) den Untertitel nicht beruehrt */
+.canvas-wrap[class*="pframe-frame-shop-"] { margin-top: 30px; }
+.mini-frame-frame-shop-arcane { border: 2px solid #c8a85a; box-shadow: 0 0 6px rgba(10, 200, 185, .6), inset 0 0 0 1px rgba(10, 200, 185, .6); background: #071a1f; }
+.mini-frame-frame-shop-void { border: 2px solid #3a1a5e; box-shadow: 0 0 6px rgba(178, 107, 255, .7); background: #10081e; }
+.mini-frame-frame-shop-clock { border: 3px solid #8a5426; box-shadow: inset 0 0 0 1px #e2b45c; background: #1e160c; }
+.mini-frame-frame-shop-filigree { border: 2px double #e8c97a; background: #141008; }
+.mini-frame-frame-shop-iron { border: 3px solid #6a6a72; background: #14141a; }
+.mini-frame-frame-shop-ivy { border: 2px solid #3a5a2a; box-shadow: inset 0 0 0 1px #4caf7d; background: #0e1a12; }
+.mini-frame-frame-shop-rune { border: 2px solid #6a4ab0; box-shadow: 0 0 0 2px rgba(106, 74, 176, .35); background: #120c22; }
+.mini-frame-frame-shop-gilded { border: 3px solid #c8962e; box-shadow: inset 0 0 0 1px #f6dc8c; background: #18120a; }
+.mini-frame-frame-shop-marble { border: 3px solid #ece8e2; background: #14141a; }
+.mini-frame-frame-shop-bamboo { border: 3px solid #d8c070; background: #18160c; }
+.mini-frame-frame-shop-slate { border: 2px solid #6e7480; background: #14161a; }
+.mini-frame-frame-shop-oak { border: 3px solid #8a6a44; background: #18120c; }
+.mini-frame-frame-shop-paper { border: 2px dashed #e8e0cc; background: #16161a; }
+.mini-theme-abyss { background: radial-gradient(circle at 60% 35%, #3fd0c9 0 12%, transparent 13%), linear-gradient(180deg, #06324a, #01060c); border: 1px solid rgba(255, 255, 255, .25); }
+.mini-theme-neon { background: linear-gradient(180deg, #1a0c2c 0 55%, #ff4fb8 55% 62%, #0b0816 62%); border: 1px solid rgba(255, 255, 255, .25); }
+.mini-theme-starfall { background: radial-gradient(1.5px 1.5px at 30% 30%, #fff 50%, transparent), radial-gradient(1.5px 1.5px at 70% 45%, #ffd86b 50%, transparent), linear-gradient(180deg, #050817, #1a1838); border: 1px solid rgba(255, 255, 255, .25); }
+.mini-theme-koi { background: radial-gradient(ellipse 30% 14% at 40% 45%, #f4f4f2 60%, transparent 62%), radial-gradient(ellipse 22% 10% at 64% 62%, #d0222c 60%, transparent 62%), #3a3c41; border: 1px solid rgba(255, 255, 255, .25); }
+.mini-theme-desert { background: radial-gradient(circle at 70% 62%, #ffe6aa 0 12%, transparent 13%), linear-gradient(180deg, #2a1838, #a8485a 50%, #f0905a 70%, #8a3e2a 71%); border: 1px solid rgba(255, 255, 255, .25); }
+.mini-theme-forest { background: linear-gradient(180deg, #0e2a1c, #04140c), #0a1a12; border: 1px solid rgba(255, 255, 255, .25); }
+
 /* Einstellung "Animations" (theme-fx.js setzt die Klassen auf <html>):
    Aus = alle Cosmetic-Animationen stehen, inaktiv = pausiert. */
 html.fx-off .cos-border,

@@ -165,6 +165,13 @@
     // Aufwendige Borders/Rahmen (Spinnen, Kuerbis, Ranken ...)
     const cos = document.createElement('script');
     cos.src = 'cosmetics-fx.js';
+    // Shop-Cosmetics melden sich bei cosmetics-fx.js bzw. theme-fx.js an
+    cos.onload = () => {
+      const sc = document.createElement('script'); sc.src = 'shop-cosmetics.js'; document.head.appendChild(sc);
+    };
+    fx.onload = () => {
+      const ss = document.createElement('script'); ss.src = 'shop-scenes.js'; document.head.appendChild(ss);
+    };
     document.head.appendChild(cos);
   }
 

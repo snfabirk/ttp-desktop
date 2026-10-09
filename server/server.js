@@ -776,6 +776,10 @@ app.post('/api/shop/consumable', (req, res) => {
   const result = progression.buyConsumable(Number(slot), choice || null, progressionContext(req.body || {}));
   res.status(result.ok ? 200 : 400).json(result);
 });
+app.post('/api/shop/buy', (req, res) => {
+  const result = progression.buyShopItem((req.body || {}).id);
+  res.status(result.ok ? 200 : 400).json(result);
+});
 app.post('/api/shop/buff/discard', (req, res) => {
   const result = progression.discardBuff((req.body || {}).kind);
   res.status(result.ok ? 200 : 400).json(result);

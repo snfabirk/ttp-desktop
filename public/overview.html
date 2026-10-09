@@ -125,15 +125,6 @@
       text-align: left;
     }
     .tile-grid .role-breakdown-more { display: none; }
-    .shop-card {
-      cursor: default;
-      opacity: 0.6;
-    }
-    .shop-card:hover {
-      border-color: var(--border) !important;
-      transform: none !important;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
-    }
     .trophies-card:hover {
       border-color: var(--gold);
       transform: translateY(-2px);
@@ -515,11 +506,11 @@
         <span class="trophies-label">Trophies</span>
         <span class="trophies-progress" id="trophiesProgress">0%</span>
       </a>
-      <div class="trophies-card shop-card" id="shopCard" title="Spend your pass coins on cosmetics - coming soon">
+      <a href="shop.html" class="trophies-card shop-card" id="shopCard" title="Spend your coins on cosmetics">
         <span class="trophies-icon">🛒</span>
         <span class="trophies-label">Shop</span>
-        <span class="trophies-progress">Coming soon</span>
-      </div>
+        <span class="trophies-progress" id="shopProgress">New offers daily</span>
+      </a>
     </div>
 
     <div class="dash-card">

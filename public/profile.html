@@ -1206,6 +1206,13 @@
       const countLine = ([have, all]) => `<div class="inv-count"><span>Collected <b>${have} / ${all}</b></span><span class="bar"><i style="width:${all ? have / all * 100 : 0}%"></i></span></div>`;
       const RAR = { basic: 'Basic', refined: 'Refined', fancy: 'Fancy', animated: 'Animated' };
       const rarTag = c => (c.id && c.rarity ? `<small class="rar rar-${c.rarity}">${RAR[c.rarity]}</small>` : '') + (rentedIds.has(c.id) ? '<small class="inv-trial">⏳ Trial</small>' : '');
+      // Gruppen: Monthly Pass / Shop (nach Seltenheit sortiert) / Basic
+      const RANK = { animated: 0, fancy: 1, refined: 2, basic: 3 };
+      const groups = (list, cell, basicHead) => {
+        const pass = list.filter(c => c.passMonth), shopL = list.filter(c => c.source === 'shop').sort((a, b) => RANK[a.rarity] - RANK[b.rarity]);
+        return (pass.length ? `<div class="inv-sub">Monthly Pass</div><div class="inv-grid">${pass.map(cell).join('')}</div>` : '') +
+          (shopL.length ? `<div class="inv-sub">Shop</div><div class="inv-grid">${shopL.map(cell).join('')}</div>` : '') + basicHead;
+      };
       const lockAttr = c => `class="inv-item locked" title="Locked - ${esc(c.source || 'not collected yet')}" aria-disabled="true"`;
       if (invTab === 'border') {
         const cell = c => {
@@ -1214,9 +1221,8 @@
             <span class="cos-border cos-${c.id || 'none'}"><span class="cos-fill"></span></span>${esc(c.name)}${rarTag(c)}
           </div>`;
         };
-        const special = ofType('border').filter(c => !c.base), basic = ofType('border').filter(c => c.base);
-        list.innerHTML = countLine(counts.border) +
-          (special.length ? `<div class="inv-sub">Monthly Pass</div><div class="inv-grid">${special.map(cell).join('')}</div>` : '') +
+        const basic = ofType('border').filter(c => c.base);
+        list.innerHTML = countLine(counts.border) + groups(ofType('border').filter(c => !c.base), cell, '') +
           `<div class="inv-sub">Basic</div><div class="inv-grid">${[{ id: null, name: 'Default' }, ...basic].map(cell).join('')}</div>`;
       } else if (invTab === 'frame') {
         const sel = owned.find(c => c.id === editState.frame);
@@ -1226,9 +1232,8 @@
             ${c.id ? `<span class="mini-frame mini-frame-${c.id}"></span>` : '<span class="mini-frame mini-none"></span>'}${esc(c.name)}${rarTag(c)}
           </div>`;
         };
-        const special = ofType('frame').filter(c => !c.base), basic = ofType('frame').filter(c => c.base);
-        list.innerHTML = countLine(counts.frame) +
-          (special.length ? `<div class="inv-sub">Monthly Pass</div><div class="inv-grid">${special.map(cell).join('')}</div>` : '') +
+        const basic = ofType('frame').filter(c => c.base);
+        list.innerHTML = countLine(counts.frame) + groups(ofType('frame').filter(c => !c.base), cell, '') +
           `<div class="inv-sub">Basic</div><div class="inv-grid">${[{ id: null, name: 'No frame' }, ...basic].map(cell).join('')}</div>` +
           (sel && sel.hasBackground
             ? `<label class="inv-toggle"><input type="checkbox" id="frameBgToggle"${editState.frameBg ? ' checked' : ''}> Show profile background</label>`
@@ -1245,7 +1250,7 @@
           </div>`;
         };
         list.innerHTML = countLine(counts.theme) +
-          (passThemes.length ? `<div class="inv-sub">Monthly Pass</div><div class="inv-grid">${passThemes.map(item).join('')}</div>` : '') +
+          groups(passThemes, item, '') +
           `<div class="inv-sub">Basic</div><div class="inv-grid">${BASE_THEMES.map(item).join('')}</div>` +
           '<p class="inv-note">Only you see your theme.</p>';
       } else {

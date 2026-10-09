@@ -301,7 +301,19 @@
     });
   }
 
-  window.TTPCos = { decorateFrame, scan };
+  // Weitere Cosmetics (z.B. die Shop-Teile aus shop-cosmetics.js) melden sich
+  // hier an; schon sichtbare Elemente werden sofort nachdekoriert.
+  function register(kind, id, fn) {
+    if (kind === 'border') {
+      BORDERS[id] = fn;
+      if (document.body) document.querySelectorAll(`.cos-border.cos-${id}`).forEach(decorate);
+    } else {
+      FRAMES[id] = fn;
+      if (document.body) document.querySelectorAll(`.pframe-${id}`).forEach(w => { w.dataset.pfDeco = id; decorateFrame(w, id); });
+    }
+  }
+
+  window.TTPCos = { decorateFrame, scan, register };
 
   function init() {
     scan(document.body);
