@@ -9,10 +9,7 @@
 - Lucky Wheel: small SVG wheel, click -> zooms to the screen centre (overlay),
   one free spin per quest day (server-side `wheel.lastSpinDay`, second spin
   -> 400), placeholder coin segments/weights; result credited to coins.
-- PRIVATE (user's own easter egg, never mention in-app): 13 clicks in the
-  invisible bottom-left corner of the shop (cursor stays default) toggles a
-  plain bright yellow wheel (localStorage `ttp_wheel_sep`) - homage to the
-  user's SEP uni project.
+- One small private extra on the shop page.
 - Pass coins per tier: 80 (1-10) / 100 (11-20) / 120 (21-30), total 2,400
   unchanged; already claimed tiers keep what they paid.
 
