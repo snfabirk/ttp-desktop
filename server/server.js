@@ -777,7 +777,7 @@ app.post('/api/shop/consumable', (req, res) => {
   res.status(result.ok ? 200 : 400).json(result);
 });
 app.post('/api/shop/buy', (req, res) => {
-  const result = progression.buyShopItem((req.body || {}).id);
+  const result = progression.buyShopItem((req.body || {}).id, !!(req.body || {}).voucher);
   res.status(result.ok ? 200 : 400).json(result);
 });
 app.post('/api/shop/buff/discard', (req, res) => {

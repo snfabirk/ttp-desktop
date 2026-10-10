@@ -102,6 +102,14 @@
     cursor: pointer;
   }
   .offer-buy:hover { background: color-mix(in srgb, var(--gold) 14%, transparent); }
+  /* Gutschein (30+5): eigener Knopf unter dem Preis */
+  .offer-voucher {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 12px; border-radius: 12px;
+    border: 1px dashed var(--gold); background: color-mix(in srgb, var(--gold) 10%, transparent);
+    color: var(--gold); font-family: inherit; font-size: 0.75rem; cursor: pointer;
+  }
+  .offer-voucher:hover, .offer-voucher.confirm { background: color-mix(in srgb, var(--gold) 22%, transparent); }
   .offer-buy.confirm { background: var(--gold); color: var(--bg); }
   .offer-buy.confirm b { color: var(--bg); }
   .offer-buy:disabled { cursor: default; border-color: var(--border); color: var(--text-faint); background: transparent; }
@@ -250,6 +258,13 @@
     background: transparent; color: var(--text-faint); font-family: inherit; font-size: 0.72rem; cursor: pointer; white-space: nowrap;
   }
   .buff:hover .buff-x, .buff-x.confirm { display: inline-block; }
+  .voucher-head { margin: 14px 0 6px; color: var(--text-faint); font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase; }
+  .voucher {
+    display: flex; align-items: center; gap: 8px; height: 32px; box-sizing: border-box; padding: 5px 10px; border-radius: 8px;
+    border: 1px dashed var(--gold); background: color-mix(in srgb, var(--gold) 14%, transparent);
+    font-size: 0.78rem; color: var(--gold);
+  }
+  .voucher .buff-time { margin-left: auto; color: var(--text-faint); font-size: 0.72rem; white-space: nowrap; }
   .buff:hover .buff-time:has(+ .buff-x) { display: none; }
   .buff-x:hover { color: var(--red); border-color: var(--red); }
   .buff-x.confirm { color: var(--bg); background: var(--red); border-color: var(--red); }
@@ -335,6 +350,7 @@
         <div class="goods" id="goods"></div>
         <div class="buffs-head">Active buffs <span id="buffCount"></span></div>
         <div class="buffs" id="buffs"></div>
+        <div id="voucherSlot"></div>
       </section>
     </aside>
   </div>
@@ -387,6 +403,13 @@
       if (shop.couponActive) return `🪙 <s>${fmtNum(o.price)}</s> <b>${fmtNum(Math.round(o.price * 0.8))}</b>`;
       return `🪙 <b>${fmtNum(o.price)}</b>`;
     }
+    // Gutschein: nur Refined/Fancy, nur solange er laeuft
+    const voucherOk = o => shop.voucher && !o.owned && shop.voucher.rarities.includes(o.rarity);
+    function voucherBtn(o) {
+      if (!voucherOk(o)) return '';
+      const c = buyConfirm.has('v:' + o.id);
+      return `<button type="button" class="offer-voucher${c ? ' confirm' : ''}" data-voucher="${o.id}">${c ? 'Use your voucher on this?' : '🎫 Free with voucher'}</button>`;
+    }
     function offerHtml(o) {
       const eff = shop.couponActive ? Math.round(o.price * 0.8) : o.price;
       const btn = o.owned
@@ -402,6 +425,7 @@
         ${o.devChoice ? '<span class="dev-choice" title="A homage to one of the developer\'s favourite games">Developer\'s Choice</span>' : ''}
         ${o.fromPass ? `<span class="offer-from">from the ${esc(o.fromPass)}</span>` : ''}
         ${btn}
+        ${voucherBtn(o)}
         <span class="offer-msg">${buyMsg[o.id] ? esc(buyMsg[o.id]) : ''}</span>
       </div>`;
     }
@@ -541,6 +565,21 @@
 
     // ----- Kaufen: zwei Klicks (Preis -> "Buy for ...?") -----
     document.querySelector('.shop').addEventListener('click', async e => {
+      const v = e.target.closest('[data-voucher]');
+      if (v) {
+        const id = v.dataset.voucher, key = 'v:' + id;
+        if (!buyConfirm.has(key)) {
+          buyConfirm.clear(); buyConfirm.add(key); render();
+          setTimeout(() => { if (buyConfirm.delete(key)) render(); }, 4000);
+          return;
+        }
+        buyConfirm.clear();
+        let r;
+        try { r = await (await fetch('/api/shop/buy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, voucher: true }) })).json(); } catch (err) { r = { ok: false, error: 'Could not reach the app server.' }; }
+        buyMsg[id] = r.ok ? "It's yours - voucher used! Equip it in your profile." : (r.error || 'Something went wrong.');
+        await load();
+        return;
+      }
       const b = e.target.closest('[data-buy]');
       if (!b) return;
       const id = b.dataset.buy;
@@ -589,6 +628,9 @@
           ? `<div class="buff"><span>${esc(b.label)}${b.detail ? ` <small>· ${esc(b.detail)}</small>` : ''}</span><span class="buff-time">⏳ ${until(b.expiresAt)}</span>${discardBtn(b)}</div>`
           : '<div class="buff free">Free slot</div>';
       }).join('');
+      document.getElementById('voucherSlot').innerHTML = shop.voucher
+        ? `<div class="voucher-head">Voucher</div><div class="voucher" title="From pass step 30+5: one free Refined or Fancy item from your current offers">🎫 Free Refined or Fancy item<span class="buff-time">⏳ ${until(shop.voucher.expiresAt)}</span></div>`
+        : '';
     }
 
     // Buff entfernen: Notausgang ohne Erstattung, danach 24 h Pause

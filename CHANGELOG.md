@@ -1,5 +1,12 @@
 # Internal Changelog
 
+## 5.22.0 — 2026-10-10
+
+- Voucher (user idea): at pass step 30+5 (once per month, pass.voucherGranted) state.voucher is granted; the 24h start on the first
+  /api/shop call after that (expiresAt null until then) so it can't run out while the app sits in the tray. Own slot under the buffs
+  (not one of the 3). Redeem: POST /api/shop/buy { id, voucher: true } - Refined/Fancy offers in daily AND weekly, price 0, coupon untouched.
+- Pass 30+ row: label shows the current step (30+N), step pills +1..+5 with the ticket on +5 and a status note.
+
 ## 5.21.0 — 2026-10-10
 
 - Pass balance (user: "auch mal abschalten können"): PASS_XP_PER_TIER 1500 -> 1200 (tier 30 = 36,000 XP, ~46 pool games / ~32 with quests);

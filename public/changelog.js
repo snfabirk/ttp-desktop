@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.22.0',
+      date: '2026-10-10',
+      notable: [
+        'Pass step 30+5 now gives a voucher for one free Refined or Fancy item from your shop offers. It lasts 24 hours from the moment you next open the shop.',
+        'The 30+ row in the pass shows which step you are on and how far the voucher is.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.21.0',
       date: '2026-10-10',
       notable: [

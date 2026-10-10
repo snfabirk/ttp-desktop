@@ -69,6 +69,14 @@ const FALLBACK_COSMETIC_COINS = 300; // Monat ohne angelegte Cosmetics
 const OVERFLOW_XP_FIRST = 2000;
 const OVERFLOW_XP_GROWTH = 300;
 const COINS_PER_OVERFLOW_STEP = 100;
+// Gutschein (Nutzeridee 2026-10-10, v5.22.0): bei 30+5 gibt es einmal pro
+// Monat einen Gutschein fuer ein Gratis-Refined/Fancy aus den aktuellen
+// Angeboten (Daily + Weekly). Er laeuft 24 h - gezaehlt ab dem ersten Oeffnen
+// des Shops, damit er nicht verfaellt, waehrend die App nur im Tray laeuft.
+// Eigener Platz, belegt keinen der 3 Buff-Slots.
+const VOUCHER_AT_OVERFLOW = 5;
+const VOUCHER_RARITIES = ['refined', 'fancy'];
+const VOUCHER_DURATION_MS = 24 * 3600e3;
 const overflowStepCost = n => OVERFLOW_XP_FIRST + OVERFLOW_XP_GROWTH * n; // n = schon erreichte Stufen
 
 // XP fuer Level n -> n+1: jedes Level 100 XP teurer, ab Level 21 fix 4.000
@@ -342,7 +350,23 @@ function claimPassRewards(state, month) {
     state.coins += (prog.overflowCount - pass.claimedOverflow) * COINS_PER_OVERFLOW_STEP;
     pass.claimedOverflow = prog.overflowCount;
   }
+  if (prog.overflowCount >= VOUCHER_AT_OVERFLOW && !pass.voucherGranted) {
+    pass.voucherGranted = true;
+    state.voucher = { month, grantedAt: new Date().toISOString(), expiresAt: null };
+  }
 }
+
+// Abgelaufenen Gutschein entfernen; liefert true bei Aenderung
+function pruneVoucher(state) {
+  if (state.voucher && state.voucher.expiresAt && new Date(state.voucher.expiresAt).getTime() <= Date.now()) {
+    state.voucher = null;
+    return true;
+  }
+  return false;
+}
+const voucherView = state => state.voucher && !(state.voucher.expiresAt && new Date(state.voucher.expiresAt).getTime() <= Date.now())
+  ? { expiresAt: state.voucher.expiresAt, rarities: VOUCHER_RARITIES }
+  : null;
 
 function addPassXp(state, month, xp) {
   if (!state.passes[month]) state.passes[month] = { xp: 0, claimedTier: 0, claimedOverflow: 0 };
@@ -372,8 +396,11 @@ function getPassOverview(state, now) {
       stepGrowthXp: OVERFLOW_XP_GROWTH,
       coinsPerStep: COINS_PER_OVERFLOW_STEP,
       count: prog.overflowCount,
-      xpInto: prog.overflowXpInto
-    }
+      xpInto: prog.overflowXpInto,
+      voucherAt: VOUCHER_AT_OVERFLOW,
+      voucherGranted: !!(state.passes[month] && state.passes[month].voucherGranted)
+    },
+    voucher: voucherView(state)
   };
 }
 
@@ -964,15 +991,24 @@ function buyConsumable(slot, choice, context) {
 
 // Shop-Kauf (v5.19.0): nur was heute/diese Woche im eigenen Shop angeboten
 // wird; Basic ist gratis; ein aktiver 20%-Gutschein wird dabei verbraucht.
-function buyShopItem(id) {
+function buyShopItem(id, useVoucher) {
   const state = readState();
   const now = new Date();
   pruneBuffs(state);
+  pruneVoucher(state);
   refreshShop(state, now);
   if (!state.shop.daily.includes(id) && !state.shop.weekly.includes(id)) return { ok: false, error: 'This item is not in your shop right now.' };
   const c = getCosmetic(id);
   if (!c) return { ok: false, error: 'Unknown item.' };
   if (state.inventory.includes(id)) return { ok: false, error: 'You already own this.' };
+  if (useVoucher) {
+    if (!state.voucher) return { ok: false, error: 'Your voucher has expired.' };
+    if (!VOUCHER_RARITIES.includes(c.rarity)) return { ok: false, error: 'The voucher only works on Refined and Fancy items.' };
+    state.voucher = null;
+    state.inventory.push(id);
+    writeState(state);
+    return { ok: true, id, price: 0, usedVoucher: true, coins: state.coins, cosmetic: { id: c.id, name: c.name, type: c.type, themeKey: c.themeKey || null } };
+  }
   let price = priceOf(c);
   const coupon = price > 0 ? activeBuff(state, 'coupon') : null;
   if (coupon) price = Math.round(price * 0.8);
@@ -1019,7 +1055,13 @@ function getShopState() {
   const shopChanged = refreshShop(state, now);
   const consChanged = refreshConsumables(state, now);
   const buffsChanged = pruneBuffs(state);
-  if (shopChanged || consChanged || buffsChanged) writeState(state);
+  let voucherChanged = pruneVoucher(state);
+  // Erstes Oeffnen des Shops startet die 24 h
+  if (state.voucher && !state.voucher.expiresAt) {
+    state.voucher.expiresAt = new Date(now.getTime() + VOUCHER_DURATION_MS).toISOString();
+    voucherChanged = true;
+  }
+  if (shopChanged || consChanged || buffsChanged || voucherChanged) writeState(state);
   const owned = new Set(state.inventory);
   return {
     provisional: true,
@@ -1034,6 +1076,7 @@ function getShopState() {
     discardAvailableAt: (t => t && t > Date.now() ? new Date(t).toISOString() : null)(discardAvailableAt(state)),
     consumablesResetAt: nextDailyReset(now).toISOString(),
     buffs: buffsView(state),
+    voucher: voucherView(state),
     tryOn: lootableCosmetics(state).filter(c => !rentedIds(state).includes(c.id)).map(c => ({ id: c.id, name: c.name, type: c.type, rarity: c.rarity, themeKey: c.themeKey || null })),
     daily: state.shop.daily.map(id => offerView(id, owned)).filter(Boolean),
     weekly: state.shop.weekly.map(id => offerView(id, owned)).filter(Boolean),

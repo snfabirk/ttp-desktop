@@ -778,7 +778,21 @@
       font-family: 'Cinzel', Georgia, serif;
       font-size: 0.85rem;
     }
-    .pass-overflow .xp-bar { flex: 1; height: 8px; }
+    .pass-overflow .xp-bar { height: 8px; }
+    .pass-overflow .of-mid { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 8px 0; }
+    /* 30+-Stufen +1..+5, die fuenfte traegt den Gutschein (v5.22.0) */
+    .of-steps { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .of-step {
+      font-size: 0.68rem; color: var(--text-faint); padding: 1px 7px; border-radius: 9px;
+      border: 1px solid color-mix(in srgb, var(--border) 80%, transparent); font-variant-numeric: tabular-nums;
+    }
+    .of-step.done { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 55%, transparent); }
+    .of-step.voucher {
+      color: var(--gold); border: 1px dashed var(--gold);
+      background: color-mix(in srgb, var(--gold) 10%, transparent);
+    }
+    .of-step.voucher.done { background: color-mix(in srgb, var(--gold) 22%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--gold) 45%, transparent); }
+    .of-step-note { font-size: 0.68rem; color: var(--text-faint); }
     .pass-overflow .of-info {
       color: var(--text-dim);
       font-size: 0.75rem;
@@ -1116,7 +1130,7 @@
         </div>
         <div class="prog-card pass-card">
           <div class="prog-card-head">
-            <h3><span id="passTitle">Monthly Pass</span> <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">A new pass starts every month. Tiers 5, 10, 15, 20, 25 and 30 unlock this month's exclusive cosmetics (yours forever), all other tiers give coins for the shop. After tier 30 you keep earning 100 coins per step - the first step takes 2,000 XP, every further one 300 XP more. Every reward is given once per tier - resetting a challenge doesn't reset the pass.</span></span></h3>
+            <h3><span id="passTitle">Monthly Pass</span> <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">A new pass starts every month. Tiers 5, 10, 15, 20, 25 and 30 unlock this month's exclusive cosmetics (yours forever), all other tiers give coins for the shop. After tier 30 you keep earning 100 coins per step - the first step takes 2,000 XP, every further one 300 XP more. Step 30+5 also gives a voucher for one free Refined or Fancy shop item - it lasts 24 hours from when you next open the shop. Every reward is given once per tier - resetting a challenge doesn't reset the pass.</span></span></h3>
             <span class="reset-in" id="passEndsIn"></span>
           </div>
           <div class="xp-bar"><div class="xp-bar-fill" id="passXpFill"></div></div>
@@ -1817,10 +1831,19 @@
       const done = pass.tier >= pass.tiers;
       const el = document.getElementById('passOverflow');
       el.classList.toggle('locked', !done);
-      el.title = `After tier ${pass.tiers}: +${of.coinsPerStep} coins per step, as often as you like - the first step takes ${fmtNum(of.firstStepXp)} XP, every further step ${fmtNum(of.stepGrowthXp)} XP more`;
-      el.innerHTML = `<span class="of-label">30+</span>` +
-        `<div class="xp-bar"><div class="xp-bar-fill" style="width:${done ? (of.xpInto / of.xpPerStep) * 100 : 0}%"></div></div>` +
-        `<span class="of-info">${done ? `${fmtNum(of.xpInto)} / ${fmtNum(of.xpPerStep)} XP · ${of.count}× claimed` : `🪙 +${of.coinsPerStep} per step from ${fmtNum(of.firstStepXp)} XP`}</span>`;
+      el.title = `After tier ${pass.tiers}: +${of.coinsPerStep} coins per step, as often as you like - the first step takes ${fmtNum(of.firstStepXp)} XP, every further step ${fmtNum(of.stepGrowthXp)} XP more. Step +${of.voucherAt} also gives a voucher for one free Refined or Fancy shop item.`;
+      const count = done ? of.count : 0;
+      let steps = '';
+      for (let k = 1; k <= of.voucherAt; k++) {
+        const isV = k === of.voucherAt;
+        const got = isV ? of.voucherGranted : count >= k;
+        steps += `<span class="of-step${isV ? ' voucher' : ''}${got ? ' done' : ''}">${isV ? '🎫 ' : ''}+${k}${got ? ' ✓' : ''}</span>`;
+      }
+      const note = of.voucherGranted ? (pass.voucher ? 'Voucher ready - use it in the shop' : 'Voucher claimed this month') : 'Free Refined or Fancy item';
+      el.innerHTML = `<span class="of-label">30+${count ? count : ''}</span>` +
+        `<div class="of-mid"><div class="xp-bar"><div class="xp-bar-fill" style="width:${done ? (of.xpInto / of.xpPerStep) * 100 : 0}%"></div></div>` +
+        `<div class="of-steps">${steps}<span class="of-step-note">${note}</span></div></div>` +
+        `<span class="of-info">${done ? `${fmtNum(of.xpInto)} / ${fmtNum(of.xpPerStep)} XP` : `🪙 +${of.coinsPerStep} per step from ${fmtNum(of.firstStepXp)} XP`}</span>`;
     }
 
     // LP-Konto (server/lib/progression.js creditLp): Gewinne fuellen 0-100,
