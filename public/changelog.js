@@ -25,6 +25,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.23.0',
+      date: '2026-10-10',
+      notable: ["Profile inventory: this month's pass items sit on top, everything else is sorted by rarity (Animated+ down to Basic) with the items you own first. A new button hides the ones you don't own yet."],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.22.3',
       date: '2026-10-10',
       notable: [],

@@ -1,5 +1,10 @@
 # Internal Changelog
 
+## 5.23.0 — 2026-10-10
+
+- Profile editor inventory (user design): "Monthly Pass" group = ONLY the running month's pass items; everything else (older pass items, shop, base) grouped by rarity Animated+ > Animated > Fancy > Refined > Basic, owned first then locked. Default/No frame and the 8 base themes lead the Basic group. Empty groups are skipped.
+- "Hide locked / Show locked" button next to the collected counter (localStorage ttp_inv_show_locked); counter row wraps in the narrow panel.
+
 ## 5.22.3 — 2026-10-10
 
 - Profile editor inventory: the whole "Shop" group was missing in all three tabs (bought shop items counted in x/y but were not listed). The catalog sends the display label source "Shop", the grouping compared against "shop"; it now groups by !passMonth && !base.

@@ -440,9 +440,16 @@
     .inv-item.locked { cursor: not-allowed; opacity: 0.5; filter: grayscale(1); }
     .inv-item.locked:hover { border-color: color-mix(in srgb, var(--border) 70%, transparent); color: var(--text-dim); }
     .inv-item.locked::after { content: '🔒'; position: absolute; top: 4px; right: 5px; font-size: 0.7rem; filter: grayscale(1); }
-    .inv-count { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--text-dim); font-size: 0.72rem; }
+    .inv-count { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-bottom: 10px; color: var(--text-dim); font-size: 0.72rem; }
+    .inv-count > span:first-child { white-space: nowrap; }
+    .inv-lock-toggle {
+      flex-shrink: 0; margin-left: auto; padding: 2px 9px; border-radius: 10px; border: 1px solid var(--border);
+      background: transparent; color: var(--text-dim); font-family: inherit; font-size: 0.68rem; cursor: pointer; white-space: nowrap;
+    }
+    .inv-lock-toggle:hover { border-color: var(--gold); color: var(--gold); }
+    .inv-lock-toggle.off { border-color: var(--gold); color: var(--gold); }
     .inv-count b { color: var(--gold); font-weight: normal; }
-    .inv-count .bar { flex: 1; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--text-faint) 25%, transparent); overflow: hidden; }
+    .inv-count .bar { flex: 1 1 50px; min-width: 50px; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--text-faint) 25%, transparent); overflow: hidden; }
     .inv-count .bar i { display: block; height: 100%; background: var(--gold); }
     .inv-tab small { margin-left: 4px; color: var(--text-faint); font-size: 0.62rem; }
     .inv-tab.active small { color: inherit; }
@@ -683,6 +690,9 @@
 
     // ===== Daten =====
     const data = { account: null, stats: null, rank: null, champions: [] };
+    // Inventar: nicht besessene Items zeigen? (Knopf im Inventar, gemerkt)
+    let showLocked = true;
+    try { showLocked = localStorage.getItem('ttp_inv_show_locked') !== '0'; } catch (e) {}
 
     // ===== Bausteine =====
     const RANK_ABBR = { IRON: 'Iron', BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold', PLATINUM: 'Plat', EMERALD: 'Emerald', DIAMOND: 'Diamond', MASTER: 'Master', GRANDMASTER: 'GM', CHALLENGER: 'Challenger' };
@@ -1206,17 +1216,27 @@
       document.getElementById('invTabs').innerHTML = INV_TABS
         .map(t => `<button type="button" class="inv-tab${t.id === invTab ? ' active' : ''}" data-invtab="${t.id}">${t.label}${counts[t.id] ? `<small>${counts[t.id][0]}/${counts[t.id][1]}</small>` : ''}</button>`).join('');
       const list = document.getElementById('invList');
-      const countLine = ([have, all]) => `<div class="inv-count"><span>Collected <b>${have} / ${all}</b></span><span class="bar"><i style="width:${all ? have / all * 100 : 0}%"></i></span></div>`;
+      const countLine = ([have, all]) => `<div class="inv-count"><span>Collected <b>${have} / ${all}</b></span><span class="bar"><i style="width:${all ? have / all * 100 : 0}%"></i></span>` +
+        `<button type="button" class="inv-lock-toggle${showLocked ? '' : ' off'}" data-toggle-locked title="${showLocked ? 'Hide' : 'Show'} items you don't own yet">🔒 ${showLocked ? 'Hide locked' : 'Show locked'}</button></div>`;
       const RAR = { basic: 'Basic', refined: 'Refined', fancy: 'Fancy', animated: 'Animated', animatedplus: 'Animated+' };
       const rarTag = c => (c.id && c.rarity ? `<small class="rar rar-${c.rarity}">${RAR[c.rarity]}</small>` : '') + (rentedIds.has(c.id) ? '<small class="inv-trial">⏳ Trial</small>' : '');
-      // Gruppen: Monthly Pass / Shop (nach Seltenheit sortiert) / Basic. Shop =
-      // weder Pass noch Basic - NICHT ueber c.source, der Katalog liefert dort
-      // das Anzeige-Label "Shop" (Bug bis v5.22.2: Shop-Gruppe fehlte ganz)
-      const RANK = { animatedplus: -1, animated: 0, fancy: 1, refined: 2, basic: 3 };
-      const groups = (list, cell, basicHead) => {
-        const pass = list.filter(c => c.passMonth), shopL = list.filter(c => !c.passMonth && !c.base).sort((a, b) => RANK[a.rarity] - RANK[b.rarity]);
-        return (pass.length ? `<div class="inv-sub">Monthly Pass</div><div class="inv-grid">${pass.map(cell).join('')}</div>` : '') +
-          (shopL.length ? `<div class="inv-sub">Shop</div><div class="inv-grid">${shopL.map(cell).join('')}</div>` : '') + basicHead;
+      // Reihenfolge (Nutzerdesign 2026-10-10): oben NUR der laufende Monatspass,
+      // danach nach Seltenheit absteigend (aeltere Pass-Items rutschen in ihre
+      // Stufe). In jeder Stufe erst Besessenes, dann Fehlendes. Fehlendes kann
+      // per Knopf ausgeblendet werden (gemerkt in localStorage).
+      const RANK_ORDER = ['animatedplus', 'animated', 'fancy', 'refined', 'basic'];
+      const nowD = new Date();
+      const curMonth = `${nowD.getFullYear()}-${String(nowD.getMonth() + 1).padStart(2, '0')}`;
+      const isOwned = c => !c.id || usableIds.has(c.id);
+      const sections = (items, cell, basicExtras = []) => {
+        const vis = c => showLocked || isOwned(c);
+        const byOwn = list => [...list.filter(isOwned), ...list.filter(c => !isOwned(c))].filter(vis);
+        const block = (title, list) => list.length ? `<div class="inv-sub">${title}</div><div class="inv-grid">${list.map(cell).join('')}</div>` : '';
+        const cur = items.filter(c => c.passMonth === curMonth);
+        const rest = items.filter(c => c.passMonth !== curMonth);
+        return block('Monthly Pass', byOwn(cur)) + RANK_ORDER.map(r => block(RAR[r],
+          r === 'basic' ? [...basicExtras, ...byOwn(rest.filter(c => (c.rarity || 'basic') === 'basic'))] : byOwn(rest.filter(c => c.rarity === r))
+        )).join('');
       };
       const lockAttr = c => `class="inv-item locked" title="Locked - ${esc(c.source || 'not collected yet')}" aria-disabled="true"`;
       if (invTab === 'border') {
@@ -1226,9 +1246,7 @@
             <span class="cos-border cos-${c.id || 'none'}"><span class="cos-fill"></span></span>${esc(c.name)}${rarTag(c)}
           </div>`;
         };
-        const basic = ofType('border').filter(c => c.base);
-        list.innerHTML = countLine(counts.border) + groups(ofType('border').filter(c => !c.base), cell, '') +
-          `<div class="inv-sub">Basic</div><div class="inv-grid">${[{ id: null, name: 'Default' }, ...basic].map(cell).join('')}</div>`;
+        list.innerHTML = countLine(counts.border) + sections(ofType('border'), cell, [{ id: null, name: 'Default' }]);
       } else if (invTab === 'frame') {
         const sel = owned.find(c => c.id === editState.frame);
         const cell = c => {
@@ -1237,9 +1255,7 @@
             ${c.id ? `<span class="mini-frame mini-frame-${c.id}"></span>` : '<span class="mini-frame mini-none"></span>'}${esc(c.name)}${rarTag(c)}
           </div>`;
         };
-        const basic = ofType('frame').filter(c => c.base);
-        list.innerHTML = countLine(counts.frame) + groups(ofType('frame').filter(c => !c.base), cell, '') +
-          `<div class="inv-sub">Basic</div><div class="inv-grid">${[{ id: null, name: 'No frame' }, ...basic].map(cell).join('')}</div>` +
+        list.innerHTML = countLine(counts.frame) + sections(ofType('frame'), cell, [{ id: null, name: 'No frame' }]) +
           (sel && sel.hasBackground
             ? `<label class="inv-toggle"><input type="checkbox" id="frameBgToggle"${editState.frameBg ? ' checked' : ''}> Show profile background</label>`
             : '');
@@ -1255,14 +1271,19 @@
           </div>`;
         };
         list.innerHTML = countLine(counts.theme) +
-          groups(passThemes, item, '') +
-          `<div class="inv-sub">Basic</div><div class="inv-grid">${BASE_THEMES.map(item).join('')}</div>` +
+          sections(passThemes, item, BASE_THEMES) +
           '<p class="inv-note">Only you see your theme.</p>';
       } else {
         list.innerHTML = '<p class="inv-empty">Coming soon.</p>';
       }
     }
 
+    document.getElementById('invList').addEventListener('click', e => {
+      if (!e.target.closest('[data-toggle-locked]')) return;
+      showLocked = !showLocked;
+      try { localStorage.setItem('ttp_inv_show_locked', showLocked ? '1' : '0'); } catch (err) {}
+      renderPanels();
+    });
     document.getElementById('invTabs').addEventListener('click', e => {
       const t = e.target.closest('[data-invtab]');
       if (!t) return;
