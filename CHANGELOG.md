@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 5.22.3 — 2026-10-10
+
+- Profile editor inventory: the whole "Shop" group was missing in all three tabs (bought shop items counted in x/y but were not listed). The catalog sends the display label source "Shop", the grouping compared against "shop"; it now groups by !passMonth && !base.
+
 ## 5.22.2 — 2026-10-10
 
 - Voucher (user): only for TODAY's daily offers, expires at the next daily reset (granted with expiresAt = nextDailyReset; the "24h from first shop open" logic is gone). Weekly offers no longer show the voucher button; server rejects non-daily ids.

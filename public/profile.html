@@ -1209,10 +1209,12 @@
       const countLine = ([have, all]) => `<div class="inv-count"><span>Collected <b>${have} / ${all}</b></span><span class="bar"><i style="width:${all ? have / all * 100 : 0}%"></i></span></div>`;
       const RAR = { basic: 'Basic', refined: 'Refined', fancy: 'Fancy', animated: 'Animated', animatedplus: 'Animated+' };
       const rarTag = c => (c.id && c.rarity ? `<small class="rar rar-${c.rarity}">${RAR[c.rarity]}</small>` : '') + (rentedIds.has(c.id) ? '<small class="inv-trial">⏳ Trial</small>' : '');
-      // Gruppen: Monthly Pass / Shop (nach Seltenheit sortiert) / Basic
+      // Gruppen: Monthly Pass / Shop (nach Seltenheit sortiert) / Basic. Shop =
+      // weder Pass noch Basic - NICHT ueber c.source, der Katalog liefert dort
+      // das Anzeige-Label "Shop" (Bug bis v5.22.2: Shop-Gruppe fehlte ganz)
       const RANK = { animatedplus: -1, animated: 0, fancy: 1, refined: 2, basic: 3 };
       const groups = (list, cell, basicHead) => {
-        const pass = list.filter(c => c.passMonth), shopL = list.filter(c => c.source === 'shop').sort((a, b) => RANK[a.rarity] - RANK[b.rarity]);
+        const pass = list.filter(c => c.passMonth), shopL = list.filter(c => !c.passMonth && !c.base).sort((a, b) => RANK[a.rarity] - RANK[b.rarity]);
         return (pass.length ? `<div class="inv-sub">Monthly Pass</div><div class="inv-grid">${pass.map(cell).join('')}</div>` : '') +
           (shopL.length ? `<div class="inv-sub">Shop</div><div class="inv-grid">${shopL.map(cell).join('')}</div>` : '') + basicHead;
       };
