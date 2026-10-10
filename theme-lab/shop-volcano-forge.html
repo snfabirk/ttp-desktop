@@ -2,28 +2,37 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Volcano Forge - Animated shop theme (Theme Lab)</title>
-<!-- Theme Lab (nicht im Installationspaket): Shop-Theme "Volcano Forge"
-     (Animated). Schmiede im Inneren eines Vulkans: Basaltwaende, Lavastroeme
-     mit langsam treibender Kruste, aufsteigende Glut, Hitzeflimmern, ein
-     gluehender Amboss mit Werkstueck. Easter Egg: 5x auf den Amboss ->
-     ein Hammer schlaegt dreimal zu, jeder Schlag mit Funkenregen ueber den
-     ganzen Bildschirm, beim dritten bebt die Hoehle und die Lava schiesst hoch. -->
+<title>Magma Heart - Animated shop theme (Theme Lab)</title>
+<!-- Theme Lab (nicht im Installationspaket): Shop-Theme "Magma Heart" (Animated),
+     v2 von "Volcano Forge" (v1 sah laut Nutzer "sehr 2D und nach Paint" aus).
+     Jetzt ein WebGL-Fragment-Shader statt Canvas-Formen:
+     - Lavasee in echter Perspektive bis zum Horizont: Kruste als Voronoi-Platten,
+       gluehende Risse dazwischen, offene Lavapools, fliesst auf den Betrachter zu,
+       Dunst in der Tiefe
+     - Hoehlenwand mit Relief (Normalen aus Rauschen), von unten durch die Lava
+       beleuchtet, gluehende Adern
+     - nahe Seitenwaende mit Streiflicht und Lichtkante
+     - Lavafall hinten rechts, beleuchtet die Wand, spiegelt sich im See
+     - Hitzeflimmern ueber dem See, Rauchschwaden, Glut mit Tiefenunschaerfe (2D-Overlay)
+     Easter Egg: 5x auf den Lavafall -> er teilt sich, dahinter oeffnen sich zwei
+     riesige Augen, die dem Mauszeiger folgen, blinzeln, sich verengen - dann
+     bebt die Hoehle und der See bricht in Lavafontaenen aus. -->
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
 <style>
-  :root { --panel-bg: rgba(20, 10, 6, .62); --border: #5a2a14; --gold: #ff8a3a; --text: #f6e8dc; --text-dim: #c4a894; }
+  :root { --panel-bg: rgba(20, 9, 5, .6); --border: #5a2a14; --gold: #ff8a3a; --text: #f6e8dc; --text-dim: #c4a894; }
   html, body { margin: 0; height: 100%; overflow: hidden; background: #0d0604; color: var(--text); font-family: Georgia, serif; }
-  #forge { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+  #gl, #fx { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+  #fx { pointer-events: none; }
   .stage { position: relative; z-index: 2; pointer-events: none; }
   .stage > * { pointer-events: auto; }
   .nav { position: fixed; top: 18px; left: 24px; display: flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel-bg); backdrop-filter: blur(10px); z-index: 3; }
   .nav span { padding: 5px 11px; border-radius: 14px; font-family: 'Cinzel', serif; font-size: .78rem; color: var(--text-dim); }
-  .nav span.on { background: var(--gold); color: #1a0a04; }
+  .nav span.on { background: linear-gradient(180deg, #ffa050, #e0601a); color: #1a0a04; }
   header { text-align: center; padding-top: 34px; }
-  h1 { margin: 0; font-family: 'Cinzel', serif; font-weight: 900; font-size: 3rem; letter-spacing: 3px; color: var(--gold); text-shadow: 0 0 20px rgba(255, 110, 30, .55), 0 2px 0 #4a1a08; }
+  h1 { margin: 0; font-family: 'Cinzel', serif; font-weight: 900; font-size: 3rem; letter-spacing: 3px; background: linear-gradient(180deg, #ffd890 0%, #ff8a3a 50%, #b8380c 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 16px rgba(255, 100, 20, .45)) drop-shadow(0 2px 0 #3a1206); }
   .subtitle { margin: 6px 0 0; color: var(--text-dim); font-style: italic; letter-spacing: 6px; text-transform: uppercase; }
   .wrap { max-width: 1000px; margin: 34px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 26px; padding: 0 30px; }
-  .card { background: var(--panel-bg); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+  .card { background: var(--panel-bg); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; box-shadow: 0 6px 24px rgba(0, 0, 0, .5), inset 0 -1px 0 rgba(255, 120, 40, .18); }
   .card h3 { margin: 0 0 8px; color: var(--gold); font-family: 'Cinzel', serif; font-size: 1rem; letter-spacing: 1px; }
   .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(90, 42, 20, .6); font-size: .9rem; }
   .row:last-child { border-bottom: none; }
@@ -31,12 +40,13 @@
   .muted { color: var(--text-dim); font-size: .9rem; }
   .tag { display: inline-block; margin-bottom: 8px; padding: 1px 8px; border: 1px dashed #8a5a3a; border-radius: 9px; color: #8a5a3a; font-size: .7rem; letter-spacing: 1px; text-transform: uppercase; }
   .hint { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 3; color: #8a6a54; font-size: 13px; background: rgba(13, 6, 4, .7); padding: 6px 14px; border-radius: 14px; border: 1px solid var(--border); }
-  body.quake .stage, body.quake .nav { animation: quake .5s ease-out; }
-  @keyframes quake { 10% { transform: translate(-6px, 3px); } 25% { transform: translate(5px, -4px); } 40% { transform: translate(-4px, 2px); } 60% { transform: translate(3px, -1px); } 80% { transform: translate(-1px, 1px); } }
+  body.quake .stage, body.quake .nav { animation: quake .7s ease-out; }
+  @keyframes quake { 10% { transform: translate(-7px, 4px); } 25% { transform: translate(6px, -5px); } 40% { transform: translate(-5px, 3px); } 60% { transform: translate(3px, -2px); } 80% { transform: translate(-1px, 1px); } }
 </style>
 </head>
 <body>
-<canvas id="forge"></canvas>
+<canvas id="gl"></canvas>
+<canvas id="fx"></canvas>
 <div class="nav"><span class="on">⌂ Overview</span><span>Profile</span><span>Challenge</span><span>Pass</span><span>Trophies</span><span>Shop</span></div>
 <div class="stage">
   <header><h1>League of Legends</h1><p class="subtitle">Three-Trick-Pony</p></header>
@@ -55,120 +65,261 @@
       </div></div>
   </div>
 </div>
-<div class="hint">psst... that anvil hasn't been used in a while</div>
+<div class="hint">psst... something sleeps behind the lavafall</div>
 
-<script>
-const cv = document.getElementById('forge'), cx = cv.getContext('2d');
-let W = 0, H = 0, D = 1;
-const rand = (a, b) => a + Math.random() * (b - a);
-function seeded(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-let rocks = [], anvil = null, crust = [];
-function build() {
-  const r = seeded(9);
-  // Hoehlenwaende links/rechts + Decke als unregelmaessige Basaltkanten
-  rocks = [];
-  const edge = (x0, side) => { const pts = []; for (let y = -20; y <= H + 20; y += 30) pts.push([x0 + side * (r() * W * .06 + Math.sin(y * .01) * W * .03), y]); return pts; };
-  rocks.push({ side: -1, pts: edge(W * .12, 1) }, { side: 1, pts: edge(W * .88, -1) });
-  anvil = { x: W * .76, y: H * .8, s: Math.min(W, H) * .11 };
-  crust = Array.from({ length: 40 }, () => ({ x: r() * W, w: 20 + r() * 70, y: r(), v: 8 + r() * 14 }));
+<script id="fs" type="x-shader/x-fragment">
+precision highp float;
+uniform vec2 R; uniform float T, uPart, uEye, uNarrow, uBlink, uErupt; uniform vec2 uLook, uShake;
+const float YH = -.12, LF = .36;
+float h21(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+vec2 h22(vec2 p) { float n = h21(p); return vec2(n, h21(p + n)); }
+float noise(vec2 p) { vec2 i = floor(p), f = fract(p), u = f * f * (3. - 2. * f);
+  return mix(mix(h21(i), h21(i + vec2(1., 0.)), u.x), mix(h21(i + vec2(0., 1.)), h21(i + vec2(1., 1.)), u.x), u.y); }
+const mat2 M = mat2(1.6, 1.2, -1.2, 1.6);
+float fbm(vec2 p) { float a = .5, s = 0.; for (int i = 0; i < 5; i++) { s += a * noise(p); p = M * p; a *= .5; } return s; }
+float fbm3(vec2 p) { float a = .5, s = 0.; for (int i = 0; i < 3; i++) { s += a * noise(p); p = M * p; a *= .5; } return s; }
+// Abstand zur naechsten Plattenkante (F2 - F1)
+float vor(vec2 p) { vec2 i = floor(p), f = fract(p); float d1 = 8., d2 = 8.;
+  for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) { vec2 g = vec2(float(x), float(y)), o = h22(i + g); o = .5 + .4 * sin(T * .25 + 6.2831 * o);
+    float d = length(g + o - f); if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d; }
+  return d2 - d1; }
+// Temperatur -> Farbe (schwarz, dunkelrot, orange, gelb, weiss)
+vec3 heat(float h) { h = clamp(h, 0., 1.25);
+  vec3 c = mix(vec3(.03, .008, .004), vec3(.5, .05, .008), smoothstep(0., .35, h));
+  c = mix(c, vec3(1., .3, .035), smoothstep(.3, .7, h));
+  c = mix(c, vec3(1., .72, .28), smoothstep(.7, .95, h));
+  return mix(c, vec3(1., .96, .82), smoothstep(.95, 1.25, h)); }
+vec3 rock(vec2 rp, out float hgt) { // Hoehe + Normale aus Rauschen
+  hgt = fbm(rp); float hx = fbm(rp + vec2(.012, 0.)), hy = fbm(rp + vec2(0., .012));
+  return normalize(vec3((hgt - hx) * 80., (hgt - hy) * 80., 1.)); }
+
+void main() {
+  vec2 p = (gl_FragCoord.xy - .5 * R) / R.y + uShake; float asp = R.x / R.y;
+  // Hitzeflimmern knapp ueber und auf dem See
+  float sh = smoothstep(.3, 0., abs(p.y - YH + .03));
+  p.x += (noise(vec2(p.x * 30., p.y * 40. - T * 3.)) - .5) * .007 * sh;
+  p.y += (noise(vec2(p.x * 25. + 5., p.y * 30. - T * 2.5)) - .5) * .005 * sh;
+  vec3 col;
+  float dxs = p.x - LF;
+  if (p.y < YH) {
+    // ---- Lavasee in Perspektive ----
+    float z = .32 / (YH - p.y);
+    vec2 q = vec2(p.x * z, z + T * .1);
+    vec2 warp = vec2(fbm3(q * .8 + vec2(0., T * .02)), fbm3(q * .8 + vec2(5.2, 1.3)));
+    vec2 qq = q * 1.3 + warp * 1.6;
+    float e = vor(qq), n = fbm(qq * 2.2);
+    float molten = smoothstep(.56, .74, fbm3(q * .32 + vec2(T * .012, 0.)));
+    float crack = 1. - smoothstep(0., .08 + .06 * n, e);
+    float far = smoothstep(2.6, 8., z);
+    float temp = .02 + .14 * n;
+    temp = mix(temp, .82 + .28 * n, crack);
+    temp = mix(temp, .72 + .38 * n, molten);
+    temp += .05 * sin(T * 1.4 + q.y * 3.) + uErupt * .3;
+    temp = mix(temp, .42, far);
+    col = heat(temp);
+    // erkaltete Platten: fast schwarzes Gestein mit leichtem grauen Schimmer
+    float plate = (1. - crack) * (1. - molten) * (1. - far);
+    col = mix(col, vec3(.05, .035, .03) * (.6 + 1.2 * fbm3(qq * 6.)), plate * .55);
+    // Kruste: Woelbung der Platten, Kanten vom Riss angestrahlt
+    float rim = smoothstep(.28, 0., e) * (1. - crack);
+    col += vec3(.55, .12, .015) * rim * .5 * (1. - far);
+    col *= mix(1., .55 + .45 * smoothstep(.0, .35, e), (1. - crack) * (1. - molten));
+    // Dunst in der Tiefe
+    float fog = 1. - exp(-z * .1);
+    col = mix(col, vec3(.42, .1, .025), fog * .8);
+    col = mix(col, vec3(.7, .2, .04), smoothstep(-.04, 0., p.y - YH) * .7); // weicher Horizont
+    // Spiegelung des Lavafalls
+    col += vec3(1., .5, .15) * exp(-abs(dxs) * 28.) * exp(-(YH - p.y) * 7.) * (.55 + .45 * noise(vec2(p.x * 40., p.y * 70. + T * 4.))) * .9;
+  } else {
+    // ---- Hoehlenwand hinten: Relief, von unten durch die Lava beleuchtet ----
+    float hgt; vec3 nr = rock(p * vec2(2.6, 3.2), hgt);
+    vec3 alb = vec3(.075, .052, .045) * (.55 + .9 * hgt);
+    float li = exp(-(p.y - YH) * 3.) * (1. + uErupt * 1.2);
+    col = alb * .12 + alb * vec3(1., .33, .07) * max(dot(nr, normalize(vec3(0., -1., .55))), 0.) * li * 6.5;
+    col += alb * vec3(1., .5, .15) * max(dot(nr, normalize(vec3(-dxs, 0., .25))), 0.) * exp(-abs(dxs) * 5.) * 3.6;
+    float v = pow(1. - abs(fbm(p * vec2(5., 6.) + vec2(3.1, 7.7)) * 2. - 1.), 60.) * smoothstep(.56, .7, fbm3(p * 2. + 9.));
+    col += vec3(1., .32, .05) * v * (.55 + .45 * sin(T * 1.3 + p.x * 4.)) * (.5 + li) * 1.6;
+    col += vec3(.8, .22, .04) * exp(-(p.y - YH) * 16.) * .45; // Gluehen ueber dem Horizont
+    // Felsgrate zwischen Wand und See (zwei Ebenen = Tiefenstaffelung), von der Lava angestrahlt
+    for (int k = 1; k >= 0; k--) {
+      float fk = float(k);
+      float rx = p.x * (4.5 - fk * 1.5) + fk * 7.;
+      float ridge = YH + .01 + fk * .05 + pow(1. - abs(noise(vec2(rx * .7, fk)) * 2. - 1.), 2.) * (.08 + fk * .07) + fbm(vec2(rx * 2.5, fk + 3.)) * .05 - .02;
+      float dr = ridge - p.y;
+      if (dr > -.004) {
+        float rh; vec3 rn = rock(p * (5. - fk * 1.5) + fk * 4., rh);
+        vec3 rc = vec3(.03, .02, .018) * (.6 + rh) * (1.4 - fk * .5);
+        rc += vec3(1., .3, .05) * max(dot(rn, normalize(vec3(0., -1., .5))), 0.) * exp(-(p.y - YH) * 12.) * .14;
+        rc += vec3(1., .42, .1) * exp(-dr * (70. - fk * 25.)) * (.35 - fk * .12);   // Lichtkante oben
+        rc = mix(rc, vec3(.4, .1, .025), fk * .35);                                // hintere Ebene im Dunst
+        col = mix(col, rc, smoothstep(-.004, .002, dr));
+      }
+    }
+    // ---- Easter Egg: Augen hinter dem Lavafall ----
+    if (uEye > .001) {
+      col *= 1. - .6 * uPart * exp(-abs(dxs) * 9.) * smoothstep(-.1, .1, p.y - YH); // dunkle Nische
+      for (int k = 0; k < 2; k++) {
+        float sx = k == 0 ? -1. : 1.;
+        vec2 e = (p - vec2(LF + sx * .068, .055)) / .048;
+        float a = -sx * .32; e = mat2(cos(a), -sin(a), sin(a), cos(a)) * e;
+        float open = uEye * (1. - uBlink), lid = open * (1. - e.x * e.x) * .55 * (1. - uNarrow * .5);
+        float inside = smoothstep(.05, -.03, abs(e.y) - lid) * step(abs(e.x), 1.);
+        vec2 pe = e - uLook * .38;
+        float slit = smoothstep(.15 - .07 * uNarrow, .07 - .04 * uNarrow, abs(pe.x)) * smoothstep(1.1, .6, abs(pe.y));
+        vec3 ic = mix(vec3(1., .96, .62), vec3(1., .42, .04), smoothstep(0., .95, length(pe)));
+        ic = mix(ic, vec3(.06, 0., 0.), slit);
+        col = mix(col, ic * (1.5 + uNarrow), inside);
+        col += vec3(1., .38, .06) * exp(-length(e * vec2(.55, 1.)) * 2.1) * uEye * (.45 + .6 * uNarrow);
+      }
+    }
+    // ---- Lavafall (teilt sich beim Easter Egg) ----
+    float edge = (noise(vec2(p.y * 12. - T * 6., 1.)) - .5) * .02;
+    float wid = .028 + .006 * sin(p.y * 9. + T * 2.);
+    float sd = min(abs(dxs + uPart * .16 + edge), abs(dxs - uPart * .16 + edge));
+    float fall = smoothstep(wid, wid * .35, sd);
+    float fn = fbm(vec2(dxs * 30., p.y * 5. + T * 2.4));
+    col = mix(col, heat(.72 + .4 * fn), fall);
+    col += vec3(1., .4, .1) * exp(-sd * 24.) * .35;
+    col += vec3(1., .55, .2) * exp(-length(vec2(dxs * 2.4, p.y - YH)) * 13.) * .9; // Aufprall
+    // Decke dunkel, Krater-Dunst
+    col *= .2 + .8 * smoothstep(.62, .12, p.y);
+  }
+  // ---- nahe Seitenwaende ----
+  for (int k = 0; k < 2; k++) {
+    float side = k == 0 ? -1. : 1.;
+    float bx = asp * .5 - .13 - .1 * fbm3(vec2(p.y * 2.4, side * 3.)) - .06 * smoothstep(.0, -.5, p.y);
+    float d = side * p.x - bx;
+    if (d > -.01) {
+      float wh; vec3 wn = rock(p * 6.5 + vec2(side * 10., 0.), wh);
+      float wl = exp(-(p.y + .5) * 1.7) * (1. + uErupt);
+      vec3 wc = vec3(.034, .024, .02) * (.5 + wh);
+      wc += vec3(.95, .26, .05) * max(dot(wn, normalize(vec3(-side * .7, -.8, .5))), 0.) * wl * .3 * (.5 + wh);
+      wc += vec3(1., .35, .06) * exp(-max(d, 0.) * 32.) * (.18 + wl * .55);
+      wc += vec3(1., .3, .05) * pow(1. - abs(fbm(p * 4.5 + side * 3.) * 2. - 1.), 50.) * smoothstep(.45, .6, fbm3(p * 3. + side)) * (.5 + .5 * sin(T * 1.1 + p.y * 5.));
+      col = mix(col, wc, smoothstep(0., .0025, d));
+    }
+  }
+  // Rauchschwaden, von unten angestrahlt
+  float sm = fbm(vec2(p.x * 1.6 + T * .03, p.y * 2.2 - T * .06));
+  col += vec3(.6, .17, .04) * sm * sm * smoothstep(-.4, .05, p.y) * smoothstep(.55, -.05, p.y) * .2 * (1. + uErupt);
+  // Lesbarkeit oben, Vignette, Tonemapping
+  col *= mix(1., .6, smoothstep(.05, .45, p.y));
+  col *= 1. - .3 * dot(p * vec2(.9 / asp, 1.), p * vec2(.9 / asp, 1.)) * 1.6;
+  col = 1. - exp(-col * 1.45);
+  gl_FragColor = vec4(pow(col, vec3(.95)), 1.);
 }
-function resize() { D = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * D; cv.height = H * D; cx.setTransform(D, 0, 0, D, 0, 0); build(); }
+</script>
+<script>
+const rand = (a, b) => a + Math.random() * (b - a);
+const glc = document.getElementById('gl'), gl = glc.getContext('webgl', { antialias: false });
+const fx = document.getElementById('fx'), cx = fx.getContext('2d');
+let W = 0, H = 0, D = 1;
+// ----- WebGL: ein Vollbild-Dreieck, der Shader macht den Rest -----
+function sh(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+const prog = gl.createProgram();
+gl.attachShader(prog, sh(gl.VERTEX_SHADER, 'attribute vec2 a; void main() { gl_Position = vec4(a, 0., 1.); }'));
+gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, document.getElementById('fs').textContent));
+gl.linkProgram(prog); gl.useProgram(prog);
+gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+const U = {}; ['R', 'T', 'uPart', 'uEye', 'uNarrow', 'uBlink', 'uErupt', 'uLook', 'uShake'].forEach(n => U[n] = gl.getUniformLocation(prog, n));
+// Shader in leicht reduzierter Aufloesung (weich + schnell), Overlay in voller
+const GLS = .75;
+function resize() {
+  D = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight;
+  glc.width = Math.round(W * GLS); glc.height = Math.round(H * GLS); gl.viewport(0, 0, glc.width, glc.height);
+  fx.width = W * D; fx.height = H * D; cx.setTransform(D, 0, 0, D, 0, 0);
+}
 addEventListener('resize', resize); resize();
+// Bildschirmkoordinaten <-> Shader-Koordinaten (p = (x - W/2) / H, y nach oben)
+const YH = -.12, LF = .36;
+const toScreen = (px, py) => [W / 2 + px * H, H / 2 - py * H];
+let mouse = [W / 2, H / 2];
+addEventListener('mousemove', e => { mouse = [e.clientX, e.clientY]; });
 
-const embers = [], sparks = [];
-let lavaBoost = 0;
-
-function lavaY(x, t) { return H * .86 + Math.sin(x * .008 + t * .6) * 6 + Math.sin(x * .02 - t * 1.1) * 3 - lavaBoost * H * .06 * (.6 + .4 * Math.sin(x * .03 + t * 8)); }
-
-function drawScene(t, dt) {
-  // Hintergrund: dunkle Hoehle, von unten rot angestrahlt
-  const g = cx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, '#0a0403'); g.addColorStop(.55, '#1e0b05'); g.addColorStop(.85, '#5a1a06'); g.addColorStop(1, '#a8300a');
-  cx.fillStyle = g; cx.fillRect(0, 0, W, H);
-  // Lichtschacht oben (Krateroeffnung) mit Rauch
-  const shaft = cx.createRadialGradient(W * .5, -H * .1, 0, W * .5, -H * .1, H * .7);
-  shaft.addColorStop(0, 'rgba(255, 160, 90, .14)'); shaft.addColorStop(1, 'rgba(255, 160, 90, 0)');
-  cx.fillStyle = shaft; cx.fillRect(0, 0, W, H);
-  for (let k = 0; k < 4; k++) { const x = W * .5 + Math.sin(t * .2 + k * 1.7) * W * .12, y = ((t * 12 + k * 90) % (H * .5)); const sm = cx.createRadialGradient(x, H * .45 - y, 0, x, H * .45 - y, 120); sm.addColorStop(0, 'rgba(60, 40, 36, .18)'); sm.addColorStop(1, 'rgba(60, 40, 36, 0)'); cx.fillStyle = sm; cx.beginPath(); cx.arc(x, H * .45 - y, 120, 0, 7); cx.fill(); }
-  // Basaltwaende mit Lava-Rissen
-  rocks.forEach(rk => {
-    cx.fillStyle = '#120806';
-    cx.beginPath(); cx.moveTo(rk.side < 0 ? 0 : W, -20); rk.pts.forEach(([x, y]) => cx.lineTo(rk.side < 0 ? x : x, y)); cx.lineTo(rk.side < 0 ? 0 : W, H + 20); cx.fill();
-    cx.strokeStyle = `rgba(255, 90, 20, ${.35 + .2 * Math.sin(t * 1.5)})`; cx.lineWidth = 1.5;
-    rk.pts.forEach(([x, y], i) => { if (i % 3) return; cx.beginPath(); cx.moveTo(x, y); cx.lineTo(x - rk.side * -1 * 0 + (rk.side < 0 ? -30 : 30), y + 18); cx.stroke(); });
-  });
-  // Lavastrom unten
-  cx.beginPath(); cx.moveTo(0, H);
-  for (let x = 0; x <= W; x += 8) cx.lineTo(x, lavaY(x, t));
-  cx.lineTo(W, H); cx.closePath();
-  const lg = cx.createLinearGradient(0, H * .82, 0, H);
-  lg.addColorStop(0, '#ffd27a'); lg.addColorStop(.2, '#ff7a1a'); lg.addColorStop(.6, '#c02a06'); lg.addColorStop(1, '#5a0e02');
-  cx.fillStyle = lg; cx.shadowColor = '#ff6a1a'; cx.shadowBlur = 40; cx.fill(); cx.shadowBlur = 0;
-  // treibende dunkle Kruste auf der Lava
-  cx.fillStyle = 'rgba(40, 10, 4, .75)';
-  crust.forEach(c => { c.x += c.v * dt; if (c.x > W + 80) c.x = -80; const y = lavaY(c.x, t) + 8 + c.y * H * .1; cx.beginPath(); cx.ellipse(c.x, y, c.w * .5, 3 + c.y * 4, 0, 0, 7); cx.fill(); });
-  // Amboss auf einem Felssockel
-  const { x, y, s } = anvil;
-  cx.fillStyle = '#160a06'; cx.beginPath(); cx.moveTo(x - s * 1.1, H); cx.lineTo(x - s * .8, y + s * .35); cx.lineTo(x + s * .9, y + s * .3); cx.lineTo(x + s * 1.2, H); cx.fill();
-  const steel = cx.createLinearGradient(x, y - s * .3, x, y + s * .3); steel.addColorStop(0, '#5a4a48'); steel.addColorStop(.3, '#2a2220'); steel.addColorStop(1, '#0e0a0a');
-  cx.fillStyle = steel; cx.beginPath();
-  cx.moveTo(x - s * .9, y - s * .2); cx.quadraticCurveTo(x - s * 1.2, y - s * .25, x - s * 1.3, y - s * .1); cx.lineTo(x - s * .75, y - s * .02); // Horn
-  cx.lineTo(x - s * .45, y + s * .05); cx.lineTo(x - s * .55, y + s * .32); cx.lineTo(x + s * .55, y + s * .32); cx.lineTo(x + s * .45, y + s * .05); cx.lineTo(x + s * .7, y - s * .2); cx.closePath(); cx.fill();
-  cx.strokeStyle = 'rgba(255, 140, 60, .5)'; cx.lineWidth = 1.5; cx.beginPath(); cx.moveTo(x - s * .9, y - s * .2); cx.lineTo(x + s * .7, y - s * .2); cx.stroke();
-  // gluehendes Werkstueck (Klinge) auf dem Amboss
-  const glow = .7 + .3 * Math.sin(t * 2.2) + (forge ? forge.heat : 0);
-  const bl = cx.createLinearGradient(x - s * .5, 0, x + s * .5, 0); bl.addColorStop(0, `rgba(255, 220, 140, ${glow})`); bl.addColorStop(1, `rgba(255, 90, 20, ${glow * .8})`);
-  cx.fillStyle = bl; cx.shadowColor = '#ff8a2a'; cx.shadowBlur = 18 * glow; cx.beginPath(); cx.moveTo(x - s * .55, y - s * .22); cx.lineTo(x + s * .45, y - s * .26); cx.lineTo(x + s * .6, y - s * .21); cx.lineTo(x - s * .55, y - s * .18); cx.fill(); cx.shadowBlur = 0;
-  anvil.hit = { x: x - s * 1.3, y: y - s * .4, w: s * 2, h: s * .8 };
+// ----- Glut: Tiefe ueber Groesse/Tempo/Unschaerfe, ab und zu grosse unscharfe Funken im Vordergrund -----
+const embers = [], blobs = [];
+function spawnEmber(fore) {
+  const depth = fore ? rand(1.4, 2.2) : rand(.25, 1);
+  const [, hy] = toScreen(0, YH);
+  embers.push({ x: rand(0, W), y: fore ? H + 20 : rand(hy, H), d: depth, vx: rand(-8, 8), vy: -rand(25, 60) * depth, life: 1, ph: rand(0, 6), fore });
+}
+// ----- Easter Egg -----
+let egg = null, clicks = 0, clickReset = null;
+addEventListener('click', e => {
+  if (egg || e.target.closest('.card, .nav, .hint')) return;
+  const [fx0, ] = toScreen(LF, 0), [, hy] = toScreen(0, YH);
+  if (Math.abs(e.clientX - fx0) > H * .05 || e.clientY > hy) return;
+  clicks++; clearTimeout(clickReset); clickReset = setTimeout(() => { clicks = 0; }, 3000);
+  if (clicks >= 5) { clicks = 0; egg = { t: 0, erupted: false }; }
+});
+let erupt = 0, shake = 0;
+function eruptNow() {
+  erupt = 1; shake = 1;
+  document.body.classList.remove('quake'); void document.body.offsetWidth; document.body.classList.add('quake');
+  const [, hy] = toScreen(0, YH);
+  for (let g = 0; g < 5; g++) { // Lavafontaenen an mehreren Stellen im See
+    const gx = rand(W * .18, W * .82), gy = hy + (H - hy) * rand(.25, .85), sc = .5 + 1.6 * (gy - hy) / (H - hy);
+    for (let k = 0; k < 70; k++) blobs.push({ x: gx + rand(-8, 8) * sc, y: gy, vx: rand(-70, 70) * sc, vy: -rand(380, 780) * sc, r: rand(2.5, 7) * sc, life: 1, delay: g * .15 + k * .008, g: 750 * sc });
+  }
+  for (let k = 0; k < 120; k++) spawnEmber(Math.random() < .2);
+}
+function eggState(dt) {
+  const s = { part: 0, eye: 0, narrow: 0, blink: 0, look: [0, 0] };
+  if (!egg) return s;
+  const t = egg.t += dt;
+  const ease = u => u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u);
+  s.part = ease(t / .9) * (1 - ease((t - 7) / .9));
+  s.eye = ease((t - .8) / 1.2) * (1 - ease((t - 6.6) / .6));
+  s.narrow = ease((t - 3) / .8) * (1 - ease((t - 6) / .6));
+  s.blink = t > 2.4 && t < 2.62 ? Math.sin((t - 2.4) / .22 * Math.PI) : 0;
+  const [ex, ey] = toScreen(LF, .055);
+  let lx = (mouse[0] - ex) / (H * .25), ly = -(mouse[1] - ey) / (H * .25); const l = Math.hypot(lx, ly); if (l > 1) { lx /= l; ly /= l; }
+  s.look = [lx, ly];
+  if (t > 4.2 && !egg.erupted) { egg.erupted = true; eruptNow(); }
+  if (t > 3 && t < 4.2) shake = Math.max(shake, (t - 3) / 1.2 * .25); // Grollen vor dem Ausbruch
+  if (t > 8.2) egg = null;
+  return s;
 }
 
 function frame(now) {
   const dt = Math.min(.05, (now - (frame.last || now)) / 1000); frame.last = now; const t = now / 1000;
-  lavaBoost = Math.max(0, lavaBoost - dt * .8);
-  drawScene(t, dt);
-  // aufsteigende Glut + Hitzeflimmern (leichtes Wabern der Glut)
-  if (Math.random() < dt * 30) embers.push({ x: rand(0, W), y: H * .9, vx: rand(-10, 10), vy: rand(-70, -30), life: 1, r: rand(.8, 2.2) });
-  cx.save(); cx.globalCompositeOperation = 'lighter';
-  for (let i = embers.length - 1; i >= 0; i--) { const e = embers[i]; e.life -= dt * .3; if (e.life <= 0) { embers.splice(i, 1); continue; } e.x += (e.vx + Math.sin(t * 2 + i) * 14) * dt; e.y += e.vy * dt; cx.fillStyle = `rgba(255, ${140 + 90 * e.life}, 60, ${e.life})`; cx.beginPath(); cx.arc(e.x, e.y, e.r, 0, 7); cx.fill(); }
-  // Funken (Easter Egg)
-  for (let i = sparks.length - 1; i >= 0; i--) { const s = sparks[i]; s.life -= dt * .9; if (s.life <= 0) { sparks.splice(i, 1); continue; } s.vy += 600 * dt; s.x += s.vx * dt; s.y += s.vy * dt; cx.strokeStyle = `rgba(255, ${200 + 55 * s.life}, ${120 * s.life}, ${s.life})`; cx.lineWidth = 1.6; cx.beginPath(); cx.moveTo(s.x, s.y); cx.lineTo(s.x - s.vx * .02, s.y - s.vy * .02); cx.stroke(); }
-  cx.restore();
-  drawHammer(dt);
-  requestAnimationFrame(frame);
-}
+  const s = eggState(dt);
+  erupt = Math.max(0, erupt - dt * .35); shake = Math.max(0, shake - dt * 1.6);
+  gl.uniform2f(U.R, glc.width, glc.height); gl.uniform1f(U.T, t);
+  gl.uniform1f(U.uPart, s.part); gl.uniform1f(U.uEye, s.eye); gl.uniform1f(U.uNarrow, s.narrow); gl.uniform1f(U.uBlink, s.blink); gl.uniform1f(U.uErupt, erupt);
+  gl.uniform2f(U.uLook, s.look[0], s.look[1]); gl.uniform2f(U.uShake, rand(-1, 1) * shake * .006, rand(-1, 1) * shake * .006);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-// ===================== Easter Egg: der Hammer =====================
-let forge = null, clicks = 0, reset = null;
-addEventListener('click', e => {
-  if (forge || !anvil.hit || e.target.closest('.card, .nav, .hint')) return;
-  const h = anvil.hit; if (e.clientX < h.x || e.clientX > h.x + h.w || e.clientY < h.y || e.clientY > h.y + h.h) return;
-  clicks++; clearTimeout(reset); reset = setTimeout(() => { clicks = 0; }, 3000);
-  if (clicks >= 5) { clicks = 0; forge = { t: 0, hits: 0, heat: 0 }; }
-});
-function strike(power) {
-  const { x, y, s } = anvil;
-  const n = power > 1 ? 260 : 90;
-  for (let k = 0; k < n; k++) { const a = -Math.PI / 2 + rand(-1.3, 1.3); const v = rand(200, power > 1 ? 1100 : 650); sparks.push({ x: x + rand(-s * .3, s * .3), y: y - s * .24, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: rand(.7, 1.2) }); }
-  forge.heat = 1;
-  if (power > 1) { lavaBoost = 1; document.body.classList.remove('quake'); void document.body.offsetWidth; document.body.classList.add('quake'); }
-}
-function drawHammer(dt) {
-  if (!forge) return;
-  forge.t += dt; forge.heat = Math.max(0, forge.heat - dt * 1.5);
-  const { x, y, s } = anvil, t = forge.t, cyc = .9;
-  const k = Math.floor(t / cyc), u = (t % cyc) / cyc;
-  if (k >= 3) { if (t > 3 * cyc + .8) forge = null; return; }
-  // Ausholen (langsam hoch) und Zuschlagen (schnell runter)
-  const ang = u < .7 ? -1.6 * Math.sin(u / .7 * Math.PI / 2) : -1.6 * (1 - (u - .7) / .3) ** 2;
-  if (u >= .97 && forge.hits === k) { forge.hits++; strike(k === 2 ? 2 : 1); }
-  const px = x + s * 1.5, py = y - s * .5;
-  const a = Math.min(1, t * 4) * (t > 3 * cyc ? Math.max(0, 1 - (t - 3 * cyc) * 2) : 1);
-  cx.save(); cx.globalAlpha = a; cx.translate(px, py); cx.rotate(ang);
-  // Stiel + Kopf (Hammer schwingt um den Griff rechts)
-  cx.fillStyle = '#3a2214'; cx.fillRect(-s * 1.15, -s * .05, s * 1.2, s * .1);
-  const hg = cx.createLinearGradient(-s * 1.35, -s * .2, -s * 1.05, s * .2); hg.addColorStop(0, '#6a5a58'); hg.addColorStop(.5, '#2a2220'); hg.addColorStop(1, '#4a3a38');
-  cx.fillStyle = hg; cx.fillRect(-s * 1.4, -s * .22, s * .32, s * .44);
+  cx.clearRect(0, 0, W, H);
+  if (Math.random() < dt * 28) spawnEmber(false);
+  if (Math.random() < dt * .7) spawnEmber(true);
+  cx.save(); cx.globalCompositeOperation = 'lighter';
+  for (let i = embers.length - 1; i >= 0; i--) {
+    const e = embers[i]; e.life -= dt * (e.fore ? .25 : .32);
+    if (e.life <= 0 || e.y < -40) { embers.splice(i, 1); continue; }
+    e.x += (e.vx + Math.sin(t * 1.7 + e.ph) * 18 * e.d) * dt; e.y += e.vy * dt;
+    const a = Math.min(1, e.life * 1.5) * (.55 + .45 * Math.sin(t * 9 + e.ph));
+    if (e.fore) { // unscharf, gross: Tiefenschaerfe
+      const r = 7 * e.d, g = cx.createRadialGradient(e.x, e.y, 0, e.x, e.y, r);
+      g.addColorStop(0, `rgba(255, 150, 60, ${.28 * a})`); g.addColorStop(.6, `rgba(255, 90, 20, ${.12 * a})`); g.addColorStop(1, 'rgba(255, 80, 20, 0)');
+      cx.fillStyle = g; cx.beginPath(); cx.arc(e.x, e.y, r, 0, 7); cx.fill();
+    } else {
+      const r = .6 + 1.4 * e.d;
+      cx.fillStyle = `rgba(255, ${150 + 90 * e.life | 0}, 70, ${a})`; cx.beginPath(); cx.arc(e.x, e.y, r, 0, 7); cx.fill();
+      cx.fillStyle = `rgba(255, 110, 30, ${a * .25})`; cx.beginPath(); cx.arc(e.x, e.y, r * 3.5, 0, 7); cx.fill();
+    }
+  }
+  for (let i = blobs.length - 1; i >= 0; i--) {
+    const b = blobs[i]; if (b.delay > 0) { b.delay -= dt; continue; }
+    b.life -= dt * .55; b.vy += b.g * dt; b.x += b.vx * dt; b.y += b.vy * dt;
+    if (b.life <= 0) { blobs.splice(i, 1); continue; }
+    const g = cx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * 3.5);
+    g.addColorStop(0, `rgba(255, 245, 200, ${b.life})`); g.addColorStop(.3, `rgba(255, 140, 40, ${b.life * .8})`); g.addColorStop(1, 'rgba(200, 40, 0, 0)');
+    cx.fillStyle = g; cx.beginPath(); cx.arc(b.x, b.y, b.r * 3.5, 0, 7); cx.fill();
+  }
   cx.restore();
+  requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 </script>
