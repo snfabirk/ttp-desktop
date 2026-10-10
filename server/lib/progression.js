@@ -47,7 +47,9 @@ const LP_BANK_SIZE = 100;
 const XP_PER_LP_BANK = 1000;
 
 const PASS_TIERS = 30;
-const PASS_XP_PER_TIER = 1500;
+// 1.200 statt 1.500 seit v5.21.0 (Nutzerwunsch: "auch mal abschalten koennen" -
+// Stufe 30 in ~46 Pool-Games statt ~57, also auch mit Pausen im Monat machbar)
+const PASS_XP_PER_TIER = 1200;
 // Pass-Belohnungen (Nutzerdesign 2026-10-09): Stufen 5/10/../30 = die 6
 // Cosmetics DIESES Monats (cosmetics.js), alle anderen Stufen = Coins. Nach
 // Stufe 30 gibt es endlos weiter Coins, aber jede 30+-Stufe kostet mehr XP,
@@ -62,8 +64,10 @@ const FALLBACK_COSMETIC_COINS = 300; // Monat ohne angelegte Cosmetics
 // Pass 30+ (Nutzerentscheidung 2026-10-09, v5.14.0): jede weitere 30+-Stufe
 // kostet 500 XP mehr als die vorige (2.500, 3.000, 3.500 ...), damit
 // Vielspieler den Shop nicht leerkaufen. Bereits abgeholte Stufen bleiben.
-const OVERFLOW_XP_FIRST = 2500;
-const OVERFLOW_XP_GROWTH = 500;
+// v5.21.0: 2.000 / +300 (vorher 2.500 / +500) - passend zu 1.200 XP pro Stufe,
+// 30+5 kostet 13.000 XP
+const OVERFLOW_XP_FIRST = 2000;
+const OVERFLOW_XP_GROWTH = 300;
 const COINS_PER_OVERFLOW_STEP = 100;
 const overflowStepCost = n => OVERFLOW_XP_FIRST + OVERFLOW_XP_GROWTH * n; // n = schon erreichte Stufen
 

@@ -1,5 +1,11 @@
 # Internal Changelog
 
+## 5.21.0 — 2026-10-10
+
+- Pass balance (user: "auch mal abschalten können"): PASS_XP_PER_TIER 1500 -> 1200 (tier 30 = 36,000 XP, ~46 pool games / ~32 with quests);
+  30+ steps OVERFLOW_XP_FIRST 2500 -> 2000, OVERFLOW_XP_GROWTH 500 -> 300 (30+5 = 13,000 XP). Coins per tier unchanged.
+  Players mid-month jump tiers on update; claimPassRewards hands out every skipped tier once.
+
 ## 5.20.1 — 2026-10-10
 
 Layout audit of every page in every state (full / empty / long names / API errors / live game) at default, 1280, 1000 and minimum size:

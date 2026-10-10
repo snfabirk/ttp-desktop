@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.21.0',
+      date: '2026-10-10',
+      notable: [
+        'The pass is faster: every tier now takes 1,200 XP instead of 1,500, so tier 30 is reachable even with a few days off.',
+        'Pass 30+: the first step now takes 2,000 XP and every further one only 300 XP more (2,000, 2,300, 2,600 ...).'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.20.1',
       date: '2026-10-10',
       notable: ['The app window now has a minimum size, so nothing overlaps when it is made very small.'],
