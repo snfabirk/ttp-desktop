@@ -15,7 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
 <style>
   html, body { margin: 0; height: 100%; background: radial-gradient(ellipse at 50% 40%, #142034 0%, #070b14 70%); color: #eef0ff; font-family: Georgia, serif; overflow: hidden; }
-  .stage { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 120px; }
+  .stage { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 150px; padding-top: 60px; box-sizing: border-box; }
   .row { display: flex; flex-direction: column; align-items: center; gap: 12px; }
   #kraken + .label { margin-top: 70px; }
   .board { position: relative; width: 600px; padding: 16px; box-sizing: border-box; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; border-radius: 16px; background: rgba(14, 18, 34, .6); }
@@ -39,7 +39,7 @@
     <div class="label">Phoenix<small>Frame · Animated — touch the firebird</small></div></div>
 </div>
 <script>
-const DPR = Math.min(2, devicePixelRatio || 1), rand = (a, b) => a + Math.random() * (b - a), P = 110;
+const DPR = Math.min(2, devicePixelRatio || 1), rand = (a, b) => a + Math.random() * (b - a), P = 150;
 let mouse = [0, 0]; addEventListener('mousemove', e => { mouse = [e.clientX, e.clientY]; });
 function setupBoard(board) {
   const cv = board.querySelector('canvas'), c = cv.getContext('2d');
@@ -77,14 +77,14 @@ function setupBoard(board) {
   tents.forEach(T => { T.barn = Array.from({ length: 16 }, () => ({ s: Math.random() * .85, side: Math.random() * .7 + .1, r: Math.random() * 1.6 + .9 })); T.scar = Math.random() * .6 + .1; });
   const drops = [], ink = [], splash = [];
   let egg = null, blink = 0, nextBlink = 3;
-  const water = P + BH + 22, head = { x: P + BW / 2, y: water + 12 };
-  Object.assign(B.hit.style, { left: `${BW / 2 - 70}px`, top: `${BH - 14}px`, width: '140px', height: '52px' });
+  const water = P + BH + 52, head = { x: P + BW / 2, y: water + 4 };
+  Object.assign(B.hit.style, { left: `${BW / 2 - 42}px`, top: `${BH - 32}px`, width: '84px', height: '84px' });
   B.hit.addEventListener('click', () => { if (!egg) egg = { t: 0, inked: false }; });
   function tentacle(T, t, squeeze) {
     const N = 130, pts = [];
     for (let i = 0; i <= N; i++) {
       const s2 = i / N, [x, y, a] = at(T.d0 + T.dir * s2 * T.L), nx = Math.sin(a), ny = -Math.cos(a);
-      const off = 9 + (T.peel ? s2 * s2 * 40 : 0) + Math.sin(t * 1.2 - s2 * 6 + T.ph) * 9 * s2 + Math.sin(t * 2.1 - s2 * 11 + T.ph) * 3 * s2 - squeeze * 9 * s2;
+      const off = 3 + (T.peel ? s2 * s2 * 46 : 0) + Math.sin(t * 1.2 - s2 * 6 + T.ph) * 11 * s2 + Math.sin(t * 2.1 - s2 * 11 + T.ph) * 3 * s2 - squeeze * 9 * s2;
       pts.push({ x: x + nx * off, y: y + ny * off, a: a + (T.dir < 0 ? Math.PI : 0), s: s2 });
     }
     const last = pts[pts.length - 1], cd = T.dir, ca = last.a, cr = 8 + Math.sin(t * 1.1 + T.ph) * 2 - squeeze * 3;
@@ -111,31 +111,55 @@ function setupBoard(board) {
       c.fillStyle = '#e6dcc0'; c.beginPath(); c.arc(sx, sy, sr, 0, 7); c.fill(); c.fillStyle = '#7a6a50'; c.beginPath(); c.arc(sx, sy, sr * .45, 0, 7); c.fill(); });
     return pts;
   }
+  // v3 (Nutzer: rundes Maul mit Monsterzaehnen, leicht ueber den Rahmen ragend): fleischiger
+  // Mantel taucht aus dem Wasser, in der Mitte ein kreisrundes Maul mit drei gegenlaeufig
+  // drehenden Zahnringen, wulstige Lippe mit Falten, Schlund dunkelrot; zwei kleine boese Augen.
   function drawHead(t, squeeze) {
-    const { x, y } = head;
-    // massiger Kopf: breite Kuppel mit Hautfalten, nur zur Haelfte ueber Wasser
-    const g = c.createRadialGradient(x - 10, y - 40, 6, x, y, 80); g.addColorStop(0, '#4a6a5c'); g.addColorStop(.55, '#253a36'); g.addColorStop(1, '#0e1a1a');
-    c.fillStyle = g; c.beginPath(); c.ellipse(x, y + 4, 100, 58, 0, Math.PI, 0); c.fill();
-    c.strokeStyle = 'rgba(10, 20, 20, .5)'; c.lineWidth = 1.2;
-    for (let k = 0; k < 4; k++) { c.beginPath(); c.ellipse(x, y + 6, 84 - k * 16, 46 - k * 10, 0, Math.PI * 1.15, Math.PI * 1.85); c.stroke(); }
-    [[-40, -18], [44, -14], [-12, -36], [20, -32]].forEach(([dx, dy]) => { c.fillStyle = '#b8b4a0'; c.beginPath(); c.arc(x + dx, y + dy, 2, 0, 7); c.fill(); });
-    // Augen: zwei, unter schweren Brauenwuelsten, Blick folgt der Maus
+    const { x, y } = head, mawY = P + BH + 10, R0 = 36;
+    // Mantel (breit, flach, hinter dem Maul)
+    const g = c.createRadialGradient(x, y - 30, 10, x, y, 110); g.addColorStop(0, '#3e5a50'); g.addColorStop(.6, '#1e302c'); g.addColorStop(1, '#0c1616');
+    c.fillStyle = g; c.beginPath(); c.ellipse(x, y + 6, 104, 50, 0, Math.PI, 0); c.fill();
+    [[-64, -12], [70, -8], [-40, -34], [44, -32], [-86, 0], [90, -2]].forEach(([dx, dy]) => { c.fillStyle = '#b8b4a0'; c.beginPath(); c.arc(x + dx, y + dy, 2.2, 0, 7); c.fill(); c.fillStyle = '#3a3a30'; c.beginPath(); c.arc(x + dx, y + dy, .9, 0, 7); c.fill(); });
+    // Augen seitlich am Mantel
     nextBlink -= 1 / 60; if (nextBlink <= 0) { blink = 1; nextBlink = rand(3, 6); } blink = Math.max(0, blink - .1);
     const rect = B.board.getBoundingClientRect();
     for (const side of [-1, 1]) {
-      const ex = x + side * 30, ey = y - 22;
-      const open = (1 - Math.sin(blink * Math.PI)) * (1 - .5 * squeeze);
-      let lx = mouse[0] - (rect.left - P + ex), ly = mouse[1] - (rect.top - P + ey); const ll = Math.hypot(lx, ly) || 1; lx = lx / ll * Math.min(3.5, ll / 30); ly = ly / ll * Math.min(2, ll / 30);
-      const glow = c.createRadialGradient(ex, ey, 0, ex, ey, 22); glow.addColorStop(0, `rgba(200, 255, 120, ${.25 + .25 * squeeze})`); glow.addColorStop(1, 'rgba(200, 255, 120, 0)');
-      c.fillStyle = glow; c.beginPath(); c.arc(ex, ey, 22, 0, 7); c.fill();
-      c.save(); c.beginPath(); c.ellipse(ex, ey, 11, 7 * open + .4, side * .18, 0, 7); c.clip();
-      const ir = c.createRadialGradient(ex + lx, ey + ly, 1, ex + lx, ey + ly, 10); ir.addColorStop(0, '#f6ff9a'); ir.addColorStop(.55, '#b8c828'); ir.addColorStop(1, '#3a4a08');
-      c.fillStyle = ir; c.fillRect(ex - 12, ey - 8, 24, 16);
-      c.fillStyle = '#050805'; c.beginPath(); c.ellipse(ex + lx, ey + ly, 5 - 2 * squeeze, 1.3, 0, 0, 7); c.fill();
-      c.restore();
-      // Brauenwulst: dunkler Bogen, nach innen abfallend = boeser Blick
-      c.fillStyle = '#16262a'; c.beginPath(); c.moveTo(ex - side * 16, ey - 13); c.quadraticCurveTo(ex, ey - 15, ex + side * 15, ey - 4 - squeeze * 3); c.lineTo(ex + side * 13, ey - 1 - squeeze * 3); c.quadraticCurveTo(ex, ey - 9, ex - side * 15, ey - 8); c.fill();
+      const ex = x + side * 62, ey = y - 26, open = (1 - Math.sin(blink * Math.PI)) * (1 - .4 * squeeze);
+      let lx = mouse[0] - (rect.left - P + ex), ly = mouse[1] - (rect.top - P + ey); const ll = Math.hypot(lx, ly) || 1; lx = lx / ll * Math.min(2.5, ll / 30); ly = ly / ll * Math.min(1.5, ll / 30);
+      const gl = c.createRadialGradient(ex, ey, 0, ex, ey, 16); gl.addColorStop(0, `rgba(200, 255, 120, ${.3 + .3 * squeeze})`); gl.addColorStop(1, 'rgba(200, 255, 120, 0)'); c.fillStyle = gl; c.beginPath(); c.arc(ex, ey, 16, 0, 7); c.fill();
+      c.save(); c.beginPath(); c.ellipse(ex, ey, 8, 5 * open + .3, side * .25, 0, 7); c.clip();
+      c.fillStyle = '#d8e830'; c.fillRect(ex - 9, ey - 6, 18, 12); c.fillStyle = '#050805'; c.beginPath(); c.ellipse(ex + lx, ey + ly, 3.5, 1, 0, 0, 7); c.fill(); c.restore();
+      c.fillStyle = '#121e20'; c.beginPath(); c.moveTo(ex - side * 11, ey - 9); c.quadraticCurveTo(ex, ey - 11, ex + side * 10, ey - 2 - squeeze * 2); c.lineTo(ex + side * 9, ey); c.quadraticCurveTo(ex, ey - 6, ex - side * 10, ey - 5); c.fill();
     }
+  }
+  function drawMaw(t, squeeze) {
+    const { x, y } = head, mawY = P + BH + 10, R0 = 36;
+    // Maul: oeffnet sich leicht im Atemrhythmus, beim Easter Egg weit
+    const open = (.8 + .08 * Math.sin(t * 1.5)) + squeeze * .35, rIn = R0 * .72 * open;
+    // Lippe: dicker Wulst mit radialen Falten
+    const lip = c.createRadialGradient(x, mawY, rIn, x, mawY, R0 + 6); lip.addColorStop(0, '#6a2a2a'); lip.addColorStop(.35, '#4a5a4a'); lip.addColorStop(1, '#22322e');
+    c.save(); c.shadowColor = 'rgba(0, 0, 0, .6)'; c.shadowBlur = 12; c.shadowOffsetY = 4;
+    c.fillStyle = lip; c.beginPath(); c.arc(x, mawY, R0 + 6, 0, 7); c.fill(); c.restore();
+    c.strokeStyle = 'rgba(10, 20, 18, .55)'; c.lineWidth = 1.2;
+    for (let k = 0; k < 28; k++) { const a = k / 28 * 6.283 + Math.sin(t * .5) * .02; c.beginPath(); c.moveTo(x + Math.cos(a) * (rIn + 3), mawY + Math.sin(a) * (rIn + 3)); c.lineTo(x + Math.cos(a) * (R0 + 4), mawY + Math.sin(a) * (R0 + 4)); c.stroke(); }
+    c.strokeStyle = 'rgba(160, 200, 180, .25)'; c.lineWidth = 1.5; c.beginPath(); c.arc(x, mawY, R0 + 4, Math.PI * 1.1, Math.PI * 1.7); c.stroke();
+    // Schlund
+    c.save(); c.beginPath(); c.arc(x, mawY, rIn, 0, 7); c.clip();
+    const th = c.createRadialGradient(x, mawY, 0, x, mawY, rIn); th.addColorStop(0, '#000000'); th.addColorStop(.45, '#2a0408'); th.addColorStop(.85, '#7a1a1e'); th.addColorStop(1, '#a83a32');
+    c.fillStyle = th; c.fillRect(x - rIn, mawY - rIn, rIn * 2, rIn * 2);
+    // drei Zahnringe, gegenlaeufig drehend, Zaehne zeigen zur Mitte
+    for (let k = 0; k < 3; k++) {
+      const rr = rIn * (1 - k * .27), n = 16 - k * 3, rot = t * (k % 2 ? -.18 : .14) * (1 + squeeze * 6) + k * .3, L = rIn * (.34 - k * .05), wd = 6.283 / n * .42;
+      for (let q = 0; q < n; q++) {
+        const a = rot + q / n * 6.283, bx = x + Math.cos(a) * rr, by = mawY + Math.sin(a) * rr, tx = x + Math.cos(a) * (rr - L), ty = mawY + Math.sin(a) * (rr - L);
+        const tg = c.createLinearGradient(bx, by, tx, ty); tg.addColorStop(0, k ? '#8a7a60' : '#c8b890'); tg.addColorStop(1, '#fff8e0');
+        c.fillStyle = tg; c.beginPath(); c.moveTo(x + Math.cos(a - wd) * rr, mawY + Math.sin(a - wd) * rr); c.quadraticCurveTo(x + Math.cos(a - wd * .3) * (rr - L * .6), mawY + Math.sin(a - wd * .3) * (rr - L * .6), tx, ty); c.quadraticCurveTo(x + Math.cos(a + wd * .3) * (rr - L * .6), mawY + Math.sin(a + wd * .3) * (rr - L * .6), x + Math.cos(a + wd) * rr, mawY + Math.sin(a + wd) * rr); c.closePath(); c.fill();
+        c.strokeStyle = 'rgba(40, 20, 10, .5)'; c.lineWidth = .6; c.stroke();
+      }
+      c.fillStyle = `rgba(0, 0, 0, ${.25 + k * .15})`; c.beginPath(); c.arc(x, mawY, rr - L * .9, 0, 7); c.fill();   // Tiefe
+    }
+    c.restore();
+    c.strokeStyle = 'rgba(30, 10, 10, .8)'; c.lineWidth = 2; c.beginPath(); c.arc(x, mawY, rIn, 0, 7); c.stroke();
   }
   function drawWater(t, squeeze) {
     const top = water, H2 = BH + P * 2;
@@ -156,12 +180,13 @@ function setupBoard(board) {
     if (egg) { egg.t += dt; const e = egg.t; squeeze = e < .5 ? e / .5 : e < 1.6 ? 1 : Math.max(0, 1 - (e - 1.6) / .5);
       B.board.style.transform = e < 1.6 ? `translate(${rand(-1.5, 1.5) * squeeze}px, ${rand(-1.5, 1.5) * squeeze}px) scale(${1 - squeeze * .012})` : '';
       if (e > .2 && e < 1.5 && Math.random() < .5) for (let k = 0; k < 3; k++) splash.push({ x: head.x + rand(-90, 90), y: water, vx: rand(-40, 40), vy: -rand(80, 200), life: 1 });
-      if (e > 1.4 && !egg.inked) { egg.inked = true; for (let k = 0; k < 80; k++) { const a = -Math.PI / 2 + rand(-1.6, 1.6), v = rand(120, 420); ink.push({ x: head.x, y: head.y - 20, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: rand(10, 30), life: 1 }); } }
+      if (e > 1.4 && !egg.inked) { egg.inked = true; for (let k = 0; k < 80; k++) { const a = -Math.PI / 2 + rand(-1.6, 1.6), v = rand(120, 420); ink.push({ x: head.x, y: head.y - 24, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: rand(10, 30), life: 1 }); } }
       if (e > 4.5 && !ink.length) { egg = null; B.board.style.transform = ''; } }
     tents.forEach(T => { const pts = tentacle(T, t, squeeze);
       if (Math.random() < dt * .6) { const p = pts[(Math.random() * pts.length * .8) | 0]; if (p.y < water) drops.push({ x: p.x, y: p.y + p.w, vy: 0, life: 1 }); } });
     drawHead(t, squeeze);
     drawWater(t, squeeze);
+    drawMaw(t, squeeze);
     for (let i = drops.length - 1; i >= 0; i--) { const d = drops[i]; d.vy += 300 * dt; d.y += d.vy * dt; d.life -= dt * .8; if (d.life <= 0 || d.y > water) { drops.splice(i, 1); continue; } c.fillStyle = `rgba(170, 215, 225, ${d.life * .7})`; c.beginPath(); c.ellipse(d.x, d.y, 1.3, 2.4, 0, 0, 7); c.fill(); }
     for (let i = splash.length - 1; i >= 0; i--) { const d = splash[i]; d.vy += 420 * dt; d.x += d.vx * dt; d.y += d.vy * dt; d.life -= dt * .9; if (d.life <= 0 || (d.vy > 0 && d.y > water)) { splash.splice(i, 1); continue; } c.fillStyle = `rgba(220, 240, 245, ${d.life})`; c.beginPath(); c.arc(d.x, d.y, 1.8, 0, 7); c.fill(); }
     for (let i = ink.length - 1; i >= 0; i--) { const k = ink[i]; k.life -= dt * .35; if (k.life <= 0) { ink.splice(i, 1); continue; } k.vx *= .94; k.vy *= .94; k.vy += 8 * dt; k.x += k.vx * dt; k.y += k.vy * dt; k.r += dt * 18;
@@ -176,8 +201,8 @@ function setupBoard(board) {
   const B = setupBoard(document.getElementById('phoenix')), { c, BW, BH, at, len, marks } = B;
   const embers = [], ash = [];
   let egg = null;
-  const home = { x: P + BW / 2, y: P - 22 };
-  Object.assign(B.hit.style, { left: `${BW / 2 - 40}px`, top: '-70px', width: '80px', height: '74px' });
+  const home = { x: P + BW / 2, y: P - 26 };
+  Object.assign(B.hit.style, { left: `${BW / 2 - 50}px`, top: '-100px', width: '100px', height: '100px' });
   B.hit.addEventListener('click', () => { if (!egg) egg = { t: 0 }; });
   // Flammenform (Spitze zeigt in Richtung ang), Farbe nach Hitze 0..1
   function flame(x, y, ang, L, w, t, ph, heat, alpha) {
@@ -188,58 +213,88 @@ function setupBoard(board) {
     c.fillStyle = g; c.beginPath(); c.moveTo(0, -w); c.quadraticCurveTo(L * .5, -w * (1 + fl), L * (1 + fl * .3), fl * w * 2); c.quadraticCurveTo(L * .5, w * (1 - fl), 0, w); c.closePath(); c.fill();
     c.restore();
   }
+  // v3 (Nutzer: Proportionen schrecklich): klassische "steigender Phoenix"-Pose.
+  // Koerper als Tropfen, S-Hals ungefaehr koerperlang, Kopf im Profil mit Hakenschnabel,
+  // zwei hochgestellte Fluegel aus echten Federn (Handschwingen lang, Armschwingen kurz,
+  // Deckfedern vorn), lange Schwanzfedern mit Feuer-Augen wehen entlang der Oberkante.
+  function feather(x, y, ang, L, w, t, ph, a, tipFire) {
+    const fl = Math.sin(t * 6 + ph) * .06;
+    c.save(); c.translate(x, y); c.rotate(ang + fl * .3);
+    const g = c.createLinearGradient(0, 0, L, 0);
+    g.addColorStop(0, `rgba(255, 246, 210, ${a})`); g.addColorStop(.35, `rgba(255, 196, 70, ${a})`); g.addColorStop(.75, `rgba(240, 96, 24, ${a})`); g.addColorStop(1, `rgba(190, 30, 10, ${a * .9})`);
+    c.fillStyle = g; c.beginPath(); c.moveTo(0, 0); c.bezierCurveTo(L * .3, -w, L * .75, -w * .9, L, -w * .15); c.quadraticCurveTo(L * 1.02, 0, L, w * .1); c.bezierCurveTo(L * .75, w * .7, L * .3, w * .8, 0, 0); c.fill();
+    c.strokeStyle = `rgba(255, 240, 200, ${a * .55})`; c.lineWidth = .8; c.beginPath(); c.moveTo(0, 0); c.lineTo(L * .95, -w * .05); c.stroke();
+    if (tipFire) { c.globalCompositeOperation = 'lighter'; const fg = c.createRadialGradient(L, 0, 0, L, 0, w * 2.6); fg.addColorStop(0, `rgba(255, 180, 60, ${a * .55})`); fg.addColorStop(1, 'rgba(255, 80, 10, 0)'); c.fillStyle = fg; c.beginPath(); c.arc(L, 0, w * 2.6, 0, 7); c.fill(); }
+    c.restore();
+  }
   function bird(t, s, heat, alpha) {
-    const { x, y } = home, flap = Math.sin(t * 2.2) * .12;
+    const { x, y } = home, flap = Math.sin(t * 1.8) * .07;
+    c.save(); c.translate(x, y); c.scale(s, s);
+    // Aura
     c.save(); c.globalCompositeOperation = 'lighter';
-    // Fluegel: zwei Faecher aus Flammenfedern entlang der Oberkante
-    for (const side of [-1, 1]) for (let k = 0; k < 11; k++) {
-      const u = k / 10, ang = (side < 0 ? Math.PI : 0) + side * (-.55 + u * .62 + flap * (1 - u)), L = (34 + u * 46) * s, w = (6 - u * 2) * s;
-      const sx = x + side * (6 + u * 26) * s, sy = y + 4 - u * 4 * s;
-      flame(sx, sy, ang, L, w, t, k * 1.3 + side, heat, alpha * (.75 + .25 * (1 - u)));
+    const au = c.createRadialGradient(0, -20, 4, 0, -20, 120); au.addColorStop(0, `rgba(255, 170, 60, ${.35 * alpha * (.8 + .2 * heat)})`); au.addColorStop(1, 'rgba(255, 90, 20, 0)');
+    c.fillStyle = au; c.beginPath(); c.arc(0, -20, 120, 0, 7); c.fill(); c.restore();
+    // Schwanzfedern: lang, entlang der Oberkante nach links und rechts, mit Feuer-Auge am Ende
+    for (const side of [-1, 1]) for (let k = 0; k < 3; k++) {
+      const ang = (side < 0 ? Math.PI : 0) + side * (.03 + k * .05) + Math.sin(t * 1.3 + k + side) * .03, L = 130 - k * 28;
+      feather(side * 4, 14, ang, L, 3.2, t, k * 2 + side, alpha * .85, false);
+      const ex = side * 4 + Math.cos(ang) * L, ey = 14 + Math.sin(ang) * L;
+      c.save(); c.globalCompositeOperation = 'lighter'; const og = c.createRadialGradient(ex, ey, 0, ex, ey, 9); og.addColorStop(0, `rgba(255, 250, 220, ${alpha})`); og.addColorStop(.4, `rgba(255, 150, 40, ${alpha * .8})`); og.addColorStop(1, 'rgba(255, 60, 10, 0)'); c.fillStyle = og; c.beginPath(); c.arc(ex, ey, 9, 0, 7); c.fill(); c.restore();
     }
-    // Schwanzfedern nach unten-seitlich, ueber die Karte hinweg kurz
-    for (let k = 0; k < 5; k++) flame(x + (k - 2) * 4 * s, y + 8 * s, Math.PI / 2 + (k - 2) * .35, 26 * s, 4 * s, t, k * 2.1, heat, alpha * .7);
-    // Koerper (gluehender Kern)
-    const bg = c.createRadialGradient(x, y, 1, x, y + 2, 16 * s); bg.addColorStop(0, `rgba(255, 250, 220, ${alpha})`); bg.addColorStop(.4, `rgba(255, 190, 70, ${alpha})`); bg.addColorStop(1, 'rgba(255, 80, 10, 0)');
-    c.fillStyle = bg; c.beginPath(); c.ellipse(x, y + 3 * s, 11 * s, 15 * s, 0, 0, 7); c.fill();
-    // Hals: geschwungen nach oben, Kopf hoch erhoben im Profil (blickt nach rechts)
-    const hx = x + 9 * s, hy = y - 22 * s + Math.sin(t * 1.4) * 1.2 * s;
-    const ng = c.createLinearGradient(x, y, hx, hy); ng.addColorStop(0, `rgba(255, 200, 90, ${alpha})`); ng.addColorStop(1, `rgba(255, 235, 170, ${alpha})`);
-    c.fillStyle = ng; c.beginPath(); c.moveTo(x - 5 * s, y - 4 * s); c.quadraticCurveTo(x - 4 * s, hy + 2 * s, hx - 4 * s, hy - 2 * s); c.lineTo(hx + 3 * s, hy + 3 * s); c.quadraticCurveTo(x + 6 * s, y - 8 * s, x + 6 * s, y); c.closePath(); c.fill();
-    // lange, nach hinten wehende Federkrone (hinter dem Kopf)
-    for (let k = 0; k < 7; k++) { const ang = -2.05 - k * .14 + Math.sin(t * 2 + k) * .06; flame(hx - 2 * s, hy - 2 * s, ang, (22 + k * 5) * s, (2.6 - k * .2) * s, t, k * 2.7, heat, alpha * (.95 - k * .08)); }
+    // Fluegel: Schulter -> Handgelenk als Bogen nach oben aussen, Federn entlang des Arms
+    for (const side of [-1, 1]) {
+      c.save(); c.translate(side * 7, -8); c.rotate(side * flap);
+      const wrist = [side * 70, -46];
+      for (let k = 0; k < 10; k++) {                     // Hand- und Armschwingen (hinten, lang)
+        const u = k / 9, bx = wrist[0] * u, by = wrist[1] * u - Math.sin(u * Math.PI) * 10;
+        const ang = side > 0 ? -1.55 + u * 1.3 : Math.PI + 1.55 - u * 1.3, L = 30 + u * 56;
+        feather(bx, by, ang, L, 6 + u * 1.5, t, k * 1.7 + side, alpha * (.8 + .2 * u), k > 6);
+      }
+      for (let k = 0; k < 8; k++) {                      // Deckfedern (vorn, kurz, heller)
+        const u = k / 7, bx = wrist[0] * u * .95, by = wrist[1] * u * .95 - Math.sin(u * Math.PI) * 10;
+        const ang = side > 0 ? -1.4 + u * 1.2 : Math.PI + 1.4 - u * 1.2;
+        feather(bx, by, ang, 20 + u * 16, 5, t, k * 2.3, alpha, false);
+      }
+      c.restore();
+    }
+    // Koerper: Tropfen, Brust hell
+    const bg = c.createRadialGradient(-2, -6, 2, 0, 0, 26); bg.addColorStop(0, `rgba(255, 252, 230, ${alpha})`); bg.addColorStop(.45, `rgba(255, 200, 80, ${alpha})`); bg.addColorStop(1, `rgba(230, 90, 20, ${alpha})`);
+    c.save(); c.shadowColor = 'rgba(255, 150, 40, .9)'; c.shadowBlur = 18;
+    c.fillStyle = bg; c.beginPath(); c.moveTo(0, -24); c.bezierCurveTo(14, -18, 15, 8, 0, 22); c.bezierCurveTo(-15, 8, -14, -18, 0, -24); c.fill();
+    // S-Hals und Kopf (blickt nach rechts, leicht nach oben)
+    const bob = Math.sin(t * 1.4) * 1.2;
+    const hx = 10, hy = -50 + bob;
+    const ng = c.createLinearGradient(0, -20, hx, hy); ng.addColorStop(0, `rgba(255, 200, 80, ${alpha})`); ng.addColorStop(1, `rgba(255, 236, 170, ${alpha})`);
+    c.fillStyle = ng; c.beginPath(); c.moveTo(-6, -18); c.bezierCurveTo(-10, -32, 2, -38, hx - 7, hy + 4); c.lineTo(hx + 5, hy + 6); c.bezierCurveTo(8, -36, 6, -26, 6, -16); c.closePath(); c.fill();
+    c.save(); c.translate(hx, hy); c.scale(1.3, 1.3); c.translate(-hx, -hy); 
+    const hg = c.createLinearGradient(hx - 8, hy - 8, hx + 10, hy + 6); hg.addColorStop(0, `rgba(255, 248, 215, ${alpha})`); hg.addColorStop(.6, `rgba(255, 196, 80, ${alpha})`); hg.addColorStop(1, `rgba(255, 120, 30, ${alpha})`);
+    c.fillStyle = hg; c.beginPath(); c.moveTo(hx - 8, hy + 4); c.bezierCurveTo(hx - 10, hy - 6, hx - 2, hy - 11, hx + 5, hy - 9); c.quadraticCurveTo(hx + 10, hy - 7, hx + 11, hy - 3); c.lineTo(hx + 8, hy + 3); c.quadraticCurveTo(hx + 2, hy + 7, hx - 8, hy + 4); c.fill();
     c.restore();
-    const S = s * 1.4;
-    // Kopf: keilfoermig, scharfe Kontur, gluehende Federn
-    c.save(); c.globalAlpha = alpha;
-    const hg = c.createLinearGradient(hx - 6 * S, hy - 6 * S, hx + 8 * S, hy + 6 * S); hg.addColorStop(0, '#fff6d0'); hg.addColorStop(.6, '#ffc050'); hg.addColorStop(1, '#ff7a20');
-    c.shadowColor = '#ffb040'; c.shadowBlur = 14 * S;
-    c.fillStyle = hg; c.beginPath(); c.moveTo(hx - 8 * S, hy + 2 * S); c.bezierCurveTo(hx - 9 * S, hy - 7 * S, hx - 2 * S, hy - 10 * S, hx + 4 * S, hy - 8.5 * S); c.quadraticCurveTo(hx + 9 * S, hy - 7 * S, hx + 10 * S, hy - 3.5 * S); c.lineTo(hx + 8 * S, hy + 1 * S); c.quadraticCurveTo(hx + 2 * S, hy + 5 * S, hx - 8 * S, hy + 2 * S); c.fill();
-    c.shadowBlur = 0;
-    // Hakenschnabel: oben gebogen, golden mit dunkler Spitze
-    const bk = c.createLinearGradient(hx + 8 * S, hy - 4 * S, hx + 17 * S, hy + 2 * S); bk.addColorStop(0, '#ffe28a'); bk.addColorStop(1, '#8a3a08');
-    c.fillStyle = bk; c.beginPath(); c.moveTo(hx + 8 * S, hy - 4.5 * S); c.quadraticCurveTo(hx + 15 * S, hy - 5 * S, hx + 17 * S, hy + 2 * S); c.quadraticCurveTo(hx + 13 * S, hy - 1 * S, hx + 9 * S, hy - .5 * S); c.lineTo(hx + 12 * S, hy + .5 * S); c.lineTo(hx + 7 * S, hy + 1 * S); c.closePath(); c.fill();
-    // Auge: schmal, weiss-gluehend, mit Brauenkante = entschlossener Blick
-    c.shadowColor = '#ffffff'; c.shadowBlur = 8 * S;
-    c.fillStyle = '#ffffff'; c.beginPath(); c.moveTo(hx + 1 * S, hy - 3.2 * S); c.quadraticCurveTo(hx + 4 * S, hy - 5 * S, hx + 7 * S, hy - 3.6 * S); c.quadraticCurveTo(hx + 4 * S, hy - 2.2 * S, hx + 1 * S, hy - 3.2 * S); c.fill();
-    c.shadowBlur = 0;
-    c.strokeStyle = 'rgba(190, 70, 10, .8)'; c.lineWidth = .9 * S; c.beginPath(); c.moveTo(hx + .5 * S, hy - 6 * S); c.quadraticCurveTo(hx + 5 * S, hy - 6.4 * S, hx + 8.5 * S, hy - 4.4 * S); c.stroke();
     c.restore();
-    c.save(); c.globalCompositeOperation = 'lighter';
-    for (let k = 0; k < 4; k++) flame(hx - 4 * S + k * 1.5 * S, hy + 3 * S, Math.PI / 2 + .9 + k * .15, (9 + k * 2) * S, 1.6 * S, t, k * 4.1, heat, alpha * .7);   // Kehlfedern
+    c.save(); c.globalAlpha = alpha; c.translate(hx, hy); c.scale(1.3, 1.3); c.translate(-hx, -hy); 
+    const bk = c.createLinearGradient(hx + 9, hy - 5, hx + 19, hy + 3); bk.addColorStop(0, '#ffe58a'); bk.addColorStop(1, '#9a4208');
+    c.fillStyle = bk; c.beginPath(); c.moveTo(hx + 9, hy - 5.5); c.quadraticCurveTo(hx + 17, hy - 6, hx + 19, hy + 2.5); c.quadraticCurveTo(hx + 15, hy - 1, hx + 10, hy - .5); c.lineTo(hx + 13, hy + .8); c.lineTo(hx + 8, hy + 1.5); c.closePath(); c.fill();
+    c.shadowColor = '#ffffff'; c.shadowBlur = 8; c.fillStyle = '#ffffff';
+    c.beginPath(); c.moveTo(hx + 1.5, hy - 4); c.quadraticCurveTo(hx + 4.5, hy - 6.2, hx + 7.5, hy - 4.6); c.quadraticCurveTo(hx + 4.5, hy - 3, hx + 1.5, hy - 4); c.fill();
+    c.shadowBlur = 0; c.strokeStyle = 'rgba(190, 70, 10, .85)'; c.lineWidth = 1; c.beginPath(); c.moveTo(hx + .5, hy - 6.8); c.quadraticCurveTo(hx + 5, hy - 7.4, hx + 9, hy - 5.2); c.stroke();
+    c.restore();
+    // Federkrone: lange Federn nach hinten oben
+    c.save(); c.translate(hx, hy); c.scale(1.3, 1.3); c.translate(-hx, -hy); 
+    for (let k = 0; k < 5; k++) feather(hx - 4, hy - 7, -2.2 - k * .17 + Math.sin(t * 2 + k) * .05, 28 + k * 7, 2.6, t, k * 3.1, alpha, true);
+    c.restore();
     c.restore();
   }
   B.draw = (t, dt) => {
     c.clearRect(0, 0, BW + P * 2, BH + P * 2);
-    let scale = 1.55, heat = .4 + .2 * Math.sin(t * 1.7), alpha = 1, trail = 1, nest = 0;
+    let scale = 1, heat = .4 + .2 * Math.sin(t * 1.7), alpha = 1, trail = 1, nest = 0;
     if (egg) {
       const e = egg.t += dt;
-      if (e < .8) { scale = 1.55 + e * .5; heat = .5 + e; }                                              // lodert auf
-      else if (e < 1.8) { const u = (e - .8); scale = 1.95 - u * .5; alpha = 1 - u; trail = 1 - u; heat = 1;    // verbrennt
+      if (e < .8) { scale = 1 + e * .3; heat = .5 + e; }                                              // lodert auf
+      else if (e < 1.8) { const u = (e - .8); scale = 1.24 - u * .3; alpha = 1 - u; trail = 1 - u; heat = 1;    // verbrennt
         if (Math.random() < .9) for (let k = 0; k < 3; k++) ash.push({ x: home.x + rand(-40, 40), y: home.y + rand(-15, 10), vx: rand(-15, 15), vy: rand(10, 40), life: 1, rot: rand(0, 6) }); }
       else if (e < 3.4) { alpha = 0; trail = 0; nest = Math.min(1, (e - 1.8) / .4); }                    // Glutnest
       else if (e < 4.4) { alpha = 0; trail = 0; nest = 1 - (e - 3.4); egg.rise = (e - 3.4); }        // Flamme steigt auf
-      else if (e < 5.4) { const u = e - 4.4; scale = .4 + u * 1.15; alpha = u; trail = u; heat = 1; egg.ring = u; }   // Wiedergeburt
+      else if (e < 5.4) { const u = e - 4.4; scale = .3 + u * .7; alpha = u; trail = u; heat = 1; egg.ring = u; }   // Wiedergeburt
       else egg = null;
     }
     // brennender Rahmen: gluehende Grundlinie + dichte, nach oben zuengelnde Flammen (vom Vogel aus nach unten schwaecher)
