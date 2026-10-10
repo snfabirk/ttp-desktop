@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Refined frame candidates (Theme Lab)</title>
+<!-- Theme Lab: Ersatz fuer den Refined-Rahmen "Stained Glass" (drei Versuche gefielen
+     nicht). Vier stehende Kandidaten zur Auswahl:
+     Kintsugi - dunkle Keramik, mit Gold reparierte Risse.
+     Origami - gefaltete Papierstreifen mit Knickschatten, Kranich in der Ecke.
+     Carved Wood - Nussbaum mit geschnitzter Ranke, Licht/Schatten der Schnitzerei.
+     Mosaic - kleine Steinchen in Meeresfarben, Wellenmuster, Fugen. -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: #0a1428; color: #f0e6d2; font-family: Georgia, serif; }
+  body { padding: 20px 40px 40px; }
+  h1 { margin: 0 0 16px; text-align: center; font-family: 'Cinzel', serif; color: #c8aa6e; letter-spacing: 3px; font-size: 1.5rem; }
+  .grid { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; max-width: 860px; margin: 0 auto; }
+  .item { text-align: center; }
+  .item b { display: block; margin-top: 8px; font-family: 'Cinzel', serif; font-size: .85rem; }
+  .item small { color: #a09b8c; font-size: .7rem; }
+  canvas { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<h1>Refined frame — replacement candidates</h1>
+<div class="grid" id="g"></div>
+<script>
+const DPR = Math.min(2, devicePixelRatio || 1);
+function seeded(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function card(name, sub, w, h) {
+  const d = document.createElement('div'); d.className = 'item';
+  const cv = document.createElement('canvas'); cv.width = w * DPR; cv.height = h * DPR; cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  d.append(cv); d.insertAdjacentHTML('beforeend', `<b>${name}</b><small>${sub}</small>`); document.getElementById('g').append(d);
+  const c = cv.getContext('2d'); c.setTransform(DPR, 0, 0, DPR, 0, 0); return c;
+}
+const rr = (c, x, y, w, h, r) => { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
+const rrP = (p, x, y, w, h, r) => { p.moveTo(x + r, y); p.arcTo(x + w, y, x + w, y + h, r); p.arcTo(x + w, y + h, x, y + h, r); p.arcTo(x, y + h, x, y, r); p.arcTo(x, y, x + w, y, r); p.closePath(); };
+const bandPath = (x0, y0, W, H, b, r0, r1) => { const p = new Path2D(); rrP(p, x0, y0, W, H, r0); rrP(p, x0 + b, y0 + b, W - b * 2, H - b * 2, r1); return p; };
+function frameCard(name, deco) {
+  const W = 400, H = 240, P = 34, c = card(name, 'Frame · Refined', W, H), w = W - P * 2, h = H - P * 2;
+  rr(c, P, P, w, h, 12); c.fillStyle = 'rgba(10, 20, 40, .7)'; c.fill();
+  c.fillStyle = 'rgba(255,255,255,.05)'; c.strokeStyle = 'rgba(255,255,255,.08)';
+  [[P + 12, P + 12, w - 24, 56], [P + 12, P + 76, (w - 32) / 2, h - 88], [P + 20 + (w - 32) / 2, P + 76, (w - 32) / 2, h - 88]].forEach(b => { rr(c, ...b, 7); c.fill(); c.stroke(); });
+  deco(c, P, P, w, h);
+}
+
+// ---------- Kintsugi ----------
+frameCard('Kintsugi', (c, x, y, w, h) => {
+  const b = 16, x0 = x - 6 - b, y0 = y - 6 - b, W2 = w + 12 + b * 2, H2 = h + 12 + b * 2, band = bandPath(x0, y0, W2, H2, b, 12, 6), r = seeded(41);
+  c.save(); c.shadowColor = 'rgba(0, 0, 0, .5)'; c.shadowBlur = 10; c.shadowOffsetY = 3; c.fillStyle = '#1a1a1e'; c.fill(band, 'evenodd'); c.restore();
+  c.save(); c.clip(band, 'evenodd');
+  // Glasur: tiefes Schwarzblau mit Glanz und feinen Sprenkeln
+  const g = c.createLinearGradient(x0, y0, x0 + W2, y0 + H2); g.addColorStop(0, '#2a2e3a'); g.addColorStop(.5, '#14161c'); g.addColorStop(1, '#232632'); c.fillStyle = g; c.fillRect(x0, y0, W2, H2);
+  for (let k = 0; k < 220; k++) { c.fillStyle = `rgba(${r() < .5 ? '160, 170, 190' : '90, 100, 120'}, ${r() * .25})`; c.fillRect(x0 + r() * W2, y0 + r() * H2, 1, 1); }
+  const sh = c.createLinearGradient(0, y0, 0, y0 + b); sh.addColorStop(0, 'rgba(255, 255, 255, .22)'); sh.addColorStop(1, 'rgba(255, 255, 255, 0)'); c.fillStyle = sh; c.fillRect(x0, y0, W2, b);
+  // Goldrisse: verzweigte Zickzack-Linien quer durchs Band, mit Glanz
+  const crack = (sx, sy, dx, dy, len, depth) => { let px = sx, py = sy; const pts = [[px, py]];
+    for (let k = 0; k < len; k++) { px += dx * 5 + (r() - .5) * 6; py += dy * 5 + (r() - .5) * 6; pts.push([px, py]); if (depth < 2 && r() < .18) crack(px, py, dx + (r() - .5), dy + (r() - .5), len / 2 | 0, depth + 1); }
+    [[3.2 - depth, '#7a5418'], [2 - depth * .5, '#e8b64a'], [.7, '#fff2c0']].forEach(([lw, col]) => { c.strokeStyle = col; c.lineWidth = Math.max(.5, lw); c.lineJoin = 'round'; c.beginPath(); pts.forEach(([qx, qy], i) => i ? c.lineTo(qx, qy) : c.moveTo(qx, qy)); c.stroke(); }); };
+  // Risse laufen ueberwiegend entlang des Bands (sonst sieht man nur kurze Stummel)
+  crack(x0 + W2 * .08, y0 + 4, 1, .25, 22, 0); crack(x0 + W2 * .55, y0 + b - 3, 1, -.2, 18, 0);
+  crack(x0 + W2 * .95, y0 + H2 - 5, -1, -.2, 24, 0); crack(x0 + W2 * .4, y0 + H2 - b + 3, -1, .25, 16, 0);
+  crack(x0 + 4, y0 + H2 * .15, .2, 1, 18, 0); crack(x0 + W2 - 4, y0 + H2 * .25, -.25, 1, 20, 0);
+  c.restore();
+  c.strokeStyle = 'rgba(255, 255, 255, .12)'; c.lineWidth = 1; c.stroke(band);
+});
+
+// ---------- Origami ----------
+frameCard('Origami', (c, x, y, w, h) => {
+  const b = 15, x0 = x - 6 - b, y0 = y - 6 - b, W2 = w + 12 + b * 2, H2 = h + 12 + b * 2, r = seeded(7);
+  const cols = [['#f4ede2', '#d8cdbc'], ['#e85a4a', '#b83a2e'], ['#f4ede2', '#d8cdbc'], ['#2a4a6a', '#1a3048']];
+  // Papierstreifen entlang der Seiten, abwechselnd gefaltet (Licht- und Schattenseite der Falte)
+  const strip = (ax, ay, bx, by, nx, ny, n) => { for (let k = 0; k < n; k++) { const u0 = k / n, u1 = (k + 1) / n, um = (u0 + u1) / 2, P = u => [ax + (bx - ax) * u, ay + (by - ay) * u];
+    const [a0x, a0y] = P(u0), [a1x, a1y] = P(u1), [mx, my] = P(um), col = cols[k % 4];
+    c.fillStyle = col[0]; c.beginPath(); c.moveTo(a0x, a0y); c.lineTo(mx, my); c.lineTo(mx + nx * b, my + ny * b); c.lineTo(a0x + nx * b, a0y + ny * b); c.fill();
+    c.fillStyle = col[1]; c.beginPath(); c.moveTo(mx, my); c.lineTo(a1x, a1y); c.lineTo(a1x + nx * b, a1y + ny * b); c.lineTo(mx + nx * b, my + ny * b); c.fill();
+    c.strokeStyle = 'rgba(0, 0, 0, .18)'; c.lineWidth = .8; c.beginPath(); c.moveTo(mx, my); c.lineTo(mx + nx * b, my + ny * b); c.stroke(); } };
+  c.save(); c.shadowColor = 'rgba(0, 0, 0, .45)'; c.shadowBlur = 8; c.shadowOffsetY = 3; c.fillStyle = '#d8cdbc'; c.fill(bandPath(x0, y0, W2, H2, b, 4, 2), 'evenodd'); c.restore();
+  strip(x0, y0, x0 + W2, y0, 0, 1, 16); strip(x0, y0 + H2 - b, x0 + W2, y0 + H2 - b, 0, 1, 16);
+  strip(x0, y0 + b, x0, y0 + H2 - b, 1, 0, 8); strip(x0 + W2 - b, y0 + b, x0 + W2 - b, y0 + H2 - b, 1, 0, 8);
+  // Papierstruktur
+  for (let k = 0; k < 300; k++) { const u = r(), s = (r() * 4) | 0, [px, py] = s === 0 ? [x0 + u * W2, y0 + r() * b] : s === 1 ? [x0 + u * W2, y0 + H2 - r() * b] : s === 2 ? [x0 + r() * b, y0 + u * H2] : [x0 + W2 - r() * b, y0 + u * H2]; c.fillStyle = `rgba(0, 0, 0, ${r() * .06})`; c.fillRect(px, py, 1, 1); }
+  // Kranich oben rechts
+  const kx = x0 + W2 - 30, ky = y0 - 6;
+  const tri = (pts, col) => { c.fillStyle = col; c.beginPath(); pts.forEach(([px, py], i) => i ? c.lineTo(kx + px, ky + py) : c.moveTo(kx + px, ky + py)); c.closePath(); c.fill(); c.strokeStyle = 'rgba(0,0,0,.15)'; c.lineWidth = .6; c.stroke(); };
+  c.save(); c.shadowColor = 'rgba(0, 0, 0, .4)'; c.shadowBlur = 6; c.shadowOffsetY = 2;
+  tri([[-26, 4], [0, 0], [-6, 10]], '#c8382c'); tri([[0, 0], [24, -12], [6, 8]], '#e85a4a');            // Hals/Schwanz
+  tri([[-4, 2], [10, -26], [6, 6]], '#f06a58'); tri([[-4, 2], [-14, -20], [6, 6]], '#b83a2e');           // Fluegel
+  tri([[24, -12], [30, -14], [25, -9]], '#c8382c'); tri([[-6, 10], [6, 8], [0, 14]], '#a82e24');           // Kopf, Bauch
+  c.restore();
+});
+
+// ---------- Carved Wood ----------
+frameCard('Carved Wood', (c, x, y, w, h) => {
+  const b = 18, x0 = x - 6 - b, y0 = y - 6 - b, W2 = w + 12 + b * 2, H2 = h + 12 + b * 2, band = bandPath(x0, y0, W2, H2, b, 10, 6), r = seeded(12);
+  c.save(); c.shadowColor = 'rgba(0, 0, 0, .55)'; c.shadowBlur = 10; c.shadowOffsetY = 3; c.fillStyle = '#4a2c18'; c.fill(band, 'evenodd'); c.restore();
+  c.save(); c.clip(band, 'evenodd');
+  // Nussbaum-Maserung
+  const g = c.createLinearGradient(x0, 0, x0 + W2, 0); g.addColorStop(0, '#5a3820'); g.addColorStop(.5, '#6e4628'); g.addColorStop(1, '#4e301a'); c.fillStyle = g; c.fillRect(x0, y0, W2, H2);
+  for (let k = 0; k < 70; k++) { const yy = y0 + r() * H2, horiz = r() < .5; c.strokeStyle = `rgba(${r() < .5 ? '30, 16, 8' : '140, 96, 58'}, ${.15 + r() * .2})`; c.lineWidth = .6 + r(); c.beginPath();
+    if (horiz) { c.moveTo(x0, yy); for (let xx = x0; xx <= x0 + W2; xx += 20) c.lineTo(xx, yy + Math.sin(xx * .03 + k) * 2); } else { const xx0 = x0 + r() * W2; c.moveTo(xx0, y0); for (let yy2 = y0; yy2 <= y0 + H2; yy2 += 20) c.lineTo(xx0 + Math.sin(yy2 * .03 + k) * 2, yy2); }
+    c.stroke(); }
+  // geschnitzte Ranke: Kerbe = dunkle Linie + helle Kante darunter (Licht von oben links)
+  const carve = (pts, w0) => { [[1, 1, '#f0c890', .5], [0, 0, '#2a160a', 1]].forEach(([ox, oy, col, a]) => { c.globalAlpha = a; c.strokeStyle = col; c.lineWidth = w0; c.lineCap = 'round'; c.beginPath(); pts.forEach(([px, py], i) => i ? c.lineTo(px + ox, py + oy) : c.moveTo(px + ox, py + oy)); c.stroke(); }); c.globalAlpha = 1; };
+  const vine = (ax, ay, bx, by, nx, ny) => { const pts = []; for (let k = 0; k <= 60; k++) { const u = k / 60; pts.push([ax + (bx - ax) * u + nx * Math.sin(u * 18) * 4, ay + (by - ay) * u + ny * Math.sin(u * 18) * 4]); } carve(pts, 1.6);
+    for (let k = 1; k < 18; k++) { const u = k / 18, px = ax + (bx - ax) * u, py = ay + (by - ay) * u, s = k % 2 ? 1 : -1, lx = px + nx * s * 6, ly = py + ny * s * 6;
+      carve([[px, py], [lx + (bx - ax) / 60, ly + (by - ay) / 60]], 1.1);
+      c.fillStyle = '#2a160a'; c.beginPath(); c.ellipse(lx, ly, 3.2, 1.8, Math.atan2(by - ay, bx - ax), 0, 7); c.fill(); c.fillStyle = 'rgba(240, 200, 144, .4)'; c.beginPath(); c.ellipse(lx + .8, ly + .8, 2.4, 1, Math.atan2(by - ay, bx - ax), 0, 7); c.fill(); } };
+  vine(x0 + 26, y0 + b / 2, x0 + W2 - 26, y0 + b / 2, 0, 1); vine(x0 + 26, y0 + H2 - b / 2, x0 + W2 - 26, y0 + H2 - b / 2, 0, 1);
+  vine(x0 + b / 2, y0 + 26, x0 + b / 2, y0 + H2 - 26, 1, 0); vine(x0 + W2 - b / 2, y0 + 26, x0 + W2 - b / 2, y0 + H2 - 26, 1, 0);
+  // Eckrosetten
+  [[x0 + b / 2 + 2, y0 + b / 2 + 2], [x0 + W2 - b / 2 - 2, y0 + b / 2 + 2], [x0 + W2 - b / 2 - 2, y0 + H2 - b / 2 - 2], [x0 + b / 2 + 2, y0 + H2 - b / 2 - 2]].forEach(([cx, cy]) => {
+    for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283; c.fillStyle = '#2a160a'; c.beginPath(); c.ellipse(cx + Math.cos(a) * 5, cy + Math.sin(a) * 5, 4, 1.8, a, 0, 7); c.fill(); }
+    c.fillStyle = '#8a5a34'; c.beginPath(); c.arc(cx, cy, 2.6, 0, 7); c.fill(); });
+  // Bevel: helle Oberkante, dunkle Unterkante
+  const top = c.createLinearGradient(0, y0, 0, y0 + 4); top.addColorStop(0, 'rgba(255, 220, 170, .35)'); top.addColorStop(1, 'rgba(255, 220, 170, 0)'); c.fillStyle = top; c.fillRect(x0, y0, W2, 4);
+  c.restore();
+  c.strokeStyle = '#2a160a'; c.lineWidth = 1.2; c.stroke(band);
+});
+
+// ---------- Mosaic ----------
+frameCard('Mosaic', (c, x, y, w, h) => {
+  const b = 16, x0 = x - 6 - b, y0 = y - 6 - b, W2 = w + 12 + b * 2, H2 = h + 12 + b * 2, band = bandPath(x0, y0, W2, H2, b, 8, 4), r = seeded(64);
+  c.save(); c.shadowColor = 'rgba(0, 0, 0, .5)'; c.shadowBlur = 8; c.shadowOffsetY = 3; c.fillStyle = '#c8c0b0'; c.fill(band, 'evenodd'); c.restore();
+  c.save(); c.clip(band, 'evenodd');
+  c.fillStyle = '#b8b0a0'; c.fillRect(x0, y0, W2, H2);   // Fugenmoertel
+  const S = 5.2;
+  for (let yy = y0; yy < y0 + H2; yy += S) for (let xx = x0; xx < x0 + W2; xx += S) {
+    const cx = xx + S / 2, cy = yy + S / 2;
+    // Wellenmuster: Abstand zum Rand bestimmt die Farbe, Welle laeuft entlang
+    const dIn = Math.min(cx - x0, x0 + W2 - cx, cy - y0, y0 + H2 - cy);
+    const along = (cy - y0 < b || y0 + H2 - cy < b) ? cx : cy;
+    const wave = dIn + Math.sin(along * .09) * 3.5;
+    const col = wave < 4 ? [16, 48, 88] : wave < 8 ? [40, 110, 160] : wave < 11 ? [120, 190, 210] : [236, 228, 206];
+    const v = (r() - .5) * 28;
+    c.fillStyle = `rgb(${col[0] + v | 0}, ${col[1] + v | 0}, ${col[2] + v | 0})`;
+    const j = .5 + r() * .5;
+    c.beginPath(); c.moveTo(xx + j, yy + r() * .8); c.lineTo(xx + S - .6 - r() * .4, yy + r() * .8); c.lineTo(xx + S - .6, yy + S - .6 - r() * .5); c.lineTo(xx + r() * .8, yy + S - .6); c.closePath(); c.fill();
+    c.fillStyle = 'rgba(255, 255, 255, .18)'; c.fillRect(xx + 1, yy + 1, 1.5, 1);
+  }
+  c.restore();
+  c.strokeStyle = '#8a8070'; c.lineWidth = 1.2; c.stroke(band);
+});
+</script>
+</body>
+</html>
