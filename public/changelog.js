@@ -25,6 +25,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.22.2',
+      date: '2026-10-10',
+      notable: [],
+      refinements: 1,
+      bugfixes: 0
+    },
+    {
       version: '5.22.1',
       date: '2026-10-10',
       notable: [],
@@ -35,8 +42,8 @@
       version: '5.22.0',
       date: '2026-10-10',
       notable: [
-        'Pass step 30+5 now gives a voucher for one free Refined or Fancy item from your shop offers. It lasts 24 hours from the moment you next open the shop.',
-        'The 30+ row in the pass shows which step you are on and how far the voucher is.'
+        "Pass step 30+5 now gives a free voucher for 1 Refined or Fancy item in that day's daily shop. It expires when the daily shop changes - don't miss it!",
+        'The 30+ row in the pass shows your steps and how far the voucher is.'
       ],
       refinements: 0,
       bugfixes: 0

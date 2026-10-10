@@ -1,5 +1,10 @@
 # Internal Changelog
 
+## 5.22.2 — 2026-10-10
+
+- Voucher (user): only for TODAY's daily offers, expires at the next daily reset (granted with expiresAt = nextDailyReset; the "24h from first shop open" logic is gone). Weekly offers no longer show the voucher button; server rejects non-daily ids.
+- Pass 30+ row: label is always "30+" (endless), step pills stay; short tooltip on the +5 ticket.
+
 ## 5.22.1 — 2026-10-10
 
 - Shop hover previews feel instant when moving from item to item: no second 250 ms delay while a preview is open / was closed <400 ms ago.

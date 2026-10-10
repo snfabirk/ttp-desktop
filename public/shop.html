@@ -403,8 +403,8 @@
       if (shop.couponActive) return `🪙 <s>${fmtNum(o.price)}</s> <b>${fmtNum(Math.round(o.price * 0.8))}</b>`;
       return `🪙 <b>${fmtNum(o.price)}</b>`;
     }
-    // Gutschein: nur Refined/Fancy, nur solange er laeuft
-    const voucherOk = o => shop.voucher && !o.owned && shop.voucher.rarities.includes(o.rarity);
+    // Gutschein: nur Refined/Fancy im heutigen Daily-Shop, laeuft mit dem Daily-Wechsel ab
+    const voucherOk = o => shop.voucher && !o.owned && shop.voucher.rarities.includes(o.rarity) && shop.daily.some(d => d.id === o.id);
     function voucherBtn(o) {
       if (!voucherOk(o)) return '';
       const c = buyConfirm.has('v:' + o.id);
@@ -631,7 +631,7 @@
           : '<div class="buff free">Free slot</div>';
       }).join('');
       document.getElementById('voucherSlot').innerHTML = shop.voucher
-        ? `<div class="voucher-head">Voucher</div><div class="voucher" title="From pass step 30+5: one free Refined or Fancy item from your current offers">🎫 Free Refined or Fancy item<span class="buff-time">⏳ ${until(shop.voucher.expiresAt)}</span></div>`
+        ? `<div class="voucher-head">Voucher</div><div class="voucher" title="Free voucher for 1 Refined or Fancy item in today's daily shop">🎫 Free Refined or Fancy item<span class="buff-time">⏳ ${until(shop.voucher.expiresAt)}</span></div>`
         : '';
     }
 

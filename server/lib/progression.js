@@ -70,13 +70,12 @@ const OVERFLOW_XP_FIRST = 2000;
 const OVERFLOW_XP_GROWTH = 300;
 const COINS_PER_OVERFLOW_STEP = 100;
 // Gutschein (Nutzeridee 2026-10-10, v5.22.0): bei 30+5 gibt es einmal pro
-// Monat einen Gutschein fuer ein Gratis-Refined/Fancy aus den aktuellen
-// Angeboten (Daily + Weekly). Er laeuft 24 h - gezaehlt ab dem ersten Oeffnen
-// des Shops, damit er nicht verfaellt, waehrend die App nur im Tray laeuft.
-// Eigener Platz, belegt keinen der 3 Buff-Slots.
+// Monat einen Gutschein fuer ein Gratis-Refined/Fancy aus dem HEUTIGEN Daily-
+// Shop. Er laeuft mit dem Daily-Wechsel ab (Nutzer: sonst wartet man einfach
+// auf den naechsten Tag - "wers verpasst selbst schuld"). Eigener Platz,
+// belegt keinen der 3 Buff-Slots.
 const VOUCHER_AT_OVERFLOW = 5;
 const VOUCHER_RARITIES = ['refined', 'fancy'];
-const VOUCHER_DURATION_MS = 24 * 3600e3;
 const overflowStepCost = n => OVERFLOW_XP_FIRST + OVERFLOW_XP_GROWTH * n; // n = schon erreichte Stufen
 
 // XP fuer Level n -> n+1: jedes Level 100 XP teurer, ab Level 21 fix 4.000
@@ -352,7 +351,8 @@ function claimPassRewards(state, month) {
   }
   if (prog.overflowCount >= VOUCHER_AT_OVERFLOW && !pass.voucherGranted) {
     pass.voucherGranted = true;
-    state.voucher = { month, grantedAt: new Date().toISOString(), expiresAt: null };
+    const now = new Date();
+    state.voucher = { month, grantedAt: now.toISOString(), expiresAt: nextDailyReset(now).toISOString() };
   }
 }
 
@@ -1003,6 +1003,7 @@ function buyShopItem(id, useVoucher) {
   if (state.inventory.includes(id)) return { ok: false, error: 'You already own this.' };
   if (useVoucher) {
     if (!state.voucher) return { ok: false, error: 'Your voucher has expired.' };
+    if (!state.shop.daily.includes(id)) return { ok: false, error: "The voucher only works in today's daily offers." };
     if (!VOUCHER_RARITIES.includes(c.rarity)) return { ok: false, error: 'The voucher only works on Refined and Fancy items.' };
     state.voucher = null;
     state.inventory.push(id);
@@ -1055,12 +1056,7 @@ function getShopState() {
   const shopChanged = refreshShop(state, now);
   const consChanged = refreshConsumables(state, now);
   const buffsChanged = pruneBuffs(state);
-  let voucherChanged = pruneVoucher(state);
-  // Erstes Oeffnen des Shops startet die 24 h
-  if (state.voucher && !state.voucher.expiresAt) {
-    state.voucher.expiresAt = new Date(now.getTime() + VOUCHER_DURATION_MS).toISOString();
-    voucherChanged = true;
-  }
+  const voucherChanged = pruneVoucher(state);
   if (shopChanged || consChanged || buffsChanged || voucherChanged) writeState(state);
   const owned = new Set(state.inventory);
   return {
