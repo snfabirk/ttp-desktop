@@ -1,5 +1,12 @@
 # Internal Changelog
 
+## 5.22.1 — 2026-10-10
+
+- Shop hover previews feel instant when moving from item to item: no second 250 ms delay while a preview is open / was closed <400 ms ago.
+- Shader theme live previews (magma, magma+, aurora, lanterns, sky isles): one compiled WebGL context per theme, reused on every hover
+  (before: a new context + ~140 ms shader compile on EVERY hover, never released - Chromium started dropping old contexts after ~16).
+  Offered themes are pre-drawn once at preview size shortly after the shop loads (requestIdleCallback never fired on this always-animating page).
+
 ## 5.22.0 — 2026-10-10
 
 - Voucher (user idea): at pass step 30+5 (once per month, pass.voucherGranted) state.voucher is granted; the 24h start on the first

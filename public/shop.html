@@ -496,9 +496,9 @@
         try { const a = await (await fetch(`/api/account?${new URLSearchParams({ gameName: parts[0], tagLine: parts[1] })}`)).json(); if (a.profileIconId != null) me.icon = `https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/${a.profileIconId}.png`; } catch (e) {}
       }
     })();
-    let pop = null, popTimer = null;
+    let pop = null, popTimer = null, lastPopHiddenAt = 0;
     let stopLive = null;
-    function hidePreview() { clearTimeout(popTimer); if (stopLive) { stopLive(); stopLive = null; } if (pop) { const p = pop; pop = null; p.classList.remove('show'); setTimeout(() => p.remove(), 160); } }
+    function hidePreview() { clearTimeout(popTimer); if (stopLive) { stopLive(); stopLive = null; } if (pop) { const p = pop; pop = null; lastPopHiddenAt = performance.now(); p.classList.remove('show'); setTimeout(() => p.remove(), 160); } }
     // Themes: kleine App-Ansicht mit laufender Szene statt Profil-Ausschnitt
     function themePreviewHtml(o, bg, accent, text, line) {
       const tile = `background:color-mix(in srgb, ${bg} 62%, transparent);border-color:${line};color:${text}`;
@@ -556,7 +556,9 @@
       const o = [...shop.daily, ...shop.weekly].find(x => x.id === offerEl.dataset.id);
       if (!o) return;
       clearTimeout(popTimer);
-      popTimer = setTimeout(() => showPreview(offerEl, o), 250);
+      // Von Vorschau zu Vorschau springen: sofort statt erneut 250 ms warten
+      const warm = pop || performance.now() - lastPopHiddenAt < 400;
+      popTimer = setTimeout(() => showPreview(offerEl, o), warm ? 0 : 250);
     });
     document.querySelector('.shop').addEventListener('mouseout', e => {
       const offerEl = e.target.closest('.offer');
@@ -728,6 +730,11 @@
       renderWheelSmall();
     }
 
+    // shop-scenes-2.js laedt evtl. erst nach dem Shop - kurz nachfassen
+    function warmThemes(keys, tries = 0) {
+      if (window.TTPThemeLiveWarm) window.TTPThemeLiveWarm(keys);
+      else if (tries < 20) setTimeout(() => warmThemes(keys, tries + 1), 250);
+    }
     async function load() {
       try {
         const res = await fetch('/api/shop');
@@ -738,6 +745,7 @@
           rotation = 360 - (shop.wheel.todayIndex * segDeg + segDeg / 2);
         }
         render();
+        warmThemes([...shop.daily, ...shop.weekly].filter(o => o.type === 'theme').map(o => o.themeKey));
       } catch (e) {
         document.getElementById('wheelStatus').textContent = 'Shop could not be loaded.';
       }

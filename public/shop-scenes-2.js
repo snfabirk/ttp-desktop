@@ -1131,11 +1131,41 @@ void main() {
   PV.cyberpunk = (c, W, H) => cyberStill(c, W, H);
   window.TTPThemePV = PV;
   window.TTPThemeLiveExtra = window.TTPThemeLiveExtra || {};
-  Object.entries(SHADER_PV).forEach(([key, fs]) => {
+  // Live-Vorschau: EIN kompilierter Shader (+ WebGL-Kontext) pro Theme, der
+  // bei jedem Hover wiederverwendet wird. Vorher wurde pro Hover ein neuer
+  // Kontext angelegt und nie freigegeben (~140 ms Kompilieren je Hover, und
+  // nach ~16 Hovers verwarf Chromium alte Kontexte).
+  const liveGL = {};
+  const liveRenderer = key => {
+    if (liveGL[key] === undefined) {
+      const off = document.createElement('canvas'); let G = null;
+      try { G = gl1(off, SHADER_PV[key]); } catch (e) {}
+      liveGL[key] = G ? { off, G } : null;
+    }
+    return liveGL[key];
+  };
+  // Shop: die gerade angebotenen Themes vorab einmal in Vorschaugroesse
+  // zeichnen - der Treiber kompiliert erst beim ersten Draw, und auch der
+  // erste Draw/Kopie in neuer Groesse kostet. (requestIdleCallback feuert hier
+  // nie, die Seite animiert staendig - deshalb gestaffelte Timer.)
+  window.TTPThemeLiveWarm = keys => keys.filter(k => SHADER_PV[k]).forEach((k, i) => setTimeout(() => {
+    const cv = document.createElement('canvas');
+    const stop = window.TTPThemeLiveExtra[k](cv, 460, 270);
+    stop();
+  }, 300 + i * 200));
+  Object.keys(SHADER_PV).forEach(key => {
     window.TTPThemeLiveExtra[key] = (cv, W, H) => {
       const d = Math.min(2, devicePixelRatio || 1); cv.width = W * d; cv.height = H * d;
-      const f = shaderInto(fs, cv, cv.width, cv.height); if (!f) return () => {};
-      let raf = 0; const step = now => { f(now / 1000); raf = requestAnimationFrame(step); }; raf = requestAnimationFrame(step);
+      const L = liveRenderer(key); if (!L) return () => {};
+      const { off, G } = L, c = cv.getContext('2d');
+      G.size(cv.width, cv.height);
+      let raf = 0;
+      const step = now => {
+        G.gl.uniform2f(G.U('R'), off.width, off.height); G.gl.uniform1f(G.U('T'), now / 1000); G.draw();
+        c.clearRect(0, 0, cv.width, cv.height); c.drawImage(off, 0, 0, cv.width, cv.height);
+        raf = requestAnimationFrame(step);
+      };
+      step(performance.now());
       return () => cancelAnimationFrame(raf);
     };
   });
