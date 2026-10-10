@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Celestial Dragon - two variants (Theme Lab)</title>
+<!-- Theme Lab: zwei Varianten fuer den Animated-Rahmen "Celestial Dragon".
+     A "Constellation": Drache als Sternbild - leuchtende Sterne, verbunden durch
+       feine Linien, durchscheinend, Kopf als Sternbild-Umriss.
+     B "Nebula": fester Koerper aus Nebel-Violett (Nachfolger von v2).
+     Beide: Kopf folgt der Wellenbewegung, schaut sich um, ab und zu schnappt er
+     nach Sternenstaub; staerkere Schlaengelwelle. Easter Egg (beide): Kopf
+     anklicken -> Bruellen + Sternenregen. -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: radial-gradient(ellipse at 50% 40%, #141a34 0%, #070912 70%); color: #eef0ff; font-family: Georgia, serif; }
+  .stage { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 70px; }
+  .row { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .board { position: relative; width: 640px; padding: 18px; box-sizing: border-box; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; border-radius: 16px; background: rgba(14, 16, 34, .55); }
+  .w { background: rgba(12, 14, 30, .78); border: 1px solid #2c3060; border-radius: 10px; padding: 10px 12px; min-height: 60px; }
+  .w.wide { grid-column: span 3; min-height: 50px; display: flex; align-items: center; gap: 14px; }
+  .w h4 { margin: 0 0 4px; color: #a8b0ff; font-family: 'Cinzel', serif; font-size: .75rem; }
+  .ava { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #8a80ff; }
+  .name { font-family: 'Cinzel', serif; color: #d8ccff; font-size: 1.1rem; }
+  .big { font-family: 'Cinzel', serif; font-size: 1.2rem; }
+  canvas.dragon { position: absolute; left: -70px; top: -70px; pointer-events: none; z-index: 4; }
+  .head-hit { position: absolute; z-index: 6; width: 70px; height: 70px; border-radius: 50%; cursor: pointer; }
+  .label { font-family: 'Cinzel', serif; color: #c8b8ff; letter-spacing: 2px; }
+  .label small { display: block; text-align: center; color: #8e94c0; font-family: Georgia, serif; letter-spacing: 0; font-size: .8rem; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="row"><div class="board" data-style="constellation"><div class="w wide"><img class="ava" src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><span class="name">LUCKSHOT#796</span></div><div class="w"><h4>Games</h4><div class="big">142</div></div><div class="w"><h4>Rank</h4><div class="big">Gold II</div></div><div class="w"><h4>Trophies</h4><div class="big">9 / 21</div></div><canvas class="dragon"></canvas><div class="head-hit"></div></div>
+    <div class="label">A · Constellation<small>a dragon drawn in stars</small></div></div>
+  <div class="row"><div class="board" data-style="nebula"><div class="w wide"><img class="ava" src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><span class="name">LUCKSHOT#796</span></div><div class="w"><h4>Games</h4><div class="big">142</div></div><div class="w"><h4>Rank</h4><div class="big">Gold II</div></div><div class="w"><h4>Trophies</h4><div class="big">9 / 21</div></div><canvas class="dragon"></canvas><div class="head-hit"></div></div>
+    <div class="label">B · Nebula<small>a solid dragon of night sky</small></div></div>
+</div>
+
+<script>
+const D = Math.min(2, devicePixelRatio || 1), rand = (a, b) => a + Math.random() * (b - a);
+const P = 70;
+
+function makeDragon(board) {
+  const style = board.dataset.style, dc = board.querySelector('canvas'), dx = dc.getContext('2d'), hit = board.querySelector('.head-hit');
+  let BW = 0, BH = 0, per = [], perLen = 0;
+  function layout() {
+    BW = board.offsetWidth; BH = board.offsetHeight;
+    dc.width = (BW + P * 2) * D; dc.height = (BH + P * 2) * D; dc.style.width = BW + P * 2 + 'px'; dc.style.height = BH + P * 2 + 'px'; dx.setTransform(D, 0, 0, D, 0, 0);
+    const o = 6, r = 26, x0 = P - o, y0 = P - o, x1 = P + BW + o, y1 = P + BH + o; per = [];
+    const arc = (cx, cy, a0, a1) => { for (let i = 0; i <= 10; i++) { const a = a0 + (a1 - a0) * i / 10; per.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } };
+    per.push([x0 + r, y0]); per.push([x1 - r, y0]); arc(x1 - r, y0 + r, -Math.PI / 2, 0); per.push([x1, y1 - r]); arc(x1 - r, y1 - r, 0, Math.PI / 2);
+    per.push([x0 + r, y1]); arc(x0 + r, y1 - r, Math.PI / 2, Math.PI); per.push([x0, y0 + r]); arc(x0 + r, y0 + r, Math.PI, Math.PI * 1.5);
+    perLen = 0; per.forEach((p, i) => { if (i) perLen += Math.hypot(p[0] - per[i - 1][0], p[1] - per[i - 1][1]); p.len = perLen; });
+  }
+  const at = d => { d = ((d % perLen) + perLen) % perLen; for (let i = 1; i < per.length; i++) if (per[i].len >= d) { const a = per[i - 1], b = per[i], u = (d - a.len) / (b.len - a.len || 1); return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, Math.atan2(b[1] - a[1], b[0] - a[0])]; } return [per[0][0], per[0][1], 0]; };
+  layout();
+  const SEG = 38, GAP = 10, dust = [], rain = [];
+  let head = style === 'nebula' ? 400 : 0, roar = null, snap = 0, nextSnap = rand(4, 8);
+  hit.addEventListener('click', () => { if (!roar) roar = { t: 0 }; });
+
+  // Kopf schaut sich um: langsames Hin- und Herdrehen + gelegentliches Schnappen
+  function lookAngle(t) { return Math.sin(t * .9) * .35 + Math.sin(t * 2.3) * .1; }
+
+  function drawHead(t, x, y, ang, open) {
+    dx.save(); dx.translate(x, y); dx.rotate(ang);
+    if (style === 'constellation') {
+      // Kopf als Sternbild: Sterne an markanten Punkten, feine Verbindungslinien
+      const S = [[-8, -10], [6, -12], [20, -8], [30, -5 - open * 6], [22, 0], [30, 4 + open * 9], [14, 10], [-6, 10], [-14, -2]];
+      dx.strokeStyle = 'rgba(190, 200, 255, .65)'; dx.lineWidth = 1;
+      dx.beginPath(); S.forEach(([px, py], i) => i ? dx.lineTo(px, py) : dx.moveTo(px, py)); dx.closePath(); dx.stroke();
+      dx.beginPath(); dx.moveTo(-2, -11); dx.lineTo(-12, -24); dx.lineTo(-22, -27); dx.moveTo(4, -12); dx.lineTo(-4, -28); dx.lineTo(-14, -34); dx.stroke(); // Hoerner
+      dx.setLineDash([2, 3]); dx.beginPath(); dx.moveTo(28, 4); dx.quadraticCurveTo(18 + Math.sin(t * 4) * 5, 20, 4, 24); dx.moveTo(28, -6); dx.quadraticCurveTo(16 + Math.cos(t * 4) * 5, -22, 2, -28); dx.stroke(); dx.setLineDash([]);
+      [...S, [-12, -24], [-22, -27], [-4, -28], [-14, -34]].forEach(([px, py], i) => star(px, py, i === 3 ? 2.6 : 1.8, t + i));
+      star(8, -6, 2.8, t * 2, '255, 220, 130'); // Auge
+    } else {
+      // Nebula: fester Kopf (aus v2), aber mit Leuchtkontur
+      for (let k = 0; k < 7; k++) { const a = Math.PI + (k - 3) * .32, sway = Math.sin(t * 4 + k) * .25; dx.strokeStyle = `rgba(150, 120, 255, ${.55 + .05 * k})`; dx.lineWidth = 3; dx.beginPath(); dx.moveTo(-6, (k - 3) * 2); dx.quadraticCurveTo(-16, (k - 3) * 5, -26 + Math.cos(a + sway) * 4, (k - 3) * 7 + Math.sin(a + sway) * 6); dx.stroke(); }
+      const h = new Path2D();
+      h.moveTo(-10, -12); h.quadraticCurveTo(6, -16, 18, -9); h.lineTo(30, -6 - open * 6); h.quadraticCurveTo(33, -3, 28, -1); h.lineTo(16, 0);
+      h.lineTo(28, 3 + open * 9); h.quadraticCurveTo(22, 11 + open * 4, 10, 10); h.quadraticCurveTo(-4, 13, -10, 10); h.closePath();
+      const hg = dx.createLinearGradient(-10, -14, 0, 14); hg.addColorStop(0, '#3a2c88'); hg.addColorStop(1, '#1c165a');
+      dx.fillStyle = hg; dx.shadowColor = 'rgba(150, 130, 255, .9)'; dx.shadowBlur = 12; dx.fill(h); dx.shadowBlur = 0;
+      dx.strokeStyle = 'rgba(200, 190, 255, .95)'; dx.lineWidth = 1.4; dx.stroke(h);
+      if (open > .05) { dx.fillStyle = 'rgba(255, 210, 140, .8)'; dx.beginPath(); dx.moveTo(16, 0); dx.lineTo(28, -5 - open * 6); dx.lineTo(28, 2 + open * 9); dx.fill(); }
+      dx.fillStyle = '#f2eeff'; for (let k = 0; k < 3; k++) { dx.beginPath(); dx.moveTo(19 + k * 3, -4 - open * 3); dx.lineTo(20 + k * 3, -1 - open * 2); dx.lineTo(21 + k * 3, -4 - open * 3); dx.fill(); }
+      dx.fillStyle = `rgba(255, 220, 120, ${.85 + .15 * Math.sin(t * 6)})`; dx.shadowColor = '#ffd86b'; dx.shadowBlur = 8; dx.beginPath(); dx.ellipse(6, -8, 3, 2, -.2, 0, 7); dx.fill(); dx.shadowBlur = 0;
+      dx.fillStyle = '#140c00'; dx.beginPath(); dx.ellipse(6.5, -8, .8, 1.8, 0, 0, 7); dx.fill();
+      dx.strokeStyle = 'rgba(235, 228, 255, .95)'; dx.lineWidth = 2.2; dx.lineCap = 'round';
+      dx.beginPath(); dx.moveTo(-2, -12); dx.quadraticCurveTo(-10, -24, -22, -26); dx.moveTo(4, -13); dx.quadraticCurveTo(-2, -28, -12, -33); dx.stroke();
+      dx.strokeStyle = 'rgba(200, 190, 255, .65)'; dx.lineWidth = 1.2;
+      dx.beginPath(); dx.moveTo(27, 2); dx.quadraticCurveTo(20 + Math.sin(t * 4) * 5, 18, 6, 22); dx.moveTo(27, -7); dx.quadraticCurveTo(18 + Math.cos(t * 4) * 5, -22, 4, -26); dx.stroke();
+    }
+    dx.restore();
+  }
+  function star(x, y, r, ph, col = '235, 230, 255') {
+    const tw = .65 + .35 * Math.sin(ph * 3);
+    const g = dx.createRadialGradient(x, y, 0, x, y, r * 4); g.addColorStop(0, `rgba(${col}, ${.6 * tw})`); g.addColorStop(1, `rgba(${col}, 0)`);
+    dx.fillStyle = g; dx.beginPath(); dx.arc(x, y, r * 4, 0, 7); dx.fill();
+    dx.fillStyle = `rgba(255, 255, 255, ${tw})`; dx.beginPath(); dx.arc(x, y, r * .7, 0, 7); dx.fill();
+  }
+
+  return function draw(t, dt) {
+    if (BW !== board.offsetWidth) layout();
+    dx.clearRect(0, 0, BW + P * 2, BH + P * 2);
+    const slow = roar && roar.t < 1.2 ? .15 : 1;
+    head += 50 * dt * slow;
+    dx.strokeStyle = 'rgba(160, 150, 255, .3)'; dx.lineWidth = 1; dx.beginPath(); per.forEach(([x, y], i) => i ? dx.lineTo(x, y) : dx.moveTo(x, y)); dx.closePath(); dx.stroke();
+    // Koerperpunkte mit deutlicher, wandernder Schlaengelwelle
+    const pts = [];
+    for (let i = 0; i < SEG; i++) {
+      const [x, y, ang] = at(head - i * GAP);
+      const wave = Math.sin(t * 2.4 - i * .32) * 10 * Math.min(1, .3 + i / 8);
+      const nx = -Math.sin(ang), ny = Math.cos(ang), u = i / (SEG - 1);
+      const w = u < .1 ? 9 + u * 30 : u < .72 ? 12 : 12 * (1 - (u - .72) / .28) + 1.5;
+      pts.push({ x: x + nx * wave, y: y + ny * wave, nx, ny, ang, w });
+    }
+    // echte Richtung des Kopfes = vom 2. zum 1. Punkt (folgt der Welle) + Umschauen
+    const hp = pts[0], h2 = pts[2];
+    const dir = Math.atan2(hp.y - h2.y, hp.x - h2.x);
+    nextSnap -= dt; if (nextSnap <= 0 && !roar) { snap = 1; nextSnap = rand(5, 9); }
+    snap = Math.max(0, snap - dt * 2.5);
+    const look = lookAngle(t) + (snap > 0 ? Math.sin(snap * Math.PI) * -.4 : 0);
+    const open = roar ? (roar.t < .35 ? roar.t / .35 : roar.t < 1.2 ? 1 : Math.max(0, 1 - (roar.t - 1.2) / .4)) : Math.sin(snap * Math.PI) * .6;
+    const lunge = snap > 0 ? Math.sin(snap * Math.PI) * 6 : 0;
+    const headX = hp.x + Math.cos(dir) * (4 + lunge), headY = hp.y + Math.sin(dir) * (4 + lunge);
+
+    if (style === 'constellation') {
+      // Sternbild: Rueckgratlinie + Rippen-Linien, Sterne an jedem 3. Punkt
+      dx.strokeStyle = 'rgba(170, 180, 255, .45)'; dx.lineWidth = 1.1;
+      dx.beginPath(); pts.forEach((p, i) => i ? dx.lineTo(p.x, p.y) : dx.moveTo(p.x, p.y)); dx.stroke();
+      dx.strokeStyle = 'rgba(170, 180, 255, .25)';
+      pts.forEach((p, i) => { if (i % 3 || i < 2) return; dx.beginPath(); dx.moveTo(p.x + p.nx * p.w, p.y + p.ny * p.w); dx.lineTo(p.x - p.nx * p.w, p.y - p.ny * p.w); dx.stroke(); });
+      // Rueckenzacken als kleine Dreiecks-Sternbilder
+      pts.forEach((p, i) => { if (i % 4 || i < 3 || i > SEG - 5) return; const fx = Math.cos(p.ang), fy = Math.sin(p.ang); const tx = p.x - p.nx * (p.w + 9), ty = p.y - p.ny * (p.w + 9); dx.beginPath(); dx.moveTo(p.x - fx * 6, p.y - fy * 6); dx.lineTo(tx, ty); dx.lineTo(p.x + fx * 6, p.y + fy * 6); dx.stroke(); star(tx, ty, 1.3, t + i); });
+      // Beine
+      [8, 24].forEach((k, li) => { const p = pts[k]; for (const side of [1, -1]) { const step = Math.sin(t * 5 + li + (side > 0 ? 0 : Math.PI)) * 5, fx = Math.cos(p.ang), fy = Math.sin(p.ang); const kx = p.x + side * p.nx * (p.w + 8) + fx * step, ky = p.y + side * p.ny * (p.w + 8) + fy * step, ex = kx + side * p.nx * 6 + fx * 6, ey = ky + side * p.ny * 6 + fy * 6; dx.beginPath(); dx.moveTo(p.x, p.y); dx.lineTo(kx, ky); dx.lineTo(ex, ey); dx.stroke(); star(kx, ky, 1.1, t + k); star(ex, ey, 1.4, t + k + 1); } });
+      pts.forEach((p, i) => { if (i % 3) return; star(p.x, p.y, i < 3 ? 2.4 : 2 - i / SEG, t + i); });
+      // Schweifquaste aus Sternenstaub
+      const tl = pts[SEG - 1]; if (Math.random() < .6) dust.push({ x: tl.x, y: tl.y, vx: rand(-12, 12), vy: rand(-12, 12), life: 1 });
+    } else {
+      // Nebula (fest): Ribbon mit leuchtender Kontur, Schuppen, Sterne, Zacken, Beine
+      const ribbon = new Path2D();
+      pts.forEach((p, k) => k ? ribbon.lineTo(p.x + p.nx * p.w, p.y + p.ny * p.w) : ribbon.moveTo(p.x + p.nx * p.w, p.y + p.ny * p.w));
+      for (let k = pts.length - 1; k >= 0; k--) { const p = pts[k]; ribbon.lineTo(p.x - p.nx * p.w, p.y - p.ny * p.w); }
+      ribbon.closePath();
+      [9, 26].forEach((k, li) => { const p = pts[k]; for (const side of [1, -1]) { const step = Math.sin(t * 5 + li * 1.7 + (side > 0 ? 0 : Math.PI)) * 5, fx = Math.cos(p.ang), fy = Math.sin(p.ang); const kx = p.x + side * p.nx * (p.w + 8) + fx * (step - 2), ky = p.y + side * p.ny * (p.w + 8) + fy * (step - 2), ex = kx + side * p.nx * 7 + fx * 6, ey = ky + side * p.ny * 7 + fy * 6; dx.strokeStyle = 'rgba(70, 56, 150, .95)'; dx.lineWidth = 5; dx.lineCap = 'round'; dx.beginPath(); dx.moveTo(p.x, p.y); dx.lineTo(kx, ky); dx.lineTo(ex, ey); dx.stroke(); } });
+      dx.save();
+      const bg = dx.createLinearGradient(0, P, 0, P + BH); bg.addColorStop(0, '#2a2068'); bg.addColorStop(1, '#16124a');
+      dx.fillStyle = bg; dx.shadowColor = 'rgba(150, 130, 255, .8)'; dx.shadowBlur = 14; dx.fill(ribbon); dx.shadowBlur = 0;
+      dx.clip(ribbon);
+      // schimmernde Welle laeuft ueber den Koerper
+      pts.forEach((p, k) => { const sh = Math.max(0, Math.sin(t * 3 - k * .35)); if (sh > .6) { dx.fillStyle = `rgba(180, 160, 255, ${(sh - .6) * .6})`; dx.beginPath(); dx.arc(p.x, p.y, p.w * 1.2, 0, 7); dx.fill(); } });
+      dx.strokeStyle = 'rgba(200, 190, 255, .22)'; dx.lineWidth = 1;
+      pts.forEach((p, k) => { if (k % 2) return; dx.beginPath(); dx.moveTo(p.x - p.nx * p.w, p.y - p.ny * p.w); dx.quadraticCurveTo(p.x + Math.cos(p.ang) * 4, p.y + Math.sin(p.ang) * 4, p.x + p.nx * p.w, p.y + p.ny * p.w); dx.stroke(); });
+      pts.forEach((p, k) => { if (k % 3) return; const tw = .4 + .6 * Math.abs(Math.sin(t * 3 + k)); dx.fillStyle = `rgba(255, 250, 220, ${tw})`; dx.beginPath(); dx.arc(p.x + p.nx * ((k * 7) % 9 - 4), p.y + p.ny * ((k * 7) % 9 - 4), 1.1, 0, 7); dx.fill(); });
+      dx.restore();
+      dx.strokeStyle = 'rgba(190, 175, 255, .9)'; dx.lineWidth = 1.4; dx.stroke(ribbon);
+      dx.fillStyle = 'rgba(170, 150, 255, .95)';
+      pts.forEach((p, k) => { if (k < 3 || k % 2 || k > SEG - 4) return; const fx = Math.cos(p.ang), fy = Math.sin(p.ang), h = p.w * .7 + 2, bx = p.x - p.nx * p.w, by = p.y - p.ny * p.w; dx.beginPath(); dx.moveTo(bx + fx * 3, by + fy * 3); dx.lineTo(bx - p.nx * h - fx * 2, by - p.ny * h - fy * 2); dx.lineTo(bx - fx * 3, by - fy * 3); dx.fill(); });
+      const tl = pts[SEG - 1];
+      for (let k = 0; k < 5; k++) { const a = tl.ang + Math.PI + (k - 2) * .35 + Math.sin(t * 3 + k) * .15; dx.strokeStyle = 'rgba(190, 170, 255, .7)'; dx.lineWidth = 2; dx.beginPath(); dx.moveTo(tl.x, tl.y); dx.quadraticCurveTo(tl.x + Math.cos(a) * 10, tl.y + Math.sin(a) * 10 + 4, tl.x + Math.cos(a) * 20, tl.y + Math.sin(a) * 20); dx.stroke(); }
+      if (Math.random() < .5) dust.push({ x: tl.x, y: tl.y, vx: rand(-10, 10), vy: rand(-10, 10), life: 1 });
+    }
+    for (let i = dust.length - 1; i >= 0; i--) { const d = dust[i]; d.life -= dt * .8; if (d.life <= 0) { dust.splice(i, 1); continue; } d.x += d.vx * dt; d.y += d.vy * dt; dx.fillStyle = `rgba(220, 210, 255, ${d.life * .7})`; dx.beginPath(); dx.arc(d.x, d.y, 1.2, 0, 7); dx.fill(); }
+    drawHead(t, headX, headY, dir + look, open);
+    Object.assign(hit.style, { left: `${headX - P - 35 + Math.cos(dir) * 10}px`, top: `${headY - P - 35 + Math.sin(dir) * 10}px` });
+    // Easter Egg
+    if (roar) {
+      roar.t += dt; const r = roar.t;
+      if (r < 1.3) { const u = r / 1.3; dx.strokeStyle = `rgba(200, 190, 255, ${1 - u})`; dx.lineWidth = 3 * (1 - u) + .5; dx.beginPath(); dx.arc(headX, headY, 20 + u * 60, 0, 7); dx.stroke(); dx.beginPath(); dx.arc(headX, headY, 10 + u * 40, 0, 7); dx.stroke(); }
+      if (r > .3 && r < 2.6 && Math.random() < .7) rain.push({ x: rand(P, P + BW), y: P + rand(-10, 20), vx: rand(-15, 15), vy: rand(40, 90), life: 1, s: rand(2, 4.5), ph: rand(0, 6) });
+      board.style.transform = r < .9 ? `translate(${rand(-2, 2)}px, ${rand(-2, 2)}px)` : '';
+      if (r > 4.5 && !rain.length) { roar = null; board.style.transform = ''; }
+    }
+    for (let i = rain.length - 1; i >= 0; i--) { const s = rain[i]; s.life -= dt * .3; s.x += s.vx * dt; s.y += s.vy * dt; if (s.life <= 0 || s.y > P + BH + 20) { rain.splice(i, 1); continue; } const tw = (.6 + .4 * Math.sin(t * 8 + s.ph)) * s.life, z = s.s * tw; dx.fillStyle = `rgba(255, 245, 220, ${tw})`; dx.beginPath(); dx.moveTo(s.x, s.y - z * 2); dx.quadraticCurveTo(s.x, s.y, s.x + z * 2, s.y); dx.quadraticCurveTo(s.x, s.y, s.x, s.y + z * 2); dx.quadraticCurveTo(s.x, s.y, s.x - z * 2, s.y); dx.quadraticCurveTo(s.x, s.y, s.x, s.y - z * 2); dx.fill(); }
+  };
+}
+const dragons = [...document.querySelectorAll('.board')].map(makeDragon);
+let last = performance.now();
+function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; dragons.forEach(d => d(now / 1000, dt)); requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
