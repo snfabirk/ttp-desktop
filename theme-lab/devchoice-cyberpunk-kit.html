@@ -63,6 +63,9 @@
 <div class="hint">psst... click the picture a few times · and that chip in the corner is blinking for a reason</div>
 
 <script>
+// Hack-Easter-Egg des Themes kommt auf die oberste Ebene
+addEventListener('message', e => { const f = document.querySelector('.bgscene'); if (e.data === 'cp-top') f.style.zIndex = 50; if (e.data === 'cp-back') f.style.zIndex = 0; });
+addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelector('.bgscene').contentWindow.postMessage('cp-esc', '*'); });
 const D = Math.min(2, devicePixelRatio || 1), rand = (a, b) => a + Math.random() * (b - a);
 const RED = '255, 74, 74', CYAN = '94, 240, 240', YEL = '232, 212, 58', DEEP = '200, 8, 20'; // DEEP = Hack/Alarm (tiefes Rot)
 

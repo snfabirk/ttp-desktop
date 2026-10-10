@@ -304,7 +304,7 @@ function frame(now) {
     const vt = virus.t;
     const peak = vt < V_SPREAD ? Math.sin(vt / V_SPREAD * Math.PI) : vt > V_HEAL_AT && vt < V_HEAL_AT + V_HEAL ? Math.sin((vt - V_HEAL_AT) / V_HEAL * Math.PI) : 0;
     distort((.3 + .6 * peak) * env);
-    if (virus.t > V_END) { virus = null; hacked = 0; distort(0); }
+    if (virus.t > V_END) { virus = null; hacked = 0; distort(0); if (parent !== window) parent.postMessage('cp-back', '*'); }
   }
   requestAnimationFrame(frame);
 }
@@ -356,7 +356,7 @@ function finish(win) {
   bp.active = false; render();
   const m = $('bpMsg'); m.className = 'msg ' + (win ? 'win' : 'fail');
   m.textContent = win ? 'UPLOAD SUCCESSFUL. Enjoy the show.' : 'BREACH FAILED. Try again later.';
-  setTimeout(() => { $('breach').classList.remove('on'); if (win) { virus = { t: 0 }; glitch = 1; } }, win ? 900 : 1400);
+  setTimeout(() => { $('breach').classList.remove('on'); if (win) { virus = { t: 0 }; glitch = 1; } if (parent !== window) parent.postMessage('cp-back', '*'); }, win ? 900 : 1400); // nur das Hack-Fenster liegt oben, der Virus laeuft wieder hinter dem Profil
 }
 setInterval(() => {
   if (!bp.active || !bp.running) return;
@@ -371,9 +371,12 @@ addEventListener('click', e => {
   $('bpMsg').className = 'msg'; $('bpMsg').textContent = 'Pick from the highlighted row. Then column, then row...';
   $('bpTime').textContent = '00:15';
   newPuzzle(); glitch = .6; $('breach').classList.add('on');
+  if (parent !== window) parent.postMessage('cp-top', '*'); // eingebettet (Kit-Demo): nach ganz oben
 });
-$('bpX').onclick = () => $('breach').classList.remove('on');
-addEventListener('keydown', e => { if (e.key === 'Escape') $('breach').classList.remove('on'); });
+const closeBreach = () => { $('breach').classList.remove('on'); if (parent !== window && !virus) parent.postMessage('cp-back', '*'); };
+$('bpX').onclick = closeBreach;
+addEventListener('keydown', e => { if (e.key === 'Escape') closeBreach(); });
+addEventListener('message', e => { if (e.data === 'cp-esc') closeBreach(); });
 </script>
 </body>
 </html>
