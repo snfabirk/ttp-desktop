@@ -77,7 +77,7 @@
         const items = poolChamps.slice(0, MAX_CHAMPS_SHOWN).map(ch => `
         <li class="rc-champ rc-champ-ghost">
           ${ch.id ? `<img src="${iconUrl(ch.id)}" alt="" loading="lazy">` : '<span class="rc-champ-noicon"></span>'}
-          <span class="rc-champ-name">${escapeHtml(ch.name || ch.id || '')}</span>
+          <span class="rc-champ-name" title="${escapeHtml(ch.name || ch.id || '')}">${escapeHtml(ch.name || ch.id || '')}</span>
         </li>`).join('');
         return `<div class="rc-champ-col"><ul class="rc-champs">${items}</ul></div>`;
       }
@@ -169,7 +169,7 @@
     const champItem = ch => `
         <li class="rc-champ">
           ${ch.id ? `<img src="${iconUrl(ch.id)}" alt="" loading="lazy">` : '<span class="rc-champ-noicon"></span>'}
-          <span class="rc-champ-name">${escapeHtml(ch.name)}</span>
+          <span class="rc-champ-name" title="${escapeHtml(ch.name)}">${escapeHtml(ch.name)}</span>
           <span class="rc-champ-rec">${ch.wins + ch.losses} <em>(${ch.wins}W/${ch.losses}L)</em></span>
         </li>`;
     // Jede Spalte ist ein eigenes Kaestchen, damit die Bilanz rechts nie so

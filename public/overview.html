@@ -591,6 +591,10 @@
     const ROLE_LABELS = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'Bot', UTILITY: 'Support' };
     const QUEUE_NAMES = { 420: 'Ranked Solo/Duo', 440: 'Ranked Flex', 400: 'Normal Draft', 430: 'Normal Blind', 490: 'Quickplay', 450: 'ARAM' };
     const ls = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
+
+    // Name sofort aus dem lokalen Speicher zeigen statt kurz "No summoner
+    // loaded yet", waehrend der Account noch laedt (Bug-Rundown v5.25.3)
+    { const n = ls('ttp_summoner_name').trim(); document.getElementById('accountOverviewName').textContent = /^.+#.+$/.test(n) ? n : 'No summoner set yet'; }
     const fmtNum = n => Number(n).toLocaleString('en-US');
     const esc = str => String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const champIcon = id => `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${id}.png`;

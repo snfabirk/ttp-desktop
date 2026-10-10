@@ -1,5 +1,11 @@
 # Internal Changelog
 
+## 5.25.3 — 2026-10-10
+
+Full bug rundown: 10 pages x (real data / long names / API errors) x (default / minimum size), 22 themes x 3 pages, isolated logic tests for shop/voucher/claim - no JS errors, no overlaps.
+- Overview / Challenge / Profile show the stored summoner name immediately instead of "No summoner loaded yet" for the first seconds while the account loads ("No summoner set yet" only when none is set).
+- Roles & Picks: shortened champion names (e.g. "Twisted F...") show the full name as a tooltip.
+
 ## 5.25.2 — 2026-10-10 (incl. unreleased 5.25.0/5.25.1)
 
 - Pass coins are claimed by hand (user): claimPassRewards puts coin tiers into pass.pendingTiers and 30+ steps into pass.pendingOverflow instead of state.coins (cosmetics stay automatic). POST /api/pass/claim { tier } | { overflow } | { all }. Older months' pending coins are credited automatically in readState (settleOldPasses). Pass grid: pulsing claimable tiles with a "Claim" tag, "Claim all · 🪙 X" next to the balance (2+ pending), "Claim 🪙 X" in the 30+ row; coins fly into the balance (WAAPI) and it counts up. Only the app's own animation setting disables the flight (Windows reports prefers-reduced-motion on this machine).

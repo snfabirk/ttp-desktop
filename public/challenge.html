@@ -1196,6 +1196,10 @@
 
     const ls = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
 
+    // Name sofort aus dem lokalen Speicher zeigen statt kurz "No summoner
+    // loaded yet", waehrend der Account noch laedt (Bug-Rundown v5.25.3)
+    { const n = ls('ttp_summoner_name').trim(); document.getElementById('accountOverviewName').textContent = /^.+#.+$/.test(n) ? n : 'No summoner set yet'; }
+
     function profileIconUrl(iconId) {
       return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${iconId}.png`;
     }

@@ -739,7 +739,7 @@
             <span class="cos-border id-frame cos-${border}"><img src="${icon}" alt="" onload="this.classList.add('loaded')"></span>
             <div class="id-main">
               <div class="id-top">
-                <div class="id-name">${a ? esc(`${a.gameName}#${a.tagLine}`) : 'No summoner loaded yet'}</div>
+                <div class="id-name">${a ? esc(`${a.gameName}#${a.tagLine}`) : esc(/^.+#.+$/.test(ls('ttp_summoner_name').trim()) ? ls('ttp_summoner_name').trim() : 'No summoner set yet')}</div>
                 ${col ? '' : `<span class="coin-pill" title="Coins from the monthly pass">🪙 ${s ? fmtNum(s.coins) : '–'}</span>`}
               </div>
               ${w.w >= 6 || col ? `<div class="id-since">${s && s.challenges.firstStarted ? `Pony since ${fmtDate(s.challenges.firstStarted)}` : ''}</div>` : ''}
