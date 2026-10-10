@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fancy shop cosmetics 2 (Theme Lab)</title>
+<!-- Theme Lab (nicht im Installationspaket): die neuen Fancy-Shop-Cosmetics.
+     Fancy = bewegt und mit Effekten, ohne Easter Egg.
+     Borders: Hextech Prism (facettierte Kristalle, wandernde Lichtbrechung mit
+     Regenbogen-Glanz, Goldring, schwebende Splitter), Bubble Ring (Seifenblasen
+     mit schillerndem Duennfilm-Rand, wabern, platzen ab und zu und wachsen nach).
+     Rahmen: Runic Vines (Ranken mit Blaettern laufen um die Karte, Lichtpulse
+     wandern durch die Ranken und lassen eingeritzte Runensteine aufleuchten,
+     Sporen schweben). -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: #0a1428; color: #f0e6d2; font-family: Georgia, serif; }
+  body { padding: 24px 40px 40px; }
+  h1 { margin: 0 0 4px; text-align: center; font-family: 'Cinzel', serif; color: #c8aa6e; letter-spacing: 3px; font-size: 1.6rem; }
+  h2 { margin: 26px 0 12px; font-family: 'Cinzel', serif; color: #b26bff; font-size: 1rem; letter-spacing: 2px; text-align: center; }
+  .grid { display: flex; justify-content: center; gap: 70px; flex-wrap: wrap; }
+  .item { text-align: center; }
+  .item b { display: block; margin-top: 10px; font-family: 'Cinzel', serif; color: #f0e6d2; font-size: .95rem; }
+  .item small { color: #a09b8c; font-size: .75rem; }
+  .border { position: relative; width: 120px; height: 120px; margin: 60px auto 40px; }
+  .border img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .border canvas { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; pointer-events: none; }
+  .frame { position: relative; width: 420px; height: 230px; margin: 40px 40px 34px; }
+  .frame .inner { position: absolute; inset: 0; border-radius: 14px; padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; box-sizing: border-box; background: rgba(10, 22, 16, .7); }
+  .frame .inner span { border-radius: 8px; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .08); }
+  .frame .inner span:first-child { grid-column: span 2; }
+  .frame canvas { position: absolute; left: -50px; top: -50px; pointer-events: none; }
+</style>
+</head>
+<body>
+<h1>Fancy · Shop Cosmetics II</h1>
+<h2>Borders</h2>
+<div class="grid">
+  <div class="item"><div class="border" data-kind="prism"><img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><canvas></canvas></div><b>Hextech Prism</b><small>Border · Fancy</small></div>
+  <div class="item"><div class="border" data-kind="bubble"><img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><canvas></canvas></div><b>Bubble Ring</b><small>Border · Fancy</small></div>
+</div>
+<h2>Profile frame</h2>
+<div class="grid">
+  <div class="item"><div class="frame" data-kind="vines"><div class="inner"><span></span><span></span><span></span></div><canvas></canvas></div><b>Runic Vines</b><small>Frame · Fancy</small></div>
+</div>
+
+<script>
+const rand = (a, b) => a + Math.random() * (b - a);
+const DPR = Math.min(2, devicePixelRatio || 1);
+function setup(cv, w, h) { cv.width = w * DPR; cv.height = h * DPR; cv.style.width = w + 'px'; cv.style.height = h + 'px'; const c = cv.getContext('2d'); c.setTransform(DPR, 0, 0, DPR, 0, 0); return c; }
+const draws = [];
+
+// ======================= BORDERS =======================
+document.querySelectorAll('.border').forEach(el => {
+  const S = el.offsetWidth, C = S * 2, R = S / 2, kind = el.dataset.kind;
+  const c = setup(el.querySelector('canvas'), C, C);
+
+  if (kind === 'prism') {
+    // ---------- Hextech Prism ----------
+    const N = 12;
+    const shards = Array.from({ length: 7 }, (_, i) => ({ a: i / 7 * 6.28, r: rand(1.42, 1.6), v: rand(.15, .3) * (i % 2 ? 1 : -1), s: rand(.05, .09), rot: rand(0, 6), vr: rand(-1, 1) }));
+    const hex = (x, y, r, rot) => { c.beginPath(); for (let k = 0; k < 6; k++) { const a = rot + k * Math.PI / 3; k ? c.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r) : c.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } c.closePath(); };
+    draws.push((t, dt) => {
+      c.clearRect(0, 0, C, C); c.save(); c.translate(C / 2, C / 2);
+      const light = t * .7;                                     // Lichtrichtung wandert im Kreis
+      // blauer Hextech-Schein
+      const halo = c.createRadialGradient(0, 0, R * .95, 0, 0, R * 1.65); halo.addColorStop(0, 'rgba(80, 200, 255, .3)'); halo.addColorStop(1, 'rgba(80, 200, 255, 0)');
+      c.fillStyle = halo; c.beginPath(); c.arc(0, 0, R * 1.65, 0, 7); c.fill();
+      // Goldring mit Gravur-Strichen
+      const gold = c.createLinearGradient(-R, -R, R, R); gold.addColorStop(0, '#f6e2a0'); gold.addColorStop(.45, '#b8862e'); gold.addColorStop(.55, '#f2d68a'); gold.addColorStop(1, '#7a5418');
+      c.strokeStyle = gold; c.lineWidth = R * .07; c.beginPath(); c.arc(0, 0, R * 1.03, 0, 7); c.stroke();
+      c.strokeStyle = 'rgba(60, 40, 10, .6)'; c.lineWidth = 1;
+      for (let k = 0; k < 48; k++) { const a = k / 48 * 6.28; c.beginPath(); c.moveTo(Math.cos(a) * R * 1.0, Math.sin(a) * R * 1.0); c.lineTo(Math.cos(a) * R * 1.06, Math.sin(a) * R * 1.06); c.stroke(); }
+      // Kristalle: laengliche Prismen mit drei Facetten, Helligkeit je nach Lichtwinkel
+      // Kristall-Gruppen: vier Cluster aus je drei Prismen (gross in der Mitte, zwei kleine schraeg)
+      for (let k = 0; k < 12; k++) {
+        const cl = Math.floor(k / 3), m = k % 3, base = cl / 4 * Math.PI * 2 + Math.PI / 4 + t * .05;
+        const a = base + (m - 1) * .2, tilt = (m - 1) * .38, big = m === 1, L = R * (big ? .42 : .26), Wd = R * (big ? .1 : .07);
+        const bx = Math.cos(a) * R * 1.08, by = Math.sin(a) * R * 1.08;
+        c.save(); c.translate(bx, by); c.rotate(a + tilt);
+        const facing = Math.cos(a - light), glint = Math.max(0, Math.cos(a - light)) ** 8;
+        const fac = [[[0, -Wd], [L * .78, -Wd * .55], [L, 0], [0, 0]], [[0, 0], [L, 0], [L * .78, Wd * .55], [0, Wd]]];
+        fac.forEach((f, fi) => {
+          const lit = .35 + .35 * (fi ? -facing : facing) + .3 * glint;
+          c.fillStyle = `rgba(${70 + 120 * lit | 0}, ${170 + 80 * lit | 0}, ${235 + 20 * lit | 0}, ${.75 + .2 * lit})`;
+          c.beginPath(); f.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); c.fill();
+        });
+        c.strokeStyle = 'rgba(220, 250, 255, .85)'; c.lineWidth = .8;
+        c.beginPath(); c.moveTo(0, -Wd); c.lineTo(L * .78, -Wd * .55); c.lineTo(L, 0); c.lineTo(L * .78, Wd * .55); c.lineTo(0, Wd); c.moveTo(0, 0); c.lineTo(L, 0); c.stroke();
+        // Goldfassung am Fuss
+        c.fillStyle = '#d6a848'; c.fillRect(-R * .03, -Wd * 1.1, R * .05, Wd * 2.2);
+        // Regenbogen-Brechung, wenn das Licht den Kristall trifft
+        if (glint > .05) {
+          c.save(); c.globalCompositeOperation = 'lighter';
+          ['255, 60, 90', '255, 200, 60', '80, 255, 140', '80, 160, 255', '190, 90, 255'].forEach((col, ci) => {
+            c.strokeStyle = `rgba(${col}, ${glint * .5})`; c.lineWidth = 1.4;
+            const sp = (ci - 2) * .09;
+            c.beginPath(); c.moveTo(L, 0); c.lineTo(L + Math.cos(sp) * R * .28 * glint, Math.sin(sp) * R * .28 * glint); c.stroke();
+          });
+          const sg = c.createRadialGradient(L * .6, -Wd * .3, 0, L * .6, -Wd * .3, R * .14); sg.addColorStop(0, `rgba(255, 255, 255, ${glint})`); sg.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          c.fillStyle = sg; c.beginPath(); c.arc(L * .6, -Wd * .3, R * .14, 0, 7); c.fill();
+          c.restore();
+        }
+        c.restore();
+      }
+      // schwebende Sechseck-Splitter
+      shards.forEach(s => {
+        s.a += s.v * dt; s.rot += s.vr * dt;
+        const x = Math.cos(s.a) * R * s.r, y = Math.sin(s.a) * R * s.r + Math.sin(t * 1.3 + s.rot) * 3, gl = Math.max(0, Math.cos(s.a - light)) ** 4;
+        hex(x, y, R * s.s, s.rot); c.fillStyle = `rgba(120, 210, 255, ${.3 + .5 * gl})`; c.fill();
+        c.strokeStyle = `rgba(230, 250, 255, ${.5 + .5 * gl})`; c.lineWidth = .8; c.stroke();
+      });
+      // Lichtsweep ueber den Goldring
+      c.save(); c.globalCompositeOperation = 'lighter';
+      c.strokeStyle = 'rgba(255, 250, 220, .7)'; c.lineWidth = R * .05; c.beginPath(); c.arc(0, 0, R * 1.03, light - .18, light + .18); c.stroke();
+      c.restore();
+      c.restore();
+    });
+  }
+
+  if (kind === 'bubble') {
+    // ---------- Bubble Ring ----------
+    const bubbles = [];
+    const spawn = (a, grow) => ({ a, r: rand(1.08, 1.4), s: rand(.09, .2), g: grow ? 0 : 1, ph: rand(0, 6), v: rand(.08, .16), hue: rand(0, 360), pop: 0 });
+    for (let k = 0; k < 16; k++) bubbles.push(spawn(k / 16 * 6.28 + rand(-.15, .15), false));
+    const drops = [];
+    let nextPop = 1.5;
+    draws.push((t, dt) => {
+      c.clearRect(0, 0, C, C); c.save(); c.translate(C / 2, C / 2);
+      // feiner Perlmutt-Ring direkt am Bild
+      const pr = c.createConicGradient ? c.createConicGradient(t * .3, 0, 0) : null;
+      if (pr) { ['#ffd6f0', '#d6f0ff', '#e0ffe8', '#fff3d0', '#ffd6f0'].forEach((col, i) => pr.addColorStop(i / 4, col)); c.strokeStyle = pr; } else c.strokeStyle = '#e8f0ff';
+      c.lineWidth = R * .05; c.beginPath(); c.arc(0, 0, R * 1.02, 0, 7); c.stroke();
+      nextPop -= dt;
+      if (nextPop <= 0) { nextPop = rand(1.8, 3.5); const live = bubbles.filter(b => b.g >= 1 && !b.pop); if (live.length) live[Math.random() * live.length | 0].pop = .001; }
+      for (let i = bubbles.length - 1; i >= 0; i--) {
+        const b = bubbles[i];
+        b.a += b.v * dt * .3; b.g = Math.min(1, b.g + dt * .6);
+        const x = Math.cos(b.a) * R * b.r + Math.sin(t * .9 + b.ph) * R * .03, y = Math.sin(b.a) * R * b.r + Math.cos(t * .7 + b.ph) * R * .03;
+        const rr = R * b.s * (b.g < 1 ? b.g * b.g * (3 - 2 * b.g) : 1);
+        if (b.pop) {
+          b.pop += dt * 4;
+          if (b.pop < .01 + dt * 4) for (let k = 0; k < 8; k++) { const a = k / 8 * 6.28; drops.push({ x: x + Math.cos(a) * rr, y: y + Math.sin(a) * rr, vx: Math.cos(a) * rand(20, 45), vy: Math.sin(a) * rand(20, 45), life: 1 }); }
+          c.strokeStyle = `rgba(230, 240, 255, ${Math.max(0, 1 - b.pop) * .7})`; c.lineWidth = 1; c.beginPath(); c.arc(x, y, rr * (1 + b.pop * .6), 0, 7); c.stroke();
+          if (b.pop >= 1) { bubbles[i] = spawn(b.a, true); }
+          continue;
+        }
+        const wob = 1 + Math.sin(t * 3 + b.ph) * .04;
+        c.save(); c.translate(x, y); c.scale(wob, 2 - wob);
+        // Koerper: fast durchsichtig, Rand dichter
+        const body = c.createRadialGradient(0, 0, rr * .6, 0, 0, rr); body.addColorStop(0, 'rgba(200, 225, 255, .03)'); body.addColorStop(1, 'rgba(200, 225, 255, .16)');
+        c.fillStyle = body; c.beginPath(); c.arc(0, 0, rr, 0, 7); c.fill();
+        // schillernder Duennfilm-Rand (Farben wandern)
+        if (c.createConicGradient) {
+          const film = c.createConicGradient(t * .8 + b.ph, 0, 0), h = b.hue + t * 40;
+          for (let k = 0; k <= 6; k++) film.addColorStop(k / 6, `hsla(${(h + k * 60) % 360}, 90%, 72%, .75)`);
+          c.strokeStyle = film;
+        } else c.strokeStyle = 'rgba(220, 230, 255, .7)';
+        c.lineWidth = Math.max(1, rr * .12); c.beginPath(); c.arc(0, 0, rr * .94, 0, 7); c.stroke();
+        // Glanzlichter: grosser Bogen oben links, kleiner Punkt unten rechts
+        c.strokeStyle = 'rgba(255, 255, 255, .85)'; c.lineWidth = Math.max(1, rr * .12); c.lineCap = 'round';
+        c.beginPath(); c.arc(0, 0, rr * .68, Math.PI * 1.1, Math.PI * 1.45); c.stroke();
+        c.fillStyle = 'rgba(255, 255, 255, .7)'; c.beginPath(); c.arc(rr * .42, rr * .42, rr * .1, 0, 7); c.fill();
+        c.restore();
+      }
+      for (let i = drops.length - 1; i >= 0; i--) { const d = drops[i]; d.life -= dt * 2.2; if (d.life <= 0) { drops.splice(i, 1); continue; } d.x += d.vx * dt; d.y += d.vy * dt; d.vy += 40 * dt; c.fillStyle = `rgba(220, 235, 255, ${d.life * .8})`; c.beginPath(); c.arc(d.x, d.y, 1, 0, 7); c.fill(); }
+      c.restore();
+    });
+  }
+});
+
+// ======================= FRAME: Runic Vines =======================
+document.querySelectorAll('.frame').forEach(el => {
+  const P = 50, BW = el.offsetWidth, BH = el.offsetHeight, CW = BW + P * 2, CH = BH + P * 2;
+  const c = setup(el.querySelector('canvas'), CW, CH);
+  // Umlaufbahn (abgerundetes Rechteck um die Karte)
+  const per = []; let len = 0;
+  { const o = 4, r = 18, x0 = P - o, y0 = P - o, x1 = P + BW + o, y1 = P + BH + o;
+    const arc = (cx, cy, a0, a1) => { for (let i = 0; i <= 8; i++) { const a = a0 + (a1 - a0) * i / 8; per.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } };
+    const line = (ax, ay, bx, by) => { const n = Math.ceil(Math.hypot(bx - ax, by - ay) / 6); for (let i = 0; i <= n; i++) per.push([ax + (bx - ax) * i / n, ay + (by - ay) * i / n]); };
+    line(x0 + r, y0, x1 - r, y0); arc(x1 - r, y0 + r, -Math.PI / 2, 0); line(x1, y0 + r, x1, y1 - r); arc(x1 - r, y1 - r, 0, Math.PI / 2);
+    line(x1 - r, y1, x0 + r, y1); arc(x0 + r, y1 - r, Math.PI / 2, Math.PI); line(x0, y1 - r, x0, y0 + r); arc(x0 + r, y0 + r, Math.PI, Math.PI * 1.5);
+    per.forEach((p, i) => { if (i) len += Math.hypot(p[0] - per[i - 1][0], p[1] - per[i - 1][1]); p.len = len; }); }
+  const at = d => { d = ((d % len) + len) % len; for (let i = 1; i < per.length; i++) if (per[i].len >= d) { const a = per[i - 1], b = per[i], u = (d - a.len) / (b.len - a.len || 1); return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, Math.atan2(b[1] - a[1], b[0] - a[0])]; } return [per[0][0], per[0][1], 0]; };
+  // zwei Ranken, die sich umeinander winden
+  // Windungen so gewaehlt, dass sie genau einmal herum aufgehen (sonst Knick am Startpunkt)
+  const TW = Math.round(len * .06 / (Math.PI * 2)) * Math.PI * 2 / len;
+  const vine = (d, k, t) => { const [x, y, a] = at(d), off = Math.sin(d * TW + k * Math.PI + t * .4) * 6; return [x - Math.sin(a) * off, y + Math.cos(a) * off, a]; };
+  const leaves = Array.from({ length: 34 }, (_, i) => ({ d: i / 34 * len + rand(-8, 8), k: i % 2, side: Math.random() < .5 ? -1 : 1, s: rand(5, 9), ph: rand(0, 6) }));
+  // Runensteine: vier Ecken + Mitte der langen Seiten
+  const runeAt = [0.0, .125, .25, .375, .5, .625, .75, .875].map(f => {
+    // die Ecken liegen bei den Boegen; Position ueber die Laenge der Bahn verteilt
+    return { d: f * len + len * .06, glow: 0, glyph: (Math.random() * 6) | 0 };
+  });
+  const GLYPHS = [ // einfache Runenzeichen (Strichlisten in -1..1)
+    [[[0, -1], [0, 1]], [[0, -.5], [.6, -1]], [[0, 0], [.6, -.5]]],
+    [[[0, -1], [0, 1]], [[0, -1], [.6, -.4]], [[.6, -.4], [0, .2]]],
+    [[[-.5, -1], [.5, 1]], [[.5, -1], [-.5, 1]]],
+    [[[0, -1], [0, 1]], [[-.6, -.3], [.6, .3]]],
+    [[[-.4, -1], [-.4, 1]], [[.4, -1], [.4, 1]], [[-.4, -.2], [.4, .4]]],
+    [[[0, -1], [.6, 0]], [[.6, 0], [0, 1]], [[0, -1], [0, 1]]],
+  ];
+  const pulses = [], spores = Array.from({ length: 14 }, () => ({ d: rand(0, len), off: rand(-26, 26), ph: rand(0, 6), v: rand(4, 10) }));
+  let nextPulse = .5;
+  draws.push((t, dt) => {
+    c.clearRect(0, 0, CW, CH);
+    // Ranken (zwei Straenge, dunkel mit hellerer Oberkante)
+    for (let k = 0; k < 2; k++) {
+      c.beginPath(); for (let d = 0; d <= len; d += 4) { const [x, y] = vine(d, k, t); d ? c.lineTo(x, y) : c.moveTo(x, y); } c.closePath();
+      c.strokeStyle = '#1e3a1c'; c.lineWidth = 4.2; c.stroke();
+      c.strokeStyle = 'rgba(110, 160, 80, .55)'; c.lineWidth = 1.2; c.stroke();
+    }
+    // Blaetter wiegen sich
+    leaves.forEach(l => {
+      const [x, y, a] = vine(l.d, l.k, t), sw = Math.sin(t * 1.6 + l.ph) * .25, ang = a + l.side * (Math.PI / 2.6) + sw;
+      c.save(); c.translate(x, y); c.rotate(ang);
+      const lg = c.createLinearGradient(0, 0, l.s * 2, 0); lg.addColorStop(0, '#2e5a24'); lg.addColorStop(1, '#5e9a3a');
+      c.fillStyle = lg; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(l.s, -l.s * .7, l.s * 2, 0); c.quadraticCurveTo(l.s, l.s * .7, 0, 0); c.fill();
+      c.strokeStyle = 'rgba(160, 210, 120, .5)'; c.lineWidth = .6; c.beginPath(); c.moveTo(0, 0); c.lineTo(l.s * 1.8, 0); c.stroke();
+      c.restore();
+    });
+    // Lichtpulse laufen durch die Ranken
+    nextPulse -= dt; if (nextPulse <= 0) { nextPulse = rand(.9, 1.8); pulses.push({ d: rand(0, len), k: Math.random() < .5 ? 0 : 1, v: rand(60, 95), life: rand(2.5, 4) }); }
+    c.save(); c.globalCompositeOperation = 'lighter';
+    for (let i = pulses.length - 1; i >= 0; i--) {
+      const p = pulses[i]; p.d += p.v * dt; p.life -= dt; if (p.life <= 0) { pulses.splice(i, 1); continue; }
+      const fade = Math.min(1, p.life);
+      for (let k = 0; k < 8; k++) { const [x, y] = vine(p.d - k * 5, p.k, t); c.fillStyle = `rgba(120, 255, 200, ${(1 - k / 8) * .5 * fade})`; c.beginPath(); c.arc(x, y, 3.2 - k * .3, 0, 7); c.fill(); }
+      runeAt.forEach(r => { const dd = ((p.d - r.d) % len + len) % len; if (dd < 6) r.glow = 1; });
+    }
+    c.restore();
+    // Runensteine
+    runeAt.forEach(r => {
+      r.glow = Math.max(0, r.glow - dt * .5);
+      const [x, y] = at(r.d);
+      c.save(); c.translate(x, y);
+      const st = c.createRadialGradient(-3, -3, 1, 0, 0, 12); st.addColorStop(0, '#6a7068'); st.addColorStop(1, '#2a2e2a');
+      c.fillStyle = st; c.beginPath(); c.moveTo(-9, -11); c.lineTo(8, -12); c.lineTo(11, 9); c.lineTo(-10, 11); c.closePath(); c.fill();
+      c.strokeStyle = 'rgba(0, 0, 0, .5)'; c.lineWidth = 1; c.stroke();
+      const g = .25 + .75 * r.glow;
+      if (r.glow > .02) { const h = c.createRadialGradient(0, 0, 0, 0, 0, 22); h.addColorStop(0, `rgba(120, 255, 200, ${.45 * r.glow})`); h.addColorStop(1, 'rgba(120, 255, 200, 0)'); c.fillStyle = h; c.beginPath(); c.arc(0, 0, 22, 0, 7); c.fill(); }
+      c.strokeStyle = `rgba(${120 + 100 * r.glow | 0}, 255, ${200 + 40 * r.glow | 0}, ${g})`; c.lineWidth = 1.6; c.lineCap = 'round';
+      c.shadowColor = '#78ffc8'; c.shadowBlur = 8 * r.glow;
+      GLYPHS[r.glyph].forEach(([[ax, ay], [bx, by]]) => { c.beginPath(); c.moveTo(ax * 6, ay * 7); c.lineTo(bx * 6, by * 7); c.stroke(); });
+      c.shadowBlur = 0; c.restore();
+    });
+    // Sporen schweben um die Ranken
+    spores.forEach(s => {
+      s.d += s.v * dt; const [x, y, a] = at(s.d), o = s.off + Math.sin(t + s.ph) * 6, px = x - Math.sin(a) * o, py = y + Math.cos(a) * o;
+      const tw = .4 + .6 * Math.abs(Math.sin(t * 2 + s.ph));
+      c.fillStyle = `rgba(190, 255, 170, ${tw * .8})`; c.beginPath(); c.arc(px, py, 1.3, 0, 7); c.fill();
+      c.fillStyle = `rgba(190, 255, 170, ${tw * .15})`; c.beginPath(); c.arc(px, py, 4, 0, 7); c.fill();
+    });
+  });
+});
+
+let last = performance.now();
+function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; draws.forEach(d => d(now / 1000, dt)); requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
