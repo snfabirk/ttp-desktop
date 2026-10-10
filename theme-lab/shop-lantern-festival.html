@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lantern Festival - Fancy shop theme (Theme Lab)</title>
+<!-- Theme Lab (nicht im Installationspaket): Shop-Theme "Lantern Festival" (Fancy, bewegt,
+     ohne Easter Egg). Abenddaemmerung ueber einem stillen See:
+     - Shader: Himmel von Indigo zu Glut-Orange, letzte Sonnenglut am Horizont, Sterne
+       oben, Huegel mit winzigen Dorflichtern, See mit Wellen-Glitzern und Spiegelung
+     - Overlay: Himmelslaternen steigen auf (Tiefe ueber Groesse/Unschaerfe, flackernde
+       Flamme, leichtes Pendeln), schwimmende Laternen treiben auf dem See, alle
+       spiegeln sich im Wasser
+     Pausiert, wenn das Fenster nicht sichtbar ist. -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root { --panel-bg: rgba(26, 14, 30, .55); --border: #6a3a3a; --accent: #ffb560; --text: #fbefe4; --text-dim: #d0b0a0; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0e0a1a; color: var(--text); font-family: Georgia, serif; }
+  #gl, #fx { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+  #fx { pointer-events: none; }
+  .stage { position: relative; z-index: 2; pointer-events: none; }
+  .stage > * { pointer-events: auto; }
+  .nav { position: fixed; top: 18px; left: 24px; display: flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel-bg); backdrop-filter: blur(10px); z-index: 3; }
+  .nav span { padding: 5px 11px; border-radius: 14px; font-family: 'Cinzel', serif; font-size: .78rem; color: var(--text-dim); }
+  .nav span.on { background: linear-gradient(180deg, #ffcf80, #f08a3a); color: #2a1206; }
+  header { text-align: center; padding-top: 34px; }
+  h1 { margin: 0; font-family: 'Cinzel', serif; font-weight: 900; font-size: 3rem; letter-spacing: 3px; background: linear-gradient(180deg, #ffe0a0 0%, #ffaa5a 55%, #e0603a 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 16px rgba(255, 160, 80, .35)); }
+  .subtitle { margin: 6px 0 0; color: var(--text-dim); font-style: italic; letter-spacing: 6px; text-transform: uppercase; }
+  .wrap { max-width: 1000px; margin: 34px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 26px; padding: 0 30px; }
+  .card { background: var(--panel-bg); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; box-shadow: 0 6px 24px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 190, 120, .14); }
+  .card h3 { margin: 0 0 8px; color: var(--accent); font-family: 'Cinzel', serif; font-size: 1rem; letter-spacing: 1px; }
+  .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(106, 58, 58, .5); font-size: .9rem; }
+  .row:last-child { border-bottom: none; }
+  .xp { color: var(--accent); }
+  .muted { color: var(--text-dim); font-size: .9rem; }
+  .tag { display: inline-block; margin-bottom: 8px; padding: 1px 8px; border: 1px dashed #8a5a4a; border-radius: 9px; color: #9a6a5a; font-size: .7rem; letter-spacing: 1px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<canvas id="fx"></canvas>
+<div class="nav"><span class="on">⌂ Overview</span><span>Profile</span><span>Challenge</span><span>Pass</span><span>Trophies</span><span>Shop</span></div>
+<div class="stage">
+  <header><h1>League of Legends</h1><p class="subtitle">Three-Trick-Pony</p></header>
+  <div class="wrap">
+    <div><span class="tag">Shop theme · Fancy</span>
+      <div class="card"><h3>Today</h3>
+        <div class="row"><span>First Win of the Day</span><span class="xp">+400 XP</span></div>
+        <div class="row"><span>Champion of the Day</span><span class="xp">+500 XP</span></div>
+        <div class="row"><span>In the Thick of It</span><span class="xp">+300 XP</span></div>
+      </div></div>
+    <div><span class="tag">Readability check</span>
+      <div class="card"><h3>Last game</h3>
+        <div class="row"><span>Ekko · Jungle</span><span class="xp">Victory</span></div>
+        <div class="row"><span>KDA</span><span>8 / 2 / 11</span></div>
+        <div class="muted" style="margin-top:8px">+725 XP · LP Bank 64 / 100</div>
+      </div></div>
+  </div>
+</div>
+
+<script id="fs" type="x-shader/x-fragment">
+precision highp float;
+uniform vec2 R; uniform float T;
+const float YH = -.2;
+float h21(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float n2(vec2 p) { vec2 i = floor(p), f = fract(p), u = f * f * (3. - 2. * f);
+  return mix(mix(h21(i), h21(i + vec2(1, 0)), u.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), u.x), u.y); }
+float fbm(vec2 p) { float a = .5, s = 0.; for (int i = 0; i < 5; i++) { s += a * n2(p); p = mat2(1.6, 1.2, -1.2, 1.6) * p; a *= .5; } return s; }
+vec3 sky(vec2 p) {
+  float y = p.y - YH;
+  vec3 col = mix(vec3(1., .55, .28), vec3(.62, .28, .38), smoothstep(0., .14, y));
+  col = mix(col, vec3(.22, .14, .36), smoothstep(.1, .38, y));
+  col = mix(col, vec3(.05, .05, .16), smoothstep(.3, .7, y));
+  col += vec3(1., .6, .3) * exp(-length(vec2((p.x + .35) * .7, y * 2.2)) * 4.) * .6;           // Sonnenglut links
+  // zarte Wolkenbaender, unten angestrahlt
+  float cl = fbm(vec2(p.x * 1.6 + T * .01, p.y * 7.));
+  col = mix(col, col * vec3(1.25, .95, .9) + vec3(.08, .03, .02), smoothstep(.55, .75, cl) * smoothstep(.45, .08, y) * .7);
+  // Sterne oben
+  vec2 g = p * 150.; float r = h21(floor(g));
+  if (r > .988) col += vec3(1.) * smoothstep(.15, 0., length(fract(g) - .5)) * (.5 + .5 * sin(T * 2. + r * 50.)) * smoothstep(.25, .5, y);
+  // Huegel mit Dorflichtern
+  float hill = YH + .012 + .09 * pow(fbm(vec2(p.x * 1.6, 3.)), 1.6) + .025 * sin(p.x * 2.3 + 1.) + .015 * fbm(vec2(p.x * 12., 1.));
+  if (p.y < hill) {
+    col = mix(vec3(.08, .05, .12), vec3(.16, .08, .14), smoothstep(hill - .05, hill, p.y));
+    vec2 lg = vec2(p.x * 260., p.y * 260.); float lr = h21(floor(lg));
+    if (lr > .993 && p.y > YH + .004 && p.y < hill - .006) col += vec3(1., .7, .35) * smoothstep(.4, 0., length(fract(lg) - .5)) * (.7 + .3 * sin(T * 3. + lr * 90.));
+  }
+  return col;
+}
+void main() {
+  vec2 p = (gl_FragCoord.xy - .5 * R) / R.y;
+  vec3 col;
+  if (p.y > YH) col = sky(p);
+  else {
+    float d = YH - p.y;
+    vec2 q = vec2(p.x + (n2(vec2(p.x * 3., p.y * 70. + T * .8)) - .5) * .014 * (.4 + d * 3.), 2. * YH - p.y);
+    col = sky(q) * vec3(.62, .58, .7) * (.9 - d * .9);
+    float gl = pow(n2(vec2(p.x * 40., p.y * 220. + T * 1.5)), 8.) * smoothstep(.35, 0., d);
+    col += vec3(1., .65, .35) * gl * .6;
+    col = mix(col, vec3(.04, .03, .08), smoothstep(.05, .35, d) * .45);
+  }
+  col *= mix(1., .72, smoothstep(.15, .5, p.y));
+  col *= 1. - .3 * dot(p * vec2(.9 / (R.x / R.y) * 1.6, 1.), p * vec2(.9 / (R.x / R.y) * 1.6, 1.));
+  col = 1. - exp(-col * 1.5);
+  gl_FragColor = vec4(pow(col, vec3(.95)), 1.);
+}
+</script>
+<script>
+const rand = (a, b) => a + Math.random() * (b - a);
+const glc = document.getElementById('gl'), gl = glc.getContext('webgl', { antialias: false });
+const fx = document.getElementById('fx'), cx = fx.getContext('2d');
+let W = 0, H = 0, D = 1;
+function sh(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+const prog = gl.createProgram();
+gl.attachShader(prog, sh(gl.VERTEX_SHADER, 'attribute vec2 a; void main() { gl_Position = vec4(a, 0., 1.); }'));
+gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, document.getElementById('fs').textContent));
+gl.linkProgram(prog); gl.useProgram(prog);
+gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+const uR = gl.getUniformLocation(prog, 'R'), uT = gl.getUniformLocation(prog, 'T');
+const GLS = .8, YH = -.2;
+let horizon = 0;
+function resize() {
+  D = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight;
+  glc.width = Math.round(W * GLS); glc.height = Math.round(H * GLS); gl.viewport(0, 0, glc.width, glc.height);
+  fx.width = W * D; fx.height = H * D; cx.setTransform(D, 0, 0, D, 0, 0);
+  horizon = H / 2 - YH * H;
+}
+addEventListener('resize', resize); resize();
+
+// Himmelslaternen: d = Tiefe (klein/langsam/blass hinten, gross/unscharf vorn)
+const sky = [], floaters = [];
+function newSky(anyY) { const d = Math.random() < .1 ? rand(1.6, 2.4) : rand(.25, 1.1); return { x: rand(-20, W + 20), y: anyY ? rand(-40, horizon) : horizon + rand(0, 20) * d, d, ph: rand(0, 6), vx: rand(-4, 4), vy: -rand(10, 18) * d, sw: rand(.5, 1.2) }; }
+for (let k = 0; k < 110; k++) sky.push(newSky(true));
+for (let k = 0; k < 14; k++) { const depth = rand(0, 1); floaters.push({ x: rand(0, W), depth, ph: rand(0, 6), v: rand(3, 8) * (.4 + depth) }); }
+function lantern(x, y, s, t, ph, alpha, blur) {
+  const fl = .85 + .15 * Math.sin(t * 9 + ph) * Math.sin(t * 3.3 + ph * 2);
+  const halo = cx.createRadialGradient(x, y, 0, x, y, s * (blur ? 4.5 : 3.2)); halo.addColorStop(0, `rgba(255, 170, 80, ${.35 * alpha * fl})`); halo.addColorStop(1, 'rgba(255, 120, 40, 0)');
+  cx.fillStyle = halo; cx.beginPath(); cx.arc(x, y, s * (blur ? 4.5 : 3.2), 0, 7); cx.fill();
+  if (blur) return;
+  // Papierkoerper: oben breiter, unten offen, innen gluehend
+  const g = cx.createLinearGradient(x, y - s, x, y + s); g.addColorStop(0, `rgba(255, 150, 70, ${alpha})`); g.addColorStop(.6, `rgba(255, 210, 130, ${alpha})`); g.addColorStop(1, `rgba(255, 240, 190, ${alpha * fl})`);
+  cx.fillStyle = g; cx.beginPath(); cx.moveTo(x - s * .55, y - s); cx.lineTo(x + s * .55, y - s); cx.lineTo(x + s * .42, y + s * .8); cx.quadraticCurveTo(x, y + s, x - s * .42, y + s * .8); cx.closePath(); cx.fill();
+  cx.strokeStyle = `rgba(180, 80, 30, ${alpha * .5})`; cx.lineWidth = .6; cx.beginPath(); cx.moveTo(x, y - s); cx.lineTo(x, y + s * .9); cx.stroke();
+}
+let running = false;
+function frame(now) {
+  if (!running) return;
+  const dt = Math.min(.05, (now - (frame.last || now)) / 1000); frame.last = now; const t = now / 1000;
+  gl.uniform2f(uR, glc.width, glc.height); gl.uniform1f(uT, t); gl.drawArrays(gl.TRIANGLES, 0, 3);
+  cx.clearRect(0, 0, W, H);
+  sky.sort((a, b) => a.d - b.d);
+  // Spiegelungen zuerst (im Wasser, gestaucht, gewellt), dann die Laternen selbst
+  cx.save(); cx.beginPath(); cx.rect(0, horizon, W, H - horizon); cx.clip();
+  sky.forEach(l => { const ry = horizon + (horizon - l.y) * .55; if (ry > H + 30) return; const wob = Math.sin(t * 2 + l.ph + ry * .05) * 3; lantern(l.x + wob, ry, 7 * l.d, t, l.ph, .3 * Math.min(1, l.d), l.d > 1.5); });
+  cx.restore();
+  sky.forEach((l, i) => {
+    l.x += (l.vx + Math.sin(t * .4 + l.ph) * 3 * l.d) * dt; l.y += l.vy * dt;
+    if (l.y < -60) sky[i] = newSky(false);
+    const fade = Math.min(1, (l.y + 60) / 160) * (.45 + .55 * Math.min(1, l.d));
+    cx.save(); cx.translate(l.x, l.y); cx.rotate(Math.sin(t * l.sw + l.ph) * .08); lantern(0, 0, 7 * l.d, t, l.ph, fade, l.d > 1.5); cx.restore();
+  });
+  // schwimmende Laternen auf dem See
+  floaters.forEach(f => {
+    f.x += f.v * dt; if (f.x > W + 30) f.x = -30;
+    const y = horizon + 8 + f.depth * (H - horizon) * .85, s = 3 + f.depth * 7, bob = Math.sin(t * 1.5 + f.ph) * 1.5;
+    // Spiegelung: weicher, flimmernder Lichtfleck statt Streifen
+    for (let k = 0; k < 4; k++) { const ry = y + s * (.8 + k * .9), w = s * (1.6 - k * .25) * (1 + .2 * Math.sin(t * 3 + k + f.ph)); cx.fillStyle = `rgba(255, 170, 80, ${.28 - k * .06})`; cx.beginPath(); cx.ellipse(f.x + Math.sin(t * 2 + k) * 1.5, ry, w, s * .22, 0, 0, 7); cx.fill(); }
+    lantern(f.x, y + bob - s * .3, s * .7, t, f.ph, .95, false);
+    cx.fillStyle = 'rgba(60, 30, 20, .8)'; cx.fillRect(f.x - s * .9, y + bob + s * .3, s * 1.8, s * .3);
+  });
+  requestAnimationFrame(frame);
+}
+function setRunning(on) { if (on === running) return; running = on; if (on) { frame.last = 0; requestAnimationFrame(frame); } }
+document.addEventListener('visibilitychange', () => setRunning(!document.hidden));
+setRunning(!document.hidden);
+</script>
+</body>
+</html>
