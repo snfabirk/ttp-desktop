@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pearl Ring + Stained Glass - variants (Theme Lab)</title>
+<!-- Theme Lab: Neuauflage fuer Pearl Ring und Stained Glass (Refined, stehend);
+     die ersten Entwuerfe gefielen dem Nutzer nicht. Je zwei Richtungen:
+     Pearl A "Strand": eine Kette gleich grosser, dicht sitzender Perlen mit Lueste
+     auf feiner Silberfassung, ohne Anhaenger.
+     Pearl B "Nacre": breites Perlmutt-Band (schillernde Muschel-Innenseite) mit vier
+     eingelassenen Perlen.
+     Glass A "Cathedral": gotisches Fenster - gedeckte Edelsteinfarben, groessere
+     Scheiben, Licht scheint durch, Spitzbogen oben, Masswerk in den Ecken.
+     Glass B "Tiffany": organische Scheiben (Blaetter und Blueten) in Bernstein und
+     Gruen mit Kupferfolien-Linien. -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: #0a1428; color: #f0e6d2; font-family: Georgia, serif; }
+  body { padding: 20px 40px 40px; }
+  h1 { margin: 0; text-align: center; font-family: 'Cinzel', serif; color: #c8aa6e; letter-spacing: 3px; font-size: 1.5rem; }
+  h2 { margin: 22px 0 10px; font-family: 'Cinzel', serif; font-size: .95rem; letter-spacing: 2px; text-align: center; color: #4fa3ff; }
+  .grid { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; }
+  .item { text-align: center; }
+  .item b { display: block; margin-top: 8px; font-family: 'Cinzel', serif; font-size: .85rem; }
+  .item small { color: #a09b8c; font-size: .7rem; }
+  canvas { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<h1>Pearl Ring · Stained Glass — two directions each</h1>
+<h2>Pearl Ring</h2><div class="grid" id="pearls"></div>
+<h2>Stained Glass</h2><div class="grid" id="glass"></div>
+<script>
+const DPR = Math.min(2, devicePixelRatio || 1);
+const img = new Image(); img.crossOrigin = 'anonymous';
+img.src = 'https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png';
+function seeded(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function card(host, name, sub, w, h) {
+  const d = document.createElement('div'); d.className = 'item';
+  const cv = document.createElement('canvas'); cv.width = w * DPR; cv.height = h * DPR; cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  d.append(cv); d.insertAdjacentHTML('beforeend', `<b>${name}</b><small>${sub}</small>`);
+  document.getElementById(host).append(d);
+  const c = cv.getContext('2d'); c.setTransform(DPR, 0, 0, DPR, 0, 0); return c;
+}
+const rr = (c, x, y, w, h, r) => { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
+
+// ================= Pearl Ring =================
+function borderCard(host, name, sub, deco) {
+  const S = 200, c = card(host, name, sub, S, S), R = 58;
+  const go = () => { c.clearRect(0, 0, S, S); c.save(); c.translate(S / 2, S / 2); deco(c, R, 'under'); c.save(); c.beginPath(); c.arc(0, 0, R, 0, 7); c.clip(); c.drawImage(img, -R, -R, R * 2, R * 2); c.restore(); deco(c, R, 'over'); c.restore(); };
+  if (img.complete) go(); else img.addEventListener('load', go);
+}
+// Perle mit Luester: Grundton leicht rosa, Licht von oben links, Gegenlicht unten rechts, Kern-Glanz
+function pearl(c, x, y, r, tint) {
+  c.fillStyle = 'rgba(0, 0, 0, .35)'; c.beginPath(); c.ellipse(x + r * .2, y + r * .35, r * .95, r * .85, 0, 0, 7); c.fill();
+  const g = c.createRadialGradient(x - r * .3, y - r * .35, r * .05, x, y, r * 1.05);
+  g.addColorStop(0, '#ffffff'); g.addColorStop(.3, tint[0]); g.addColorStop(.75, tint[1]); g.addColorStop(1, tint[2]);
+  c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+  const rim = c.createRadialGradient(x + r * .35, y + r * .4, 0, x + r * .35, y + r * .4, r * .7); rim.addColorStop(0, 'rgba(255, 235, 245, .45)'); rim.addColorStop(1, 'rgba(255, 235, 245, 0)');
+  c.fillStyle = rim; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+  c.fillStyle = 'rgba(255, 255, 255, .95)'; c.beginPath(); c.ellipse(x - r * .32, y - r * .38, r * .22, r * .13, -.7, 0, 7); c.fill();
+}
+const PEARL_TINT = ['#f8f0f2', '#e2d4dc', '#9c8a98'];
+borderCard('pearls', 'A · Strand', 'Border · Refined', (c, R, p) => {
+  if (p !== 'over') return;
+  // Silberfassung
+  const s = c.createLinearGradient(-R, -R, R, R); s.addColorStop(0, '#f4f6fa'); s.addColorStop(.5, '#8a909c'); s.addColorStop(1, '#e8ecf2');
+  c.strokeStyle = s; c.lineWidth = 2.5; c.beginPath(); c.arc(0, 0, R * 1.02, 0, 7); c.stroke();
+  // dicht sitzende, gleich grosse Perlen (Anzahl so, dass sie sich beruehren)
+  const rp = R * .1, ring = R * 1.02 + rp + 1, N = Math.floor(Math.PI * 2 * ring / (rp * 2.02));
+  for (let k = 0; k < N; k++) { const a = k / N * Math.PI * 2; pearl(c, Math.cos(a) * ring, Math.sin(a) * ring, rp, PEARL_TINT); }
+});
+borderCard('pearls', 'B · Nacre', 'Border · Refined', (c, R, p) => {
+  if (p !== 'over') return;
+  const r0 = R * 1.0, r1 = R * 1.24;
+  // Perlmutt-Band: schillernde Farben im Kreis + feine Wachstumslinien
+  c.save(); c.beginPath(); c.arc(0, 0, r1, 0, 7); c.moveTo(r0, 0); c.arc(0, 0, r0, 0, 7, true); c.clip('evenodd');
+  const cg = c.createConicGradient(.6, 0, 0);
+  ['#f2ecf6', '#d6e8f2', '#f6e2ec', '#e2f2e8', '#f2ead6', '#dcdcf6', '#f2ecf6'].forEach((col, i, a) => cg.addColorStop(i / (a.length - 1), col));
+  c.fillStyle = cg; c.fillRect(-r1, -r1, r1 * 2, r1 * 2);
+  const r = seeded(8);
+  for (let k = 0; k < 26; k++) { const rad = r0 + (r1 - r0) * r(); c.strokeStyle = `rgba(${r() < .5 ? '170, 150, 190' : '150, 190, 200'}, ${.15 + r() * .2})`; c.lineWidth = .6; c.beginPath(); c.arc(0, 0, rad, r() * 6, r() * 6 + 1 + r() * 2); c.stroke(); }
+  const sh = c.createLinearGradient(-r1, -r1, r1, r1); sh.addColorStop(0, 'rgba(255, 255, 255, .55)'); sh.addColorStop(.4, 'rgba(255, 255, 255, 0)'); sh.addColorStop(.7, 'rgba(60, 40, 80, .15)');
+  c.fillStyle = sh; c.fillRect(-r1, -r1, r1 * 2, r1 * 2);
+  c.restore();
+  // Silberkanten innen/aussen
+  [r0, r1].forEach(rad => { const s = c.createLinearGradient(-R, -R, R, R); s.addColorStop(0, '#ffffff'); s.addColorStop(.5, '#8a909c'); s.addColorStop(1, '#e8ecf2'); c.strokeStyle = s; c.lineWidth = 1.6; c.beginPath(); c.arc(0, 0, rad, 0, 7); c.stroke(); });
+  // vier eingelassene Perlen in Silberfassung
+  for (let k = 0; k < 4; k++) { const a = k / 4 * Math.PI * 2 - Math.PI / 2, x = Math.cos(a) * (r0 + r1) / 2, y = Math.sin(a) * (r0 + r1) / 2;
+    c.fillStyle = '#c8ccd4'; c.beginPath(); c.arc(x, y, R * .115, 0, 7); c.fill(); pearl(c, x, y, R * .09, PEARL_TINT); }
+});
+
+// ================= Stained Glass =================
+function frameCard(host, name, sub, deco) {
+  const W = 360, H = 220, P = 30, c = card(host, name, sub, W, H), w = W - P * 2, h = H - P * 2;
+  rr(c, P, P, w, h, 12); c.fillStyle = 'rgba(10, 20, 40, .7)'; c.fill();
+  c.fillStyle = 'rgba(255,255,255,.05)'; c.strokeStyle = 'rgba(255,255,255,.08)';
+  [[P + 12, P + 12, w - 24, 52], [P + 12, P + 72, (w - 32) / 2, h - 84], [P + 20 + (w - 32) / 2, P + 72, (w - 32) / 2, h - 84]].forEach(b => { rr(c, ...b, 7); c.fill(); c.stroke(); });
+  deco(c, P, P, w, h);
+}
+// Glasscheibe: Grundfarbe, Licht scheint von hinten (heller Kern), Schlieren, Bleirute
+function glassPane(c, path, col, r, lead = '#14141a', lw = 2.6) {
+  c.save(); c.clip(path);
+  const b = path._b; const g = c.createRadialGradient(b[0] + b[2] * .35, b[1] + b[3] * .3, 1, b[0] + b[2] / 2, b[1] + b[3] / 2, Math.max(b[2], b[3]) * .8);
+  g.addColorStop(0, col[0]); g.addColorStop(.55, col[1]); g.addColorStop(1, col[2]);
+  c.fillStyle = g; c.fillRect(b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4);
+  c.globalAlpha = .18; for (let k = 0; k < 4; k++) { c.strokeStyle = r() < .5 ? '#ffffff' : '#000000'; c.lineWidth = 1 + r() * 2; c.beginPath(); const y = b[1] + r() * b[3]; c.moveTo(b[0], y); c.bezierCurveTo(b[0] + b[2] * .3, y + (r() - .5) * 8, b[0] + b[2] * .7, y + (r() - .5) * 8, b[0] + b[2], y + (r() - .5) * 6); c.stroke(); }
+  c.restore();
+  c.strokeStyle = lead; c.lineWidth = lw; c.lineJoin = 'round'; c.stroke(path);
+}
+function poly(pts) { const p = new Path2D(); pts.forEach(([x, y], i) => i ? p.lineTo(x, y) : p.moveTo(x, y)); p.closePath(); const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]); p._b = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)]; return p; }
+
+frameCard('glass', 'A · Cathedral', 'Frame · Refined', (c, x, y, w, h) => {
+  const r = seeded(19), band = 15, o = 5;
+  const BLUE = ['#9ac8ff', '#2a5ab8', '#122a6a'], RUBY = ['#ff9aa8', '#b81e34', '#5a0a18'], GOLD = ['#fff0b0', '#d8a028', '#7a5010'], GREEN = ['#b0f0c0', '#2a8a4a', '#0e3a1e'];
+  const x0 = x - o - band, y0 = y - o - band, x1 = x + w + o + band, y1 = y + h + o + band;
+  // Seiten: groessere Scheiben, Muster blau-rubin-blau-gold (ruhiger Rhythmus)
+  const pattern = [BLUE, RUBY, BLUE, GOLD];
+  const side = (ax, ay, bx, by, nx, ny, n) => { for (let k = 0; k < n; k++) { const u0 = k / n, u1 = (k + 1) / n, P0 = [ax + (bx - ax) * u0, ay + (by - ay) * u0], P1 = [ax + (bx - ax) * u1, ay + (by - ay) * u1];
+    glassPane(c, poly([P0, P1, [P1[0] + nx * band, P1[1] + ny * band], [P0[0] + nx * band, P0[1] + ny * band]]), pattern[k % 4], r);
+    // kleine Raute in jeder Scheibe (Bleirute)
+    const mx = (P0[0] + P1[0]) / 2 + nx * band / 2, my = (P0[1] + P1[1]) / 2 + ny * band / 2; c.strokeStyle = 'rgba(20, 20, 26, .8)'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(mx - 4, my); c.lineTo(mx, my - 4); c.lineTo(mx + 4, my); c.lineTo(mx, my + 4); c.closePath(); c.stroke(); } };
+  side(x0 + band * 1.6, y1 - band, x1 - band * 1.6, y1 - band, 0, 1, 8);
+  side(x0, y0 + band * 1.6, x0, y1 - band * 1.6, 1, 0, 5); side(x1 - band, y0 + band * 1.6, x1 - band, y1 - band * 1.6, 1, 0, 5);
+  // oben: links/rechts Scheiben, in der Mitte ein Spitzbogen mit Rosette
+  const cx = (x0 + x1) / 2, archW = 70;
+  side(x0 + band * 1.6, y0, cx - archW / 2, y0, 0, 1, 3); side(cx + archW / 2, y0, x1 - band * 1.6, y0, 0, 1, 3);
+  const archTop = y0 - 26;
+  const arch = new Path2D(); arch.moveTo(cx - archW / 2, y0 + band); arch.lineTo(cx - archW / 2, y0); arch.quadraticCurveTo(cx - archW / 2, archTop + 6, cx, archTop); arch.quadraticCurveTo(cx + archW / 2, archTop + 6, cx + archW / 2, y0); arch.lineTo(cx + archW / 2, y0 + band); arch.closePath(); arch._b = [cx - archW / 2, archTop, archW, y0 + band - archTop];
+  glassPane(c, arch, BLUE, r, '#14141a', 3);
+  const ry = y0 - 2; for (let k = 0; k < 8; k++) { const a0 = k / 8 * 6.283, a1 = (k + 1) / 8 * 6.283; glassPane(c, poly([[cx, ry], [cx + Math.cos(a0) * 13, ry + Math.sin(a0) * 13], [cx + Math.cos(a1) * 13, ry + Math.sin(a1) * 13]]), k % 2 ? RUBY : GOLD, r, '#14141a', 1.6); }
+  c.strokeStyle = '#14141a'; c.lineWidth = 2.6; c.beginPath(); c.arc(cx, ry, 13, 0, 7); c.stroke(); c.fillStyle = '#fff2c0'; c.beginPath(); c.arc(cx, ry, 3, 0, 7); c.fill(); c.stroke();
+  // Ecken: Masswerk-Vierpass in Gruen/Gold
+  [[x0 + band * .8, y0 + band * .8], [x1 - band * .8, y0 + band * .8], [x1 - band * .8, y1 - band * .8], [x0 + band * .8, y1 - band * .8]].forEach(([qx, qy]) => {
+    const q = new Path2D(); for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2; q.moveTo(qx + Math.cos(a) * 7 + 7, qy + Math.sin(a) * 7); q.arc(qx + Math.cos(a) * 7, qy + Math.sin(a) * 7, 7, 0, 7); } q._b = [qx - 14, qy - 14, 28, 28];
+    const disc = new Path2D(); disc.arc(qx, qy, band * 1.15, 0, 7); disc._b = [qx - band * 1.2, qy - band * 1.2, band * 2.4, band * 2.4];
+    glassPane(c, disc, GREEN, r, '#14141a', 3); glassPane(c, q, GOLD, r, '#14141a', 1.8);
+  });
+  // Steinlaibung aussen
+  c.strokeStyle = '#4a4650'; c.lineWidth = 3; rr(c, x0 - 2, y0 - 2, x1 - x0 + 4, y1 - y0 + 4, 6); c.stroke();
+  c.strokeStyle = '#14141a'; c.lineWidth = 2; rr(c, x0 + band, y0 + band, x1 - x0 - band * 2, y1 - y0 - band * 2, 4); c.stroke();
+});
+
+frameCard('glass', 'B · Tiffany', 'Frame · Refined', (c, x, y, w, h) => {
+  const r = seeded(23), band = 16, o = 5;
+  const AMBER = ['#fff0c0', '#e0a040', '#8a5414'], HONEY = ['#fff6d6', '#f0c870', '#a87a24'], LEAF = ['#d8f0a0', '#5a9a3a', '#2a4a14'], LEAF2 = ['#e8f8c0', '#7ab048', '#3a5a1a'], ROSE = ['#ffd6d6', '#d8606a', '#7a2028'];
+  const x0 = x - o - band, y0 = y - o - band, x1 = x + w + o + band, y1 = y + h + o + band;
+  // Hintergrundband: unregelmaessige Bernstein-Scheiben (organisch geschnitten)
+  const seg = (ax, ay, bx, by, nx, ny, n) => { let prevJ = 0;
+    for (let k = 0; k < n; k++) { const u0 = k / n, u1 = (k + 1) / n, j = k === n - 1 ? 0 : (r() - .5) * .5 / n;
+      const A = [ax + (bx - ax) * (u0 + prevJ), ay + (by - ay) * (u0 + prevJ)], B = [ax + (bx - ax) * (u1 + j), ay + (by - ay) * (u1 + j)];
+      const lean = (r() - .5) * 8;
+      glassPane(c, poly([A, B, [B[0] + nx * band + ny * lean, B[1] + ny * band + nx * lean], [A[0] + nx * band - ny * lean * .5, A[1] + ny * band - nx * lean * .5]]), r() < .6 ? AMBER : HONEY, r, '#5a3a1a', 1.8);
+      prevJ = j; } };
+  seg(x0, y0, x1, y0, 0, 1, 11); seg(x0, y1 - band, x1, y1 - band, 0, 1, 11);
+  seg(x0, y0 + band, x0, y1 - band, 1, 0, 6); seg(x1 - band, y0 + band, x1 - band, y1 - band, 1, 0, 6);
+  // Blaetter-Ranke ueber dem Band (Kupferfolie)
+  const leaf = (lx, ly, a, s, col) => { const p = new Path2D(); const ca = Math.cos(a), sa = Math.sin(a), T = (u, v) => [lx + u * ca - v * sa, ly + u * sa + v * ca];
+    p.moveTo(...T(0, 0)); p.bezierCurveTo(...T(s * .3, -s * .45), ...T(s * .8, -s * .35), ...T(s, 0)); p.bezierCurveTo(...T(s * .8, s * .35), ...T(s * .3, s * .45), ...T(0, 0)); p.closePath(); p._b = [lx - s, ly - s, s * 2, s * 2];
+    glassPane(c, p, col, r, '#5a3a1a', 1.6); c.strokeStyle = 'rgba(90, 58, 26, .9)'; c.lineWidth = 1; c.beginPath(); c.moveTo(...T(0, 0)); c.lineTo(...T(s * .9, 0)); c.stroke(); };
+  const flower = (fx, fy, s) => { for (let k = 0; k < 5; k++) { const a = k / 5 * 6.283 - Math.PI / 2; const p = new Path2D(); p.ellipse(fx + Math.cos(a) * s * .55, fy + Math.sin(a) * s * .55, s * .5, s * .32, a, 0, 7); p._b = [fx - s, fy - s, s * 2, s * 2]; glassPane(c, p, ROSE, r, '#5a3a1a', 1.5); }
+    const ctr = new Path2D(); ctr.arc(fx, fy, s * .25, 0, 7); ctr._b = [fx - s * .3, fy - s * .3, s * .6, s * .6]; glassPane(c, ctr, HONEY, r, '#5a3a1a', 1.4); };
+  // Blaetter entlang der Kanten, Blueten an den Ecken
+  for (let k = 0; k < 9; k++) { const u = (k + .5) / 9; leaf(x0 + (x1 - x0) * u, y0 + band * .5, k % 2 ? -.45 : Math.PI + .45, 19, k % 2 ? LEAF : LEAF2); leaf(x0 + (x1 - x0) * u, y1 - band * .5, (k % 2 ? .5 : -.5), 19, k % 2 ? LEAF2 : LEAF); }
+  for (let k = 0; k < 5; k++) { const u = (k + .5) / 5; leaf(x0 + band * .5, y0 + (y1 - y0) * u, Math.PI / 2 + (k % 2 ? .4 : -.4), 18, k % 2 ? LEAF : LEAF2); leaf(x1 - band * .5, y0 + (y1 - y0) * u, -Math.PI / 2 + (k % 2 ? .4 : -.4), 18, k % 2 ? LEAF2 : LEAF); }
+  [[x0 + band * .6, y0 + band * .6], [x1 - band * .6, y0 + band * .6], [x1 - band * .6, y1 - band * .6], [x0 + band * .6, y1 - band * .6]].forEach(([fx, fy]) => flower(fx, fy, 16));
+  c.strokeStyle = '#5a3a1a'; c.lineWidth = 2.4; rr(c, x0, y0, x1 - x0, y1 - y0, 8); c.stroke(); rr(c, x0 + band, y0 + band, x1 - x0 - band * 2, y1 - y0 - band * 2, 5); c.stroke();
+});
+</script>
+</body>
+</html>
