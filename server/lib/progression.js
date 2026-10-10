@@ -336,11 +336,11 @@ function tierReward(month, tier) {
 
 // Vergibt alle Belohnungen bis zur aktuell erreichten Stufe, die in diesem
 // Monat noch nicht vergeben wurden. Cosmetics bleiben fuer immer im Inventar.
-// Coins holt man seit v5.25.0 selbst ab (Nutzerwunsch: sehen, dass sie bereit
-// sind, anklicken, sie fliegen in den Kontostand). claimedTier/claimedOverflow
-// heissen weiter so, bedeuten aber "erreicht und verbucht"; die Coins liegen
-// bis zum Abholen in pass.pendingTiers / pass.pendingOverflow.
-// Cosmetics kommen weiterhin automatisch ins Inventar.
+// Belohnungen holt man seit v5.25.0 selbst ab (Nutzerwunsch: sehen, dass sie
+// bereit sind, anklicken - Coins fliegen in den Kontostand, Cosmetics zum
+// Profil). claimedTier/claimedOverflow heissen weiter so, bedeuten aber
+// "erreicht und verbucht"; die Belohnung liegt bis zum Abholen in
+// pass.pendingTiers (Coins UND Cosmetics) / pass.pendingOverflow.
 function claimPassRewards(state, month) {
   const pass = state.passes[month];
   if (!Array.isArray(pass.pendingTiers)) pass.pendingTiers = [];
@@ -348,8 +348,7 @@ function claimPassRewards(state, month) {
   const prog = passProgress(pass.xp);
   for (let t = pass.claimedTier + 1; t <= prog.tier; t++) {
     const reward = tierReward(month, t);
-    if (reward.type === 'coins') pass.pendingTiers.push(t);
-    else if (!state.inventory.includes(reward.id)) state.inventory.push(reward.id);
+    pass.pendingTiers.push(t);
   }
   pass.claimedTier = Math.max(pass.claimedTier, prog.tier);
   if (prog.overflowCount > pass.claimedOverflow) {
@@ -369,7 +368,10 @@ function settleOldPasses(state, now = new Date()) {
   const cur = monthKey(now);
   Object.entries(state.passes || {}).forEach(([month, pass]) => {
     if (month === cur) return;
-    (pass.pendingTiers || []).forEach(t => { state.coins += tierReward(month, t).amount || 0; });
+    (pass.pendingTiers || []).forEach(t => {
+      const r = tierReward(month, t);
+      if (r.type === 'cosmetic') { if (!state.inventory.includes(r.id)) state.inventory.push(r.id); } else state.coins += r.amount || 0;
+    });
     state.coins += (pass.pendingOverflow || 0) * COINS_PER_OVERFLOW_STEP;
     pass.pendingTiers = []; pass.pendingOverflow = 0;
   });
@@ -384,7 +386,17 @@ function claimPassCoins({ tier, overflow, all } = {}) {
   if (!pass) return { ok: false, error: 'Nothing to claim yet.' };
   pass.pendingTiers = pass.pendingTiers || [];
   let amount = 0;
-  const takeTier = t => { const i = pass.pendingTiers.indexOf(t); if (i < 0) return false; pass.pendingTiers.splice(i, 1); amount += tierReward(month, t).amount || 0; return true; };
+  const cosmetics = [];
+  const takeTier = t => {
+    const i = pass.pendingTiers.indexOf(t); if (i < 0) return false;
+    pass.pendingTiers.splice(i, 1);
+    const r = tierReward(month, t);
+    if (r.type === 'cosmetic') {
+      if (!state.inventory.includes(r.id)) state.inventory.push(r.id);
+      cosmetics.push({ tier: t, id: r.id, name: r.name, type: r.cosmeticType });
+    } else amount += r.amount || 0;
+    return true;
+  };
   if (all) {
     [...pass.pendingTiers].forEach(takeTier);
     amount += (pass.pendingOverflow || 0) * COINS_PER_OVERFLOW_STEP; pass.pendingOverflow = 0;
@@ -393,10 +405,10 @@ function claimPassCoins({ tier, overflow, all } = {}) {
   } else if (!takeTier(Number(tier))) {
     return { ok: false, error: 'Nothing to claim on this tier.' };
   }
-  if (!amount) return { ok: false, error: 'Nothing to claim.' };
+  if (!amount && !cosmetics.length) return { ok: false, error: 'Nothing to claim.' };
   state.coins += amount;
   writeState(state);
-  return { ok: true, amount, coins: state.coins };
+  return { ok: true, amount, cosmetics, coins: state.coins };
 }
 
 // Abgelaufenen Gutschein entfernen; liefert true bei Aenderung
@@ -555,6 +567,7 @@ function readState() {
   // vor einer Katalog-Aenderung geholt hat, die neue Belohnung.
   Object.entries(state.passes || {}).forEach(([month, pass]) => {
     for (let t = 5; t <= Math.min(pass.claimedTier || 0, PASS_TIERS); t += 5) {
+      if ((pass.pendingTiers || []).includes(t)) continue; // liegt noch zum Abholen bereit
       const c = passCosmetic(month, t);
       if (c && !state.inventory.includes(c.id)) state.inventory.push(c.id);
     }

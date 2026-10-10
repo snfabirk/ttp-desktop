@@ -25,10 +25,10 @@
 (function () {
   const CHANGELOG = [
     {
-      version: '5.25.0',
+      version: '5.25.1',
       date: '2026-10-10',
       notable: [
-        "Pass coins are now collected by hand: tiers with coins waiting glow - click them (or 'Claim all') and watch the coins fly into your balance. Coins you didn't collect in an earlier month are added automatically.",
+        "Pass rewards are now collected by hand: ready tiers glow - click them (or 'Claim all') and watch coins fly into your balance and cosmetics fly up to your profile. Anything you didn't collect in an earlier month is added automatically.",
         "'Closest next' on the Challenge page no longer lists the trophies that average over the whole challenge (they only lock in at the end)."
       ],
       refinements: 1,

@@ -1,8 +1,9 @@
 # Internal Changelog
 
-## 5.25.0 — 2026-10-10
+## 5.25.1 — 2026-10-10 (incl. unreleased 5.25.0)
 
 - Pass coins are claimed by hand (user): claimPassRewards puts coin tiers into pass.pendingTiers and 30+ steps into pass.pendingOverflow instead of state.coins (cosmetics stay automatic). POST /api/pass/claim { tier } | { overflow } | { all }. Older months' pending coins are credited automatically in readState (settleOldPasses). Pass grid: pulsing claimable tiles with a "Claim" tag, "Claim all · 🪙 X" next to the balance (2+ pending), "Claim 🪙 X" in the 30+ row; coins fly into the balance (WAAPI) and it counts up. Only the app's own animation setting disables the flight (Windows reports prefers-reduced-motion on this machine).
+- Pass cosmetics (tiers 5-30) are claimed by hand too: they wait in pendingTiers (readState no longer auto-adds pending cosmetic tiers), claiming adds them to the inventory and a copy of the tile icon flies to the "Profile" nav tab, which pings. Claim all label shows coins + item count.
 - Challenge page "Closest next": average trophies (AVERAGE_TROPHY_IDS) excluded.
 - Shop wording "Active buffs" -> "Active effects" (+ slot/remove messages).
 
