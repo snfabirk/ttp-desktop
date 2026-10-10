@@ -33,7 +33,7 @@
   <div class="row"><div class="board" data-style="constellation"><div class="w wide"><img class="ava" src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><span class="name">LUCKSHOT#796</span></div><div class="w"><h4>Games</h4><div class="big">142</div></div><div class="w"><h4>Rank</h4><div class="big">Gold II</div></div><div class="w"><h4>Trophies</h4><div class="big">9 / 21</div></div><canvas class="dragon"></canvas><div class="head-hit"></div></div>
     <div class="label">A · before<small>the first constellation draft</small></div></div>
   <div class="row"><div class="board" data-style="constellation2"><div class="w wide"><img class="ava" src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><span class="name">LUCKSHOT#796</span></div><div class="w"><h4>Games</h4><div class="big">142</div></div><div class="w"><h4>Rank</h4><div class="big">Gold II</div></div><div class="w"><h4>Trophies</h4><div class="big">9 / 21</div></div><canvas class="dragon"></canvas><div class="head-hit"></div></div>
-    <div class="label">A2 · Constellation+<small>nebula haze, the pearl it chases, star mane, shooting stars</small></div></div>
+    <div class="label">A2 · Constellation+<small>nebula haze, star mane, shooting stars</small></div></div>
 </div>
 
 <script>
@@ -55,7 +55,7 @@ function makeDragon(board) {
   const at = d => { d = ((d % perLen) + perLen) % perLen; for (let i = 1; i < per.length; i++) if (per[i].len >= d) { const a = per[i - 1], b = per[i], u = (d - a.len) / (b.len - a.len || 1); return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, Math.atan2(b[1] - a[1], b[0] - a[0])]; } return [per[0][0], per[0][1], 0]; };
   layout();
   const SEG = 38, GAP = 10, dust = [], rain = [];
-  let head = style === 'constellation2' ? 400 : 0, roar = null, snap = 0, nextSnap = rand(4, 8), glow = 0, kick = 0, shooters = [], nextShoot = rand(2, 5);
+  let head = style === 'constellation2' ? 400 : 0, roar = null, snap = 0, nextSnap = rand(4, 8), glow = 0, shooters = [], nextShoot = rand(2, 5);
   // Farbe der Sternbild-Linien: Silberblau, beim Bruellen Gold
   const L = a => `rgba(${180 + 75 * glow | 0}, ${190 + 30 * glow | 0}, ${255 - 115 * glow | 0}, ${a})`;
   hit.addEventListener('click', () => { if (!roar) roar = { t: 0 }; });
@@ -225,17 +225,7 @@ function makeDragon(board) {
     let headAng = dir + look;
     if (style === 'constellation2') {
       glow = roar ? Math.max(0, 1 - roar.t / 2.8) : 0;
-      if (snap > .95) kick = 1; kick = Math.max(0, kick - dt * 1.2);
-      // Perle: schwebt vor dem Kopf, weicht beim Schnappen aus
-      const [qx, qy, qa] = at(head + 38 + kick * 22 + Math.sin(t * .7) * 6), off = Math.sin(t * 1.3) * 14 + kick * 10;
-      const px = qx - Math.sin(qa) * off, py = qy + Math.cos(qa) * off;
       headAng = dir; // Kopf folgt nur dem Koerper (Nutzerwunsch: nicht unabhaengig bewegen)
-      dx.save(); dx.globalCompositeOperation = 'lighter';
-      const pr = 5 + glow * 3, pg = dx.createRadialGradient(px, py, 0, px, py, pr * 4); pg.addColorStop(0, 'rgba(255, 245, 220, .9)'); pg.addColorStop(.25, `rgba(200, 210, 255, ${.45 + glow * .4})`); pg.addColorStop(1, 'rgba(120, 110, 255, 0)');
-      dx.fillStyle = pg; dx.beginPath(); dx.arc(px, py, pr * 4, 0, 7); dx.fill();
-      dx.strokeStyle = 'rgba(220, 225, 255, .55)'; dx.lineWidth = 1; dx.beginPath(); dx.arc(px, py, pr + 4, t * 2, t * 2 + 2); dx.stroke(); dx.beginPath(); dx.arc(px, py, pr + 4, t * 2 + 3.1, t * 2 + 5.1); dx.stroke();
-      dx.fillStyle = '#fffdf4'; dx.beginPath(); dx.arc(px, py, pr * .6, 0, 7); dx.fill();
-      dx.restore();
       // Sternschnuppen ueber der Karte
       nextShoot -= dt; if (nextShoot <= 0) { nextShoot = rand(4, 9); shooters.push({ x: rand(P + 40, P + BW * .7), y: P + rand(10, BH * .5), vx: rand(160, 240), vy: rand(50, 90), life: 1 }); }
       for (let i = shooters.length - 1; i >= 0; i--) { const s = shooters[i]; s.life -= dt * 1.6; if (s.life <= 0) { shooters.splice(i, 1); continue; } s.x += s.vx * dt; s.y += s.vy * dt;
