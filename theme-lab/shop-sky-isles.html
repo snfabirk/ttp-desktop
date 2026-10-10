@@ -112,15 +112,18 @@ void island(vec2 p, vec2 c, float w, float dep, float seed, float far, inout vec
   col = mix(c2, skyBase(p) * vec3(.95, .9, 1.), far * .55);
 }
 void fall(vec2 p, vec2 c, float w, float seed, float far, inout vec3 col) {
+  // Wasserfall: ohne harte Grenzen - Breite, Deckkraft und Schleier laufen weich aus
   c.y += sin(T * .35 + seed) * .006;
-  float fx = c.x + w * .5, wd = .005 + w * .035;
-  if (p.y > c.y + .004 || abs(p.x - fx) > wd * 3.) return;
-  float spread = 1. + (c.y - p.y) * 1.5;
-  float s = smoothstep(wd * spread, wd * spread * .3, abs(p.x - fx + sin(p.y * 30. + seed) * .002));
-  float streak = .55 + .45 * n2(vec2((p.x - fx) * 300. / spread, p.y * 25. + T * 5.));
-  vec3 wc = mix(vec3(.92, .96, 1.), skyBase(p), far * .5) * (.8 + .35 * streak);
-  col = mix(col, wc, s * .9);
-  col += vec3(1.) * exp(-abs(p.x - fx) / (wd * spread * 2.)) * .08;       // Gischt-Schleier
+  float fx = c.x + w * .5, drop = c.y - p.y;
+  if (drop < -.004) return;
+  float spread = 1. + drop * 2.2, wd = (.004 + w * .022) * spread;
+  float dx = abs(p.x - fx + sin(p.y * 30. + seed) * .0015);
+  float s = smoothstep(wd, wd * .2, dx) * smoothstep(-.004, .01, drop);
+  float streak = .5 + .5 * n2(vec2((p.x - fx) * 260. / spread, p.y * 22. + T * 5.));
+  float fade = exp(-drop * 3.5);                                   // wird nach unten duenner und loest sich auf
+  vec3 wc = mix(vec3(.95, .97, 1.), skyBase(p), far * .5);
+  col = mix(col, wc, s * (.35 + .5 * streak) * fade);
+  col += vec3(.9, .92, 1.) * exp(-dx / (wd * 1.6)) * .06 * fade * smoothstep(-.004, .02, drop);   // zarter Schleier, weich
 }
 // Wolkenfeld: weiches Maximum aus Bauschen-Kreisen und dem Wolkenkoerper unten -> keine Naehte zwischen Bauschen
 float cloudF(vec2 q, float fk, float cs, float base) {
@@ -142,7 +145,7 @@ void main() {
   for (int k = 0; k < 3; k++) {
     float fk = float(k), sp = .008 + fk * .014;
     // Kumulus: Feld aus Bauschen, Normale aus dem Feldgradienten (weich ueber alle Bausche hinweg)
-    float cs = .07 + fk * .035, base = -.15 - fk * .1, ex = p.x + T * sp;
+    float cs = .065 + fk * .032, base = -.25 - fk * .085, ex = p.x + T * sp;
     vec2 q = vec2(ex, p.y);
     float f = cloudF(q, fk, cs, base);
     float m = smoothstep(-.003, .003, f);
