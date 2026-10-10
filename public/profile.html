@@ -690,9 +690,9 @@
 
     // ===== Daten =====
     const data = { account: null, stats: null, rank: null, champions: [] };
-    // Inventar: nicht besessene Items zeigen? (Knopf im Inventar, gemerkt)
-    let showLocked = true;
-    try { showLocked = localStorage.getItem('ttp_inv_show_locked') !== '0'; } catch (e) {}
+    // Inventar: nicht besessene Items zeigen? Standard aus, per Knopf an -
+    // setzt sich bei jedem Oeffnen des Editors zurueck (Nutzerwunsch)
+    let showLocked = false;
 
     // ===== Bausteine =====
     const RANK_ABBR = { IRON: 'Iron', BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold', PLATINUM: 'Plat', EMERALD: 'Emerald', DIAMOND: 'Diamond', MASTER: 'Master', GRANDMASTER: 'GM', CHALLENGER: 'Challenger' };
@@ -1281,7 +1281,6 @@
     document.getElementById('invList').addEventListener('click', e => {
       if (!e.target.closest('[data-toggle-locked]')) return;
       showLocked = !showLocked;
-      try { localStorage.setItem('ttp_inv_show_locked', showLocked ? '1' : '0'); } catch (err) {}
       renderPanels();
     });
     document.getElementById('invTabs').addEventListener('click', e => {
@@ -1354,6 +1353,7 @@
     }
 
     async function enterEdit() {
+      showLocked = false;
       editState = {
         snapshot: JSON.parse(JSON.stringify(layout)),
         border: (S() && S().equipped && S().equipped.border) || 'none',

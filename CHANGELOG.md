@@ -1,9 +1,9 @@
 # Internal Changelog
 
-## 5.23.0 — 2026-10-10
+## 5.23.1 — 2026-10-10 (incl. unreleased 5.23.0)
 
 - Profile editor inventory (user design): "Monthly Pass" group = ONLY the running month's pass items; everything else (older pass items, shop, base) grouped by rarity Animated+ > Animated > Fancy > Refined > Basic, owned first then locked. Default/No frame and the 8 base themes lead the Basic group. Empty groups are skipped.
-- "Hide locked / Show locked" button next to the collected counter (localStorage ttp_inv_show_locked); counter row wraps in the narrow panel.
+- "Show locked / Hide locked" button next to the collected counter: locked items are HIDDEN by default and it resets every time the editor opens (user); counter row wraps in the narrow panel.
 
 ## 5.22.3 — 2026-10-10
 
