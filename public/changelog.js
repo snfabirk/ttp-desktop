@@ -25,7 +25,7 @@
 (function () {
   const CHANGELOG = [
     {
-      version: '5.25.1',
+      version: '5.25.2',
       date: '2026-10-10',
       notable: [
         "Pass rewards are now collected by hand: ready tiers glow - click them (or 'Claim all') and watch coins fly into your balance and cosmetics fly up to your profile. Anything you didn't collect in an earlier month is added automatically.",

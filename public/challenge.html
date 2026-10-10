@@ -2030,7 +2030,17 @@
       const fly = document.createElement('div');
       fly.className = 'fly-cos';
       fly.style.width = `${a.width}px`; fly.style.height = `${a.height}px`;
-      fly.appendChild(icon.cloneNode(true));
+      const clone = icon.cloneNode(true);
+      // Animierte Cosmetics malen auf Canvas - cloneNode kopiert nur die leere
+      // Flaeche, also den aktuellen Bildinhalt mitkopieren (sonst flog z.B. der
+      // Haunted-Rand unsichtbar)
+      const srcCv = icon.querySelectorAll('canvas'), dstCv = clone.querySelectorAll('canvas');
+      srcCv.forEach((cv, i) => { const d = dstCv[i]; if (!d) return; d.width = cv.width; d.height = cv.height; try { d.getContext('2d').drawImage(cv, 0, 0); } catch (e) {} });
+      // Groesse/Deckkraft kommen sonst aus ".pass-tier .tier-cos" - ausserhalb
+      // der Kachel waere ein Rand-Icon ungestylt (Haunted flog unsichtbar)
+      clone.style.width = `${a.width}px`; clone.style.height = `${a.height}px`;
+      clone.style.flexShrink = '0'; clone.style.opacity = '1';
+      fly.appendChild(clone);
       document.body.appendChild(fly);
       const x0 = a.left, y0 = a.top, x1 = b.left + b.width / 2 - a.width / 2, y1 = b.top + b.height / 2 - a.height / 2;
       const mx = (x0 + x1) / 2, my = Math.min(y0, y1) - 80;
