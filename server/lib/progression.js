@@ -785,6 +785,9 @@ function offerView(id, owned) {
 }
 
 // Wuerfelt neue Angebote, wenn ein neuer Tag / eine neue Woche begonnen hat.
+// 4 Daily-Angebote seit v5.24.0 (Nutzer: mehr Auswahl = bewusste Entscheidung,
+// die Coins bleiben die Grenze)
+const DAILY_OFFERS = 4;
 function refreshShop(state, now) {
   const shop = { ...emptyState().shop, ...(state.shop || {}) };
   const today = dayKey(now), week = weekKey(now);
@@ -800,11 +803,16 @@ function refreshShop(state, now) {
     changed = true;
   }
   if (shop.dayKey !== today) {
-    shop.daily = rollOffers(state, 3, shopWeights(SHOP_DAILY_WEIGHTS, shop.pityDaily, PITY_DAILY_STEP), 'daily', shop.weekly);
+    shop.daily = rollOffers(state, DAILY_OFFERS, shopWeights(SHOP_DAILY_WEIGHTS, shop.pityDaily, PITY_DAILY_STEP), 'daily', shop.weekly);
     const hit = shop.daily.some(id => (shopItemById(id) || {}).rarity === 'animated');
     shop.pityDaily = hit ? 0 : shop.pityDaily + 1;
     shop.dayKey = today;
     changed = true;
+  } else if (shop.daily.length < DAILY_OFFERS) {
+    // Heute schon gewuerfelt, aber weniger Plaetze (z.B. vor v5.24.0 mit 3):
+    // nur auffuellen, die bestehenden Angebote bleiben
+    const add = rollOffers(state, DAILY_OFFERS - shop.daily.length, shopWeights(SHOP_DAILY_WEIGHTS, shop.pityDaily, PITY_DAILY_STEP), 'daily', [...shop.weekly, ...shop.daily]);
+    if (add.length) { shop.daily = [...shop.daily, ...add]; changed = true; }
   }
   state.shop = shop;
   return changed;
@@ -965,7 +973,7 @@ function buyConsumable(slot, choice, context) {
     state.buffs.push(buff);
   } else if (id === 'shop_reroll') {
     refreshShop(state, now);
-    state.shop.daily = rollOffers(state, 3, shopWeights(SHOP_DAILY_WEIGHTS, state.shop.pityDaily, PITY_DAILY_STEP), 'daily', state.shop.weekly);
+    state.shop.daily = rollOffers(state, DAILY_OFFERS, shopWeights(SHOP_DAILY_WEIGHTS, state.shop.pityDaily, PITY_DAILY_STEP), 'daily', state.shop.weekly);
   } else if (id === 'week_reroll') {
     refreshShop(state, now);
     state.shop.weekly = rollOffers(state, 2, shopWeights(SHOP_WEEKLY_WEIGHTS, state.shop.pityWeekly, PITY_WEEKLY_STEP), 'weekly', state.shop.daily);

@@ -1,5 +1,11 @@
 # Internal Changelog
 
+## 5.24.0 — 2026-10-10
+
+- 4 daily offers (DAILY_OFFERS, user: more choice = deliberate decision). Same-day shops with fewer slots are topped up without re-rolling the existing ones; daily grid 4 columns (2 below 1000px).
+- Unaffordable prices: offers and Daily Goods keep showing the price (goods used to say "Not enough coins") with a red .short style, tooltip "Not enough coins".
+- Shop previews of the standing Refined/Basic frames (circuit, kintsugi, origami, carved, mosaic, linen, night) are scaled down like the creature frames (Kintsugi covered its own name); voucher texts stay on one line.
+
 ## 5.23.1 — 2026-10-10 (incl. unreleased 5.23.0)
 
 - Profile editor inventory (user design): "Monthly Pass" group = ONLY the running month's pass items; everything else (older pass items, shop, base) grouped by rarity Animated+ > Animated > Fancy > Refined > Basic, owned first then locked. Default/No frame and the 8 base themes lead the Basic group. Empty groups are skipped.

@@ -59,7 +59,7 @@
   }
   .offers { display: grid; gap: 14px; }
   .offers.weekly { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .offers.daily { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .offers.daily { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .offer {
     position: relative;
     display: flex; flex-direction: column; align-items: center; gap: 8px;
@@ -102,12 +102,14 @@
     cursor: pointer;
   }
   .offer-buy:hover { background: color-mix(in srgb, var(--gold) 14%, transparent); }
+  /* Zu wenig Coins: Preis bleibt sichtbar (worauf man spart), aber rot */
+  .offer-buy.short:disabled, .good-buy.short:disabled { border-color: var(--red); color: var(--red); opacity: 1; cursor: not-allowed; background: color-mix(in srgb, var(--red) 8%, transparent); }
   /* Gutschein (30+5): eigener Knopf unter dem Preis */
   .offer-voucher {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 3px 12px; border-radius: 12px;
     border: 1px dashed var(--gold); background: color-mix(in srgb, var(--gold) 10%, transparent);
-    color: var(--gold); font-family: inherit; font-size: 0.75rem; cursor: pointer;
+    color: var(--gold); font-family: inherit; font-size: 0.72rem; cursor: pointer; white-space: nowrap;
   }
   .offer-voucher:hover, .offer-voucher.confirm { background: color-mix(in srgb, var(--gold) 22%, transparent); }
   .offer-buy.confirm { background: var(--gold); color: var(--bg); }
@@ -262,8 +264,9 @@
   .voucher {
     display: flex; align-items: center; gap: 8px; height: 32px; box-sizing: border-box; padding: 5px 10px; border-radius: 8px;
     border: 1px dashed var(--gold); background: color-mix(in srgb, var(--gold) 14%, transparent);
-    font-size: 0.78rem; color: var(--gold);
+    font-size: 0.78rem; color: var(--gold); white-space: nowrap;
   }
+  .voucher > span:first-child { overflow: hidden; text-overflow: ellipsis; }
   .voucher .buff-time { margin-left: auto; color: var(--text-faint); font-size: 0.72rem; white-space: nowrap; }
   .buff:hover .buff-time:has(+ .buff-x) { display: none; }
   .buff-x:hover { color: var(--red); border-color: var(--red); }
@@ -374,7 +377,9 @@
     // Vorschau: Borders und Rahmen werden live gezeichnet (cosmetics-fx.js /
     // shop-cosmetics.js), Themes als Farbkreis
     const ICON = 'https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/29.png';
-    const BIG_FRAME_PV = { 'frame-shop-kraken': 3.4, 'frame-shop-phoenix': 3.4, 'frame-shop-dragon': 2.4, 'frame-dev-netrunner': 2.6, 'frame-shop-vines': 2.3 };
+    const BIG_FRAME_PV = { 'frame-shop-kraken': 3.4, 'frame-shop-phoenix': 3.4, 'frame-shop-dragon': 2.4, 'frame-dev-netrunner': 2.6, 'frame-shop-vines': 2.3,
+      // stehende Refined/Basic-Rahmen (v5.20.0) sind fuer Profilgroesse gezeichnet
+      'frame-shop-circuit': 2.6, 'frame-shop-kintsugi': 2.6, 'frame-shop-origami': 2.6, 'frame-shop-carved': 2.6, 'frame-shop-mosaic': 2.6, 'frame-shop-linen': 2.6, 'frame-shop-night': 2.6 };
     function previewHtml(o) {
       let inner;
       if (o.type === 'border') inner = `<span class="cos-border cos-${o.id}"><img src="${ICON}" alt=""></span>`;
@@ -415,7 +420,7 @@
       const btn = o.owned
         ? '<button type="button" class="offer-buy" disabled>✓ Owned</button>'
         : shop.coins < eff
-          ? `<button type="button" class="offer-buy" disabled title="Not enough coins">${priceLabel(o)}</button>`
+          ? `<button type="button" class="offer-buy short" disabled title="Not enough coins">${priceLabel(o)}</button>`
           : `<button type="button" class="offer-buy${buyConfirm.has(o.id) ? ' confirm' : ''}" data-buy="${o.id}">${buyConfirm.has(o.id) ? `Buy for 🪙 <b>${fmtNum(eff)}</b>?` : priceLabel(o)}</button>`;
       return `<div class="offer rar-${o.rarity}${o.owned ? ' owned' : ''}" data-id="${o.id}">
         <span class="offer-tag rar rar-${o.rarity}">${RARITY_LABEL[o.rarity] || o.rarity}</span>
@@ -611,12 +616,13 @@
       document.getElementById('goods').innerHTML = (shop.consumables || [null, null]).map((g, i) => {
         if (!g) return '<div class="good empty">The merchant has nothing here today.</div>';
         const label = g.sold ? 'Used' : g.unavailable ? g.unavailable : confirming.has(i) ? `Use now? 🪙 ${fmtNum(g.price)}` : `Buy & use · 🪙 ${fmtNum(g.price)}`;
-        const disabled = g.sold || !!g.unavailable || shop.coins < g.price;
+        const short = !g.sold && !g.unavailable && shop.coins < g.price;
+        const disabled = g.sold || !!g.unavailable || short;
         return `<div class="good${g.sold ? ' sold' : ''}">
           <span class="good-icon">${g.icon}</span>
           <span class="good-name">${esc(g.name)}</span>
           <span class="good-desc">${esc(g.desc)}</span>
-          <button type="button" class="good-buy${confirming.has(i) ? ' confirm' : ''}" data-slot="${i}"${disabled ? ' disabled' : ''}>${!g.sold && !g.unavailable && shop.coins < g.price ? 'Not enough coins' : label}</button>
+          <button type="button" class="good-buy${confirming.has(i) ? ' confirm' : ''}${short ? ' short' : ''}" data-slot="${i}"${disabled ? ' disabled' : ''}${short ? ' title="Not enough coins"' : ''}>${short ? `🪙 ${fmtNum(g.price)}` : label}</button>
           ${goodMsg[i] ? `<span class="good-msg">${esc(goodMsg[i])}</span>` : ''}
         </div>`;
       }).join('');
@@ -631,7 +637,7 @@
           : '<div class="buff free">Free slot</div>';
       }).join('');
       document.getElementById('voucherSlot').innerHTML = shop.voucher
-        ? `<div class="voucher-head">Voucher</div><div class="voucher" title="Free voucher for 1 Refined or Fancy item in today's daily shop">🎫 Free Refined or Fancy item<span class="buff-time">⏳ ${until(shop.voucher.expiresAt)}</span></div>`
+        ? `<div class="voucher-head">Voucher</div><div class="voucher" title="Free voucher for 1 Refined or Fancy item in today's daily shop"><span>🎫 Free Refined or Fancy item</span><span class="buff-time">⏳ ${until(shop.voucher.expiresAt)}</span></div>`
         : '';
     }
 

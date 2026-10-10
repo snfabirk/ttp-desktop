@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.24.0',
+      date: '2026-10-10',
+      notable: [
+        'The daily shop now has 4 offers instead of 3 - more to choose from.',
+        "Prices you can't afford yet now show in red instead of 'Not enough coins', so you know what to save for."
+      ],
+      refinements: 1,
+      bugfixes: 0
+    },
+    {
       version: '5.23.1',
       date: '2026-10-10',
       notable: ["Profile inventory: this month's pass items sit on top, everything else is sorted by rarity (Animated+ down to Basic) with the items you own first. Items you don't own yet are hidden - one click on 'Show locked' brings them in."],
