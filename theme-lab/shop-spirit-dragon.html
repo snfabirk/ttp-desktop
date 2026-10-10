@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Spirit Lantern + Celestial Dragon - Animated shop cosmetics (Theme Lab)</title>
+<!-- Theme Lab (nicht im Installationspaket): zwei Animated-Shop-Teile.
+     Border "Spirit Lantern": blaue Geisterflammen umkreisen das Bild, kleine
+       Papierlaternen schaukeln auf dem Ring, Bluetenblaetter treiben.
+       Easter Egg: 5x aufs Bild -> die Flammen werden zu Geisterfuechsen, die
+       einmal ums Bild jagen und dann wieder zu Flammen werden.
+     Rahmen "Celestial Dragon": ein Sternendrache schlaengelt sich um den
+       Rahmen, Koerper aus Sternen, Sternenstaub-Spur.
+       Easter Egg: Kopf anklicken -> er bruellt (Schockwelle), Sternenstaub
+       regnet ueber das Board. -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: radial-gradient(ellipse at 50% 40%, #141a34 0%, #070912 70%); color: #eef0ff; font-family: Georgia, serif; }
+  .stage { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; }
+  h1 { margin: 0; font-family: 'Cinzel', serif; color: #c8b8ff; letter-spacing: 3px; font-size: 1.5rem; }
+  .board { position: relative; width: 760px; padding: 20px; box-sizing: border-box; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; border-radius: 16px; background: rgba(14, 16, 34, .55); }
+  .w { position: relative; background: rgba(12, 14, 30, .78); border: 1px solid #2c3060; border-radius: 10px; padding: 12px 14px; min-height: 84px; }
+  .w.wide { grid-column: span 3; display: grid; grid-template-columns: 150px 1fr; align-items: center; min-height: 150px; z-index: 2; }
+  .w h4 { margin: 0 0 6px; color: #a8b0ff; font-family: 'Cinzel', serif; font-size: .82rem; letter-spacing: 1px; }
+  .big { font-family: 'Cinzel', serif; font-size: 1.5rem; }
+  .muted { color: #8e94c0; font-size: .85rem; }
+  .name { position: relative; z-index: 3; font-family: 'Cinzel', serif; font-size: 1.5rem; color: #d8ccff; letter-spacing: 1px; text-shadow: 0 0 8px #0c0e1e, 0 0 14px #0c0e1e; }
+  .lantern { position: relative; width: 96px; height: 96px; justify-self: center; cursor: default; }
+  .lantern img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .lantern canvas { position: absolute; left: -75%; top: -75%; width: 250%; height: 250%; pointer-events: none; }
+  canvas.dragon { position: absolute; left: -70px; top: -70px; pointer-events: none; z-index: 4; }
+  .head-hit { position: absolute; z-index: 6; width: 70px; height: 70px; border-radius: 50%; cursor: pointer; }
+  .label { color: #8e94c0; font-size: .8rem; letter-spacing: 2px; text-transform: uppercase; }
+  .hint { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); color: #7a80b0; font-size: 13px; border: 1px solid #2c3060; border-radius: 14px; padding: 6px 14px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <h1>Spirit Lantern · Celestial Dragon</h1>
+  <div class="board" id="board">
+    <div class="w wide">
+      <div class="lantern" id="lantern"><img src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" onerror="this.src='https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/Evelynn.png'" alt=""><canvas></canvas></div>
+      <div><div class="name">LUCKSHOT#796</div><div class="muted">Pony since 09.10.2026 · Level 17</div></div>
+    </div>
+    <div class="w"><h4>Games</h4><div class="big">142</div><div class="muted">58% win rate</div></div>
+    <div class="w"><h4>Rank</h4><div class="big">Gold II</div><div class="muted">40 LP</div></div>
+    <div class="w"><h4>Trophies</h4><div class="big">9 / 21</div><div class="muted">2 this week</div></div>
+    <canvas class="dragon" id="dragon"></canvas>
+    <div class="head-hit" id="headHit"></div>
+  </div>
+  <div class="label">Border: Spirit Lantern · Frame: Celestial Dragon</div>
+</div>
+<div class="hint">psst... click the picture a few times · and dragons don't like being poked on the nose</div>
+
+<script>
+const D = Math.min(2, devicePixelRatio || 1), rand = (a, b) => a + Math.random() * (b - a);
+
+// ===================== Border: Spirit Lantern =====================
+const lan = document.getElementById('lantern'), lc = lan.querySelector('canvas'), lx = lc.getContext('2d');
+const LS = lan.offsetWidth, LC = LS * 2.5; lc.width = LC * D; lc.height = LC * D; lx.setTransform(D, 0, 0, D, 0, 0);
+const petals = Array.from({ length: 10 }, () => ({ a: rand(0, 6.28), r: rand(1.15, 1.5), v: rand(.2, .5), rot: rand(0, 6.28), s: rand(.6, 1) }));
+let foxes = null, lClicks = 0, lReset = null;
+function flame(c, x, y, s, t, ph, a) {
+  // blau-violette Geisterflamme
+  const fl = Math.sin(t * 7 + ph) * .15;
+  const g = c.createRadialGradient(x, y + s * .2, 0, x, y, s * 1.4);
+  g.addColorStop(0, `rgba(220, 240, 255, ${a})`); g.addColorStop(.35, `rgba(110, 170, 255, ${a * .85})`); g.addColorStop(1, 'rgba(120, 80, 255, 0)');
+  c.fillStyle = g;
+  c.beginPath(); c.moveTo(x - s * .5, y + s * .3);
+  c.quadraticCurveTo(x - s * .6, y - s * .4, x + fl * s, y - s * (1.3 + fl));
+  c.quadraticCurveTo(x + s * .6, y - s * .4, x + s * .5, y + s * .3);
+  c.quadraticCurveTo(x, y + s * .7, x - s * .5, y + s * .3); c.fill();
+}
+function fox(c, x, y, s, ang, t, a) {
+  // Geisterfuchs im Lauf: Koerper, Kopf mit Ohren, buschiger Schweif, leuchtend
+  c.save(); c.translate(x, y); c.rotate(ang); c.globalAlpha = a;
+  c.shadowColor = '#7ab8ff'; c.shadowBlur = s * .8;
+  const leg = Math.sin(t * 22) * s * .15;
+  c.fillStyle = 'rgba(190, 220, 255, .9)';
+  c.beginPath(); c.ellipse(0, 0, s * .55, s * .22, 0, 0, 7); c.fill();                          // Koerper
+  c.beginPath(); c.moveTo(s * .45, -s * .1); c.lineTo(s * .85, -s * .05); c.lineTo(s * .6, s * .12); c.fill(); // Schnauze
+  c.beginPath(); c.moveTo(s * .45, -s * .15); c.lineTo(s * .5, -s * .45); c.lineTo(s * .62, -s * .18); c.fill(); // Ohr
+  c.fillStyle = 'rgba(150, 120, 255, .8)';
+  c.beginPath(); c.moveTo(-s * .5, 0); c.quadraticCurveTo(-s * 1, -s * .4 + leg, -s * 1.3, -s * .1); c.quadraticCurveTo(-s * .95, s * .15, -s * .5, s * .08); c.fill(); // Schweif
+  c.strokeStyle = 'rgba(190, 220, 255, .9)'; c.lineWidth = s * .08;
+  c.beginPath(); c.moveTo(s * .3, s * .15); c.lineTo(s * .35 + leg, s * .42); c.moveTo(-s * .3, s * .15); c.lineTo(-s * .35 - leg, s * .42); c.stroke();
+  c.restore();
+}
+function drawLantern(t, dt) {
+  const R = LS / 2; lx.clearRect(0, 0, LC, LC); lx.save(); lx.translate(LC / 2, LC / 2);
+  // weicher Geisterschein + doppelter Ring
+  const halo = lx.createRadialGradient(0, 0, R * .9, 0, 0, R * 1.6); halo.addColorStop(0, 'rgba(110, 150, 255, .28)'); halo.addColorStop(1, 'rgba(110, 150, 255, 0)');
+  lx.fillStyle = halo; lx.beginPath(); lx.arc(0, 0, R * 1.6, 0, 7); lx.fill();
+  const rg = lx.createLinearGradient(-R, -R, R, R); rg.addColorStop(0, '#c8d8ff'); rg.addColorStop(.5, '#6a70d8'); rg.addColorStop(1, '#b8a8ff');
+  lx.strokeStyle = rg; lx.lineWidth = R * .07; lx.beginPath(); lx.arc(0, 0, R * 1.05, 0, 7); lx.stroke();
+  lx.strokeStyle = 'rgba(200, 210, 255, .35)'; lx.lineWidth = 1; lx.beginPath(); lx.arc(0, 0, R * 1.14, 0, 7); lx.stroke();
+  // Papierlaternen schaukeln an drei Stellen auf dem Ring
+  [-.5, 1.6, 3.7].forEach((a, k) => {
+    const x = Math.cos(a) * R * 1.12, y = Math.sin(a) * R * 1.12, sw = Math.sin(t * 1.6 + k) * .25;
+    lx.save(); lx.translate(x, y); lx.rotate(sw);
+    lx.strokeStyle = 'rgba(200, 200, 230, .6)'; lx.lineWidth = 1; lx.beginPath(); lx.moveTo(0, 0); lx.lineTo(0, R * .14); lx.stroke();
+    const lg = lx.createRadialGradient(0, R * .28, 0, 0, R * .28, R * .2); lg.addColorStop(0, '#fff2d0'); lg.addColorStop(.6, '#ff9a5a'); lg.addColorStop(1, '#c8402a');
+    lx.fillStyle = lg; lx.shadowColor = '#ffaa60'; lx.shadowBlur = R * .25; lx.beginPath(); lx.ellipse(0, R * .28, R * .1, R * .14, 0, 0, 7); lx.fill(); lx.shadowBlur = 0;
+    lx.fillStyle = '#5a2010'; lx.fillRect(-R * .06, R * .13, R * .12, R * .03); lx.fillRect(-R * .06, R * .41, R * .12, R * .03);
+    lx.restore();
+  });
+  // Bluetenblaetter treiben langsam um das Bild
+  petals.forEach(p => { p.a += p.v * dt; p.rot += dt; const x = Math.cos(p.a) * R * p.r, y = Math.sin(p.a) * R * p.r + Math.sin(t + p.rot) * 3; lx.save(); lx.translate(x, y); lx.rotate(p.rot); lx.fillStyle = 'rgba(255, 190, 220, .75)'; lx.beginPath(); lx.ellipse(0, 0, R * .06 * p.s, R * .03 * p.s, 0, 0, 7); lx.fill(); lx.restore(); });
+  // Geisterflammen kreisen (bzw. werden zu Fuechsen)
+  const N = 5, f = foxes, morph = f ? (f.t < .5 ? f.t / .5 : f.t > 3.3 ? Math.max(0, 1 - (f.t - 3.3) / .5) : 1) : 0;
+  lx.save(); lx.globalCompositeOperation = 'lighter';
+  for (let k = 0; k < N; k++) {
+    const base = k / N * Math.PI * 2;
+    let a = base + t * .6, rr = R * 1.32;
+    if (f) { a = base + t * .6 + f.lap; rr = R * (1.32 + .12 * morph); }
+    const x = Math.cos(a) * rr, y = Math.sin(a) * rr;
+    if (morph < 1) flame(lx, x, y, R * .22, t, k, 1 - morph);
+    if (morph > 0) fox(lx, x, y, R * .46, a + Math.PI / 2, t, morph);
+  }
+  lx.restore();
+  if (f) { f.t += dt; f.lap += dt * (morph > .5 ? 5.5 : 1.5) * morph; if (f.t > 3.9) foxes = null; }
+  lx.restore();
+}
+lan.addEventListener('click', () => {
+  if (foxes) return; lClicks++; clearTimeout(lReset); lReset = setTimeout(() => { lClicks = 0; }, 3000);
+  if (lClicks >= 5) { lClicks = 0; foxes = { t: 0, lap: 0 }; }
+});
+
+// ===================== Rahmen: Celestial Dragon =====================
+const board = document.getElementById('board'), dc = document.getElementById('dragon'), dx = dc.getContext('2d'), headHit = document.getElementById('headHit');
+const P = 70; let BW = 0, BH = 0, per = [], perLen = 0;
+function layout() {
+  BW = board.offsetWidth; BH = board.offsetHeight;
+  dc.width = (BW + P * 2) * D; dc.height = (BH + P * 2) * D; dc.style.width = BW + P * 2 + 'px'; dc.style.height = BH + P * 2 + 'px'; dx.setTransform(D, 0, 0, D, 0, 0);
+  // Bahn: abgerundetes Rechteck knapp ausserhalb der Kante
+  const o = 6, r = 26, x0 = P - o, y0 = P - o, x1 = P + BW + o, y1 = P + BH + o;
+  per = [];
+  const arc = (cx, cy, a0, a1) => { for (let i = 0; i <= 10; i++) { const a = a0 + (a1 - a0) * i / 10; per.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } };
+  per.push([x0 + r, y0]); per.push([x1 - r, y0]); arc(x1 - r, y0 + r, -Math.PI / 2, 0); per.push([x1, y1 - r]); arc(x1 - r, y1 - r, 0, Math.PI / 2);
+  per.push([x0 + r, y1]); arc(x0 + r, y1 - r, Math.PI / 2, Math.PI); per.push([x0, y0 + r]); arc(x0 + r, y0 + r, Math.PI, Math.PI * 1.5);
+  perLen = 0; per.forEach((p, i) => { if (i) perLen += Math.hypot(p[0] - per[i - 1][0], p[1] - per[i - 1][1]); p.len = perLen; });
+}
+function at(d) { d = ((d % perLen) + perLen) % perLen; for (let i = 1; i < per.length; i++) if (per[i].len >= d) { const a = per[i - 1], b = per[i], u = (d - a.len) / (b.len - a.len || 1); return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, Math.atan2(b[1] - a[1], b[0] - a[0])]; } return [per[0][0], per[0][1], 0]; }
+layout(); addEventListener('resize', layout);
+const SEG = 46, GAP = 11;
+let head = 0, roar = null;
+const dust = [], rain = [];
+function drawDragon(t, dt) {
+  const W2 = BW + P * 2, H2 = BH + P * 2; dx.clearRect(0, 0, W2, H2);
+  const slow = roar && roar.t < 1.2 ? .15 : 1;
+  head += 55 * dt * slow;
+  // Rahmenkante: feiner Sternenhimmel-Rand
+  dx.strokeStyle = 'rgba(160, 150, 255, .35)'; dx.lineWidth = 1; dx.beginPath(); per.forEach(([x, y], i) => i ? dx.lineTo(x, y) : dx.moveTo(x, y)); dx.closePath(); dx.stroke();
+  // Koerper: Segmente entlang der Bahn, leicht gewellt, Sterne als Schuppen
+  dx.save(); dx.globalCompositeOperation = 'lighter';
+  for (let i = SEG - 1; i >= 0; i--) {
+    const [x, y, ang] = at(head - i * GAP);
+    const wave = Math.sin(t * 3 - i * .45) * 7 * (1 - i / SEG * .5);
+    const nx = -Math.sin(ang), ny = Math.cos(ang), px = x + nx * wave, py = y + ny * wave;
+    const s = (1 - i / SEG) * 15 + 4;
+    const g = dx.createRadialGradient(px, py, 0, px, py, s * 1.8);
+    g.addColorStop(0, `rgba(220, 210, 255, ${.55 * (1 - i / SEG) + .15})`); g.addColorStop(1, 'rgba(110, 90, 255, 0)');
+    dx.fillStyle = g; dx.beginPath(); dx.arc(px, py, s * 1.8, 0, 7); dx.fill();
+    if (i % 3 === 0) { const tw = .5 + .5 * Math.sin(t * 5 + i); dx.fillStyle = `rgba(255, 250, 220, ${tw})`; dx.beginPath(); dx.arc(px + rand(-1, 1), py + rand(-1, 1), 1.4, 0, 7); dx.fill(); }
+    if (i % 9 === 4) { // kleine Flossen/Krallen
+      dx.strokeStyle = 'rgba(190, 180, 255, .5)'; dx.lineWidth = 1.2; dx.beginPath(); dx.moveTo(px, py); dx.lineTo(px + nx * s * 1.6 + Math.cos(ang) * -6, py + ny * s * 1.6 + Math.sin(ang) * -6); dx.stroke();
+    }
+    if (i === SEG - 1 && Math.random() < .5) dust.push({ x: px, y: py, vx: rand(-10, 10), vy: rand(-10, 10), life: 1 });
+  }
+  // Sternenstaub-Spur
+  for (let i = dust.length - 1; i >= 0; i--) { const d = dust[i]; d.life -= dt * .8; if (d.life <= 0) { dust.splice(i, 1); continue; } d.x += d.vx * dt; d.y += d.vy * dt; dx.fillStyle = `rgba(220, 210, 255, ${d.life * .7})`; dx.beginPath(); dx.arc(d.x, d.y, 1.2, 0, 7); dx.fill(); }
+  // Kopf: Schnauze, Hoerner, Bart, leuchtende Augen; Maul oeffnet beim Bruellen
+  const [hx, hy, ha] = at(head);
+  const open = roar ? (roar.t < .35 ? roar.t / .35 : roar.t < 1.2 ? 1 : Math.max(0, 1 - (roar.t - 1.2) / .4)) : 0;
+  dx.save(); dx.translate(hx, hy); dx.rotate(ha); dx.scale(1.6, 1.6);
+  dx.fillStyle = 'rgba(200, 190, 255, .9)'; dx.shadowColor = '#a090ff'; dx.shadowBlur = 16;
+  dx.beginPath(); dx.moveTo(-10, -9); dx.quadraticCurveTo(10, -12, 22, -4 - open * 5); dx.lineTo(10, -1); dx.lineTo(-10, 0); dx.fill();   // Oberkiefer
+  dx.beginPath(); dx.moveTo(-10, 2); dx.lineTo(10, 1); dx.lineTo(20, 4 + open * 7); dx.quadraticCurveTo(6, 10, -10, 8); dx.fill();              // Unterkiefer
+  dx.shadowBlur = 0;
+  dx.strokeStyle = 'rgba(230, 220, 255, .85)'; dx.lineWidth = 1.6;
+  dx.beginPath(); dx.moveTo(-6, -9); dx.quadraticCurveTo(-14, -20, -24, -22); dx.moveTo(-2, -10); dx.quadraticCurveTo(-8, -24, -16, -28); dx.stroke(); // Hoerner
+  dx.strokeStyle = 'rgba(200, 190, 255, .55)'; dx.lineWidth = 1;
+  dx.beginPath(); dx.moveTo(14, 2); dx.quadraticCurveTo(6 + Math.sin(t * 4) * 4, 16, -4, 20); dx.moveTo(14, -3); dx.quadraticCurveTo(4 + Math.cos(t * 4) * 4, -18, -6, -22); dx.stroke(); // Bart-Faeden
+  dx.fillStyle = `rgba(255, 230, 140, ${.8 + .2 * Math.sin(t * 6)})`; dx.shadowColor = '#ffd86b'; dx.shadowBlur = 8; dx.beginPath(); dx.arc(4, -6, 2, 0, 7); dx.fill(); dx.shadowBlur = 0;
+  dx.restore();
+  dx.restore();
+  // klickbare Flaeche ueber dem Kopf
+  Object.assign(headHit.style, { left: `${hx - P - 35}px`, top: `${hy - P - 35}px` });
+  // Easter Egg: Bruellen + Sternenregen
+  if (roar) {
+    roar.t += dt; const r = roar.t;
+    if (r < 1.3) { const u = r / 1.3; dx.strokeStyle = `rgba(200, 190, 255, ${1 - u})`; dx.lineWidth = 3 * (1 - u) + .5; dx.beginPath(); dx.arc(hx, hy, 20 + u * 260, 0, 7); dx.stroke(); dx.beginPath(); dx.arc(hx, hy, 10 + u * 160, 0, 7); dx.stroke(); }
+    if (r > .3 && r < 2.6 && Math.random() < .7) rain.push({ x: rand(P, P + BW), y: P + rand(-10, 20), vx: rand(-15, 15), vy: rand(40, 90), life: 1, s: rand(2, 4.5), ph: rand(0, 6) });
+    board.style.transform = r < .9 ? `translate(${rand(-2, 2)}px, ${rand(-2, 2)}px)` : '';
+    if (r > 4.5 && !rain.length) { roar = null; board.style.transform = ''; }
+  }
+  dx.save(); dx.globalCompositeOperation = 'lighter';
+  // Sternenstaub sinkt als funkelnde 4-Zack-Sterne langsam herab
+  for (let i = rain.length - 1; i >= 0; i--) { const s = rain[i]; s.life -= dt * .3; s.x += s.vx * dt; s.y += s.vy * dt; if (s.life <= 0 || s.y > P + BH + 20) { rain.splice(i, 1); continue; }
+    const tw = (.6 + .4 * Math.sin(t * 8 + s.ph)) * s.life, z = s.s * tw;
+    dx.fillStyle = `rgba(255, 245, 220, ${tw})`; dx.beginPath(); dx.moveTo(s.x, s.y - z * 2); dx.quadraticCurveTo(s.x, s.y, s.x + z * 2, s.y); dx.quadraticCurveTo(s.x, s.y, s.x, s.y + z * 2); dx.quadraticCurveTo(s.x, s.y, s.x - z * 2, s.y); dx.quadraticCurveTo(s.x, s.y, s.x, s.y - z * 2); dx.fill();
+    const g = dx.createRadialGradient(s.x, s.y, 0, s.x, s.y, z * 3); g.addColorStop(0, `rgba(180, 160, 255, ${.5 * tw})`); g.addColorStop(1, 'rgba(180,160,255,0)'); dx.fillStyle = g; dx.beginPath(); dx.arc(s.x, s.y, z * 3, 0, 7); dx.fill(); }
+  dx.restore();
+}
+headHit.addEventListener('click', () => { if (!roar) roar = { t: 0 }; });
+
+let last = performance.now();
+function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; drawLantern(now / 1000, dt); drawDragon(now / 1000, dt); requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
