@@ -1030,15 +1030,19 @@ html[data-theme="forest"] body { background: transparent; }
 /* ===== Shop-Themes II (v5.20.0) - Szenen in shop-scenes-2.js ===== */
 html[data-theme="magmaplus"] {
   --bg: #0d0604; --bg-rgb: 13, 6, 4; --input-bg: #1e0d07; --border: #5a2a14; --border-hover: #ff8a3a; --gold: #ff8a3a;
-  --text: #f6e8dc; --text-dim: #c4a894; --text-faint: #7a5a44; --red: #ff5a6a; --green: #6fd08a; --live-accent: #6fd08a;
+  --text: #f6e8dc; --text-dim: #c4a894; --text-faint: #9a7860; --red: #ff5a6a; --green: #6fd08a; --live-accent: #6fd08a;
   --history-view-accent: #ff8a3a; --scrollbar: #5a2a14; --scrollbar-hover: #ff8a3a;
+  /* deckendere Karten: der grelle Lavafall machte kleine Beschriftungen unlesbar (v5.24.1) */
+  --panel-bg: rgba(var(--bg-rgb), 0.78);
   background: linear-gradient(180deg, #0a0403 0%, #1e0b05 55%, #5a1a06 85%, #a8300a 100%); background-attachment: fixed;
 }
 html[data-theme="magmaplus"] body { background: transparent; }
 html[data-theme="magma"] {
   --bg: #0d0604; --bg-rgb: 13, 6, 4; --input-bg: #1e0d07; --border: #5a2a14; --border-hover: #ff8a3a; --gold: #ff8a3a;
-  --text: #f6e8dc; --text-dim: #c4a894; --text-faint: #7a5a44; --red: #ff5a6a; --green: #6fd08a; --live-accent: #6fd08a;
+  --text: #f6e8dc; --text-dim: #c4a894; --text-faint: #9a7860; --red: #ff5a6a; --green: #6fd08a; --live-accent: #6fd08a;
   --history-view-accent: #ff8a3a; --scrollbar: #5a2a14; --scrollbar-hover: #ff8a3a;
+  /* deckendere Karten: der grelle Lavafall machte kleine Beschriftungen unlesbar (v5.24.1) */
+  --panel-bg: rgba(var(--bg-rgb), 0.78);
   background: linear-gradient(180deg, #0a0403 0%, #1e0b05 55%, #5a1a06 85%, #a8300a 100%); background-attachment: fixed;
 }
 html[data-theme="magma"] body { background: transparent; }

@@ -524,7 +524,13 @@ void main() {
 
   vec3 col = vec3(0.);
   float tEnd;
-  if (tHit < tL) {
+  // Fels und See werden getrennt berechnet und an der Kontaktlinie weich
+  // ueberblendet - vorher entschied jeder Pixel hart "Fels ODER Lava", was an
+  // den Seitenwaenden sichtbare Treppenkanten ergab (v5.24.1)
+  bool rockHit = tHit < tL, lakeHit = tL < 1e8;
+  float rockY = 1e3;
+  vec3 rockCol = vec3(0.), lakeCol = vec3(0.);
+  if (rockHit) {
     // ---- Fels ----
     vec3 pos = ro + rd * tHit, n = nrm(pos);
     vec3 alb = vec3(.07, .055, .048) * (.5 + 1.1 * fbm3(pos * 1.7));
@@ -541,8 +547,9 @@ void main() {
       col *= 1. - .7 * uPart * exp(-abs(pos.x - FX) * 1.2) * smoothstep(0., 1., pos.y);
       col = eye(pos.xy, col);
     }
-    tEnd = tHit;
-  } else if (tL < 1e8) {
+    rockCol = col; rockY = pos.y;
+  }
+  if (lakeHit && (!rockHit || rockY < .3)) {
     // ---- Lavasee ----
     vec3 pos = ro + rd * tL;
     vec2 w = pos.xz * .85 + vec2(0., T * .25);
@@ -578,8 +585,11 @@ void main() {
     lit += vec3(1., .55, .2) * pow(max(dot(n, hv), 0.), 40.) * 2.5 / (1. + ld * ld * .1);   // Glanz auf der Kruste
     col = mix(emit, lit, plate * .9);
     col += vec3(2.5, 1.1, .3) * exp(-abs(pos.x - FX) * 2.2) * exp(-abs(pos.z - 14.) * .35) * .5;     // Spiegelung/Aufprall Lavafall
-    tEnd = tL;
-  } else { tEnd = 40.; }
+    lakeCol = col;
+  }
+  if (rockHit) { col = mix(lakeCol, rockCol, lakeHit ? smoothstep(-.02, .3, rockY) : 1.); tEnd = tHit; }
+  else if (lakeHit) { col = lakeCol; tEnd = tL; }
+  else { col = vec3(0.); tEnd = 40.; }
 
   // ---- Lavafall: leuchtender Vorhang vor der Rueckwand ----
   float tF = (13.9 - ro.z) / rd.z;

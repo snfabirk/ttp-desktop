@@ -1,5 +1,10 @@
 # Internal Changelog
 
+## 5.24.1 — 2026-10-10
+
+- Magma Heart+: rock and lava are shaded separately and blended near the lake surface (smoothstep on the rock hit height) instead of a hard per-pixel rock-or-lava choice - removes the stair edges where the side walls meet the lake.
+- Magma Heart / Magma Heart+: cards 78% opaque (was 60%) and a lighter --text-faint, so small labels stay readable in front of the bright lavafall.
+
 ## 5.24.0 — 2026-10-10
 
 - 4 daily offers (DAILY_OFFERS, user: more choice = deliberate decision). Same-day shops with fewer slots are topped up without re-rolling the existing ones; daily grid 4 columns (2 below 1000px).
