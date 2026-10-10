@@ -776,6 +776,12 @@ app.post('/api/shop/consumable', (req, res) => {
   const result = progression.buyConsumable(Number(slot), choice || null, progressionContext(req.body || {}));
   res.status(result.ok ? 200 : 400).json(result);
 });
+// Pass-Coins selbst abholen (v5.25.0): { tier } | { overflow: true } | { all: true }
+app.post('/api/pass/claim', (req, res) => {
+  const result = progression.claimPassCoins(req.body || {});
+  res.status(result.ok ? 200 : 400).json(result);
+});
+
 app.post('/api/shop/buy', (req, res) => {
   const result = progression.buyShopItem((req.body || {}).id, !!(req.body || {}).voucher);
   res.status(result.ok ? 200 : 400).json(result);

@@ -856,6 +856,28 @@
       color: var(--text);
       opacity: 1;
     }
+    /* Coins abholbereit (v5.25.0): pulsiert, Klick schickt sie in den Kontostand */
+    .pass-tier.claimable { cursor: pointer; animation: tierReady 1.6s ease-in-out infinite; }
+    .pass-tier.claimable .tier-check { display: none; }
+    .pass-tier.claimable::after {
+      content: 'Claim'; position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%); z-index: 1; font-size: 0.58rem; letter-spacing: .5px;
+      color: var(--bg); background: var(--gold); border-radius: 6px; padding: 0 4px; text-transform: uppercase;
+    }
+    .pass-tier.claimable:hover { transform: translateY(-2px); }
+    @keyframes tierReady {
+      0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 0%, transparent); }
+      50% { box-shadow: 0 0 12px 2px color-mix(in srgb, var(--gold) 70%, transparent); }
+    }
+    html.fx-off .pass-tier.claimable { animation: none; box-shadow: 0 0 8px 1px color-mix(in srgb, var(--gold) 60%, transparent); }
+    .claim-all, .of-claim {
+      padding: 2px 10px; border-radius: 10px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 16%, transparent);
+      color: var(--gold); font-family: inherit; font-size: 0.75rem; cursor: pointer; white-space: nowrap;
+    }
+    .claim-all:hover, .of-claim:hover { background: color-mix(in srgb, var(--gold) 28%, transparent); }
+    .claim-all[hidden] { display: none; }
+    .coin-balance.bump { animation: coinBump .45s ease-out; display: inline-block; }
+    @keyframes coinBump { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
+    .fly-coin { position: fixed; left: 0; top: 0; z-index: 9999; pointer-events: none; font-size: 18px; filter: drop-shadow(0 0 6px rgba(255, 200, 80, .8)); }
     /* Stufe, an der gerade gearbeitet wird: Rahmen + Mini-Fortschritt unten */
     .pass-tier.current {
       position: relative;
@@ -1136,7 +1158,8 @@
           <div class="xp-bar"><div class="xp-bar-fill" id="passXpFill"></div></div>
           <div class="pass-summary">
             <span id="passTierText">Tier 0 / 30</span>
-            <span class="coin-balance" id="coinBalance" title="Coins - spend them in the shop (coming soon)">🪙 0</span>
+            <span class="coin-balance" id="coinBalance" title="Coins - spend them in the shop">🪙 0</span>
+            <button type="button" class="claim-all" id="claimAll" hidden></button>
             <span id="passXpText">0 / 1,200 XP</span>
           </div>
           <div class="pass-grid" id="passGrid"></div>
@@ -1624,6 +1647,7 @@
     }
 
     // Trophy-Stand aus dem letzten Besuch der Trophies-Seite (gleiche Challenge).
+    const AVG_TROPHY_IDS = new Set(['consistency', 'jungle-boss', 'mid-diff', 'death-dealer', 'marksman', 'all-seeing-eye', 'puppet-master']);
     function renderTrophyMini(since) {
       let snap = null;
       try { snap = JSON.parse(ls('ttp_last_trophy_snapshot') || 'null'); } catch (e) {}
@@ -1632,6 +1656,11 @@
       const closest = snap.trophies
         // >= 100% ohne "unlocked" = Ø-Trophy, die aktuell erfuellt ist, aber
         // erst final wird - gehoert nicht zu "als Naechstes".
+        // Durchschnitts-Trophaeen (Winrate/Ø-Werte ueber die ganze Challenge)
+        // stehen oft schon bei 90%+, werden aber erst am Ende fest - die sind
+        // nicht "als Naechstes" freischaltbar (Nutzer, v5.25.0). Gleiche Liste
+        // wie AVERAGE_TROPHY_IDS in server/lib/achievements.js.
+        .filter(t => !AVG_TROPHY_IDS.has(t.id))
         .filter(t => !t.unlocked && typeof t.percent === 'number' && t.percent < 100)
         .sort((a, b) => b.percent - a.percent)
         .slice(0, 3);
@@ -1799,7 +1828,14 @@
       document.getElementById('passTitle').textContent = `${pass.label.split(' ')[0]} Pass`;
       document.getElementById('passEndsIn').textContent = `ends in ${timeUntil(pass.endsAt)}`;
       document.getElementById('passTierText').textContent = `Tier ${pass.tier} / ${pass.tiers}`;
-      document.getElementById('coinBalance').textContent = `🪙 ${fmtNum(coins)}`;
+      if (!coinsFlying) document.getElementById('coinBalance').textContent = `🪙 ${fmtNum(coins)}`;
+      shownCoins = coins;
+      const claimables = pass.rewards.filter(r => r.claimable);
+      const pendingTotal = claimables.reduce((a, r) => a + (r.amount || 0), 0) + (pass.overflow.pending || 0) * pass.overflow.coinsPerStep;
+      const pendingCount = claimables.length + (pass.overflow.pending ? 1 : 0);
+      const ca = document.getElementById('claimAll');
+      ca.hidden = pendingCount < 2;
+      ca.textContent = `Claim all · 🪙 ${fmtNum(pendingTotal)}`;
       document.getElementById('passXpText').textContent = pass.tier >= pass.tiers
         ? 'Pass complete'
         : `${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP`;
@@ -1822,7 +1858,7 @@
               ? `<span class="mini-theme mini-theme-${r.themeKey} tier-cos"></span>`
               : `<span class="cos-border cos-${r.id} tier-cos"><span class="cos-fill"></span></span>`;
         const label = r.type === 'cosmetic' ? `${r.name} (${COS_LABEL[r.cosmeticType] || r.cosmeticType}${r.animated ? ', animated' : ''})` : `${r.amount} coins`;
-        html += `<div class="pass-tier${milestone ? ' milestone' : ''}${unlocked ? ' unlocked' : ''}${current ? ' current' : ''}" title="Tier ${t} - ${label}${unlocked ? ' - unlocked' : ''}${current ? ` (${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP)` : ''}">` +
+        html += `<div class="pass-tier${milestone ? ' milestone' : ''}${unlocked ? ' unlocked' : ''}${current ? ' current' : ''}${r.claimable ? ' claimable' : ''}"${r.claimable ? ` data-claim-tier="${t}"` : ''} title="Tier ${t} - ${label}${r.claimable ? ' - click to claim' : unlocked ? ' - unlocked' : ''}${current ? ` (${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP)` : ''}">` +
           `<span class="tier-num">${t}</span>${reward}${unlocked ? '<span class="tier-check">✓</span>' : ''}${progress}</div>`;
       });
       document.getElementById('passGrid').innerHTML = html;
@@ -1844,6 +1880,7 @@
       el.innerHTML = `<span class="of-label">30+</span>` +
         `<div class="of-mid"><div class="xp-bar"><div class="xp-bar-fill" style="width:${done ? (of.xpInto / of.xpPerStep) * 100 : 0}%"></div></div>` +
         `<div class="of-steps">${steps}<span class="of-step-note">${note}</span></div></div>` +
+        (of.pending ? `<button type="button" class="of-claim" data-claim-overflow title="Claim the coins of your 30+ steps">Claim 🪙 ${fmtNum(of.pending * of.coinsPerStep)}</button>` : '') +
         `<span class="of-info">${done ? `${fmtNum(of.xpInto)} / ${fmtNum(of.xpPerStep)} XP` : `🪙 +${of.coinsPerStep} per step from ${fmtNum(of.firstStepXp)} XP`}</span>`;
     }
 
@@ -1942,6 +1979,69 @@
         document.getElementById('dailyQuests').textContent = `Could not load quests: ${e.message}`;
       }
     }
+
+    // ----- Pass-Coins abholen: Muenzen fliegen in den Kontostand (v5.25.0) -----
+    let coinsFlying = 0, shownCoins = 0;
+    function flyCoins(fromEl, amount, done) {
+      const target = document.getElementById('coinBalance');
+      // nur die App-eigene Animations-Einstellung zaehlt (Windows meldet oft reduced-motion)
+      const reduce = document.documentElement.classList.contains('fx-off');
+      if (reduce) { done(); return; }
+      const a = fromEl.getBoundingClientRect(), b = target.getBoundingClientRect();
+      const n = Math.max(3, Math.min(10, Math.round(amount / 40)));
+      coinsFlying++;
+      let landed = 0;
+      for (let i = 0; i < n; i++) {
+        const c = document.createElement('span');
+        c.className = 'fly-coin';
+        c.textContent = '🪙';
+        const x0 = a.left + a.width / 2 - 9 + (Math.random() - .5) * a.width * .5;
+        const y0 = a.top + a.height / 2 - 9 + (Math.random() - .5) * a.height * .4;
+        const x1 = b.left + 4, y1 = b.top + b.height / 2 - 9;
+        const mx = (x0 + x1) / 2 + (Math.random() - .5) * 80, my = Math.min(y0, y1) - 60 - Math.random() * 60;
+        document.body.appendChild(c);
+        const anim = c.animate([
+          { transform: `translate(${x0}px, ${y0}px) scale(.6)`, opacity: 0 },
+          { transform: `translate(${x0}px, ${y0 - 14}px) scale(1.1)`, opacity: 1, offset: .15 },
+          { transform: `translate(${mx}px, ${my}px) scale(1)`, opacity: 1, offset: .55 },
+          { transform: `translate(${x1}px, ${y1}px) scale(.7)`, opacity: .9 }
+        ], { duration: 700 + i * 45, delay: i * 55, easing: 'cubic-bezier(.45,0,.35,1)', fill: 'forwards' });
+        anim.onfinish = () => {
+          c.remove();
+          target.classList.remove('bump'); void target.offsetWidth; target.classList.add('bump');
+          if (++landed === n) { coinsFlying--; done(); }
+        };
+      }
+    }
+    function countTo(from, to) {
+      const el = document.getElementById('coinBalance');
+      const t0 = performance.now(), dur = 500;
+      const step = now => {
+        const k = Math.min(1, (now - t0) / dur);
+        el.textContent = `🪙 ${fmtNum(Math.round(from + (to - from) * k))}`;
+        if (k < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+    async function claim(body, fromEl) {
+      let r;
+      try {
+        r = await (await fetch('/api/pass/claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
+      } catch (err) { r = { ok: false }; }
+      if (!r.ok) { loadProgression(); return; }
+      const before = shownCoins;
+      fromEl.classList.remove('claimable');
+      fromEl.removeAttribute('data-claim-tier');
+      flyCoins(fromEl, r.amount, () => { countTo(before, r.coins); shownCoins = r.coins; loadProgression(); });
+    }
+    document.getElementById('passGrid').closest('.prog-card').addEventListener('click', e => {
+      const tile = e.target.closest('[data-claim-tier]');
+      if (tile) { claim({ tier: Number(tile.dataset.claimTier) }, tile); return; }
+      const of = e.target.closest('[data-claim-overflow]');
+      if (of) { claim({ overflow: true }, of); return; }
+      const all = e.target.closest('#claimAll');
+      if (all) { all.hidden = true; claim({ all: true }, document.getElementById('passGrid')); }
+    });
 
     document.getElementById('dailyQuests').addEventListener('click', async (e) => {
       const btn = e.target.closest('[data-reroll]');

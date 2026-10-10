@@ -336,17 +336,24 @@ function tierReward(month, tier) {
 
 // Vergibt alle Belohnungen bis zur aktuell erreichten Stufe, die in diesem
 // Monat noch nicht vergeben wurden. Cosmetics bleiben fuer immer im Inventar.
+// Coins holt man seit v5.25.0 selbst ab (Nutzerwunsch: sehen, dass sie bereit
+// sind, anklicken, sie fliegen in den Kontostand). claimedTier/claimedOverflow
+// heissen weiter so, bedeuten aber "erreicht und verbucht"; die Coins liegen
+// bis zum Abholen in pass.pendingTiers / pass.pendingOverflow.
+// Cosmetics kommen weiterhin automatisch ins Inventar.
 function claimPassRewards(state, month) {
   const pass = state.passes[month];
+  if (!Array.isArray(pass.pendingTiers)) pass.pendingTiers = [];
+  pass.pendingOverflow = pass.pendingOverflow || 0;
   const prog = passProgress(pass.xp);
   for (let t = pass.claimedTier + 1; t <= prog.tier; t++) {
     const reward = tierReward(month, t);
-    if (reward.type === 'coins') state.coins += reward.amount;
+    if (reward.type === 'coins') pass.pendingTiers.push(t);
     else if (!state.inventory.includes(reward.id)) state.inventory.push(reward.id);
   }
   pass.claimedTier = Math.max(pass.claimedTier, prog.tier);
   if (prog.overflowCount > pass.claimedOverflow) {
-    state.coins += (prog.overflowCount - pass.claimedOverflow) * COINS_PER_OVERFLOW_STEP;
+    pass.pendingOverflow += prog.overflowCount - pass.claimedOverflow;
     pass.claimedOverflow = prog.overflowCount;
   }
   if (prog.overflowCount >= VOUCHER_AT_OVERFLOW && !pass.voucherGranted) {
@@ -354,6 +361,42 @@ function claimPassRewards(state, month) {
     const now = new Date();
     state.voucher = { month, grantedAt: now.toISOString(), expiresAt: nextDailyReset(now).toISOString() };
   }
+}
+
+// Nicht abgeholte Coins vergangener Monate automatisch gutschreiben (den alten
+// Pass kann man nicht mehr oeffnen, also geht so nichts verloren)
+function settleOldPasses(state, now = new Date()) {
+  const cur = monthKey(now);
+  Object.entries(state.passes || {}).forEach(([month, pass]) => {
+    if (month === cur) return;
+    (pass.pendingTiers || []).forEach(t => { state.coins += tierReward(month, t).amount || 0; });
+    state.coins += (pass.pendingOverflow || 0) * COINS_PER_OVERFLOW_STEP;
+    pass.pendingTiers = []; pass.pendingOverflow = 0;
+  });
+}
+
+// Coins einer Stufe (tier) bzw. aller 30+-Stufen (overflow) oder alles abholen
+function claimPassCoins({ tier, overflow, all } = {}) {
+  const state = readState();
+  const now = new Date();
+  const month = monthKey(now);
+  const pass = state.passes[month];
+  if (!pass) return { ok: false, error: 'Nothing to claim yet.' };
+  pass.pendingTiers = pass.pendingTiers || [];
+  let amount = 0;
+  const takeTier = t => { const i = pass.pendingTiers.indexOf(t); if (i < 0) return false; pass.pendingTiers.splice(i, 1); amount += tierReward(month, t).amount || 0; return true; };
+  if (all) {
+    [...pass.pendingTiers].forEach(takeTier);
+    amount += (pass.pendingOverflow || 0) * COINS_PER_OVERFLOW_STEP; pass.pendingOverflow = 0;
+  } else if (overflow) {
+    amount += (pass.pendingOverflow || 0) * COINS_PER_OVERFLOW_STEP; pass.pendingOverflow = 0;
+  } else if (!takeTier(Number(tier))) {
+    return { ok: false, error: 'Nothing to claim on this tier.' };
+  }
+  if (!amount) return { ok: false, error: 'Nothing to claim.' };
+  state.coins += amount;
+  writeState(state);
+  return { ok: true, amount, coins: state.coins };
 }
 
 // Abgelaufenen Gutschein entfernen; liefert true bei Aenderung
@@ -379,7 +422,8 @@ function getPassOverview(state, now) {
   const pass = state.passes[month] || { xp: 0 };
   const prog = passProgress(pass.xp);
   const rewards = [];
-  for (let t = 1; t <= PASS_TIERS; t++) rewards.push({ tier: t, ...tierReward(month, t) });
+  const pending = new Set(pass.pendingTiers || []);
+  for (let t = 1; t <= PASS_TIERS; t++) rewards.push({ tier: t, ...tierReward(month, t), claimable: pending.has(t) });
   return {
     month,
     label: monthLabel(month),
@@ -397,6 +441,7 @@ function getPassOverview(state, now) {
       coinsPerStep: COINS_PER_OVERFLOW_STEP,
       count: prog.overflowCount,
       xpInto: prog.overflowXpInto,
+      pending: pass.pendingOverflow || 0,
       voucherAt: VOUCHER_AT_OVERFLOW,
       voucherGranted: !!(state.passes[month] && state.passes[month].voucherGranted)
     },
@@ -515,6 +560,7 @@ function readState() {
     }
   });
   ['border', 'frame'].forEach(t => { if (state.equipped[t] && !ownsOrRents(state, state.equipped[t])) state.equipped[t] = null; });
+  settleOldPasses(state);
   // v5.1/5.2 -> v5.3: der Pass hing an der Challenge (passXp). Monats-Paesse
   // aus dem Ledger (Spielzeitpunkt) + LP-Bank-Events (Zeitpunkt) neu aufbauen.
   if (!raw.passes) {
@@ -871,7 +917,7 @@ function lootableCosmetics(state) {
 function consumableUnavailable(state, id) {
   const c = CONSUMABLES[id];
   if (c.buff && activeBuff(state, c.buff.kind)) return 'Already active';
-  if (c.buff && (state.buffs || []).length >= MAX_BUFFS) return 'Buff slots full';
+  if (c.buff && (state.buffs || []).length >= MAX_BUFFS) return 'Effect slots full';
   if (id === 'bonus_daily' && state.bonusQuests.daily && state.bonusQuests.daily.day === dayKey(new Date())) return 'Already active';
   if (id === 'bonus_weekly' && state.bonusQuests.weekly && state.bonusQuests.weekly.week === weekKey(new Date())) return 'Already active';
   if ((id === 'mystery' || id === 'try_on') && !lootableCosmetics(state).filter(c => id === 'mystery' || !rentedIds(state).includes(c.id)).length) return 'Nothing left';
@@ -910,9 +956,9 @@ function discardBuff(kind) {
   const state = readState();
   pruneBuffs(state);
   const buff = state.buffs.find(b => b.kind === kind);
-  if (!buff) return { ok: false, error: 'This buff is not active.' };
+  if (!buff) return { ok: false, error: 'This effect is not active.' };
   const next = discardAvailableAt(state);
-  if (next && next > Date.now()) return { ok: false, error: 'You can remove a buff again later.' };
+  if (next && next > Date.now()) return { ok: false, error: 'You can remove an effect again later.' };
   state.buffs = state.buffs.filter(b => b !== buff);
   state.lastBuffDiscardAt = new Date().toISOString();
   pruneBuffs(state); // abgelegte Probe-Cosmetics wieder ausziehen
@@ -1161,6 +1207,7 @@ module.exports = {
   saveProfileLayout,
   rerollDaily,
   creditQuests,
+  claimPassCoins,
   buyConsumable,
   buyShopItem,
   discardBuff,

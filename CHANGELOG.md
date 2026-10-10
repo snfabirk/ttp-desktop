@@ -1,5 +1,11 @@
 # Internal Changelog
 
+## 5.25.0 — 2026-10-10
+
+- Pass coins are claimed by hand (user): claimPassRewards puts coin tiers into pass.pendingTiers and 30+ steps into pass.pendingOverflow instead of state.coins (cosmetics stay automatic). POST /api/pass/claim { tier } | { overflow } | { all }. Older months' pending coins are credited automatically in readState (settleOldPasses). Pass grid: pulsing claimable tiles with a "Claim" tag, "Claim all · 🪙 X" next to the balance (2+ pending), "Claim 🪙 X" in the 30+ row; coins fly into the balance (WAAPI) and it counts up. Only the app's own animation setting disables the flight (Windows reports prefers-reduced-motion on this machine).
+- Challenge page "Closest next": average trophies (AVERAGE_TROPHY_IDS) excluded.
+- Shop wording "Active buffs" -> "Active effects" (+ slot/remove messages).
+
 ## 5.24.1 — 2026-10-10
 
 - Magma Heart+: rock and lava are shaded separately and blended near the lake surface (smoothstep on the rock hit height) instead of a hard per-pixel rock-or-lava choice - removes the stair edges where the side walls meet the lake.

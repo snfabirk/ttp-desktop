@@ -351,7 +351,7 @@
       <section class="shop-card">
         <div class="sc-head"><h3>Daily Goods</h3><span class="sc-reset" id="goodsReset"></span></div>
         <div class="goods" id="goods"></div>
-        <div class="buffs-head">Active buffs <span id="buffCount"></span></div>
+        <div class="buffs-head">Active effects <span id="buffCount"></span></div>
         <div class="buffs" id="buffs"></div>
         <div id="voucherSlot"></div>
       </section>
@@ -644,9 +644,9 @@
     // Buff entfernen: Notausgang ohne Erstattung, danach 24 h Pause
     let confirmDiscard = null;
     function discardBtn(b) {
-      if (shop.discardAvailableAt) return `<button type="button" class="buff-x" disabled title="You can remove a buff again in ${until(shop.discardAvailableAt)}">✕ in ${until(shop.discardAvailableAt)}</button>`;
+      if (shop.discardAvailableAt) return `<button type="button" class="buff-x" disabled title="You can remove an effect again in ${until(shop.discardAvailableAt)}">✕ in ${until(shop.discardAvailableAt)}</button>`;
       const c = confirmDiscard === b.kind;
-      return `<button type="button" class="buff-x${c ? ' confirm' : ''}" data-discard="${b.kind}" title="Remove this buff - the coins are lost, and you can only do this once every 24 hours">${c ? 'Remove? Coins are lost' : '✕'}</button>`;
+      return `<button type="button" class="buff-x${c ? ' confirm' : ''}" data-discard="${b.kind}" title="Remove this effect - the coins are lost, and you can only do this once every 24 hours">${c ? 'Remove? Coins are lost' : '✕'}</button>`;
     }
     document.getElementById('buffs').addEventListener('click', async e => {
       const b = e.target.closest('[data-discard]');
