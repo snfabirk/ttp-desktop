@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kraken + Phoenix - Animated frames (Theme Lab)</title>
+<!-- Theme Lab (nicht im Installationspaket): zwei neue Animated-Profilrahmen.
+     Kraken: Tentakel winden sich aus den unteren Ecken um die Karte (Saugnaepfe innen,
+       Wellenbewegung, eingerollte Spitzen, Tropfen); unten mittig lugt ein Auge hervor,
+       blinzelt und folgt der Maus. Easter Egg: Auge anklicken -> die Tentakel quetschen
+       die Karte (Beben), das Auge verengt sich, dann spritzt eine Tintenwolke.
+     Phoenix: Feuervogel oben mittig, Flammenfluegel entlang der Oberkante, Flammenschweif
+       laeuft um den Rahmen, Glut steigt auf. Easter Egg: Phoenix anklicken -> er lodert
+       auf, verbrennt zu Asche (Ascheflocken, Rahmen erlischt), ein Glutnest glimmt unten,
+       eine Flamme steigt auf und er wird mit einem Feuerring wiedergeboren. -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: radial-gradient(ellipse at 50% 40%, #142034 0%, #070b14 70%); color: #eef0ff; font-family: Georgia, serif; overflow: hidden; }
+  .stage { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 120px; }
+  .row { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  #kraken + .label { margin-top: 70px; }
+  .board { position: relative; width: 600px; padding: 16px; box-sizing: border-box; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; border-radius: 16px; background: rgba(14, 18, 34, .6); }
+  .w { background: rgba(12, 16, 30, .8); border: 1px solid #2c3450; border-radius: 10px; padding: 10px 12px; min-height: 56px; }
+  .w.wide { grid-column: span 3; min-height: 48px; display: flex; align-items: center; gap: 14px; }
+  .w h4 { margin: 0 0 4px; color: #a8b4d8; font-family: 'Cinzel', serif; font-size: .72rem; }
+  .ava { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #8a90b0; }
+  .name { position: relative; z-index: 5; font-family: 'Cinzel', serif; font-size: 1.05rem; text-shadow: 0 0 6px #0a0e1a, 0 0 12px #0a0e1a; }
+  .big { font-family: 'Cinzel', serif; font-size: 1.15rem; }
+  canvas.fx { position: absolute; pointer-events: none; z-index: 4; }
+  .hit { position: absolute; z-index: 6; border-radius: 50%; cursor: pointer; }
+  .label { font-family: 'Cinzel', serif; color: #c8cce8; letter-spacing: 2px; }
+  .label small { display: block; text-align: center; color: #8a90b0; font-family: Georgia, serif; letter-spacing: 0; font-size: .78rem; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="row"><div class="board" id="kraken"><div class="w wide"><img class="ava" src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><span class="name">LUCKSHOT#796</span></div><div class="w"><h4>Games</h4><div class="big">142</div></div><div class="w"><h4>Rank</h4><div class="big">Gold II</div></div><div class="w"><h4>Trophies</h4><div class="big">9 / 21</div></div><canvas class="fx"></canvas><div class="hit"></div></div>
+    <div class="label">Kraken<small>Frame · Animated — something is watching from below</small></div></div>
+  <div class="row"><div class="board" id="phoenix"><div class="w wide"><img class="ava" src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><span class="name">LUCKSHOT#796</span></div><div class="w"><h4>Games</h4><div class="big">142</div></div><div class="w"><h4>Rank</h4><div class="big">Gold II</div></div><div class="w"><h4>Trophies</h4><div class="big">9 / 21</div></div><canvas class="fx"></canvas><div class="hit"></div></div>
+    <div class="label">Phoenix<small>Frame · Animated — touch the firebird</small></div></div>
+</div>
+<script>
+const DPR = Math.min(2, devicePixelRatio || 1), rand = (a, b) => a + Math.random() * (b - a), P = 80;
+let mouse = [0, 0]; addEventListener('mousemove', e => { mouse = [e.clientX, e.clientY]; });
+function setupBoard(board) {
+  const cv = board.querySelector('canvas'), c = cv.getContext('2d');
+  const BW = board.offsetWidth, BH = board.offsetHeight;
+  cv.width = (BW + P * 2) * DPR; cv.height = (BH + P * 2) * DPR; cv.style.width = BW + P * 2 + 'px'; cv.style.height = BH + P * 2 + 'px'; cv.style.left = -P + 'px'; cv.style.top = -P + 'px';
+  c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  // Umlaufbahn im Uhrzeigersinn ab oben links; at(d) -> [x, y, Winkel]; aussen = (sin a, -cos a)
+  const o = 3, r = 16, x0 = P - o, y0 = P - o, x1 = P + BW + o, y1 = P + BH + o, per = [];
+  const arc = (cx, cy, a0, a1) => { for (let i = 0; i <= 10; i++) { const a = a0 + (a1 - a0) * i / 10; per.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } };
+  const line = (ax, ay, bx, by) => { const n = Math.ceil(Math.hypot(bx - ax, by - ay) / 6); for (let i = 0; i <= n; i++) per.push([ax + (bx - ax) * i / n, ay + (by - ay) * i / n]); };
+  line(x0 + r, y0, x1 - r, y0); arc(x1 - r, y0 + r, -Math.PI / 2, 0); line(x1, y0 + r, x1, y1 - r); arc(x1 - r, y1 - r, 0, Math.PI / 2);
+  line(x1 - r, y1, x0 + r, y1); arc(x0 + r, y1 - r, Math.PI / 2, Math.PI); line(x0, y1 - r, x0, y0 + r); arc(x0 + r, y0 + r, Math.PI, Math.PI * 1.5);
+  let len = 0; per.forEach((p, i) => { if (i) len += Math.hypot(p[0] - per[i - 1][0], p[1] - per[i - 1][1]); p.len = len; });
+  const at = d => { d = ((d % len) + len) % len; for (let i = 1; i < per.length; i++) if (per[i].len >= d) { const a = per[i - 1], b = per[i], u = (d - a.len) / (b.len - a.len || 1); return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, Math.atan2(b[1] - a[1], b[0] - a[0])]; } return [per[0][0], per[0][1], 0]; };
+  // Strecken-Marken: Ecke unten rechts / unten links / oben Mitte
+  const topLen = (x1 - x0 - 2 * r), sideLen = (y1 - y0 - 2 * r), q = Math.PI * r / 2;
+  const marks = { topMid: topLen / 2, br: topLen + q + sideLen + q / 2, bl: topLen + q + sideLen + q + topLen + q / 2, bottomMid: topLen + q + sideLen + q + topLen / 2 };
+  return { board, c, BW, BH, at, len, marks, x0, y0, x1, y1, hit: board.querySelector('.hit') };
+}
+
+// ============================ KRAKEN ============================
+(() => {
+  const B = setupBoard(document.getElementById('kraken')), { c, BW, BH, at, len, marks } = B;
+  // Tentakel: Start an einer unteren Ecke, laufen entlang des Rahmens (dir +1 = im Uhrzeigersinn)
+  // Tentakel wachsen alle unter dem Kopf hervor (unten mitte) und laufen nach aussen, die langen bis ueber die oberen Ecken
+  const tents = [
+    { d0: marks.bottomMid + 26, dir: 1, L: len * .37, w: 20, ph: 0 },
+    { d0: marks.bottomMid - 26, dir: -1, L: len * .39, w: 20, ph: 3.1 },
+    { d0: marks.bottomMid + 12, dir: 1, L: len * .15, w: 15, ph: 1.7, peel: 1 },
+    { d0: marks.bottomMid - 12, dir: -1, L: len * .13, w: 14, ph: 4.4, peel: 1 }
+  ];
+  const drops = [], ink = [];
+  let egg = null, blink = 0, nextBlink = 2.5;
+  const eye = { x: P + BW / 2, y: P + BH + 26 };
+  Object.assign(B.hit.style, { left: `${BW / 2 - 30}px`, top: `${BH + 6}px`, width: '60px', height: '42px' });
+  B.hit.addEventListener('click', () => { if (!egg) egg = { t: 0, inked: false }; });
+  function tentacle(T, t, squeeze) {
+    const N = 130, pts = [];
+    for (let i = 0; i <= N; i++) {
+      const s = i / N, [x, y, a] = at(T.d0 + T.dir * s * T.L), nx = Math.sin(a), ny = -Math.cos(a);
+      const off = 9 + (T.peel ? s * s * 34 : 0) + Math.sin(t * 1.3 - s * 6 + T.ph) * 10 * s + Math.sin(t * 2.1 - s * 11 + T.ph) * 3 * s - squeeze * 9 * s;
+      pts.push({ x: x + nx * off, y: y + ny * off, a: a + (T.dir < 0 ? Math.PI : 0), s });
+    }
+    // eingerollte Spitze
+    const last = pts[pts.length - 1], curlDir = T.dir, ca = last.a;
+    const cr = 9 + Math.sin(t * 1.1 + T.ph) * 2 - squeeze * 3;
+    const ccx = last.x + Math.cos(ca + curlDir * Math.PI / 2 * -1) * cr, ccy = last.y + Math.sin(ca + curlDir * Math.PI / 2 * -1) * cr;
+    for (let k = 1; k <= 14; k++) { const u = k / 14, ang = ca + curlDir * Math.PI / 2 + curlDir * u * Math.PI * 1.5, rr = cr * (1 - u * .6); pts.push({ x: ccx + Math.cos(ang) * rr, y: ccy + Math.sin(ang) * rr, a: ang + curlDir * Math.PI / 2, s: 1 + u * .2 }); }
+    const W = s => T.w * (1 + squeeze * .25) * Math.max(.12, 1 - s * .82);
+    // Rand links/rechts
+    const L = [], Rr = [];
+    pts.forEach((p, i) => { const q = pts[Math.min(pts.length - 1, i + 1)], pr = pts[Math.max(0, i - 1)], ang = Math.atan2(q.y - pr.y, q.x - pr.x), nx = -Math.sin(ang), ny = Math.cos(ang), w = W(p.s); L.push([p.x + nx * w, p.y + ny * w]); Rr.push([p.x - nx * w, p.y - ny * w]); p.n = [nx, ny]; p.w = w; });
+    const body = new Path2D(); L.forEach(([x, y], i) => i ? body.lineTo(x, y) : body.moveTo(x, y)); for (let i = Rr.length - 1; i >= 0; i--) body.lineTo(...Rr[i]); body.closePath();
+    c.save(); c.shadowColor = 'rgba(0, 0, 0, .55)'; c.shadowBlur = 8; c.shadowOffsetY = 3;
+    const g = c.createLinearGradient(pts[0].x, pts[0].y, last.x, last.y); g.addColorStop(0, '#3a0e2a'); g.addColorStop(.6, '#6a1c3e'); g.addColorStop(1, '#8a2a4a');
+    c.fillStyle = g; c.fill(body); c.restore();
+    // Unterseite (zur Karte hin) heller, darauf Saugnaepfe
+    c.save(); c.clip(body);
+    c.strokeStyle = 'rgba(230, 150, 150, .45)'; c.lineWidth = 3; c.beginPath(); Rr.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke();
+    c.strokeStyle = 'rgba(255, 200, 220, .25)'; c.lineWidth = 1.2; c.beginPath(); L.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke();
+    // Hautflecken
+    pts.forEach((p, i) => { if (i % 5) return; c.fillStyle = 'rgba(30, 6, 20, .35)'; c.beginPath(); c.arc(p.x + p.n[0] * p.w * .3, p.y + p.n[1] * p.w * .3, p.w * .2, 0, 7); c.fill(); });
+    c.restore();
+    pts.forEach((p, i) => { if (i % 7 || p.s > 1.05) return; const sx = p.x - p.n[0] * p.w * .55, sy = p.y - p.n[1] * p.w * .55, sr = Math.max(.8, p.w * .32);
+      c.fillStyle = '#e8a8a8'; c.beginPath(); c.arc(sx, sy, sr, 0, 7); c.fill(); c.fillStyle = '#9a4a5a'; c.beginPath(); c.arc(sx, sy, sr * .5, 0, 7); c.fill(); });
+    return pts;
+  }
+  B.draw = (t, dt) => {
+    c.clearRect(0, 0, BW + P * 2, BH + P * 2);
+    let squeeze = 0;
+    if (egg) { egg.t += dt; const e = egg.t; squeeze = e < .5 ? e / .5 : e < 1.6 ? 1 : Math.max(0, 1 - (e - 1.6) / .5);
+      B.board.style.transform = e < 1.6 ? `translate(${rand(-1.5, 1.5) * squeeze}px, ${rand(-1.5, 1.5) * squeeze}px) scale(${1 - squeeze * .012})` : '';
+      if (e > 1.4 && !egg.inked) { egg.inked = true; for (let k = 0; k < 80; k++) { const a = -Math.PI / 2 + rand(-1.6, 1.6), v = rand(120, 420); ink.push({ x: eye.x, y: eye.y - 6, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: rand(10, 30), life: 1 }); } }
+      if (e > 4.5 && !ink.length) { egg = null; B.board.style.transform = ''; } }
+    // Tentakel
+    tents.forEach(T => { const pts = tentacle(T, t, squeeze);
+      if (Math.random() < dt * .5) { const p = pts[(Math.random() * pts.length * .8) | 0]; drops.push({ x: p.x, y: p.y + p.w, vy: 0, life: 1 }); } });
+    // Kopf/Mantel unten mittig (vor den Tentakel-Ansaetzen), mit Auge
+    nextBlink -= dt; if (nextBlink <= 0) { blink = 1; nextBlink = rand(2.5, 5); } blink = Math.max(0, blink - dt * 6);
+    const mx = eye.x, my = eye.y;
+    const mg = c.createRadialGradient(mx, my - 4, 4, mx, my + 10, 46); mg.addColorStop(0, '#7a2446'); mg.addColorStop(1, '#2a0a1e');
+    c.save(); c.beginPath(); c.ellipse(mx, my + 22, 66, 44, 0, 0, 7); c.clip(); c.fillStyle = mg; c.fillRect(mx - 70, my - 24, 140, 90);
+    const fadeG = c.createLinearGradient(0, my + 6, 0, my + 46); fadeG.addColorStop(0, 'rgba(0,0,0,0)'); fadeG.addColorStop(1, 'rgba(0,0,0,1)');
+    c.globalCompositeOperation = 'destination-out'; c.fillStyle = fadeG; c.fillRect(mx - 70, my + 6, 140, 60); c.restore();
+    c.fillStyle = 'rgba(20, 4, 14, .35)'; [[-30, 4, 6], [26, 8, 5], [-10, -10, 4], [40, -2, 3]].forEach(([dx, dy, rr2]) => { c.beginPath(); c.arc(mx + dx, my + dy + 10, rr2, 0, 7); c.fill(); });
+    const open = (1 - Math.sin(blink * Math.PI)) * (egg ? 1 - .55 * squeeze : 1);
+    const rect = B.board.getBoundingClientRect(), ex = rect.left - P + mx, ey = rect.top - P + my;
+    let lx = mouse[0] - ex, ly = mouse[1] - ey; const ll = Math.hypot(lx, ly) || 1; lx = lx / ll * Math.min(4, ll / 30); ly = ly / ll * Math.min(2.5, ll / 30);
+    c.save(); c.beginPath(); c.ellipse(mx, my, 20, 12 * open + .5, 0, 0, 7); c.clip();
+    const ir = c.createRadialGradient(mx + lx, my + ly, 1, mx + lx, my + ly, 14); ir.addColorStop(0, '#fff2a0'); ir.addColorStop(.5, '#f0a020'); ir.addColorStop(1, '#8a3a08');
+    c.fillStyle = ir; c.fillRect(mx - 22, my - 14, 44, 28);
+    c.fillStyle = '#0a0204'; c.beginPath(); c.ellipse(mx + lx, my + ly, egg ? 6 - 3 * squeeze : 7, 1.6, 0, 0, 7); c.fill();   // waagerechte Pupille
+    c.fillStyle = 'rgba(255, 255, 255, .7)'; c.beginPath(); c.arc(mx + lx - 4, my + ly - 2.5, 1.4, 0, 7); c.fill();
+    c.restore();
+    c.strokeStyle = '#1a0612'; c.lineWidth = 2.5; c.beginPath(); c.ellipse(mx, my, 20, 12 * open + .5, 0, 0, 7); c.stroke();
+    // Tropfen
+    for (let i = drops.length - 1; i >= 0; i--) { const d = drops[i]; d.vy += 300 * dt; d.y += d.vy * dt; d.life -= dt * .8; if (d.life <= 0 || d.y > BH + P * 2) { drops.splice(i, 1); continue; } c.fillStyle = `rgba(150, 200, 230, ${d.life * .7})`; c.beginPath(); c.ellipse(d.x, d.y, 1.3, 2.4, 0, 0, 7); c.fill(); }
+    // Tinte
+    for (let i = ink.length - 1; i >= 0; i--) { const k = ink[i]; k.life -= dt * .35; if (k.life <= 0) { ink.splice(i, 1); continue; } k.vx *= .94; k.vy *= .94; k.vy += 8 * dt; k.x += k.vx * dt; k.y += k.vy * dt; k.r += dt * 18;
+      const g = c.createRadialGradient(k.x, k.y, 0, k.x, k.y, k.r); g.addColorStop(0, `rgba(12, 4, 20, ${.85 * k.life})`); g.addColorStop(.7, `rgba(30, 8, 40, ${.5 * k.life})`); g.addColorStop(1, 'rgba(30, 8, 40, 0)');
+      c.fillStyle = g; c.beginPath(); c.arc(k.x, k.y, k.r, 0, 7); c.fill(); }
+  };
+  window.KR = B;
+})();
+
+// ============================ PHOENIX ============================
+(() => {
+  const B = setupBoard(document.getElementById('phoenix')), { c, BW, BH, at, len, marks } = B;
+  const embers = [], ash = [];
+  let egg = null;
+  const home = { x: P + BW / 2, y: P - 22 };
+  Object.assign(B.hit.style, { left: `${BW / 2 - 40}px`, top: '-70px', width: '80px', height: '74px' });
+  B.hit.addEventListener('click', () => { if (!egg) egg = { t: 0 }; });
+  // Flammenform (Spitze zeigt in Richtung ang), Farbe nach Hitze 0..1
+  function flame(x, y, ang, L, w, t, ph, heat, alpha) {
+    const fl = Math.sin(t * 11 + ph) * .12 + Math.sin(t * 7 + ph * 2) * .08;
+    c.save(); c.translate(x, y); c.rotate(ang);
+    const g = c.createLinearGradient(0, 0, L, 0);
+    g.addColorStop(0, `rgba(255, ${200 + 55 * heat | 0}, ${120 + 120 * heat | 0}, ${alpha})`); g.addColorStop(.45, `rgba(255, ${120 + 60 * heat | 0}, 30, ${alpha * .9})`); g.addColorStop(1, 'rgba(220, 40, 10, 0)');
+    c.fillStyle = g; c.beginPath(); c.moveTo(0, -w); c.quadraticCurveTo(L * .5, -w * (1 + fl), L * (1 + fl * .3), fl * w * 2); c.quadraticCurveTo(L * .5, w * (1 - fl), 0, w); c.closePath(); c.fill();
+    c.restore();
+  }
+  function bird(t, s, heat, alpha) {
+    const { x, y } = home, flap = Math.sin(t * 2.2) * .12;
+    c.save(); c.globalCompositeOperation = 'lighter';
+    // Fluegel: zwei Faecher aus Flammenfedern entlang der Oberkante
+    for (const side of [-1, 1]) for (let k = 0; k < 11; k++) {
+      const u = k / 10, ang = (side < 0 ? Math.PI : 0) + side * (-.55 + u * .62 + flap * (1 - u)), L = (34 + u * 46) * s, w = (6 - u * 2) * s;
+      const sx = x + side * (6 + u * 26) * s, sy = y + 4 - u * 4 * s;
+      flame(sx, sy, ang, L, w, t, k * 1.3 + side, heat, alpha * (.75 + .25 * (1 - u)));
+    }
+    // Schwanzfedern nach unten-seitlich, ueber die Karte hinweg kurz
+    for (let k = 0; k < 5; k++) flame(x + (k - 2) * 4 * s, y + 8 * s, Math.PI / 2 + (k - 2) * .35, 26 * s, 4 * s, t, k * 2.1, heat, alpha * .7);
+    // Koerper + Kopf
+    const bg = c.createRadialGradient(x, y, 1, x, y + 2, 16 * s); bg.addColorStop(0, `rgba(255, 250, 220, ${alpha})`); bg.addColorStop(.4, `rgba(255, 190, 70, ${alpha})`); bg.addColorStop(1, 'rgba(255, 80, 10, 0)');
+    c.fillStyle = bg; c.beginPath(); c.ellipse(x, y + 3 * s, 11 * s, 15 * s, 0, 0, 7); c.fill();
+    c.restore();
+    c.save(); c.globalAlpha = alpha;
+    c.fillStyle = `rgb(255, ${200 + 40 * heat | 0}, 120)`; c.beginPath(); c.arc(x + 3 * s, y - 12 * s, 5.5 * s, 0, 7); c.fill();                 // Kopf
+    c.fillStyle = '#ffd040'; c.beginPath(); c.moveTo(x + 8 * s, y - 13 * s); c.lineTo(x + 15 * s, y - 11 * s); c.lineTo(x + 8 * s, y - 9.5 * s); c.fill();   // Schnabel
+    c.fillStyle = '#3a0a00'; c.beginPath(); c.arc(x + 4.5 * s, y - 13 * s, 1.2 * s, 0, 7); c.fill();
+    c.restore();
+    c.save(); c.globalCompositeOperation = 'lighter';
+    for (let k = 0; k < 3; k++) flame(x + (1 - k) * 2 * s, y - 16 * s, -Math.PI / 2 - .5 - k * .25, (14 + k * 3) * s, 2.2 * s, t, k * 3, heat, alpha * .9);   // Federkrone
+    c.restore();
+  }
+  B.draw = (t, dt) => {
+    c.clearRect(0, 0, BW + P * 2, BH + P * 2);
+    let scale = 1.55, heat = .4 + .2 * Math.sin(t * 1.7), alpha = 1, trail = 1, nest = 0;
+    if (egg) {
+      const e = egg.t += dt;
+      if (e < .8) { scale = 1.55 + e * .5; heat = .5 + e; }                                              // lodert auf
+      else if (e < 1.8) { const u = (e - .8); scale = 1.95 - u * .5; alpha = 1 - u; trail = 1 - u; heat = 1;    // verbrennt
+        if (Math.random() < .9) for (let k = 0; k < 3; k++) ash.push({ x: home.x + rand(-40, 40), y: home.y + rand(-15, 10), vx: rand(-15, 15), vy: rand(10, 40), life: 1, rot: rand(0, 6) }); }
+      else if (e < 3.4) { alpha = 0; trail = 0; nest = Math.min(1, (e - 1.8) / .4); }                    // Glutnest
+      else if (e < 4.4) { alpha = 0; trail = 0; nest = 1 - (e - 3.4); egg.rise = (e - 3.4); }        // Flamme steigt auf
+      else if (e < 5.4) { const u = e - 4.4; scale = .4 + u * 1.15; alpha = u; trail = u; heat = 1; egg.ring = u; }   // Wiedergeburt
+      else egg = null;
+    }
+    // brennender Rahmen: gluehende Grundlinie + dichte, nach oben zuengelnde Flammen (vom Vogel aus nach unten schwaecher)
+    if (trail > 0) {
+      c.save(); c.globalCompositeOperation = 'lighter';
+      c.shadowColor = 'rgba(255, 120, 30, .9)'; c.shadowBlur = 14;
+      c.strokeStyle = `rgba(255, 140, 40, ${.55 * trail})`; c.lineWidth = 2.2; c.beginPath();
+      for (let i = 0; i <= 200; i++) { const [x, y] = at(i / 200 * len); i ? c.lineTo(x, y) : c.moveTo(x, y); } c.closePath(); c.stroke();
+      c.shadowBlur = 0;
+      for (let i = 0; i < 150; i++) {
+        const d = i / 150 * len, [x, y] = at(d), distTop = Math.min(Math.abs(d - marks.topMid), len - Math.abs(d - marks.topMid)) / (len / 2);
+        const strength = (1 - distTop * .55) * trail, sway = Math.sin(t * 3 + i * .7) * .25;
+        const h = (8 + 12 * (.5 + .5 * Math.sin(t * 7 + i * 1.9))) * strength;
+        flame(x, y + 1, -Math.PI / 2 + sway, h, 2.6, t, i * 1.3, .35 * (1 - distTop), .5 * strength);
+      }
+      c.restore();
+    }
+    // Glut steigt auf
+    if (trail > .2 && Math.random() < dt * 22) { const [x, y] = at(rand(0, len)); embers.push({ x, y, vx: rand(-6, 6), vy: rand(-30, -12), life: 1 }); }
+    c.save(); c.globalCompositeOperation = 'lighter';
+    for (let i = embers.length - 1; i >= 0; i--) { const e = embers[i]; e.life -= dt * .7; if (e.life <= 0) { embers.splice(i, 1); continue; } e.x += (e.vx + Math.sin(t * 3 + i) * 8) * dt; e.y += e.vy * dt; c.fillStyle = `rgba(255, ${150 + 80 * e.life | 0}, 60, ${e.life})`; c.beginPath(); c.arc(e.x, e.y, 1.2, 0, 7); c.fill(); }
+    c.restore();
+    // Asche
+    for (let i = ash.length - 1; i >= 0; i--) { const a = ash[i]; a.life -= dt * .35; a.vy += 20 * dt; a.x += (a.vx + Math.sin(t * 2 + i) * 10) * dt; a.y += a.vy * dt; a.rot += dt * 2; if (a.life <= 0 || a.y > P + BH + 30) { ash.splice(i, 1); continue; }
+      c.save(); c.translate(a.x, a.y); c.rotate(a.rot); c.fillStyle = `rgba(150, 140, 135, ${a.life * .8})`; c.fillRect(-2, -1, 4, 2); c.restore(); }
+    // Glutnest unten mittig
+    if (nest > 0) { const nx = P + BW / 2, ny = P + BH + 18; const g = c.createRadialGradient(nx, ny, 0, nx, ny, 40); g.addColorStop(0, `rgba(255, 150, 40, ${.8 * nest * (.7 + .3 * Math.sin(t * 8))})`); g.addColorStop(1, 'rgba(255, 60, 10, 0)');
+      c.fillStyle = g; c.beginPath(); c.arc(nx, ny, 40, 0, 7); c.fill(); c.fillStyle = `rgba(90, 80, 76, ${nest})`; c.beginPath(); c.ellipse(nx, ny + 4, 24, 6, 0, 0, 7); c.fill(); }
+    if (egg && egg.rise !== undefined && egg.t < 4.4) { const u = egg.rise, x = P + BW / 2, y = P + BH + 18 + (home.y - P - BH - 18) * u;
+      c.save(); c.globalCompositeOperation = 'lighter'; flame(x, y + 10, -Math.PI / 2, 30, 7, t, 0, 1, 1); const g = c.createRadialGradient(x, y, 0, x, y, 24); g.addColorStop(0, 'rgba(255, 220, 140, .9)'); g.addColorStop(1, 'rgba(255, 100, 20, 0)'); c.fillStyle = g; c.beginPath(); c.arc(x, y, 24, 0, 7); c.fill(); c.restore(); }
+    if (egg && egg.ring !== undefined) { const u = egg.ring; c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(255, 180, 70, ${1 - u})`; c.lineWidth = 4 * (1 - u) + 1; c.beginPath(); c.arc(home.x, home.y, 20 + u * 160, 0, 7); c.stroke(); c.restore(); }
+    if (alpha > 0) bird(t, scale, Math.min(1, heat), alpha);
+  };
+  window.PH = B;
+})();
+
+let last = performance.now();
+function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; window.KR.draw(now / 1000, dt); window.PH.draw(now / 1000, dt); requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
