@@ -31,9 +31,9 @@
 <body>
 <div class="stage">
   <div class="row"><div class="board" data-style="constellation"><div class="w wide"><img class="ava" src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><span class="name">LUCKSHOT#796</span></div><div class="w"><h4>Games</h4><div class="big">142</div></div><div class="w"><h4>Rank</h4><div class="big">Gold II</div></div><div class="w"><h4>Trophies</h4><div class="big">9 / 21</div></div><canvas class="dragon"></canvas><div class="head-hit"></div></div>
-    <div class="label">A · Constellation<small>a dragon drawn in stars</small></div></div>
-  <div class="row"><div class="board" data-style="nebula"><div class="w wide"><img class="ava" src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><span class="name">LUCKSHOT#796</span></div><div class="w"><h4>Games</h4><div class="big">142</div></div><div class="w"><h4>Rank</h4><div class="big">Gold II</div></div><div class="w"><h4>Trophies</h4><div class="big">9 / 21</div></div><canvas class="dragon"></canvas><div class="head-hit"></div></div>
-    <div class="label">B · Nebula<small>a solid dragon of night sky</small></div></div>
+    <div class="label">A · before<small>the first constellation draft</small></div></div>
+  <div class="row"><div class="board" data-style="constellation2"><div class="w wide"><img class="ava" src="https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/4644.png" alt=""><span class="name">LUCKSHOT#796</span></div><div class="w"><h4>Games</h4><div class="big">142</div></div><div class="w"><h4>Rank</h4><div class="big">Gold II</div></div><div class="w"><h4>Trophies</h4><div class="big">9 / 21</div></div><canvas class="dragon"></canvas><div class="head-hit"></div></div>
+    <div class="label">A2 · Constellation+<small>nebula haze, the pearl it chases, star mane, shooting stars</small></div></div>
 </div>
 
 <script>
@@ -55,7 +55,9 @@ function makeDragon(board) {
   const at = d => { d = ((d % perLen) + perLen) % perLen; for (let i = 1; i < per.length; i++) if (per[i].len >= d) { const a = per[i - 1], b = per[i], u = (d - a.len) / (b.len - a.len || 1); return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, Math.atan2(b[1] - a[1], b[0] - a[0])]; } return [per[0][0], per[0][1], 0]; };
   layout();
   const SEG = 38, GAP = 10, dust = [], rain = [];
-  let head = style === 'nebula' ? 400 : 0, roar = null, snap = 0, nextSnap = rand(4, 8);
+  let head = style === 'constellation2' ? 400 : 0, roar = null, snap = 0, nextSnap = rand(4, 8), glow = 0, kick = 0, shooters = [], nextShoot = rand(2, 5);
+  // Farbe der Sternbild-Linien: Silberblau, beim Bruellen Gold
+  const L = a => `rgba(${180 + 75 * glow | 0}, ${190 + 30 * glow | 0}, ${255 - 115 * glow | 0}, ${a})`;
   hit.addEventListener('click', () => { if (!roar) roar = { t: 0 }; });
 
   // Kopf schaut sich um: langsames Hin- und Herdrehen + gelegentliches Schnappen
@@ -72,6 +74,32 @@ function makeDragon(board) {
       dx.setLineDash([2, 3]); dx.beginPath(); dx.moveTo(28, 4); dx.quadraticCurveTo(18 + Math.sin(t * 4) * 5, 20, 4, 24); dx.moveTo(28, -6); dx.quadraticCurveTo(16 + Math.cos(t * 4) * 5, -22, 2, -28); dx.stroke(); dx.setLineDash([]);
       [...S, [-12, -24], [-22, -27], [-4, -28], [-14, -34]].forEach(([px, py], i) => star(px, py, i === 3 ? 2.6 : 1.8, t + i));
       star(8, -6, 2.8, t * 2, '255, 220, 130'); // Auge
+    } else if (style === 'constellation2') {
+      // Kopf A2: groesser, klare Drachen-Silhouette, Nebelfuellung, Maehne aus Sternenspuren
+      dx.scale(1.3, 1.3);
+      for (let k = 0; k < 5; k++) { // Maehne: fliessende Sternenstraenge nach hinten
+        const yy = -8 + k * 4, sw = Math.sin(t * 3.2 + k * .9) * 5, ex = -30 - k % 2 * 6, ey = yy * 1.8 + sw;
+        dx.setLineDash([1.5, 3]); dx.strokeStyle = L(.5); dx.lineWidth = 1; dx.beginPath(); dx.moveTo(-10, yy * .6); dx.quadraticCurveTo(-20, yy + sw * .5, ex, ey); dx.stroke(); dx.setLineDash([]);
+        star(ex, ey, .9, t * 1.5 + k);
+      }
+      const S = [[-10, -9], [2, -13], [14, -11], [24, -8], [34, -6 - open * 7], [36, -2 - open * 5], [24, -1], [33, 4 + open * 10], [24, 9 + open * 6], [10, 10], [-4, 11], [-12, 4]];
+      const hp2 = new Path2D(); S.forEach(([px, py], i) => i ? hp2.lineTo(px, py) : hp2.moveTo(px, py)); hp2.closePath();
+      const hf = dx.createRadialGradient(8, 0, 0, 8, 0, 30); hf.addColorStop(0, `rgba(130, 120, 255, ${.28 + glow * .3})`); hf.addColorStop(1, 'rgba(80, 60, 200, .05)');
+      dx.fillStyle = hf; dx.fill(hp2);
+      dx.strokeStyle = L(.75); dx.lineWidth = 1; dx.stroke(hp2);
+      dx.beginPath(); dx.moveTo(2, -13); dx.lineTo(12, -6); dx.lineTo(24, -8); dx.moveTo(-12, 4); dx.lineTo(10, 3); dx.lineTo(24, -1); dx.stroke(); // Brauenwulst + Kieferlinie
+      // Hoerner: geschwungen, je 3 Sterne
+      dx.strokeStyle = L(.7); dx.beginPath(); dx.moveTo(-2, -12); dx.quadraticCurveTo(-14, -24, -36, -21); dx.moveTo(6, -13); dx.quadraticCurveTo(-2, -30, -14, -37); dx.stroke();
+      [[-14, -21], [-26, -23], [-36, -21], [-1, -26], [-14, -37]].forEach(([px, py], i) => star(px, py, 1.2, t + i * 1.3));
+      // Barthaare: lange, wehende Sternenfaeden
+      dx.setLineDash([2, 3]); dx.strokeStyle = L(.55);
+      dx.beginPath(); dx.moveTo(33, 3); dx.bezierCurveTo(26, 16, 12 + Math.sin(t * 3) * 6, 22, -4 + Math.sin(t * 2.5) * 6, 30); dx.moveTo(34, -6); dx.bezierCurveTo(28, -18, 14 + Math.cos(t * 3) * 6, -24, -2 + Math.cos(t * 2.5) * 6, -30); dx.stroke(); dx.setLineDash([]);
+      star(-4 + Math.sin(t * 2.5) * 6, 30, 1, t * 2); star(-2 + Math.cos(t * 2.5) * 6, -30, 1, t * 2 + 1);
+      S.forEach(([px, py], i) => star(px, py, i === 4 || i === 7 ? 1.9 : 1.4, t + i));
+      if (open > .1) for (let k = 0; k < 3; k++) star(26 + k * 3, -2 - open * 2 + k, .8, t * 4 + k, '255, 240, 220'); // Zaehne
+      // Auge: goldener Stern mit Schlitzpupille
+      star(12, -5, 3, t * 1.7, '255, 215, 120');
+      dx.fillStyle = '#1a1000'; dx.beginPath(); dx.ellipse(12.4, -5, .6, 1.8, 0, 0, 7); dx.fill();
     } else {
       // Nebula: fester Kopf (aus v2), aber mit Leuchtkontur
       for (let k = 0; k < 7; k++) { const a = Math.PI + (k - 3) * .32, sway = Math.sin(t * 4 + k) * .25; dx.strokeStyle = `rgba(150, 120, 255, ${.55 + .05 * k})`; dx.lineWidth = 3; dx.beginPath(); dx.moveTo(-6, (k - 3) * 2); dx.quadraticCurveTo(-16, (k - 3) * 5, -26 + Math.cos(a + sway) * 4, (k - 3) * 7 + Math.sin(a + sway) * 6); dx.stroke(); }
@@ -91,6 +119,11 @@ function makeDragon(board) {
       dx.beginPath(); dx.moveTo(27, 2); dx.quadraticCurveTo(20 + Math.sin(t * 4) * 5, 18, 6, 22); dx.moveTo(27, -7); dx.quadraticCurveTo(18 + Math.cos(t * 4) * 5, -22, 4, -26); dx.stroke();
     }
     dx.restore();
+  }
+  function glint(x, y, ph) { // kurzes Funkel-Kreuz, nur in einem Teil des Zyklus sichtbar
+    const v = Math.max(0, Math.sin(ph * 2.1) - .85) / .15; if (v <= 0) return;
+    dx.strokeStyle = `rgba(255, 255, 255, ${v * .9})`; dx.lineWidth = 1; const z = 9 * v;
+    dx.beginPath(); dx.moveTo(x - z, y); dx.lineTo(x + z, y); dx.moveTo(x, y - z); dx.lineTo(x, y + z); dx.stroke();
   }
   function star(x, y, r, ph, col = '235, 230, 255') {
     const tw = .65 + .35 * Math.sin(ph * 3);
@@ -137,6 +170,34 @@ function makeDragon(board) {
       pts.forEach((p, i) => { if (i % 3) return; star(p.x, p.y, i < 3 ? 2.4 : 2 - i / SEG, t + i); });
       // Schweifquaste aus Sternenstaub
       const tl = pts[SEG - 1]; if (Math.random() < .6) dust.push({ x: tl.x, y: tl.y, vx: rand(-12, 12), vy: rand(-12, 12), life: 1 });
+    } else if (style === 'constellation2') {
+      // Nebel-Volumen: weiche Leuchtwolke entlang des Koerpers (blau -> violett zum Schwanz)
+      dx.save(); dx.globalCompositeOperation = 'lighter';
+      pts.forEach((p, i) => { if (i % 2) return; const r = p.w * 2.6, u = i / SEG, g = dx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+        g.addColorStop(0, `rgba(${90 + u * 70 + glow * 120 | 0}, ${110 - u * 30 + glow * 80 | 0}, 255, ${.09 + glow * .12})`); g.addColorStop(1, 'rgba(80, 60, 200, 0)');
+        dx.fillStyle = g; dx.beginPath(); dx.arc(p.x, p.y, r, 0, 7); dx.fill(); });
+      dx.restore();
+      // Kometenschweif hinter dem Schwanz (laeuft auf der Bahn weiter)
+      for (let k = 0; k < 14; k++) { const [x, y] = at(head - (SEG - 1 + k) * GAP), a = (1 - k / 14) * .35; dx.fillStyle = L(a); dx.beginPath(); dx.arc(x + rand(-2, 2), y + rand(-2, 2), 1.2 * (1 - k / 14) + .3, 0, 7); dx.fill(); }
+      // Koerperkanten + Rueckgrat
+      dx.lineWidth = 1;
+      for (const side of [1, -1]) { dx.strokeStyle = L(.3); dx.beginPath(); pts.forEach((p, i) => { const x = p.x + side * p.nx * p.w * .8, y = p.y + side * p.ny * p.w * .8; i ? dx.lineTo(x, y) : dx.moveTo(x, y); }); dx.stroke(); }
+      dx.strokeStyle = L(.55); dx.beginPath(); pts.forEach((p, i) => i ? dx.lineTo(p.x, p.y) : dx.moveTo(p.x, p.y)); dx.stroke();
+      // Gitter: Zickzack zwischen den Kanten (Schuppen als Sternbild)
+      dx.strokeStyle = L(.18); dx.beginPath();
+      pts.forEach((p, i) => { if (i % 3) return; const side = (i / 3) % 2 ? 1 : -1, q = pts[Math.min(SEG - 1, i + 3)]; dx.moveTo(p.x + side * p.nx * p.w * .8, p.y + side * p.ny * p.w * .8); dx.lineTo(q.x - side * q.nx * q.w * .8, q.y - side * q.ny * q.w * .8); }); dx.stroke();
+      // Rueckenzacken
+      dx.strokeStyle = L(.4);
+      pts.forEach((p, i) => { if (i % 4 || i < 3 || i > SEG - 5) return; const fx = Math.cos(p.ang), fy = Math.sin(p.ang), h = p.w + 6 + Math.sin(t * 3 - i * .4) * 2, tx = p.x - p.nx * h, ty = p.y - p.ny * h; dx.beginPath(); dx.moveTo(p.x - p.nx * p.w * .8 - fx * 5, p.y - p.ny * p.w * .8 - fy * 5); dx.lineTo(tx, ty); dx.lineTo(p.x - p.nx * p.w * .8 + fx * 5, p.y - p.ny * p.w * .8 + fy * 5); dx.stroke(); star(tx, ty, 1.2, t + i); });
+      // Beine mit drei Krallen-Sternen
+      [8, 24].forEach((k, li) => { const p = pts[k]; for (const side of [1, -1]) { const step = Math.sin(t * 5 + li * 1.7 + (side > 0 ? 0 : Math.PI)) * 5, fx = Math.cos(p.ang), fy = Math.sin(p.ang);
+        const kx = p.x + side * p.nx * (p.w + 8) + fx * step, ky = p.y + side * p.ny * (p.w + 8) + fy * step, ex = kx + side * p.nx * 6 + fx * 6, ey = ky + side * p.ny * 6 + fy * 6;
+        dx.strokeStyle = L(.45); dx.beginPath(); dx.moveTo(p.x + side * p.nx * p.w * .8, p.y + side * p.ny * p.w * .8); dx.lineTo(kx, ky); dx.lineTo(ex, ey); dx.stroke(); star(kx, ky, 1.1, t + k);
+        for (let c = -1; c <= 1; c++) { const cx = ex + fx * 4 + side * p.nx * c * 3, cy = ey + fy * 4 + side * p.ny * c * 3; dx.beginPath(); dx.moveTo(ex, ey); dx.lineTo(cx, cy); dx.stroke(); star(cx, cy, .7, t * 2 + c); } } });
+      // Sterne: Rueckgrat (unterschiedlich gross) + Kanten versetzt; helle Sterne blitzen ab und zu als Funkel-Kreuz auf
+      pts.forEach((p, i) => { if (i % 3 === 0) { const big = (i * 7) % 5 === 0; star(p.x, p.y, big ? 2.3 : 1.5 - i / SEG * .6, t + i, glow > .2 ? '255, 225, 150' : undefined); if (big) glint(p.x, p.y, t * .8 + i); }
+        else if (i % 6 === 2) for (const side of [1, -1]) star(p.x + side * p.nx * p.w * .8, p.y + side * p.ny * p.w * .8, .9, t * 1.3 + i + side); });
+      const tl = pts[SEG - 1]; if (Math.random() < .6) dust.push({ x: tl.x, y: tl.y, vx: rand(-12, 12), vy: rand(-12, 12), life: 1 });
     } else {
       // Nebula (fest): Ribbon mit leuchtender Kontur, Schuppen, Sterne, Zacken, Beine
       const ribbon = new Path2D();
@@ -162,7 +223,28 @@ function makeDragon(board) {
       if (Math.random() < .5) dust.push({ x: tl.x, y: tl.y, vx: rand(-10, 10), vy: rand(-10, 10), life: 1 });
     }
     for (let i = dust.length - 1; i >= 0; i--) { const d = dust[i]; d.life -= dt * .8; if (d.life <= 0) { dust.splice(i, 1); continue; } d.x += d.vx * dt; d.y += d.vy * dt; dx.fillStyle = `rgba(220, 210, 255, ${d.life * .7})`; dx.beginPath(); dx.arc(d.x, d.y, 1.2, 0, 7); dx.fill(); }
-    drawHead(t, headX, headY, dir + look, open);
+    let headAng = dir + look;
+    if (style === 'constellation2') {
+      glow = roar ? Math.max(0, 1 - roar.t / 2.8) : 0;
+      if (snap > .95) kick = 1; kick = Math.max(0, kick - dt * 1.2);
+      // Perle: schwebt vor dem Kopf, weicht beim Schnappen aus
+      const [qx, qy, qa] = at(head + 38 + kick * 22 + Math.sin(t * .7) * 6), off = Math.sin(t * 1.3) * 14 + kick * 10;
+      const px = qx - Math.sin(qa) * off, py = qy + Math.cos(qa) * off;
+      let d = Math.atan2(py - headY, px - headX) - dir; d = Math.atan2(Math.sin(d), Math.cos(d));
+      headAng = dir + Math.max(-.9, Math.min(.9, d)) * .85 + Math.sin(t * 2.3) * .08;
+      dx.save(); dx.globalCompositeOperation = 'lighter';
+      const pr = 5 + glow * 3, pg = dx.createRadialGradient(px, py, 0, px, py, pr * 4); pg.addColorStop(0, 'rgba(255, 245, 220, .9)'); pg.addColorStop(.25, `rgba(200, 210, 255, ${.45 + glow * .4})`); pg.addColorStop(1, 'rgba(120, 110, 255, 0)');
+      dx.fillStyle = pg; dx.beginPath(); dx.arc(px, py, pr * 4, 0, 7); dx.fill();
+      dx.strokeStyle = 'rgba(220, 225, 255, .55)'; dx.lineWidth = 1; dx.beginPath(); dx.arc(px, py, pr + 4, t * 2, t * 2 + 2); dx.stroke(); dx.beginPath(); dx.arc(px, py, pr + 4, t * 2 + 3.1, t * 2 + 5.1); dx.stroke();
+      dx.fillStyle = '#fffdf4'; dx.beginPath(); dx.arc(px, py, pr * .6, 0, 7); dx.fill();
+      dx.restore();
+      // Sternschnuppen ueber der Karte
+      nextShoot -= dt; if (nextShoot <= 0) { nextShoot = rand(4, 9); shooters.push({ x: rand(P + 40, P + BW * .7), y: P + rand(10, BH * .5), vx: rand(160, 240), vy: rand(50, 90), life: 1 }); }
+      for (let i = shooters.length - 1; i >= 0; i--) { const s = shooters[i]; s.life -= dt * 1.6; if (s.life <= 0) { shooters.splice(i, 1); continue; } s.x += s.vx * dt; s.y += s.vy * dt;
+        const g = dx.createLinearGradient(s.x, s.y, s.x - s.vx * .25, s.y - s.vy * .25); g.addColorStop(0, `rgba(255, 255, 255, ${s.life * .8})`); g.addColorStop(1, 'rgba(180, 190, 255, 0)');
+        dx.strokeStyle = g; dx.lineWidth = 1.3; dx.beginPath(); dx.moveTo(s.x, s.y); dx.lineTo(s.x - s.vx * .25, s.y - s.vy * .25); dx.stroke(); }
+    }
+    drawHead(t, headX, headY, headAng, open);
     Object.assign(hit.style, { left: `${headX - P - 35 + Math.cos(dir) * 10}px`, top: `${headY - P - 35 + Math.sin(dir) * 10}px` });
     // Easter Egg
     if (roar) {
