@@ -140,9 +140,12 @@ function setupBoard(board) {
   function drawWater(t, squeeze) {
     const top = water, H2 = BH + P * 2;
     const wave = x => top + Math.sin(x * .05 + t * 1.6) * 2 + Math.sin(x * .021 - t * 1.1) * 2.5;
-    c.beginPath(); c.moveTo(0, H2); for (let x = 0; x <= BW + P * 2; x += 6) c.lineTo(x, wave(x)); c.lineTo(BW + P * 2, H2); c.closePath();
+    // Wasser in schmalen Streifen, zu den Seiten weich ausgeblendet (keine harten Kanten)
     const g = c.createLinearGradient(0, top, 0, H2); g.addColorStop(0, 'rgba(20, 60, 70, .92)'); g.addColorStop(1, 'rgba(6, 16, 26, 0)');
-    c.fillStyle = g; c.fill();
+    c.fillStyle = g;
+    const Wc = BW + P * 2;
+    for (let x = 0; x < Wc; x += 6) { const edge = Math.min(x, Wc - x - 6) / (P * .9); c.globalAlpha = Math.max(0, Math.min(1, edge)); c.beginPath(); c.moveTo(x, wave(x)); c.lineTo(x + 6.5, wave(x + 6)); c.lineTo(x + 6.5, H2); c.lineTo(x, H2); c.closePath(); c.fill(); }
+    c.globalAlpha = 1;
     // Gischt an der Wasserlinie, staerker am Kopf
     c.strokeStyle = 'rgba(210, 235, 240, .7)'; c.lineWidth = 1.4; c.beginPath(); for (let x = P - 30; x <= P + BW + 30; x += 6) { const y = wave(x); x === P - 30 ? c.moveTo(x, y) : c.lineTo(x, y); } c.stroke();
     for (let k = 0; k < 18; k++) { const fx = head.x + Math.sin(k * 2.3 + t * .7) * 70, fy = wave(fx) + Math.sin(k + t * 3) * 1.5; c.fillStyle = `rgba(230, 245, 250, ${.35 + .25 * Math.sin(t * 4 + k)})`; c.beginPath(); c.ellipse(fx, fy, 4 + (k % 3) * 2, 1.2, 0, 0, 7); c.fill(); }
