@@ -55,64 +55,95 @@ document.querySelectorAll('.border').forEach(el => {
   const c = setup(el.querySelector('canvas'), C, C);
 
   if (kind === 'prism') {
-    // ---------- Hextech Prism ----------
-    const N = 12;
-    const shards = Array.from({ length: 7 }, (_, i) => ({ a: i / 7 * 6.28, r: rand(1.42, 1.6), v: rand(.15, .3) * (i % 2 ? 1 : -1), s: rand(.05, .09), rot: rand(0, 6), vr: rand(-1, 1) }));
-    const hex = (x, y, r, rot) => { c.beginPath(); for (let k = 0; k < 6; k++) { const a = rot + k * Math.PI / 3; k ? c.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r) : c.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } c.closePath(); };
+    // ---------- Hextech Prism v2: ein Hextech-Geraet statt Kristallkranz ----------
+    // Messingring mit Zahnkranz (dreht langsam), darin eine Energierinne, durch die
+    // blaue Hextech-Energie fliesst; oben ein grosser Hexkern in Messingfassung
+    // (pulsiert, Lichtbrechung), an drei Stellen Kristall-Kondensatoren, zwischen
+    // denen ab und zu Lichtboegen springen; ein Hexgitter-Hologramm flackert auf.
+    const hexPath = (x, y, r, rot) => { c.beginPath(); for (let k = 0; k < 6; k++) { const a = rot + k * Math.PI / 3; k ? c.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r) : c.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } c.closePath(); };
+    const brass = (x0, y0, x1, y1) => { const g = c.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, '#f8e3a4'); g.addColorStop(.35, '#b8862e'); g.addColorStop(.6, '#f0cf7c'); g.addColorStop(1, '#6a4612'); return g; };
+    const caps = [Math.PI * 1.5 + 2.1, Math.PI * 1.5, Math.PI * 1.5 - 2.1]; // unten rechts, oben (Kern), unten links
+    let arc = null, nextArc = 1, holo = 0, nextHolo = 3;
+    const jag = (ax, ay, bx, by, n, amp) => { const pts = [[ax, ay]]; for (let k = 1; k < n; k++) { const u = k / n; pts.push([ax + (bx - ax) * u + rand(-amp, amp), ay + (by - ay) * u + rand(-amp, amp)]); } pts.push([bx, by]); return pts; };
     draws.push((t, dt) => {
       c.clearRect(0, 0, C, C); c.save(); c.translate(C / 2, C / 2);
-      const light = t * .7;                                     // Lichtrichtung wandert im Kreis
-      // blauer Hextech-Schein
-      const halo = c.createRadialGradient(0, 0, R * .95, 0, 0, R * 1.65); halo.addColorStop(0, 'rgba(80, 200, 255, .3)'); halo.addColorStop(1, 'rgba(80, 200, 255, 0)');
-      c.fillStyle = halo; c.beginPath(); c.arc(0, 0, R * 1.65, 0, 7); c.fill();
-      // Goldring mit Gravur-Strichen
-      const gold = c.createLinearGradient(-R, -R, R, R); gold.addColorStop(0, '#f6e2a0'); gold.addColorStop(.45, '#b8862e'); gold.addColorStop(.55, '#f2d68a'); gold.addColorStop(1, '#7a5418');
-      c.strokeStyle = gold; c.lineWidth = R * .07; c.beginPath(); c.arc(0, 0, R * 1.03, 0, 7); c.stroke();
-      c.strokeStyle = 'rgba(60, 40, 10, .6)'; c.lineWidth = 1;
-      for (let k = 0; k < 48; k++) { const a = k / 48 * 6.28; c.beginPath(); c.moveTo(Math.cos(a) * R * 1.0, Math.sin(a) * R * 1.0); c.lineTo(Math.cos(a) * R * 1.06, Math.sin(a) * R * 1.06); c.stroke(); }
-      // Kristalle: laengliche Prismen mit drei Facetten, Helligkeit je nach Lichtwinkel
-      // Kristall-Gruppen: vier Cluster aus je drei Prismen (gross in der Mitte, zwei kleine schraeg)
-      for (let k = 0; k < 12; k++) {
-        const cl = Math.floor(k / 3), m = k % 3, base = cl / 4 * Math.PI * 2 + Math.PI / 4 + t * .05;
-        const a = base + (m - 1) * .2, tilt = (m - 1) * .38, big = m === 1, L = R * (big ? .42 : .26), Wd = R * (big ? .1 : .07);
-        const bx = Math.cos(a) * R * 1.08, by = Math.sin(a) * R * 1.08;
-        c.save(); c.translate(bx, by); c.rotate(a + tilt);
-        const facing = Math.cos(a - light), glint = Math.max(0, Math.cos(a - light)) ** 8;
-        const fac = [[[0, -Wd], [L * .78, -Wd * .55], [L, 0], [0, 0]], [[0, 0], [L, 0], [L * .78, Wd * .55], [0, Wd]]];
-        fac.forEach((f, fi) => {
-          const lit = .35 + .35 * (fi ? -facing : facing) + .3 * glint;
-          c.fillStyle = `rgba(${70 + 120 * lit | 0}, ${170 + 80 * lit | 0}, ${235 + 20 * lit | 0}, ${.75 + .2 * lit})`;
-          c.beginPath(); f.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); c.fill();
-        });
-        c.strokeStyle = 'rgba(220, 250, 255, .85)'; c.lineWidth = .8;
-        c.beginPath(); c.moveTo(0, -Wd); c.lineTo(L * .78, -Wd * .55); c.lineTo(L, 0); c.lineTo(L * .78, Wd * .55); c.lineTo(0, Wd); c.moveTo(0, 0); c.lineTo(L, 0); c.stroke();
-        // Goldfassung am Fuss
-        c.fillStyle = '#d6a848'; c.fillRect(-R * .03, -Wd * 1.1, R * .05, Wd * 2.2);
-        // Regenbogen-Brechung, wenn das Licht den Kristall trifft
-        if (glint > .05) {
-          c.save(); c.globalCompositeOperation = 'lighter';
-          ['255, 60, 90', '255, 200, 60', '80, 255, 140', '80, 160, 255', '190, 90, 255'].forEach((col, ci) => {
-            c.strokeStyle = `rgba(${col}, ${glint * .5})`; c.lineWidth = 1.4;
-            const sp = (ci - 2) * .09;
-            c.beginPath(); c.moveTo(L, 0); c.lineTo(L + Math.cos(sp) * R * .28 * glint, Math.sin(sp) * R * .28 * glint); c.stroke();
-          });
-          const sg = c.createRadialGradient(L * .6, -Wd * .3, 0, L * .6, -Wd * .3, R * .14); sg.addColorStop(0, `rgba(255, 255, 255, ${glint})`); sg.addColorStop(1, 'rgba(255, 255, 255, 0)');
-          c.fillStyle = sg; c.beginPath(); c.arc(L * .6, -Wd * .3, R * .14, 0, 7); c.fill();
+      const pulse = .5 + .5 * Math.sin(t * 2.2);
+      const halo = c.createRadialGradient(0, 0, R * .95, 0, 0, R * 1.6); halo.addColorStop(0, `rgba(70, 190, 255, ${.22 + .1 * pulse})`); halo.addColorStop(1, 'rgba(70, 190, 255, 0)');
+      c.fillStyle = halo; c.beginPath(); c.arc(0, 0, R * 1.6, 0, 7); c.fill();
+      // Zahnkranz aussen (dreht langsam)
+      c.save(); c.rotate(t * .12);
+      c.fillStyle = brass(-R, -R, R, R);
+      c.beginPath();
+      for (let k = 0; k < 36; k++) { const a0 = k / 36 * Math.PI * 2, a1 = a0 + Math.PI / 36; c.arc(0, 0, R * 1.25, a0, a1); c.arc(0, 0, R * 1.19, a1, a1 + Math.PI / 36); }
+      c.closePath(); c.arc(0, 0, R * 1.12, 0, 7, true); c.fill('evenodd');
+      c.strokeStyle = 'rgba(60, 36, 8, .55)'; c.lineWidth = .8; c.stroke();
+      c.restore();
+      // Messing-Grundring + Energierinne
+      c.lineWidth = R * .13; c.strokeStyle = brass(-R, R, R, -R); c.beginPath(); c.arc(0, 0, R * 1.07, 0, 7); c.stroke();
+      c.lineWidth = R * .05; c.strokeStyle = '#08121c'; c.beginPath(); c.arc(0, 0, R * 1.07, 0, 7); c.stroke();
+      c.save(); c.globalCompositeOperation = 'lighter';
+      for (let k = 0; k < 3; k++) { // drei Energiepakete fliessen durch die Rinne
+        const a = t * 1.6 + k * 2.094;
+        for (let s2 = 0; s2 < 14; s2++) { const aa = a - s2 * .045; c.strokeStyle = `rgba(110, 220, 255, ${(1 - s2 / 14) * .8})`; c.lineWidth = R * .035; c.beginPath(); c.arc(0, 0, R * 1.07, aa - .05, aa); c.stroke(); }
+      }
+      c.strokeStyle = `rgba(80, 190, 255, ${.25 + .2 * pulse})`; c.lineWidth = R * .02; c.beginPath(); c.arc(0, 0, R * 1.07, 0, 7); c.stroke();
+      c.restore();
+      // Nieten
+      c.fillStyle = '#f6dc94'; for (let k = 0; k < 12; k++) { const a = k / 12 * 6.28 + .26; c.beginPath(); c.arc(Math.cos(a) * R * 1.01, Math.sin(a) * R * 1.01, R * .022, 0, 7); c.fill(); }
+      // Kristall-Kondensatoren in Messing-Klauen
+      const capPos = caps.map(a => [Math.cos(a) * R * 1.07, Math.sin(a) * R * 1.07, a]);
+      capPos.slice(0, 3).forEach(([x, y, a], k) => {
+        if (k === 1) return; // oben sitzt der Hexkern, dort kein Kondensator
+        c.save(); c.translate(x, y); c.rotate(a + Math.PI / 2);
+        c.fillStyle = brass(-R * .1, 0, R * .1, 0);
+        c.beginPath(); c.moveTo(-R * .11, R * .02); c.lineTo(-R * .07, -R * .16); c.lineTo(-R * .03, -R * .02); c.lineTo(R * .03, -R * .02); c.lineTo(R * .07, -R * .16); c.lineTo(R * .11, R * .02); c.closePath(); c.fill();
+        const cg = c.createLinearGradient(-R * .05, 0, R * .05, 0); cg.addColorStop(0, '#9ee8ff'); cg.addColorStop(.5, '#2a8ad0'); cg.addColorStop(1, '#bff4ff');
+        c.fillStyle = cg; c.beginPath(); c.moveTo(0, -R * .2); c.lineTo(R * .05, -R * .08); c.lineTo(R * .035, R * .01); c.lineTo(-R * .035, R * .01); c.lineTo(-R * .05, -R * .08); c.closePath(); c.fill();
+        c.strokeStyle = 'rgba(230, 250, 255, .8)'; c.lineWidth = .7; c.stroke();
+        c.restore();
+      });
+      // Lichtboegen zwischen Kondensatoren und Kern
+      nextArc -= dt;
+      const coreX = 0, coreY = -R * 1.12;
+      if (nextArc <= 0) { nextArc = rand(1.2, 2.6); const from = capPos[Math.random() < .5 ? 0 : 2]; arc = { life: .35, a: [from[0] + Math.cos(from[2]) * R * .12, from[1] + Math.sin(from[2]) * R * .12] }; }
+      if (arc) {
+        arc.life -= dt; if (arc.life <= 0) arc = null; else {
+          const pts = jag(arc.a[0], arc.a[1], coreX, coreY, 9, R * .07);
+          c.save(); c.globalCompositeOperation = 'lighter'; c.lineJoin = 'round';
+          [[R * .06, 'rgba(80, 180, 255, .35)'], [R * .02, 'rgba(220, 245, 255, .95)']].forEach(([w, col]) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke(); });
           c.restore();
+        }
+      }
+      // Hexkern oben: Messingfassung, facettierter Kristall, pulsierendes Licht
+      c.save(); c.translate(coreX, coreY);
+      c.fillStyle = brass(-R * .3, -R * .3, R * .3, R * .3); hexPath(0, 0, R * .27, Math.PI / 6); c.fill();
+      c.strokeStyle = 'rgba(60, 36, 8, .6)'; c.lineWidth = 1; c.stroke();
+      const core = c.createRadialGradient(-R * .05, -R * .06, 0, 0, 0, R * .2); core.addColorStop(0, '#f0fdff'); core.addColorStop(.35, `rgba(120, 220, 255, 1)`); core.addColorStop(1, '#0c5a9a');
+      c.fillStyle = core; hexPath(0, 0, R * .19, Math.PI / 6); c.fill();
+      c.strokeStyle = 'rgba(220, 250, 255, .55)'; c.lineWidth = .7; // Facetten
+      for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(a) * R * .19, Math.sin(a) * R * .19); c.stroke(); }
+      c.globalCompositeOperation = 'lighter';
+      const cg2 = c.createRadialGradient(0, 0, 0, 0, 0, R * .5); cg2.addColorStop(0, `rgba(120, 220, 255, ${.35 + .35 * pulse + (arc ? .3 : 0)})`); cg2.addColorStop(1, 'rgba(120, 220, 255, 0)');
+      c.fillStyle = cg2; c.beginPath(); c.arc(0, 0, R * .5, 0, 7); c.fill();
+      // Lichtbrechung: kurze Regenbogen-Strahlen, die langsam rotieren
+      ['255, 80, 110', '255, 210, 80', '90, 255, 150', '90, 170, 255', '200, 110, 255'].forEach((col, ci) => {
+        const a = t * .4 + ci * .12 - Math.PI / 2; c.strokeStyle = `rgba(${col}, ${.18 + .15 * pulse})`; c.lineWidth = 1.2;
+        c.beginPath(); c.moveTo(Math.cos(a) * R * .2, Math.sin(a) * R * .2); c.lineTo(Math.cos(a) * R * .45, Math.sin(a) * R * .45); c.stroke();
+      });
+      c.restore();
+      // Hexgitter-Hologramm, das ab und zu ueber den Ring flackert
+      nextHolo -= dt; if (nextHolo <= 0) { nextHolo = rand(3, 6); holo = 1; }
+      if (holo > 0) {
+        holo = Math.max(0, holo - dt * .8);
+        c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(110, 220, 255, ${holo * .35 * (Math.random() < .85 ? 1 : .3)})`; c.lineWidth = .7;
+        const hr = R * .09;
+        for (let q = -8; q <= 8; q++) for (let r = -8; r <= 8; r++) {
+          const x = hr * 1.5 * q, y = hr * Math.sqrt(3) * (r + q / 2), d = Math.hypot(x, y);
+          if (d < R * 1.3 || d > R * 1.55) continue;
+          hexPath(x, y, hr * .92, 0); c.stroke();
         }
         c.restore();
       }
-      // schwebende Sechseck-Splitter
-      shards.forEach(s => {
-        s.a += s.v * dt; s.rot += s.vr * dt;
-        const x = Math.cos(s.a) * R * s.r, y = Math.sin(s.a) * R * s.r + Math.sin(t * 1.3 + s.rot) * 3, gl = Math.max(0, Math.cos(s.a - light)) ** 4;
-        hex(x, y, R * s.s, s.rot); c.fillStyle = `rgba(120, 210, 255, ${.3 + .5 * gl})`; c.fill();
-        c.strokeStyle = `rgba(230, 250, 255, ${.5 + .5 * gl})`; c.lineWidth = .8; c.stroke();
-      });
-      // Lichtsweep ueber den Goldring
-      c.save(); c.globalCompositeOperation = 'lighter';
-      c.strokeStyle = 'rgba(255, 250, 220, .7)'; c.lineWidth = R * .05; c.beginPath(); c.arc(0, 0, R * 1.03, light - .18, light + .18); c.stroke();
-      c.restore();
       c.restore();
     });
   }
@@ -185,7 +216,28 @@ document.querySelectorAll('.frame').forEach(el => {
   // Windungen so gewaehlt, dass sie genau einmal herum aufgehen (sonst Knick am Startpunkt)
   const TW = Math.round(len * .06 / (Math.PI * 2)) * Math.PI * 2 / len;
   const vine = (d, k, t) => { const [x, y, a] = at(d), off = Math.sin(d * TW + k * Math.PI + t * .4) * 6; return [x - Math.sin(a) * off, y + Math.cos(a) * off, a]; };
-  const leaves = Array.from({ length: 34 }, (_, i) => ({ d: i / 34 * len + rand(-8, 8), k: i % 2, side: Math.random() < .5 ? -1 : 1, s: rand(5, 9), ph: rand(0, 6) }));
+  // Efeu: Blaetter mit drei bis fuenf Lappen in verschiedenen Groessen/Gruentoenen, Ranken mit Rankenkringeln
+  const leaves = Array.from({ length: 44 }, (_, i) => ({ d: i / 44 * len + rand(-6, 6), k: i % 2, side: Math.random() < .5 ? -1 : 1, s: rand(4.5, 9.5), ph: rand(0, 6), hue: rand(-12, 14), lobes: Math.random() < .6 ? 5 : 3, tilt: rand(-.4, .4) }));
+  const curls = Array.from({ length: 9 }, () => ({ d: rand(0, len), k: Math.random() < .5 ? 0 : 1, side: Math.random() < .5 ? -1 : 1, s: rand(5, 8), ph: rand(0, 6) }));
+  // Efeublatt (Spitze zeigt in +x), Laenge ~ 2*s
+  function ivy(s, lobes) {
+    c.beginPath(); c.moveTo(0, 0);
+    if (lobes === 5) {
+      c.bezierCurveTo(-s * .1, -s * .55, s * .25, -s * 1.0, s * .55, -s * .75);   // unterer Lappen links
+      c.bezierCurveTo(s * .7, -s * .95, s * 1.05, -s * .85, s * 1.15, -s * .45);   // Seitenlappen
+      c.bezierCurveTo(s * 1.4, -s * .4, s * 1.85, -s * .2, s * 2.05, 0);            // Spitze
+      c.bezierCurveTo(s * 1.85, s * .2, s * 1.4, s * .4, s * 1.15, s * .45);
+      c.bezierCurveTo(s * 1.05, s * .85, s * .7, s * .95, s * .55, s * .75);
+      c.bezierCurveTo(s * .25, s * 1.0, -s * .1, s * .55, 0, 0);
+    } else {
+      c.bezierCurveTo(s * .1, -s * .8, s * .9, -s * .9, s * 1.2, -s * .4);
+      c.bezierCurveTo(s * 1.5, -s * .3, s * 1.9, -s * .15, s * 2.05, 0);
+      c.bezierCurveTo(s * 1.9, s * .15, s * 1.5, s * .3, s * 1.2, s * .4);
+      c.bezierCurveTo(s * .9, s * .9, s * .1, s * .8, 0, 0);
+    }
+    c.closePath();
+  }
+
   // Runensteine: vier Ecken + Mitte der langen Seiten
   const runeAt = [0.0, .125, .25, .375, .5, .625, .75, .875].map(f => {
     // die Ecken liegen bei den Boegen; Position ueber die Laenge der Bahn verteilt
@@ -203,19 +255,48 @@ document.querySelectorAll('.frame').forEach(el => {
   let nextPulse = .5;
   draws.push((t, dt) => {
     c.clearRect(0, 0, CW, CH);
-    // Ranken (zwei Straenge, dunkel mit hellerer Oberkante)
+    // Ranken: holzige Staengel mit wechselnder Dicke, plastisch (Schatten, Koerper, Glanzkante, Rinde)
     for (let k = 0; k < 2; k++) {
-      c.beginPath(); for (let d = 0; d <= len; d += 4) { const [x, y] = vine(d, k, t); d ? c.lineTo(x, y) : c.moveTo(x, y); } c.closePath();
-      c.strokeStyle = '#1e3a1c'; c.lineWidth = 4.2; c.stroke();
-      c.strokeStyle = 'rgba(110, 160, 80, .55)'; c.lineWidth = 1.2; c.stroke();
+      const pts = []; for (let d = 0; d <= len; d += 3) pts.push(vine(d, k, t));
+      const thick = d => 2.6 + 1.3 * Math.sin(d * .021 + k * 2) + .6 * Math.sin(d * .07 + k);
+      const pass = (ox, oy, wMul, col) => {
+        for (let q = 1; q < pts.length; q++) { const d = q * 3, [ax, ay] = pts[q - 1], [bx, by] = pts[q];
+          c.strokeStyle = col; c.lineWidth = Math.max(.5, thick(d) * wMul); c.lineCap = 'round'; c.beginPath(); c.moveTo(ax + ox, ay + oy); c.lineTo(bx + ox, by + oy); c.stroke(); }
+      };
+      pass(1.2, 1.6, 1.1, 'rgba(0, 0, 0, .45)');       // Schlagschatten
+      pass(0, 0, 1, '#3a2c1a');                         // Rinde dunkel
+      pass(-.4, -.5, .62, '#5e4a2c');                   // Koerper
+      pass(-.8, -1, .22, 'rgba(170, 150, 100, .55)');   // Glanzkante
+      // Rindenkerben
+      c.strokeStyle = 'rgba(25, 16, 8, .7)'; c.lineWidth = .7;
+      for (let q = 4; q < pts.length; q += 5) { const [x, y, a] = pts[q], w = thick(q * 3) * .45; c.beginPath(); c.moveTo(x - Math.sin(a) * w + Math.cos(a) * 1.2, y + Math.cos(a) * w + Math.sin(a) * 1.2); c.lineTo(x + Math.sin(a) * w * .3, y - Math.cos(a) * w * .3); c.stroke(); }
     }
-    // Blaetter wiegen sich
+    // Rankenkringel
+    curls.forEach(cu => {
+      const [x, y, a] = vine(cu.d, cu.k, t); const sway = Math.sin(t * 1.3 + cu.ph) * .2;
+      c.save(); c.translate(x, y); c.rotate(a + cu.side * 1.2 + sway);
+      c.strokeStyle = '#6a8a3a'; c.lineWidth = .9; c.beginPath();
+      for (let q = 0; q <= 40; q++) { const u = q / 40, r = cu.s * (1 - u * .85), th = u * Math.PI * 3.2; const px = u * cu.s * 1.6 + Math.cos(th) * r * .5, py = cu.side * Math.sin(th) * r * .5; q ? c.lineTo(px, py) : c.moveTo(px, py); }
+      c.stroke(); c.restore();
+    });
+    // Efeublaetter: Stiel, Schatten, Verlauf, Adern, wiegen sich leicht
     leaves.forEach(l => {
-      const [x, y, a] = vine(l.d, l.k, t), sw = Math.sin(t * 1.6 + l.ph) * .25, ang = a + l.side * (Math.PI / 2.6) + sw;
+      const [x, y, a] = vine(l.d, l.k, t), sw = Math.sin(t * 1.4 + l.ph) * .18, ang = a + l.side * (Math.PI / 2.4) + sw + l.tilt;
       c.save(); c.translate(x, y); c.rotate(ang);
-      const lg = c.createLinearGradient(0, 0, l.s * 2, 0); lg.addColorStop(0, '#2e5a24'); lg.addColorStop(1, '#5e9a3a');
-      c.fillStyle = lg; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(l.s, -l.s * .7, l.s * 2, 0); c.quadraticCurveTo(l.s, l.s * .7, 0, 0); c.fill();
-      c.strokeStyle = 'rgba(160, 210, 120, .5)'; c.lineWidth = .6; c.beginPath(); c.moveTo(0, 0); c.lineTo(l.s * 1.8, 0); c.stroke();
+      c.strokeStyle = '#4a5a24'; c.lineWidth = .9; c.beginPath(); c.moveTo(0, 0); c.lineTo(l.s * .5, 0); c.stroke();
+      c.translate(l.s * .45, 0);
+      c.save(); c.translate(1.5, 1.8); ivy(l.s, l.lobes); c.fillStyle = 'rgba(0, 0, 0, .35)'; c.fill(); c.restore();
+      ivy(l.s, l.lobes);
+      const lg = c.createLinearGradient(0, -l.s, l.s * 2, l.s);
+      lg.addColorStop(0, `hsl(${100 + l.hue}, 45%, 34%)`); lg.addColorStop(.55, `hsl(${108 + l.hue}, 50%, 26%)`); lg.addColorStop(1, `hsl(${115 + l.hue}, 55%, 17%)`);
+      c.fillStyle = lg; c.fill();
+      c.strokeStyle = 'rgba(20, 40, 12, .7)'; c.lineWidth = .6; c.stroke();
+      c.strokeStyle = 'rgba(200, 225, 160, .45)'; c.lineWidth = .55; c.beginPath();
+      c.moveTo(0, 0); c.lineTo(l.s * 1.9, 0);
+      if (l.lobes === 5) { c.moveTo(l.s * .2, 0); c.lineTo(l.s * .9, -l.s * .55); c.moveTo(l.s * .2, 0); c.lineTo(l.s * .9, l.s * .55); }
+      c.moveTo(l.s * .1, 0); c.lineTo(l.s * .45, -l.s * .5); c.moveTo(l.s * .1, 0); c.lineTo(l.s * .45, l.s * .5);
+      c.stroke();
+      c.fillStyle = 'rgba(255, 255, 255, .08)'; c.beginPath(); c.ellipse(l.s * .9, -l.s * .25, l.s * .5, l.s * .18, -.3, 0, 7); c.fill(); // Glanz
       c.restore();
     });
     // Lichtpulse laufen durch die Ranken
