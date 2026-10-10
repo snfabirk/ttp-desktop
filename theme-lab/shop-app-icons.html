@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App Icon Skins</title>
+<style>
+  :root { --bg: #0a1424; --panel: #111d33; --gold: #c8a96e; --text: #d9cfb8; --dim: #8a8270; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: Georgia, serif; padding: 28px; }
+  h1 { color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-weight: 600; letter-spacing: 1px; margin: 0 0 4px; }
+  p.lead { color: var(--dim); margin: 0 0 24px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+  .card { background: var(--panel); border: 1px solid #2a3550; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .head { display: flex; align-items: baseline; justify-content: space-between; }
+  .name { color: var(--gold); font-size: 1.1rem; }
+  .rar { font-size: .7rem; letter-spacing: 1px; text-transform: uppercase; border: 1px solid currentColor; border-radius: 99px; padding: 1px 8px; }
+  .rar.refined { color: #6fb3d9; } .rar.fancy { color: #b58cf0; }
+  .row { display: flex; align-items: center; gap: 14px; }
+  .big { width: 128px; height: 128px; }
+  .sizes { display: flex; align-items: end; gap: 10px; }
+  .sizes span { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: .65rem; color: var(--dim); }
+  .bars { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .bar { height: 40px; border-radius: 6px; display: flex; align-items: center; gap: 10px; padding: 0 10px; }
+  .bar.dark { background: #1f1f1f; } .bar.light { background: #eef0f3; }
+  .bar .tb { width: 40px; height: 34px; border-radius: 5px; display: grid; place-items: center; position: relative; }
+  .bar.dark .tb { background: rgba(255,255,255,.08); } .bar.light .tb { background: rgba(0,0,0,.06); }
+  .bar .tb::after { content: ''; position: absolute; bottom: 1px; width: 14px; height: 3px; border-radius: 2px; background: #4cc2ff; }
+  .bar .tray { margin-left: auto; display: flex; align-items: center; gap: 8px; font: 11px Segoe UI, sans-serif; }
+  .bar.dark .tray { color: #ddd; } .bar.light .tray { color: #222; }
+  .desc { color: var(--dim); font-size: .85rem; margin: 0; }
+  img.px { image-rendering: auto; }
+</style>
+</head>
+<body>
+<h1>App Icon Skins</h1>
+<p class="lead">Static icons for the taskbar and tray. Each one is shown big, at taskbar size (32 / 24 px) and at tray size (16 px) on a dark and a light Windows taskbar.</p>
+<div class="grid" id="grid"></div>
+
+<script>
+// Pferdekopf (nach links schauend), 0..100 - gemeinsame Silhouette fuer die Pony-Varianten
+const HEAD = 'M42 4 L48 15 L54 3 L60 18 C74 20 86 30 90 48 C93 62 92 80 92 96 L48 96 C50 84 52 72 50 62 C40 64 28 74 16 75 C8 75 4 69 6 62 C10 52 26 36 37 22 Z';
+const MANE = 'M60 18 L66 9 L69 20 L77 13 L79 26 L87 22 L87 35 L95 35 L91 47 L99 51 L93 59 L99 67 L93 73 L97 81 L92 85';
+const EYE = [36, 33];
+
+const icons = [
+  {
+    id: 'icon-classic-pony', name: 'Golden Pony', rarity: 'refined',
+    desc: 'The house colours, but with a pony instead of letters.',
+    svg: () => `
+      <circle cx="128" cy="128" r="122" fill="#c8a96e"/>
+      <circle cx="128" cy="128" r="112" fill="#0a1424"/>
+      <g transform="translate(40 34) scale(1.75)">
+        <path d="${HEAD}" fill="#c8a96e"/>
+        <path d="${MANE} L92 96 C92 80 93 62 90 48 C86 30 74 20 60 18 Z" fill="#e6cf98"/>
+        <circle cx="${EYE[0]}" cy="${EYE[1]}" r="3.4" fill="#0a1424"/>
+      </g>`
+  },
+  {
+    id: 'icon-neon-pony', name: 'Neon Pony', rarity: 'fancy',
+    desc: 'Glowing outline pony on black, cyan with a magenta mane.',
+    svg: () => `
+      <defs><filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+      <rect x="8" y="8" width="240" height="240" rx="56" fill="#07040f"/>
+      <rect x="8" y="8" width="240" height="240" rx="56" fill="none" stroke="#ff2bd6" stroke-width="6" filter="url(#glow)"/>
+      <g transform="translate(40 30) scale(1.75)" filter="url(#glow)">
+        <path d="${HEAD}" fill="none" stroke="#2bf0ff" stroke-width="4.5" stroke-linejoin="round"/>
+        <path d="${MANE}" fill="none" stroke="#ff2bd6" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="${EYE[0]}" cy="${EYE[1]}" r="3.6" fill="#2bf0ff"/>
+      </g>`
+  },
+  {
+    id: 'icon-pixel-pony', name: 'Pixel Pony', rarity: 'refined',
+    desc: '16x16 pixel art - looks exactly right at tray size.',
+    svg: () => {
+      // 16x16 Pixelraster: . leer, k Kontur, b Koerper, m Maehne, e Auge, s Hintergrund
+      const P = [
+        '................',
+        '......k.k.......',
+        '.....kbkbk......',
+        '....kbbbbbkm....',
+        '...kbbbbbbkmm...',
+        '..kbbebbbbbkmm..',
+        '.kbbbbbbbbbbkmm.',
+        'kbbbbbbbbbbbbkm.',
+        'kbbbkkbbbbbbbkmm',
+        'kbkk..kbbbbbbbkm',
+        '.kk....kbbbbbbkm',
+        '.......kbbbbbbbk',
+        '......kbbbbbbbbk',
+        '......kbbbbbbbbk',
+        '......kkkkkkkkkk',
+        '................'
+].map(r => r.replace(/\./g, 's'));
+      const C = { s: '#3a2a6a', k: '#141020', b: '#f2c94c', m: '#ff6b9a', e: '#141020' };
+      let out = '<rect width="256" height="256" rx="40" fill="#3a2a6a"/>';
+      P.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== 's') out += `<rect x="${x * 16}" y="${y * 16}" width="16.5" height="16.5" fill="${C[ch]}"/>`; }));
+      return out;
+    }
+  },
+  {
+    id: 'icon-horseshoes', name: 'Lucky Horseshoes', rarity: 'refined',
+    desc: 'Three bronze horseshoes - one for each pony.',
+    svg: () => {
+      const shoe = (x, y, s, rot) => `
+        <g transform="translate(${x} ${y}) rotate(${rot + 180}) scale(${s})">
+          <path d="M-30 30 L-30 -2 A30 30 0 0 1 30 -2 L30 30 L16 30 L16 -2 A16 16 0 0 0 -16 -2 L-16 30 Z" fill="url(#bronze)" stroke="#3b230f" stroke-width="3" stroke-linejoin="round"/>
+          ${[[-23, 18], [-23, 2], [-14, -16], [14, -16], [23, 2], [23, 18]].map(([a, b]) => `<circle cx="${a}" cy="${b}" r="2.6" fill="#3b230f"/>`).join('')}
+        </g>`;
+      return `
+        <defs><linearGradient id="bronze" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3c98b"/><stop offset=".5" stop-color="#c47d3a"/><stop offset="1" stop-color="#7a4419"/></linearGradient></defs>
+        <circle cx="128" cy="128" r="122" fill="#1d3b2a"/>
+        <circle cx="128" cy="128" r="122" fill="none" stroke="#c47d3a" stroke-width="8"/>
+        ${shoe(128, 92, 1.2, 0)}${shoe(80, 168, 1.2, -14)}${shoe(176, 168, 1.2, 14)}`;
+    }
+  },
+  {
+    id: 'icon-crystal', name: 'Crystal Core', rarity: 'fancy',
+    desc: 'A faceted blue crystal set in a gold hexagon.',
+    svg: () => {
+      const hex = r => [...Array(6)].map((_, i) => { const a = Math.PI / 3 * i - Math.PI / 2; return `${128 + r * Math.cos(a)},${128 + r * Math.sin(a)}`; }).join(' ');
+      return `
+        <defs>
+          <linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6e2a8"/><stop offset="1" stop-color="#9a7430"/></linearGradient>
+          <radialGradient id="cg" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#e6fbff"/><stop offset=".35" stop-color="#5fd4ff"/><stop offset="1" stop-color="#0b4f8a"/></radialGradient>
+        </defs>
+        <polygon points="${hex(124)}" fill="url(#hg)"/>
+        <polygon points="${hex(106)}" fill="#0c1a30"/>
+        <polygon points="128,46 186,112 128,212 70,112" fill="url(#cg)"/>
+        <polygon points="128,46 150,112 128,212 106,112" fill="#ffffff" opacity=".18"/>
+        <polyline points="70,112 106,112 128,46 150,112 186,112" fill="none" stroke="#e6fbff" stroke-width="3" opacity=".7"/>
+        <polyline points="106,112 128,212 150,112" fill="none" stroke="#e6fbff" stroke-width="2" opacity=".45"/>`;
+    }
+  },
+  {
+    id: 'icon-ember', name: 'Ember 3TP', rarity: 'refined',
+    desc: 'The classic letters, forged in lava.',
+    svg: () => `
+      <defs>
+        <radialGradient id="eg" cx=".5" cy=".7" r=".8"><stop offset="0" stop-color="#5a1206"/><stop offset="1" stop-color="#160403"/></radialGradient>
+        <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2a8"/><stop offset=".45" stop-color="#ffb02e"/><stop offset="1" stop-color="#e2380e"/></linearGradient>
+      </defs>
+      <circle cx="128" cy="128" r="122" fill="url(#eg)"/>
+      <circle cx="128" cy="128" r="117" fill="none" stroke="#ff6a1a" stroke-width="7"/>
+      <path d="M40 180 Q70 168 92 186 T150 182 T216 178" fill="none" stroke="#ff6a1a" stroke-width="5" opacity=".55"/>
+      <text x="128" y="154" text-anchor="middle" font-family="Segoe UI, Arial Black, sans-serif" font-weight="900" font-size="92" fill="url(#tg)" stroke="#3a0a02" stroke-width="4" paint-order="stroke">3TP</text>`
+  },
+  {
+    id: 'icon-unicorn', name: 'Secretly a Unicorn', rarity: 'fancy',
+    desc: 'The pony was a unicorn all along. Rainbow mane, golden horn.',
+    svg: () => `
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd6f1"/><stop offset="1" stop-color="#c9b6ff"/></linearGradient>
+        <linearGradient id="rb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff5f6d"/><stop offset=".25" stop-color="#ffc371"/><stop offset=".5" stop-color="#7bed9f"/><stop offset=".75" stop-color="#70a1ff"/><stop offset="1" stop-color="#a55eea"/></linearGradient>
+        <linearGradient id="horn" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffe9a8"/><stop offset="1" stop-color="#d9a23a"/></linearGradient>
+      </defs>
+      <circle cx="128" cy="128" r="122" fill="url(#sky)"/>
+      <g transform="translate(40 34) scale(1.75)">
+        <path d="M44 22 L30 -2 L52 18 Z" fill="url(#horn)" stroke="#a4741f" stroke-width="1.2" stroke-linejoin="round"/>
+        <path d="${HEAD}" fill="#ffffff" stroke="#6b4fa0" stroke-width="2.4" stroke-linejoin="round"/>
+        <path d="${MANE} L92 96 C92 80 93 62 90 48 C86 30 74 20 60 18 Z" fill="url(#rb)" stroke="#6b4fa0" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="${EYE[0]}" cy="${EYE[1]}" r="3.6" fill="#2b1d4a"/>
+        <circle cx="30" cy="54" r="3.5" fill="#ff9ec8" opacity=".8"/>
+      </g>`
+  },
+  {
+    id: 'icon-coin', name: 'Lucky Coin', rarity: 'refined',
+    desc: 'A minted gold coin with the pony on it - for the shop regulars.',
+    svg: () => `
+      <defs>
+        <radialGradient id="cn" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="#fff1b8"/><stop offset=".55" stop-color="#e2b23c"/><stop offset="1" stop-color="#9a6a12"/></radialGradient>
+      </defs>
+      <circle cx="128" cy="128" r="122" fill="#7a520c"/>
+      <circle cx="128" cy="124" r="118" fill="url(#cn)"/>
+      <circle cx="128" cy="124" r="96" fill="none" stroke="#9a6a12" stroke-width="5" stroke-dasharray="3 7"/>
+      <g transform="translate(52 50) scale(1.45)" opacity=".92">
+        <path d="${HEAD}" fill="#b07d18" stroke="#7a520c" stroke-width="2"/>
+        <circle cx="${EYE[0]}" cy="${EYE[1]}" r="3" fill="#7a520c"/>
+      </g>`
+  }
+];
+
+const svgUrl = ic => 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">${ic.svg()}</svg>`);
+const img = (url, s) => `<img class="px" src="${url}" width="${s}" height="${s}" alt="">`;
+const bar = (cls, url) => `<div class="bar ${cls}">
+  <div class="tb">${img(url, 24)}</div><div class="tb" style="opacity:.35"></div>
+  <div class="tray"><span>⌃</span>${img(url, 16)}<span>🔊</span><span>16:40</span></div></div>`;
+document.getElementById('grid').innerHTML = icons.map(ic => {
+  const u = svgUrl(ic);
+  return `<div class="card">
+    <div class="head"><span class="name">${ic.name}</span><span class="rar ${ic.rarity}">${ic.rarity}</span></div>
+    <div class="row">${img(u, 128)}
+      <div class="sizes"><span>${img(u, 48)}48</span><span>${img(u, 32)}32</span><span>${img(u, 24)}24</span><span>${img(u, 16)}16</span></div></div>
+    <div class="bars">${bar('dark', u)}${bar('light', u)}</div>
+    <p class="desc">${ic.desc}</p>
+  </div>`;
+}).join('');
+</script>
+</body>
+</html>

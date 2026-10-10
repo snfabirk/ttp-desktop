@@ -264,8 +264,11 @@
     .challenge-pass-card .trophies-progress {
       display: inline-flex;
       align-items: center;
-      white-space: nowrap;
+      flex-wrap: wrap;
+      row-gap: 2px;
     }
+    /* Schmale Kachel: Segmente brechen als Ganzes um statt ueber den Rand zu laufen */
+    .challenge-pass-card .cp-seg { white-space: nowrap; }
     /* Deutliche Trennung zwischen Pass-Stufe und LP Bank (ein Punkt war zu
        wenig, Nutzerfeedback). */
     .challenge-pass-card .cp-sep {

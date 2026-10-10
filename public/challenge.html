@@ -59,8 +59,13 @@
       position: absolute;
       left: 0;
       right: 0;
-      bottom: -6px;
+      bottom: 0;
       margin: 0;
+      /* Exakt in die 14px-Luecke: einzeilig, voller Text im Tooltip */
+      line-height: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     /* ----- Account-Karte (aus overview.html hierher umgezogen) ----- */
     .account-overview-wrap {
@@ -1131,6 +1136,7 @@
   <script>
     const DDRAGON_VERSION = '16.17.1';
     const statusEl = document.getElementById('profileStatus');
+    new MutationObserver(() => { statusEl.title = statusEl.textContent; }).observe(statusEl, { childList: true, characterData: true, subtree: true });
     const accountOverviewIcon = document.getElementById('accountOverviewIcon');
     const accountOverviewName = document.getElementById('accountOverviewName');
     const accountWLEl = document.getElementById('accountWL');

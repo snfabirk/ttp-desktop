@@ -462,6 +462,11 @@
 
     let screenWidth = 1920;
     let screenHeight = 1080;
+    // Untergrenze je Achse: mindestens MIN_PERCENT, aber nie kleiner als die
+    // Mindestfenstergroesse der App (sonst zeigt der Regler 30% an, waehrend
+    // das Fenster bei der Mindestgroesse stehen bleibt)
+    let minW = MIN_PERCENT;
+    let minH = MIN_PERCENT;
 
     function clamp(value, min, max) {
       return Math.min(Math.max(value, min), max);
@@ -479,13 +484,13 @@
 
     widthSlider.addEventListener('input', () => { widthInput.value = widthSlider.value; });
     widthInput.addEventListener('input', () => {
-      const v = clamp(Number(widthInput.value) || MIN_PERCENT, MIN_PERCENT, MAX_PERCENT);
+      const v = clamp(Number(widthInput.value) || minW, minW, MAX_PERCENT);
       widthSlider.value = v;
     });
 
     heightSlider.addEventListener('input', () => { heightInput.value = heightSlider.value; });
     heightInput.addEventListener('input', () => {
-      const v = clamp(Number(heightInput.value) || MIN_PERCENT, MIN_PERCENT, MAX_PERCENT);
+      const v = clamp(Number(heightInput.value) || minH, minH, MAX_PERCENT);
       heightSlider.value = v;
     });
 
@@ -496,8 +501,8 @@
     let applyConfirmedTimeoutId = null;
 
     applyBtn.addEventListener('click', () => {
-      const widthPercent = clamp(Number(widthInput.value) || MIN_PERCENT, MIN_PERCENT, MAX_PERCENT);
-      const heightPercent = clamp(Number(heightInput.value) || MIN_PERCENT, MIN_PERCENT, MAX_PERCENT);
+      const widthPercent = clamp(Number(widthInput.value) || minW, minW, MAX_PERCENT);
+      const heightPercent = clamp(Number(heightInput.value) || minH, minH, MAX_PERCENT);
       const widthPx = Math.round(screenWidth * widthPercent / 100);
       const heightPx = Math.round(screenHeight * heightPercent / 100);
 
@@ -589,9 +594,13 @@
         const info = await window.ttpSettings.getWindowInfo();
         screenWidth = info.screenWidth;
         screenHeight = info.screenHeight;
+        if (info.minWidth) minW = clamp(Math.ceil(info.minWidth / screenWidth * 100), MIN_PERCENT, MAX_PERCENT);
+        if (info.minHeight) minH = clamp(Math.ceil(info.minHeight / screenHeight * 100), MIN_PERCENT, MAX_PERCENT);
+        widthSlider.min = widthInput.min = minW;
+        heightSlider.min = heightInput.min = minH;
 
-        const widthPercent = clamp(Math.round((info.width / screenWidth) * 100), MIN_PERCENT, MAX_PERCENT);
-        const heightPercent = clamp(Math.round((info.height / screenHeight) * 100), MIN_PERCENT, MAX_PERCENT);
+        const widthPercent = clamp(Math.round((info.width / screenWidth) * 100), minW, MAX_PERCENT);
+        const heightPercent = clamp(Math.round((info.height / screenHeight) * 100), minH, MAX_PERCENT);
 
         widthSlider.value = widthPercent;
         widthInput.value = widthPercent;

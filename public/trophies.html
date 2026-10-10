@@ -1161,7 +1161,9 @@
       if (activeHistoricalEntryId === null) document.getElementById('achievementsStatus').textContent = text;
     }
 
+    let liveResultShown = false;
     function renderLiveResult(result) {
+      liveResultShown = true;
       applyAchievementProgress(result.trophies);
 
       const rulesStatusEl = document.getElementById('rulesStatus');
@@ -1322,6 +1324,17 @@
         }).catch(() => {});
       } catch (e) {
         setLiveStatus(`Could not load trophy progress: ${e.message}`);
+        // Noch nie geladen: oben "–" statt eines falschen "0%" und den Fehler
+        // direkt unter der Zusammenfassung zeigen (die Statuszeile ganz unten
+        // sieht man sonst erst nach dem Scrollen)
+        if (!liveResultShown && activeHistoricalEntryId === null) {
+          document.getElementById('trophiesOverallPercent').textContent = '–';
+          document.getElementById('trophiesOverallCount').textContent = 'Progress could not be loaded';
+          const rulesStatusEl = document.getElementById('rulesStatus');
+          rulesStatusEl.classList.remove('current');
+          rulesStatusEl.classList.add('outdated', 'visible');
+          rulesStatusEl.textContent = e.message;
+        }
       } finally {
         achievementRefreshInProgress = false;
       }

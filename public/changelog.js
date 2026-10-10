@@ -25,6 +25,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.20.1',
+      date: '2026-10-10',
+      notable: ['The app window now has a minimum size, so nothing overlaps when it is made very small.'],
+      refinements: 3,
+      bugfixes: 5
+    },
+    {
       version: '5.20.0',
       date: '2026-10-10',
       notable: [

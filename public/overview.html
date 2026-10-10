@@ -254,8 +254,11 @@
     .challenge-pass-card .trophies-progress {
       display: inline-flex;
       align-items: center;
-      white-space: nowrap;
+      flex-wrap: wrap;
+      row-gap: 2px;
     }
+    /* Schmale Kachel: Segmente brechen als Ganzes um statt ueber den Rand zu laufen */
+    .challenge-pass-card .cp-seg { white-space: nowrap; }
     /* Deutliche Trennung zwischen Pass-Stufe und LP Bank (ein Punkt war zu
        wenig, Nutzerfeedback). */
     .challenge-pass-card .cp-sep {
@@ -267,8 +270,9 @@
     .profile-card:hover .profile-card-more {
       color: var(--gold);
     }
-    /* Sehr schmales Fenster: Name hat Vorrang, die ganze Karte bleibt klickbar */
-    @media (max-width: 760px) {
+    /* Schmaleres Fenster: Name hat Vorrang, die ganze Karte bleibt klickbar
+       (bei Mindestgroesse wurde sonst schon "Luckshot#796" abgeschnitten) */
+    @media (max-width: 1350px) {
       .profile-card-more { display: none; }
     }
     .subtitle strong {
@@ -468,7 +472,7 @@
     /* Status schwebt ueber der rechten Spalte, damit beide Spalten oben buendig starten */
     .split-right .content { position: relative; }
     .split-left .content > *, .split-right .content > * { box-sizing: border-box; }
-    .dash-status { color: var(--text-faint); font-size: 0.8rem; font-family: Georgia, serif; min-height: 1.2em; margin: 0; position: absolute; top: -22px; left: 30px; right: 30px; }
+    .dash-status { color: var(--text-faint); font-size: 0.8rem; font-family: Georgia, serif; min-height: 1.2em; margin: 0; position: absolute; bottom: calc(100% + 6px); left: 30px; right: 30px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   </style>
 </head>
 <body>
@@ -565,8 +569,8 @@
           const bottoms = cards.map((e, i) => e.getBoundingClientRect().bottom + e.closest('.split-left, .split-right').scrollTop - (extra.get(e) || 0));
           const max = Math.max(...bottoms);
           cards.forEach((e, i) => {
-            const add = stacked.matches ? 0 : Math.round(max - bottoms[i]);
-            if ((extra.get(e) || 0) === add) return;
+            const add = stacked.matches ? 0 : max - bottoms[i];
+            if (Math.abs((extra.get(e) || 0) - add) < 0.5) return;
             const base = e.getBoundingClientRect().height - (extra.get(e) || 0);
             extra.set(e, add);
             e.style.minHeight = add ? (base + add) + 'px' : '';
@@ -591,6 +595,8 @@
     const esc = str => String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const champIcon = id => `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${id}.png`;
     const statusEl = document.getElementById('dashStatus');
+    // Einzeilig mit Ellipse - voller Text im Tooltip
+    new MutationObserver(() => { statusEl.title = statusEl.textContent; }).observe(statusEl, { childList: true, characterData: true, subtree: true });
 
     async function parseApiResponse(res) {
       const text = await res.text();
@@ -642,7 +648,7 @@
       try {
         const res = await fetch(`/api/progression?${new URLSearchParams(progressionContext())}`);
         const d = await parseApiResponse(res);
-        if (!res.ok) return;
+        if (!res.ok) throw new Error(d.error || 'Unknown error');
         document.getElementById('profileCardLevel').textContent = `Lv ${d.level.level}`;
         document.getElementById('profileCardFrame').className =
           `cos-border profile-card-icon-wrap cos-${(d.equipped && d.equipped.border) || 'none'}`;
@@ -653,7 +659,11 @@
         renderToday(d);
         renderLastGame(d);
         renderFeed(d);
-      } catch (e) {}
+      } catch (e) {
+        // Nur wenn noch nichts da ist - sonst bleibt der letzte Stand stehen
+        if (!document.getElementById('todayDailies').children.length)
+          document.getElementById('todayDailies').innerHTML = '<p class="muted">Quests could not be loaded right now.</p>';
+      }
     }
 
     function renderToday(d) {
@@ -835,7 +845,9 @@
         if (!res.ok) throw new Error(a.error || 'Could not find summoner.');
         puuid = a.puuid;
         playerName = a.gameName;
-        document.getElementById('accountOverviewName').textContent = `${a.gameName}#${a.tagLine}`;
+        const nameEl = document.getElementById('accountOverviewName');
+        nameEl.textContent = `${a.gameName}#${a.tagLine}`;
+        nameEl.title = nameEl.textContent; // bei Platzmangel abgeschnitten
         if (lastProgression) renderFeed(lastProgression);
         if (a.profileIconId != null) {
           const img = document.getElementById('accountOverviewIcon');

@@ -258,9 +258,12 @@ ipcMain.handle('settings-get-window-info', () => {
   if (!mainWin) return { width: 1400, height: 960, screenWidth: 1920, screenHeight: 1080 };
   const bounds = mainWin.getBounds();
   const display = screen.getDisplayMatching(bounds);
+  const [minWidth, minHeight] = mainWin.getMinimumSize();
   return {
     width: bounds.width,
     height: bounds.height,
+    minWidth,
+    minHeight,
     screenWidth: display.workArea.width,
     screenHeight: display.workArea.height
   };
@@ -510,6 +513,10 @@ function createWindow(port) {
     y: winState.y,
     width: winState.width,
     height: winState.height,
+    // Mindestgroesse (Nutzerwunsch v5.20.0): darunter ueberlappen Navigation
+    // und Setup-Knopf - auf sehr kleinen Bildschirmen auf deren Flaeche begrenzt
+    minWidth: Math.min(1120, screenWidth),
+    minHeight: Math.min(700, screenHeight),
     show: !startHidden,
     title: windowTitle,
     autoHideMenuBar: true,

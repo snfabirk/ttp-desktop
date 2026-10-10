@@ -697,6 +697,8 @@
     const title = t => `<div class="w-title">${t}</div>`;
     const bar = (pct, text) => `<div class="level-line"><div class="xp-bar"><div class="xp-bar-fill" style="width:${Math.max(0, Math.min(100, pct))}%"></div></div>${text ? `<span class="xp-text">${text}</span>` : ''}</div>`;
     const S = () => data.stats;
+    // Ohne Profil-Daten (Ladefehler) "–" statt erfundener Werte wie Level 1 / 0 Coins
+    const NO_LEVEL = { level: '–', xpIntoLevel: 0, xpForNextLevel: 1 };
     const winrate = () => (S() && S().games ? Math.round((S().wins / S().games) * 100) : null);
     // Anzahl Stat-Kacheln je Groesse fuer die Listen-Widgets
     const statCount = w => (w.w >= 6 ? 5 : w.w >= 4 ? 4 : w.w);
@@ -719,7 +721,7 @@
         render(w) {
           const s = S();
           const a = data.account;
-          const lvl = s ? s.level : { level: 1, xpIntoLevel: 0, xpForNextLevel: 2000 };
+          const lvl = s ? s.level : NO_LEVEL;
           const border = (editState ? editState.border : (s && s.equipped && s.equipped.border)) || 'none';
           const icon = a && a.profileIconId != null ? `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${a.profileIconId}.png` : '';
           const col = w.h >= 2;
@@ -728,15 +730,15 @@
             <div class="id-main">
               <div class="id-top">
                 <div class="id-name">${a ? esc(`${a.gameName}#${a.tagLine}`) : 'No summoner loaded yet'}</div>
-                ${col ? '' : `<span class="coin-pill" title="Coins from the monthly pass">🪙 ${fmtNum(s ? s.coins : 0)}</span>`}
+                ${col ? '' : `<span class="coin-pill" title="Coins from the monthly pass">🪙 ${s ? fmtNum(s.coins) : '–'}</span>`}
               </div>
               ${w.w >= 6 || col ? `<div class="id-since">${s && s.challenges.firstStarted ? `Pony since ${fmtDate(s.challenges.firstStarted)}` : ''}</div>` : ''}
               <div class="level-line" title="Profile level - keeps growing across all challenges">
                 <span class="level-pill">Level ${lvl.level}</span>
                 <div class="xp-bar"><div class="xp-bar-fill" style="width:${(lvl.xpIntoLevel / lvl.xpForNextLevel) * 100}%"></div></div>
-                ${col ? '' : `<span class="xp-text">${fmtNum(lvl.xpIntoLevel)} / ${fmtNum(lvl.xpForNextLevel)} XP</span>`}
+                ${col ? '' : `<span class="xp-text">${s ? `${fmtNum(lvl.xpIntoLevel)} / ${fmtNum(lvl.xpForNextLevel)} XP` : '– XP'}</span>`}
               </div>
-              ${col ? `<span class="coin-pill col-coins">🪙 ${fmtNum(s ? s.coins : 0)}</span>` : ''}
+              ${col ? `<span class="coin-pill col-coins">🪙 ${s ? fmtNum(s.coins) : '–'}</span>` : ''}
             </div>
           </div>`;
         }
@@ -891,7 +893,7 @@
       level: {
         group: 'Progress', name: 'Level', desc: 'Your level', sizes: [[1, 1], [2, 1], [3, 1]],
         render(w) {
-          const lvl = S() ? S().level : { level: 1, xpIntoLevel: 0, xpForNextLevel: 2000 };
+          const lvl = S() ? S().level : NO_LEVEL;
           if (w.w === 1) return big(lvl.level, 'Level');
           return `<div class="w-body">${title(`Level ${lvl.level}`)}${bar((lvl.xpIntoLevel / lvl.xpForNextLevel) * 100, w.w >= 3 ? `${fmtNum(lvl.xpIntoLevel)} / ${fmtNum(lvl.xpForNextLevel)} XP` : '')}</div>`;
         }
@@ -899,7 +901,8 @@
       totalXp: {
         group: 'Progress', name: 'Total XP', desc: 'All XP ever earned', sizes: [[1, 1], [2, 1]],
         render(w) {
-          const xp = S() ? S().totalXp : 0;
+          if (!S()) return big('–', 'Total XP');
+          const xp = S().totalXp;
           return big(w.w === 1 && xp >= 10000 ? `${Math.round(xp / 1000)}k` : fmtNum(xp), 'Total XP');
         }
       },

@@ -726,7 +726,10 @@ function rollOffers(state, count, weights, kind, exclude = []) {
       // gewuerfelte Seltenheit; ist dort nichts mehr frei, erst hoeher, dann tiefer
       const want = rollRarity(weights);
       const idx = SHOP_RARITY_ORDER.indexOf(want);
-      const order = [...SHOP_RARITY_ORDER.slice(idx), ...SHOP_RARITY_ORDER.slice(0, idx).reverse()].filter(r => allowed.has(r));
+      // Animated+ nur, wenn es selbst gewuerfelt wurde - sonst waere es fuer
+      // alle, die Animated leergekauft haben, der Normalfall statt selten
+      const order = [...SHOP_RARITY_ORDER.slice(idx), ...SHOP_RARITY_ORDER.slice(0, idx).reverse()]
+        .filter(r => allowed.has(r) && (r !== 'animatedplus' || want === 'animatedplus'));
       for (const r of order) {
         const pool = free(SHOP_ITEMS.filter(it => it.rarity === r));
         if (pool.length) { pick = pool[Math.floor(Math.random() * pool.length)]; break; }

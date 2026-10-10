@@ -1,5 +1,16 @@
 # Internal Changelog
 
+## 5.20.1 — 2026-10-10
+
+Layout audit of every page in every state (full / empty / long names / API errors / live game) at default, 1280, 1000 and minimum size:
+- Main window minWidth 1120 / minHeight 700 (capped to the screen); below that the Setup button overlapped the nav. Settings size sliders now start at the minimum (getWindowInfo returns minWidth/minHeight).
+- Overview: status line no longer pushes into the Live card when it is long (single line, ellipsis, full text as tooltip); "Today" shows a message when quests fail to load; flush-column sync without 1px rounding drift; "View profile →" hidden below 1350px so the name is not cut at minimum size (name has a tooltip).
+- Pass tile (overview + champion): "Tier x / y | LP Bank" wraps as whole segments instead of running into the card padding.
+- Challenge: load error no longer sits on top of the Goal Progress card (fits the 14px gap, tooltip for full text).
+- Profile: without profile data shows "–" instead of a fake Level 1 / 0 coins / 0 XP.
+- Trophies: load error shows "–" + the message right under the summary instead of "0%" and a line at the very bottom.
+- Shop: Animated+ is only offered when it was actually rolled (the "sold out, go one rarity higher" fallback skipped from Animated straight to Animated+).
+
 ## 5.20.0 — 2026-10-10
 
 - 28 shop cosmetics ported from theme-lab (shop-cosmetics-2.js, shop-scenes-2.js, loaded by nav.js after the v1 files):
