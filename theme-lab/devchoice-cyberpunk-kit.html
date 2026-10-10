@@ -26,7 +26,8 @@
   .w .muted { color: var(--dim); font-size: .85rem; font-family: 'Share Tech Mono', monospace; }
   /* Profilzeile ohne clip-path, sonst schneidet sie die Border-Effekte ab; Ecke per Verlauf */
   .w.wide { clip-path: none; overflow: visible; position: relative; z-index: 2; background: linear-gradient(225deg, transparent 10px, rgba(10, 12, 18, .72) 10px); border-color: transparent; box-shadow: inset 0 0 0 1px rgba(94, 240, 240, .2); grid-column: span 3; display: flex; align-items: center; gap: 30px; min-height: 0; padding: 18px 24px; }
-  .name { font-size: 1.6rem; font-weight: 700; letter-spacing: 2px; color: var(--yellow); }
+  .name { position: relative; z-index: 3; font-size: 1.6rem; font-weight: 700; letter-spacing: 2px; color: var(--yellow); text-shadow: 0 0 6px #07080c, 0 0 12px #07080c, 0 0 2px #07080c; }
+  .w.wide .muted { position: relative; z-index: 3; text-shadow: 0 0 6px #07080c, 0 0 10px #07080c; }
   /* Border */
   .optic { position: relative; width: 96px; height: 96px; flex-shrink: 0; cursor: default; }
   .optic img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
@@ -122,6 +123,17 @@ function drawOptic(t, dt) {
   ox.fillStyle = sg; ox.beginPath(); ox.moveTo(0, 0); ox.arc(0, 0, R * 1.4, sa, sa + .35); ox.closePath(); ox.fill();
   // Datenpunkte am Rand blinken
   for (let k = 0; k < 4; k++) { const a = k * 1.57 + .78; if (Math.sin(t * 5 + k * 2) > .3) { ox.fillStyle = `rgba(${CYAN}, .9)`; ox.fillRect(Math.cos(a) * R * 1.42 - 2, Math.sin(a) * R * 1.42 - 2, 4, 4); } }
+  // Zur Namensseite (rechts) blenden die aeusseren Elemente weich aus, damit
+  // der Name frei bleibt - Ring bleibt gross, nur der Bereich ueber dem Text wird leiser
+  ox.save();
+  ox.beginPath(); ox.arc(0, 0, R * 2.3, 0, 7); ox.arc(0, 0, R * 1.24, 0, 7, true); ox.clip('evenodd');
+  ox.globalCompositeOperation = 'destination-out';
+  const fade = ox.createConicGradient(-Math.PI / 2, 0, 0); // 0 = oben, laeuft im Uhrzeigersinn
+  fade.addColorStop(0, 'rgba(0,0,0,0)'); fade.addColorStop(.1, 'rgba(0,0,0,0)');
+  fade.addColorStop(.2, 'rgba(0,0,0,.92)'); fade.addColorStop(.3, 'rgba(0,0,0,.92)');
+  fade.addColorStop(.4, 'rgba(0,0,0,0)'); fade.addColorStop(1, 'rgba(0,0,0,0)');
+  ox.fillStyle = fade; ox.fillRect(-R * 2.4, -R * 2.4, R * 4.8, R * 4.8);
+  ox.restore();
   // Easter Egg: Fadenkreuz rastet ein
   if (scan) {
     scan.t += dt; const s = scan.t;
