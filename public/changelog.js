@@ -25,6 +25,17 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.20.0',
+      date: '2026-10-10',
+      notable: [
+        '28 new cosmetics in the shop, including a spirit dragon, a kraken and a phoenix - and each new Animated piece hides its own secret.',
+        'New rarity: Animated+. Extremely rare, extremely shiny.',
+        "Developer's Choice: homage cosmetics inspired by the developer's favourite games."
+      ],
+      refinements: 2,
+      bugfixes: 0
+    },
+    {
       version: '5.19.1',
       date: '2026-10-09',
       notable: ['Shop themes now preview as a mini version of the whole app, with their scene running live.'],

@@ -749,6 +749,7 @@ on(window, 'click', e => {
   window.TTPThemePreviewLive = (key, cv) => {
     const d = Math.min(2, devicePixelRatio || 1), W = cv.clientWidth, H = cv.clientHeight;
     cv.width = W * d; cv.height = H * d; const c = cv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0);
+    if (window.TTPThemeLiveExtra && window.TTPThemeLiveExtra[key]) return window.TTPThemeLiveExtra[key](cv, W, H);   // shop-scenes-2.js
     const live = { starfall: [starfallSetup, starfallDraw, 1], koi: [koiSetup, koiDraw, .55] }[key];
     if (!live) { (PV[key] || (() => {}))(c, W, H); return () => {}; }
     const [setup, draw, scale] = live;
@@ -759,6 +760,7 @@ on(window, 'click', e => {
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   };
+  window.TTPThemePV = PV;   // shop-scenes-2.js ergaenzt eigene Standbilder
   window.TTPThemePreview = (key, cv) => { const fn = PV[key]; if (!fn) return false; const d = Math.min(2, devicePixelRatio || 1), W = cv.clientWidth || 96, H = cv.clientHeight || 96; cv.width = W * d; cv.height = H * d; const c = cv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0); fn(c, W, H); return true; };
 
   const R = window.TTPThemeFx.register;

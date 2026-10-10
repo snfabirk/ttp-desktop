@@ -680,9 +680,10 @@ function rerollDaily(context) {
 //    Chance pro Platz (Tag 8 %, Woche 20 %), solange man nicht alle hat
 // Shop-Artikel = alle Cosmetics mit source 'shop' (cosmetics.js, seit v5.19.0 echte Designs)
 const SHOP_ITEMS = COSMETICS.filter(c => c.source === 'shop');
-const SHOP_RARITY_ORDER = ['basic', 'refined', 'fancy', 'animated'];
-const SHOP_DAILY_WEIGHTS = { basic: 30, refined: 50, fancy: 18, animated: 2 };
-const SHOP_WEEKLY_WEIGHTS = { fancy: 70, animated: 30 };
+const SHOP_RARITY_ORDER = ['basic', 'refined', 'fancy', 'animated', 'animatedplus'];
+// Animated+ (v5.20.0): extrem selten, ohne steigende Chance
+const SHOP_DAILY_WEIGHTS = { basic: 30, refined: 49.5, fancy: 18, animated: 2, animatedplus: .5 };
+const SHOP_WEEKLY_WEIGHTS = { fancy: 68, animated: 30, animatedplus: 2 };
 const PITY_DAILY_STEP = 1;
 const PITY_WEEKLY_STEP = 20;
 const PAST_PASS_CHANCE = { daily: 0.08, weekly: 0.2 };
@@ -743,7 +744,7 @@ function offerView(id, owned) {
   if (!c) return null;
   return {
     id: c.id, type: c.type, name: c.name, rarity: c.rarity || 'refined', price: priceOf(c), c: c.c || null,
-    themeKey: c.themeKey || null,
+    themeKey: c.themeKey || null, devChoice: !!c.devChoice,
     fromPass: c.passMonth ? `${monthLabel(c.passMonth)} Pass` : null,
     owned: owned.has(c.id)
   };

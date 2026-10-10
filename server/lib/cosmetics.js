@@ -22,12 +22,14 @@
 // Seltenheiten (Nutzerdesign 2026-10-09): Basic (gratis, z.B. die Grund-
 // Themes) -> Refined -> Fancy -> Animated. Pass: Stufe 5/10/15 Refined,
 // 20/25 Fancy, 30 Animated. Shop-Preise nach Seltenheit x Typ.
-const RARITIES = ['basic', 'refined', 'fancy', 'animated'];
+const RARITIES = ['basic', 'refined', 'fancy', 'animated', 'animatedplus'];
 const PRICES = {
   basic: { border: 0, frame: 0, theme: 0 },
   refined: { border: 500, frame: 650, theme: 900 },
   fancy: { border: 1000, frame: 1300, theme: 1600 },
-  animated: { border: 1600, frame: 1900, theme: 2400 }
+  animated: { border: 1600, frame: 1900, theme: 2400 },
+  // Animated+ (v5.20.0): bisher nur Themes; Border/Rahmen-Preise fuer spaeter
+  animatedplus: { border: 2600, frame: 3000, theme: 4000 }
 };
 const priceOf = c => (PRICES[c.rarity] || PRICES.refined)[c.type] || 0;
 
@@ -69,6 +71,39 @@ const COSMETICS = [
   { id: 'frame-shop-slate', type: 'frame', name: 'Slate Frame', rarity: 'basic', source: 'shop' },
   { id: 'frame-shop-oak', type: 'frame', name: 'Oak Frame', rarity: 'basic', source: 'shop' },
   { id: 'frame-shop-paper', type: 'frame', name: 'Paper Frame', rarity: 'basic', source: 'shop' },
+  // ----- Shop II (v5.20.0): zweite Welle aus theme-lab/ (alle vom Nutzer
+  // abgenommen). Animated+ = neue, extrem seltene Stufe ueber Animated: nur
+  // ab und zu ein auffaelliges, aufwendiges Teil (Magma Heart+ = Messlatte).
+  // devChoice = "Developer's Choice": Hommage-Kits an die Lieblingsspiele des
+  // Entwicklers (Theme + Border + Rahmen, jedes Teil mit eigenem Easter Egg).
+  // Darstellung: shop-cosmetics-2.js (Borders/Rahmen), shop-scenes-2.js (Themes). -----
+  { id: 'theme-shop-magmaplus', type: 'theme', name: 'Magma Heart+', rarity: 'animatedplus', source: 'shop', themeKey: 'magmaplus', animated: true },
+  { id: 'theme-shop-magma', type: 'theme', name: 'Magma Heart', rarity: 'animated', source: 'shop', themeKey: 'magma', animated: true },
+  { id: 'theme-dev-cyberpunk', type: 'theme', name: 'Neon Overdrive', rarity: 'animated', source: 'shop', themeKey: 'cyberpunk', animated: true, devChoice: true },
+  { id: 'border-dev-optic', type: 'border', name: 'Optic Scan', rarity: 'animated', source: 'shop', devChoice: true },
+  { id: 'frame-dev-netrunner', type: 'frame', name: 'Netrunner HUD', rarity: 'animated', source: 'shop', devChoice: true },
+  { id: 'border-shop-lantern', type: 'border', name: 'Spirit Lantern', rarity: 'animated', source: 'shop' },
+  { id: 'frame-shop-dragon', type: 'frame', name: 'Celestial Dragon', rarity: 'animated', source: 'shop' },
+  { id: 'frame-shop-kraken', type: 'frame', name: 'Kraken', rarity: 'animated', source: 'shop' },
+  { id: 'frame-shop-phoenix', type: 'frame', name: 'Phoenix', rarity: 'animated', source: 'shop' },
+  { id: 'theme-shop-aurora', type: 'theme', name: 'Aurora', rarity: 'fancy', source: 'shop', themeKey: 'aurora', animated: true },
+  { id: 'theme-shop-lanterns', type: 'theme', name: 'Lantern Festival', rarity: 'fancy', source: 'shop', themeKey: 'lanterns', animated: true },
+  { id: 'theme-shop-skyisles', type: 'theme', name: 'Sky Isles', rarity: 'fancy', source: 'shop', themeKey: 'skyisles', animated: true },
+  { id: 'border-shop-hexprism', type: 'border', name: 'Hextech Prism', rarity: 'fancy', source: 'shop' },
+  { id: 'border-shop-bubble', type: 'border', name: 'Bubble Ring', rarity: 'fancy', source: 'shop' },
+  { id: 'frame-shop-vines', type: 'frame', name: 'Runic Vines', rarity: 'fancy', source: 'shop' },
+  { id: 'theme-shop-cherry', type: 'theme', name: 'Cherry Blossom Night', rarity: 'refined', source: 'shop', themeKey: 'cherry' },
+  { id: 'theme-shop-arctic', type: 'theme', name: 'Arctic Shore', rarity: 'refined', source: 'shop', themeKey: 'arctic' },
+  { id: 'border-shop-pearl', type: 'border', name: 'Pearl Ring', rarity: 'refined', source: 'shop' },
+  { id: 'border-shop-sunburst', type: 'border', name: 'Sunburst Ring', rarity: 'refined', source: 'shop' },
+  { id: 'frame-shop-circuit', type: 'frame', name: 'Circuit Board', rarity: 'refined', source: 'shop' },
+  { id: 'frame-shop-kintsugi', type: 'frame', name: 'Kintsugi', rarity: 'refined', source: 'shop' },
+  { id: 'frame-shop-origami', type: 'frame', name: 'Origami', rarity: 'refined', source: 'shop' },
+  { id: 'frame-shop-carved', type: 'frame', name: 'Carved Wood', rarity: 'refined', source: 'shop' },
+  { id: 'frame-shop-mosaic', type: 'frame', name: 'Mosaic', rarity: 'refined', source: 'shop' },
+  { id: 'border-shop-bronze', type: 'border', name: 'Bronze Ring', rarity: 'basic', source: 'shop' },
+  { id: 'frame-shop-linen', type: 'frame', name: 'Linen Frame', rarity: 'basic', source: 'shop' },
+  { id: 'frame-shop-night', type: 'frame', name: 'Night Frame', rarity: 'basic', source: 'shop' },
   // ----- Basic (v5.17.0): zu jedem Grund-Theme eine schlichte Border + ein
   // schlichter Rahmen in dessen Farben. Hat jeder (base: true), frei
   // kombinierbar mit jedem Theme (Nutzerwunsch: alles mit allem). -----

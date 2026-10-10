@@ -503,4 +503,7 @@
   TTPCos.register('frame', 'frame-shop-clock', clockwork);
   TTPCos.register('frame', 'frame-shop-filigree', filigree);
   Object.entries(FR).forEach(([id, fn]) => TTPCos.register('frame', id, sf(fn)));
+
+  // Werkzeuge fuer weitere Cosmetic-Dateien (shop-cosmetics-2.js, v5.20.0)
+  window.TTPShopCosKit = { canvasBorder, canvasFrame, ring, rr, corners, seeded, rand, wake, fxOff };
 })();

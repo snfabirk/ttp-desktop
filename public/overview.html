@@ -465,7 +465,10 @@
       font-size: 0.8rem;
       text-align: center;
     }
-    .dash-status { color: var(--text-faint); font-size: 0.8rem; font-family: Georgia, serif; min-height: 1.2em; margin: -6px 0 10px; }
+    /* Status schwebt ueber der rechten Spalte, damit beide Spalten oben buendig starten */
+    .split-right .content { position: relative; }
+    .split-left .content > *, .split-right .content > * { box-sizing: border-box; }
+    .dash-status { color: var(--text-faint); font-size: 0.8rem; font-family: Georgia, serif; min-height: 1.2em; margin: 0; position: absolute; top: -22px; left: 30px; right: 30px; }
   </style>
 </head>
 <body>
@@ -546,6 +549,38 @@
   </div>
   </div>
 
+  <script>
+    // Beide Spalten unten buendig: der letzte Block der kuerzeren Spalte waechst
+    // um die Differenz (nur nebeneinander, nicht im gestapelten Layout).
+    (() => {
+      const cols = [...document.querySelectorAll('.split-left > .content, .split-right > .content')];
+      const stacked = matchMedia('(max-width: 1100px)');
+      const lastCard = c => [...c.children].reverse().find(e => e.offsetParent && getComputedStyle(e).position !== 'absolute');
+      const extra = new Map();
+      let busy = false;
+      const sync = () => {
+        if (busy) return; busy = true;
+        const cards = cols.map(lastCard);
+        if (cards.every(Boolean)) {
+          const bottoms = cards.map((e, i) => e.getBoundingClientRect().bottom + e.closest('.split-left, .split-right').scrollTop - (extra.get(e) || 0));
+          const max = Math.max(...bottoms);
+          cards.forEach((e, i) => {
+            const add = stacked.matches ? 0 : Math.round(max - bottoms[i]);
+            if ((extra.get(e) || 0) === add) return;
+            const base = e.getBoundingClientRect().height - (extra.get(e) || 0);
+            extra.set(e, add);
+            e.style.minHeight = add ? (base + add) + 'px' : '';
+          });
+        }
+        requestAnimationFrame(() => { busy = false; });
+      };
+      const ro = new ResizeObserver(() => requestAnimationFrame(sync));
+      cols.forEach(c => { ro.observe(c); [...c.children].forEach(ch => ro.observe(ch)); });
+      stacked.addEventListener('change', sync);
+      addEventListener('resize', sync);
+      sync();
+    })();
+  </script>
   <script>
     const DDRAGON_VERSION = '16.17.1';
     const RANKED_SOLO = 420;

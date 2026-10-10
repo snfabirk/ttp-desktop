@@ -50,12 +50,27 @@
   --rar-refined: #4fa3ff;
   --rar-fancy: #b26bff;
   --rar-animated: #ff9a2a;
+  --rar-animatedplus: #e0143c;
 }
 .rar { font-size: 0.6rem; letter-spacing: 1px; text-transform: uppercase; }
 .rar-basic { color: var(--rar-basic); }
 .rar-refined { color: var(--rar-refined); }
 .rar-fancy { color: var(--rar-fancy); }
 .rar-animated { color: var(--rar-animated); text-shadow: 0 0 8px color-mix(in srgb, var(--rar-animated) 55%, transparent); }
+/* Animated+ (v5.20.0): Karmesin, leuchtet und flackert wie Glut - "das Beste vom Besten" (Nutzer) */
+.rar-animatedplus { color: #ff2a52; font-weight: 700; text-shadow: 0 0 4px #e0143c, 0 0 10px rgba(224, 20, 60, .8), 0 0 18px rgba(224, 20, 60, .45); animation: rarCrimson 2.6s linear infinite; }
+@keyframes rarCrimson {
+  0%, 100% { color: #ff2a52; text-shadow: 0 0 4px #e0143c, 0 0 10px rgba(224, 20, 60, .8), 0 0 18px rgba(224, 20, 60, .45); }
+  8% { color: #ff6a84; text-shadow: 0 0 6px #ff2a52, 0 0 14px rgba(255, 42, 82, .95), 0 0 26px rgba(224, 20, 60, .7); }
+  11% { color: #c8102e; text-shadow: 0 0 2px #a00c24, 0 0 6px rgba(160, 12, 36, .5); }
+  14% { color: #ff4a6a; text-shadow: 0 0 5px #ff2a52, 0 0 12px rgba(255, 42, 82, .9), 0 0 22px rgba(224, 20, 60, .6); }
+  50% { color: #ff2a52; text-shadow: 0 0 4px #e0143c, 0 0 9px rgba(224, 20, 60, .75), 0 0 16px rgba(224, 20, 60, .4); }
+  57% { color: #ff5a78; text-shadow: 0 0 6px #ff2a52, 0 0 16px rgba(255, 42, 82, .95), 0 0 28px rgba(224, 20, 60, .7); }
+  60% { color: #b80e2a; text-shadow: 0 0 2px #a00c24, 0 0 5px rgba(160, 12, 36, .45); }
+  63% { color: #ff2a52; }
+}
+html.fx-off .rar-animatedplus, html.fx-paused .rar-animatedplus { animation-play-state: paused; }
+.dev-choice { display: inline-block; padding: 1px 7px; border-radius: 8px; font-size: .58rem; letter-spacing: 1px; text-transform: uppercase; color: #e8d43a; border: 1px solid #e8d43a; background: rgba(232, 212, 58, .08); }
 
 /* Kein Cosmetic ausgeruestet: schlichter Gold-Rand wie bisher. */
 .cos-none::before { background: var(--gold); }
@@ -284,13 +299,14 @@ body.editing .pframe-frame-2026-10-manor .bloom { transform: scale(0); }
 
 
 /* ===== Shop-Cosmetics (v5.19.0): Borders/Rahmen zeichnet shop-cosmetics.js ===== */
-.cos-border[class*="cos-border-shop-"] { padding: 0; overflow: visible; }
-.cos-border[class*="cos-border-shop-"]::before { display: none; }
-.cos-border[class*="cos-border-shop-"] > img, .cos-border[class*="cos-border-shop-"] > .cos-fill { border-radius: 50%; }
+/* auch Developer's-Choice-Borders (cos-border-dev-*, v5.20.0) */
+.cos-border:is([class*="cos-border-shop-"], [class*="cos-border-dev-"]) { padding: 0; overflow: visible; }
+.cos-border:is([class*="cos-border-shop-"], [class*="cos-border-dev-"])::before { display: none; }
+.cos-border:is([class*="cos-border-shop-"], [class*="cos-border-dev-"]) > img, .cos-border:is([class*="cos-border-shop-"], [class*="cos-border-dev-"]) > .cos-fill { border-radius: 50%; }
 .cb-canvas, .cf-canvas { position: absolute; pointer-events: none; z-index: 2; }
-.pframe[class*="pframe-frame-shop-"] { border-radius: 14px; }
+.pframe:is([class*="pframe-frame-shop-"], [class*="pframe-frame-dev-"]) { border-radius: 14px; }
 /* Platz nach oben, damit Deko ueber der Kante (Manometer, Leiterbahnen) den Untertitel nicht beruehrt */
-.canvas-wrap[class*="pframe-frame-shop-"] { margin-top: 30px; }
+.canvas-wrap:is([class*="pframe-frame-shop-"], [class*="pframe-frame-dev-"]) { margin-top: 30px; }
 .mini-frame-frame-shop-arcane { border: 2px solid #c8a85a; box-shadow: 0 0 6px rgba(10, 200, 185, .6), inset 0 0 0 1px rgba(10, 200, 185, .6); background: #071a1f; }
 .mini-frame-frame-shop-void { border: 2px solid #3a1a5e; box-shadow: 0 0 6px rgba(178, 107, 255, .7); background: #10081e; }
 .mini-frame-frame-shop-clock { border: 3px solid #8a5426; box-shadow: inset 0 0 0 1px #e2b45c; background: #1e160c; }
@@ -304,11 +320,33 @@ body.editing .pframe-frame-2026-10-manor .bloom { transform: scale(0); }
 .mini-frame-frame-shop-slate { border: 2px solid #6e7480; background: #14161a; }
 .mini-frame-frame-shop-oak { border: 3px solid #8a6a44; background: #18120c; }
 .mini-frame-frame-shop-paper { border: 2px dashed #e8e0cc; background: #16161a; }
+/* Rahmen II (v5.20.0) */
+.mini-frame-frame-shop-dragon { border: 1px dashed #b8c0ff; box-shadow: 0 0 7px rgba(140, 130, 255, .7); background: #0c0e24; }
+.mini-frame-frame-shop-kraken { border: 3px solid #4a2a6e; box-shadow: inset 0 -4px 0 #1e4a50, 0 0 6px rgba(200, 255, 120, .4); background: #120a1e; }
+.mini-frame-frame-shop-phoenix { border: 2px solid #ff9a3a; box-shadow: 0 0 8px rgba(255, 140, 40, .8), inset 0 0 4px rgba(255, 200, 80, .6); background: #1e0c06; }
+.mini-frame-frame-dev-netrunner { border: 2px solid #e8d43a; box-shadow: 2px 2px 0 #5ef0f0; background: #07080c; }
+.mini-frame-frame-shop-vines { border: 3px solid #5e4a2c; box-shadow: inset 0 0 0 1px #5a9a3a, 0 0 6px rgba(120, 255, 200, .5); background: #0e1a12; }
+.mini-frame-frame-shop-circuit { border: 3px solid #0e5a32; box-shadow: inset 0 0 0 1px #c88a3a; background: #0a1a12; }
+.mini-frame-frame-shop-kintsugi { border: 3px solid #1a1a1e; box-shadow: inset 0 0 0 1px #e8b64a; background: #14161c; }
+.mini-frame-frame-shop-origami { border: 3px dotted #e85a4a; background: #1a3048; }
+.mini-frame-frame-shop-carved { border: 3px solid #6e4628; box-shadow: inset 0 0 0 1px #2a160a; background: #1a120a; }
+.mini-frame-frame-shop-mosaic { border: 3px dotted #286ea0; box-shadow: inset 0 0 0 1px #ece4ce; background: #0e1824; }
+.mini-frame-frame-shop-linen { border: 3px solid #d8ccb4; background: #16161a; }
+.mini-frame-frame-shop-night { border: 3px solid #1e2a4a; box-shadow: 0 0 0 1px rgba(140, 160, 220, .4); background: #0a0e1c; }
 .mini-theme-abyss { background: radial-gradient(circle at 60% 35%, #3fd0c9 0 12%, transparent 13%), linear-gradient(180deg, #06324a, #01060c); border: 1px solid rgba(255, 255, 255, .25); }
 .mini-theme-neon { background: linear-gradient(180deg, #1a0c2c 0 55%, #ff4fb8 55% 62%, #0b0816 62%); border: 1px solid rgba(255, 255, 255, .25); }
 .mini-theme-starfall { background: radial-gradient(1.5px 1.5px at 30% 30%, #fff 50%, transparent), radial-gradient(1.5px 1.5px at 70% 45%, #ffd86b 50%, transparent), linear-gradient(180deg, #050817, #1a1838); border: 1px solid rgba(255, 255, 255, .25); }
 .mini-theme-koi { background: radial-gradient(ellipse 30% 14% at 40% 45%, #f4f4f2 60%, transparent 62%), radial-gradient(ellipse 22% 10% at 64% 62%, #d0222c 60%, transparent 62%), #3a3c41; border: 1px solid rgba(255, 255, 255, .25); }
 .mini-theme-desert { background: radial-gradient(circle at 70% 62%, #ffe6aa 0 12%, transparent 13%), linear-gradient(180deg, #2a1838, #a8485a 50%, #f0905a 70%, #8a3e2a 71%); border: 1px solid rgba(255, 255, 255, .25); }
+/* Shop-Themes II (v5.20.0) */
+.mini-theme-magmaplus { background: radial-gradient(circle at 62% 30%, #ffd890 0 8%, transparent 10%), linear-gradient(180deg, #1e0b05 0 55%, #ff7a1a 58%, #8a1a04 70%, #2a0a04); border: 1px solid #ff9a3a; box-shadow: 0 0 8px rgba(255, 120, 30, .7); }
+.mini-theme-magma { background: linear-gradient(180deg, #1e0b05 0 55%, #ff7a1a 58%, #8a1a04 70%, #2a0a04); border: 1px solid rgba(255, 255, 255, .25); }
+.mini-theme-cyberpunk { background: linear-gradient(180deg, #0c0e16 0 50%, #e8d43a 50% 56%, #5ef0f0 56% 60%, #07080c 60%); border: 1px solid rgba(255, 255, 255, .25); }
+.mini-theme-aurora { background: linear-gradient(180deg, #2a1a48, #1a7a6a 45%, #04121a 70%, #0c1a24); border: 1px solid rgba(255, 255, 255, .25); }
+.mini-theme-lanterns { background: radial-gradient(circle at 35% 35%, #ffc070 0 7%, transparent 9%), radial-gradient(circle at 65% 55%, #ffb060 0 5%, transparent 7%), linear-gradient(180deg, #0e0c22, #3a2450 50%, #b0607a 72%, #2a1a30 74%); border: 1px solid rgba(255, 255, 255, .25); }
+.mini-theme-skyisles { background: radial-gradient(ellipse 22% 12% at 30% 40%, #6a4a5a 60%, transparent 62%), linear-gradient(180deg, #2a3466, #f0b88a 55%, #c8b0c8 62%, #8a7ea8); border: 1px solid rgba(255, 255, 255, .25); }
+.mini-theme-cherry { background: radial-gradient(circle at 70% 30%, #fff4f8 0 9%, transparent 10%), radial-gradient(circle at 25% 20%, #ffb0cc 0 14%, transparent 15%), linear-gradient(180deg, #120c2a, #3a2450); border: 1px solid rgba(255, 255, 255, .25); }
+.mini-theme-arctic { background: linear-gradient(180deg, #5a6aa8, #f6d0b8 50%, #8a94bc 52%, #2a3a5e 85%, #e8f0fa 86%); border: 1px solid rgba(255, 255, 255, .25); }
 .mini-theme-forest { background: linear-gradient(180deg, #0e2a1c, #04140c), #0a1a12; border: 1px solid rgba(255, 255, 255, .25); }
 
 /* Einstellung "Animations" (theme-fx.js setzt die Klassen auf <html>):

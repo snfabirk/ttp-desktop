@@ -82,6 +82,11 @@
   .offer-tag.rar-refined { border-color: var(--rar-refined); }
   .offer-tag.rar-fancy { border-color: var(--rar-fancy); }
   .offer-tag.rar-animated { border-color: var(--rar-animated); }
+  .offer-tag.rar-animatedplus { border-color: var(--rar-animatedplus); }
+  .offer.rar-animatedplus { border-color: color-mix(in srgb, var(--rar-animatedplus) 70%, var(--border)); animation: offerCrimson 2.6s linear infinite; }
+  @keyframes offerCrimson { 0%, 100% { box-shadow: 0 0 18px rgba(224, 20, 60, .35); } 8% { box-shadow: 0 0 30px rgba(255, 42, 82, .6); } 11% { box-shadow: 0 0 10px rgba(160, 12, 36, .25); } 14% { box-shadow: 0 0 24px rgba(255, 42, 82, .5); } 57% { box-shadow: 0 0 32px rgba(255, 42, 82, .6); } 60% { box-shadow: 0 0 10px rgba(160, 12, 36, .25); } }
+  html.fx-off .offer.rar-animatedplus, html.fx-paused .offer.rar-animatedplus { animation-play-state: paused; }
+  .offer .dev-choice { position: absolute; top: 8px; right: 8px; }
   .offer.rar-fancy { border-color: color-mix(in srgb, var(--rar-fancy) 45%, var(--border)); }
   .offer.rar-animated { border-color: color-mix(in srgb, var(--rar-animated) 55%, var(--border)); box-shadow: 0 0 18px color-mix(in srgb, var(--rar-animated) 18%, transparent); }
   .offer-from { color: var(--text-faint); font-size: 0.68rem; font-style: italic; }
@@ -110,6 +115,10 @@
   .weekly .offer-pv .cos-border { width: 72px; height: 72px; }
   .offer-pv .pv-frame-live { position: relative; width: 104px; height: 62px; border-radius: 10px; background: rgba(255,255,255,.04); }
   .weekly .offer-pv .pv-frame-live { width: 140px; height: 84px; }
+  .offer-pv .pv-frame-big { background: none; }
+  .offer-pv .pv-frame-big:has(.pframe-frame-shop-kraken) { top: -12px; }
+  .offer-pv:has(.cos-border-dev-optic) { padding-top: 14px; box-sizing: border-box; }
+  .offer-pv .pv-frame-big > .pframe { position: absolute; left: 0; top: 0; transform-origin: 0 0; border-radius: 24px; background: rgba(255,255,255,.04); }
   .offer-pv .mini-theme { width: 72px; height: 72px; border-radius: 50%; }
   .offer-pv canvas.theme-pv { width: 120px; height: 72px; border-radius: 10px; border: 1px solid rgba(255,255,255,.15); }
   .weekly .offer-pv canvas.theme-pv { width: 170px; height: 100px; }
@@ -336,7 +345,7 @@
     const fmtNum = n => Number(n || 0).toLocaleString('en-US');
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const TYPE_LABEL = { border: 'Border', frame: 'Profile frame', theme: 'Theme' };
-    const RARITY_LABEL = { basic: 'Basic', refined: 'Refined', fancy: 'Fancy', animated: 'Animated' };
+    const RARITY_LABEL = { basic: 'Basic', refined: 'Refined', fancy: 'Fancy', animated: 'Animated', animatedplus: 'Animated+' };
     let shop = null;
 
     function until(iso) {
@@ -349,9 +358,16 @@
     // Vorschau: Borders und Rahmen werden live gezeichnet (cosmetics-fx.js /
     // shop-cosmetics.js), Themes als Farbkreis
     const ICON = 'https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/29.png';
+    const BIG_FRAME_PV = { 'frame-shop-kraken': 3.4, 'frame-shop-phoenix': 3.4, 'frame-shop-dragon': 2.4, 'frame-dev-netrunner': 2.6, 'frame-shop-vines': 2.3 };
     function previewHtml(o) {
       let inner;
       if (o.type === 'border') inner = `<span class="cos-border cos-${o.id}"><img src="${ICON}" alt=""></span>`;
+      else if (o.type === 'frame' && BIG_FRAME_PV[o.id]) {
+        // Grosse Rahmen (Kreatur ragt weit ueber den Rand): in Originalgroesse
+        // zeichnen und verkleinert einpassen, sonst ueberdecken sie die Karte
+        const k = BIG_FRAME_PV[o.id];
+        inner = `<span class="pv-frame-live pv-frame-big"><span class="pframe pframe-${o.id}" data-pv-frame="${o.id}" style="width:${k * 100}%;height:${k * 100}%;transform:scale(${1 / k})"></span></span>`;
+      }
       else if (o.type === 'frame') inner = `<span class="pv-frame-live pframe pframe-${o.id}" data-pv-frame="${o.id}"></span>`;
       else inner = `<canvas class="mini-theme theme-pv" data-theme-pv="${o.themeKey}"></canvas>`;
       return `<div class="offer-pv">${inner}</div>`;
@@ -383,6 +399,7 @@
         ${previewHtml(o)}
         <span class="offer-name">${esc(o.name)}</span>
         <span class="offer-type">${TYPE_LABEL[o.type] || o.type}</span>
+        ${o.devChoice ? '<span class="dev-choice" title="A homage to one of the developer\'s favourite games">Developer\'s Choice</span>' : ''}
         ${o.fromPass ? `<span class="offer-from">from the ${esc(o.fromPass)}</span>` : ''}
         ${btn}
         <span class="offer-msg">${buyMsg[o.id] ? esc(buyMsg[o.id]) : ''}</span>
@@ -420,9 +437,9 @@
     // "?" - Preise nach Seltenheit + Grund-Wahrscheinlichkeiten pro Angebotsplatz
     function renderHelp() {
       if (!shop.prices || !shop.odds) return;
-      const R = ['basic', 'refined', 'fancy', 'animated'];
+      const R = ['basic', 'refined', 'fancy', 'animated', 'animatedplus'];
       const price = v => v ? fmtNum(v) : 'Free';
-      const pct = (w, r) => { const sum = Object.values(w).reduce((a, b) => a + b, 0); return w[r] ? `${Math.round(w[r] / sum * 100)}%` : '–'; };
+      const pct = (w, r) => { const sum = Object.values(w).reduce((a, b) => a + b, 0); if (!w[r]) return '–'; const v = w[r] / sum * 100; return `${v < 1 ? v.toFixed(1) : Math.round(v)}%`; };
       // Zwei klar getrennte Tabellen (Nutzer las die Rates-Spalten sonst als
       // Frame/Theme): Spalten heissen ausdruecklich "Daily offer" / "Weekly highlight".
       document.getElementById('shopHelp').innerHTML =
@@ -443,7 +460,8 @@
       abyss: ['#03111c', '#3fd0c9', '#e2f4f6', '#12455a'], neon: ['#0b0816', '#ff4fb8', '#f2e9ff', '#3a2458'],
       starfall: ['#0a0f2a', '#ffd86b', '#e8ecff', '#2c3a6e'], koi: ['#1b1c1f', '#e0303a', '#f2f2f2', '#5a5d63'],
       desert: ['#2a1424', '#ffb35c', '#f6ece4', '#7a4a2a'], forest: ['#0a1a12', '#7ee08a', '#eaf6ec', '#2c5a38'],
-      hallows: ['#0f0e10', '#ff7a18', '#ece6e0', '#3d3530'], haunted: ['#0b0a10', '#ff8a2a', '#efe9f5', '#3a2d45']
+      hallows: ['#0f0e10', '#ff7a18', '#ece6e0', '#3d3530'], haunted: ['#0b0a10', '#ff8a2a', '#efe9f5', '#3a2d45'],
+      magmaplus: ['#0d0604', '#ff8a3a', '#f6e8dc', '#5a2a14'], magma: ['#0d0604', '#ff8a3a', '#f6e8dc', '#5a2a14'], cyberpunk: ['#07080c', '#e8d43a', '#e8ecf2', '#3a3a22'], aurora: ['#050a12', '#6ef0b4', '#e8f4f8', '#23485a'], lanterns: ['#120c1e', '#ffb560', '#fbefe4', '#6a3a3a'], skyisles: ['#1a2448', '#ffd27a', '#fdf6ea', '#5a6aa0'], cherry: ['#120c2a', '#ffb0cc', '#f6eef6', '#5a3a6a'], arctic: ['#16213a', '#9ad8ff', '#f2f8fc', '#3a6a8a']
     };
     const me = { icon: ICON, name: 'You', level: 1, border: 'none', frame: null };
     (async () => {

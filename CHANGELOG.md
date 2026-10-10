@@ -1,5 +1,17 @@
 # Internal Changelog
 
+## 5.20.0 — 2026-10-10
+
+- 28 shop cosmetics ported from theme-lab (shop-cosmetics-2.js, shop-scenes-2.js, loaded by nav.js after the v1 files):
+  themes Magma Heart+, Magma Heart, Neon Overdrive (dev), Aurora, Lantern Festival, Sky Isles, Cherry Blossom Night, Arctic Shore;
+  borders Optic Scan (dev), Lantern, Hextech Prism, Bubble, Nacre, Sunburst, Bronze;
+  frames Spirit Dragon, Kraken, Phoenix, Netrunner HUD (dev), Runic Vines, Circuit Board, Kintsugi, Origami, Carved Wood, Mosaic, Linen, Night.
+  Every Animated item has its own click easter egg. Shop pool now 60 items.
+- New rarity Animated+ (crimson, flickering glow; prices 2600/3000/4000; daily 0.5%, weekly 2%).
+- Developer's Choice badge on homage items (offerView.devChoice).
+- Shop: big creature frames preview scaled down so they fit their card.
+- Overview: both columns start and end flush (status line floats above, shorter column's last card grows).
+
 ## 5.19.1 — 2026-10-09
 
 - Theme hover preview: 460x270 mini app (nav, title, cards in theme colours) over the live scene (TTPThemePreviewLive; starfall/koi run their real scene scaled down, others still images). Fixed a console error when hovering a theme while a frame is equipped.

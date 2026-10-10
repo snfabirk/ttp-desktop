@@ -1204,10 +1204,10 @@
         .map(t => `<button type="button" class="inv-tab${t.id === invTab ? ' active' : ''}" data-invtab="${t.id}">${t.label}${counts[t.id] ? `<small>${counts[t.id][0]}/${counts[t.id][1]}</small>` : ''}</button>`).join('');
       const list = document.getElementById('invList');
       const countLine = ([have, all]) => `<div class="inv-count"><span>Collected <b>${have} / ${all}</b></span><span class="bar"><i style="width:${all ? have / all * 100 : 0}%"></i></span></div>`;
-      const RAR = { basic: 'Basic', refined: 'Refined', fancy: 'Fancy', animated: 'Animated' };
+      const RAR = { basic: 'Basic', refined: 'Refined', fancy: 'Fancy', animated: 'Animated', animatedplus: 'Animated+' };
       const rarTag = c => (c.id && c.rarity ? `<small class="rar rar-${c.rarity}">${RAR[c.rarity]}</small>` : '') + (rentedIds.has(c.id) ? '<small class="inv-trial">⏳ Trial</small>' : '');
       // Gruppen: Monthly Pass / Shop (nach Seltenheit sortiert) / Basic
-      const RANK = { animated: 0, fancy: 1, refined: 2, basic: 3 };
+      const RANK = { animatedplus: -1, animated: 0, fancy: 1, refined: 2, basic: 3 };
       const groups = (list, cell, basicHead) => {
         const pass = list.filter(c => c.passMonth), shopL = list.filter(c => c.source === 'shop').sort((a, b) => RANK[a.rarity] - RANK[b.rarity]);
         return (pass.length ? `<div class="inv-sub">Monthly Pass</div><div class="inv-grid">${pass.map(cell).join('')}</div>` : '') +
