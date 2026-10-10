@@ -59,6 +59,13 @@ const lan = document.getElementById('lantern'), lc = lan.querySelector('canvas')
 const LS = lan.offsetWidth, LC = LS * 2.5; lc.width = LC * D; lc.height = LC * D; lx.setTransform(D, 0, 0, D, 0, 0);
 const petals = Array.from({ length: 10 }, () => ({ a: rand(0, 6.28), r: rand(1.15, 1.5), v: rand(.2, .5), rot: rand(0, 6.28), s: rand(.6, 1) }));
 let foxes = null, lClicks = 0, lReset = null;
+const RING = Array.from({ length: 13 }, (_, k) => ({ a: k / 13 * Math.PI * 2 + rand(-.12, .12), r: rand(1.12, 1.2), big: k % 4 === 0, gap: k % 5 === 4 }));
+function lstar(x, y, r, ph) {
+  const tw = .6 + .4 * Math.sin(ph * 3);
+  const g = lx.createRadialGradient(x, y, 0, x, y, r * 4); g.addColorStop(0, `rgba(235, 230, 255, ${.55 * tw})`); g.addColorStop(1, 'rgba(235, 230, 255, 0)');
+  lx.fillStyle = g; lx.beginPath(); lx.arc(x, y, r * 4, 0, 7); lx.fill();
+  lx.fillStyle = `rgba(255, 255, 255, ${tw})`; lx.beginPath(); lx.arc(x, y, r * .7, 0, 7); lx.fill();
+}
 function flame(c, x, y, s, t, ph, a) {
   // blau-violette Geisterflamme
   const fl = Math.sin(t * 7 + ph) * .15;
@@ -88,23 +95,27 @@ function fox(c, x, y, s, ang, t, a) {
 function drawLantern(t, dt) {
   const R = LS / 2; lx.clearRect(0, 0, LC, LC); lx.save(); lx.translate(LC / 2, LC / 2);
   // weicher Geisterschein + doppelter Ring
-  const halo = lx.createRadialGradient(0, 0, R * .9, 0, 0, R * 1.6); halo.addColorStop(0, 'rgba(110, 150, 255, .28)'); halo.addColorStop(1, 'rgba(110, 150, 255, 0)');
+  const halo = lx.createRadialGradient(0, 0, R * .9, 0, 0, R * 1.6); halo.addColorStop(0, 'rgba(110, 120, 255, .3)'); halo.addColorStop(.6, 'rgba(150, 100, 255, .12)'); halo.addColorStop(1, 'rgba(110, 90, 255, 0)');
   lx.fillStyle = halo; lx.beginPath(); lx.arc(0, 0, R * 1.6, 0, 7); lx.fill();
-  const rg = lx.createLinearGradient(-R, -R, R, R); rg.addColorStop(0, '#c8d8ff'); rg.addColorStop(.5, '#6a70d8'); rg.addColorStop(1, '#b8a8ff');
+  const rg = lx.createLinearGradient(-R, -R, R, R); rg.addColorStop(0, '#dfe4ff'); rg.addColorStop(.5, '#7a80e0'); rg.addColorStop(1, '#c8bcff');
   lx.strokeStyle = rg; lx.lineWidth = R * .07; lx.beginPath(); lx.arc(0, 0, R * 1.05, 0, 7); lx.stroke();
-  lx.strokeStyle = 'rgba(200, 210, 255, .35)'; lx.lineWidth = 1; lx.beginPath(); lx.arc(0, 0, R * 1.14, 0, 7); lx.stroke();
+  // Sternbild-Kranz (passend zum Celestial Dragon): Sterne auf dem Aussenring, feine Linien dazwischen, mit Luecken
+  lx.strokeStyle = 'rgba(180, 190, 255, .4)'; lx.lineWidth = 1;
+  for (let k = 0; k < RING.length; k++) { if (RING[k].gap) continue; const a = RING[k], b = RING[(k + 1) % RING.length];
+    lx.beginPath(); lx.moveTo(Math.cos(a.a) * R * a.r, Math.sin(a.a) * R * a.r); lx.lineTo(Math.cos(b.a) * R * b.r, Math.sin(b.a) * R * b.r); lx.stroke(); }
+  RING.forEach((s, k) => lstar(Math.cos(s.a) * R * s.r, Math.sin(s.a) * R * s.r, s.big ? 2 : 1.2, t * 1.4 + k));
   // Papierlaternen schaukeln an drei Stellen auf dem Ring
   [-.5, 1.6, 3.7].forEach((a, k) => {
     const x = Math.cos(a) * R * 1.12, y = Math.sin(a) * R * 1.12, sw = Math.sin(t * 1.6 + k) * .25;
     lx.save(); lx.translate(x, y); lx.rotate(sw);
     lx.strokeStyle = 'rgba(200, 200, 230, .6)'; lx.lineWidth = 1; lx.beginPath(); lx.moveTo(0, 0); lx.lineTo(0, R * .14); lx.stroke();
-    const lg = lx.createRadialGradient(0, R * .28, 0, 0, R * .28, R * .2); lg.addColorStop(0, '#fff2d0'); lg.addColorStop(.6, '#ff9a5a'); lg.addColorStop(1, '#c8402a');
-    lx.fillStyle = lg; lx.shadowColor = '#ffaa60'; lx.shadowBlur = R * .25; lx.beginPath(); lx.ellipse(0, R * .28, R * .1, R * .14, 0, 0, 7); lx.fill(); lx.shadowBlur = 0;
-    lx.fillStyle = '#5a2010'; lx.fillRect(-R * .06, R * .13, R * .12, R * .03); lx.fillRect(-R * .06, R * .41, R * .12, R * .03);
+    const lg = lx.createRadialGradient(0, R * .28, 0, 0, R * .28, R * .2); lg.addColorStop(0, '#fffbe8'); lg.addColorStop(.6, '#ffd77a'); lg.addColorStop(1, '#b08a3a');
+    lx.fillStyle = lg; lx.shadowColor = '#ffd86b'; lx.shadowBlur = R * .25; lx.beginPath(); lx.ellipse(0, R * .28, R * .1, R * .14, 0, 0, 7); lx.fill(); lx.shadowBlur = 0;
+    lx.fillStyle = '#9aa0d8'; lx.fillRect(-R * .06, R * .13, R * .12, R * .03); lx.fillRect(-R * .06, R * .41, R * .12, R * .03);
     lx.restore();
   });
-  // Bluetenblaetter treiben langsam um das Bild
-  petals.forEach(p => { p.a += p.v * dt; p.rot += dt; const x = Math.cos(p.a) * R * p.r, y = Math.sin(p.a) * R * p.r + Math.sin(t + p.rot) * 3; lx.save(); lx.translate(x, y); lx.rotate(p.rot); lx.fillStyle = 'rgba(255, 190, 220, .75)'; lx.beginPath(); lx.ellipse(0, 0, R * .06 * p.s, R * .03 * p.s, 0, 0, 7); lx.fill(); lx.restore(); });
+  // Sternenstaub treibt langsam um das Bild (ersetzt die Bluetenblaetter, passend zum Drachen)
+  petals.forEach(p => { p.a += p.v * dt; p.rot += dt; const x = Math.cos(p.a) * R * p.r, y = Math.sin(p.a) * R * p.r + Math.sin(t + p.rot) * 3; const z = R * .045 * p.s * (.6 + .4 * Math.sin(t * 4 + p.rot * 3)); lx.save(); lx.translate(x, y); lx.rotate(p.rot * .3); lx.fillStyle = 'rgba(255, 245, 220, .85)'; lx.beginPath(); lx.moveTo(0, -z * 2); lx.quadraticCurveTo(0, 0, z * 2, 0); lx.quadraticCurveTo(0, 0, 0, z * 2); lx.quadraticCurveTo(0, 0, -z * 2, 0); lx.quadraticCurveTo(0, 0, 0, -z * 2); lx.fill(); lx.restore(); });
   // Geisterflammen kreisen (bzw. werden zu Fuechsen)
   const N = 5, f = foxes, morph = f ? (f.t < .5 ? f.t / .5 : f.t > 3.3 ? Math.max(0, 1 - (f.t - 3.3) / .5) : 1) : 0;
   lx.save(); lx.globalCompositeOperation = 'lighter';
