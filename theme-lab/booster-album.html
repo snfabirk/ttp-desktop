@@ -177,6 +177,7 @@
   </section>
 </div>
 
+<script src="sticker-set.js"></script>
 <script>
 // ===================== Sticker-Kunst (detailliert, ohne Die-Cut-Rand) =====================
 const HEAD = 'M42 4 L48 15 L54 3 L60 18 C74 20 86 30 90 48 C93 62 92 80 92 96 L48 96 C50 84 52 72 50 62 C40 64 28 74 16 75 C8 75 4 69 6 62 C10 52 26 36 37 22 Z';
@@ -258,7 +259,7 @@ document.querySelector('#pack .logo').innerHTML = `<svg viewBox="0 0 120 120"><c
 // ===================== Set (Entwurfsausschnitt aus 50) =====================
 const RC = { common: 'var(--c-common)', uncommon: 'var(--c-uncommon)', holo: 'var(--c-holo)', anim: 'var(--c-anim)' };
 const RL = { common: 'Common', uncommon: 'Uncommon', holo: 'Holo Rare', anim: 'Animated Rare' };
-const SET = [
+const SET_OLD = [
   { n: 1, id: 'smite', name: 'Smite!', r: 'common' },
   { n: 2, id: 'one-more-game', name: 'One More Game', r: 'common' },
   { n: 3, id: 'ward', name: 'Ward Placed', r: 'common' },
@@ -268,6 +269,9 @@ const SET = [
   { n: 42, id: 'baron-steal', name: 'Baron Steal', r: 'holo' },
   { n: 48, id: 'golden-pony', name: 'Golden Pony', r: 'anim' }
 ];
+// Die echten 50 Sticker aus sticker-set.js
+const SET = window.STICKERS.SET;
+const frontHtml = window.STICKERS.frontHtml;
 const TOTAL_IN_SET = 50;
 const DUPE = { common: 3, uncommon: 8, holo: 50, anim: 300 };
 const owned = {};
@@ -286,7 +290,7 @@ function rollPack() {
   return [pick(by('common')), pick(by('common')), pick(by('common')), pick(by('common')), pick(by('uncommon')), pick(by('uncommon')), Math.random() < .10 ? pick(by('anim')) : pick(by('holo'))];
 }
 const backHtml = s => `<div class="face back${s.r === 'holo' ? ' glow-holo' : s.r === 'anim' ? ' glow-anim' : ''}">${BACK_LOGO}</div>`;
-const frontHtml = s => `<div class="face front${s.r === 'holo' ? ' holo' : ''}${s.r === 'anim' ? ' anim' : ''}" style="--rc:${RC[s.r]}">
+const frontHtmlOld = s => `<div class="face front${s.r === 'holo' ? ' holo' : ''}${s.r === 'anim' ? ' anim' : ''}" style="--rc:${RC[s.r]}">
       <div class="art"><svg viewBox="0 0 120 120">${ART[s.id]()}</svg></div>
       <div class="name">${s.name}</div>
       <div class="meta"><span class="rar">${RL[s.r]}</span><span>#${String(s.n).padStart(3, '0')}</span></div>

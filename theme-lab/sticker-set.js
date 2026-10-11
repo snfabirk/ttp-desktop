@@ -1,0 +1,280 @@
+// Three-Trick-Pony - Base Set (50 Sticker). Gemeinsame Quelle fuer
+// booster-album.html und sticker-gallery.html (spaeter: die App).
+// Eigene Motive rund um Jungle/Ranked/Pony - keine Riot-Namen/-Artworks.
+// Raritaeten: common (25), uncommon (15), holo (7), anim (3).
+(function () {
+  let uid = 0;
+  const U = p => p + (++uid);
+  const HEAD = 'M42 4 L48 15 L54 3 L60 18 C74 20 86 30 90 48 C93 62 92 80 92 96 L48 96 C50 84 52 72 50 62 C40 64 28 74 16 75 C8 75 4 69 6 62 C10 52 26 36 37 22 Z';
+  const MANE = 'M60 18 L66 9 L69 20 L77 13 L79 26 L87 22 L87 35 L95 35 L91 47 L99 51 L93 59 L99 67 L93 73 L97 81 L92 85 L92 96 C92 80 93 62 90 48 C86 30 74 20 60 18 Z';
+
+  // ---------- Bausteine ----------
+  // Pony-Kopf mit Schattierung; eye: normal | happy | angry | tired | closed | wide | star
+  function pony({ body = '#e8c48c', shade = '#b07d18', mane = '#7a4a20', x = 16, y = 14, s = .88, flip = false, eye = 'normal', cls = '', extra = '' } = {}) {
+    const g = U('pg');
+    const eyes = {
+      normal: '<ellipse cx="36" cy="33" rx="4" ry="4.6" fill="#1a1410"/><circle cx="37.3" cy="31.6" r="1.4" fill="#fff"/>',
+      happy: '<path d="M31 34 Q36 28 41 34" stroke="#1a1410" stroke-width="2.6" fill="none" stroke-linecap="round"/>',
+      angry: '<ellipse cx="36" cy="34" rx="3.6" ry="4" fill="#1a1410"/><path d="M29 26 L43 31" stroke="#1a1410" stroke-width="3" stroke-linecap="round"/>',
+      tired: '<ellipse cx="36" cy="34" rx="4" ry="3" fill="#1a1410"/><path d="M30 31 L42 31" stroke="#8a6a40" stroke-width="3.4" stroke-linecap="round"/>',
+      closed: '<path d="M31 33 Q36 37 41 33" stroke="#1a1410" stroke-width="2.6" fill="none" stroke-linecap="round"/>',
+      wide: '<circle cx="36" cy="33" r="5.6" fill="#fff" stroke="#1a1410" stroke-width="1.2"/><circle cx="36.5" cy="33.5" r="2.6" fill="#1a1410"/>',
+      star: '<path d="M36 26 L38 31 L43 31 L39 34 L40.5 39 L36 36 L31.5 39 L33 34 L29 31 L34 31 Z" fill="#fff6c8" stroke="#c8941c" stroke-width=".8"/>'
+    };
+    return `<g class="${cls}" transform="translate(${x} ${y}) scale(${flip ? -s : s} ${s})${flip ? ' translate(-100 0)' : ''}">
+      <defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${body}"/><stop offset="1" stop-color="${shade}"/></linearGradient></defs>
+      <path d="${HEAD}" fill="url(#${g})" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/>
+      <path d="${MANE}" fill="${mane}" stroke="rgba(0,0,0,.3)" stroke-width="1"/>
+      <path d="M14 66 C22 70 30 68 36 64" stroke="rgba(0,0,0,.25)" stroke-width="1.6" fill="none"/>
+      <path d="M44 14 C50 30 56 40 70 50" stroke="rgba(255,255,255,.25)" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="13" cy="64" r="2" fill="rgba(0,0,0,.45)"/>${eyes[eye] || eyes.normal}${extra}
+    </g>`;
+  }
+  // Hintergrund: Verlauf + Vignette
+  function bg(top, bottom, glowColor) {
+    const a = U('bg'), v = U('vg');
+    return `<defs><linearGradient id="${a}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient>
+      <radialGradient id="${v}" cx=".5" cy=".45" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></radialGradient></defs>
+      <rect width="120" height="120" fill="url(#${a})"/>${glowColor ? glow(60, 52, 54, glowColor, .45) : ''}<rect width="120" height="120" fill="url(#${v})"/>`;
+  }
+  function glow(cx, cy, r, color, op = .8, cls = '') {
+    const g = U('gl');
+    return `<defs><radialGradient id="${g}"><stop offset="0" stop-color="${color}" stop-opacity="${op}"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></radialGradient></defs><circle class="${cls}" cx="${cx}" cy="${cy}" r="${r}" fill="url(#${g})"/>`;
+  }
+  function rays(cx, cy, color, n = 14, op = .1, len = 95, cls = '') {
+    let out = '';
+    for (let i = 0; i < n; i++) {
+      const a = i / n * Math.PI * 2, w = Math.PI / n * .55;
+      out += `<path d="M${cx} ${cy} L${(cx + Math.cos(a - w) * len).toFixed(1)} ${(cy + Math.sin(a - w) * len).toFixed(1)} L${(cx + Math.cos(a + w) * len).toFixed(1)} ${(cy + Math.sin(a + w) * len).toFixed(1)} Z" fill="${color}" opacity="${op}"/>`;
+    }
+    return `<g class="${cls}" style="transform-origin:${cx}px ${cy}px">${out}</g>`;
+  }
+  // Position im aeusseren <g>, Animation am inneren Pfad - sonst ueberschreibt
+  // die CSS-Animation das transform-Attribut und der Stern springt in die Ecke
+  const spark = (x, y, s = 1, o = .9, cls = '', c = '#fff') => `<g transform="translate(${x} ${y}) scale(${s})"><path class="${cls}" d="M0 -8 L2.2 -2.2 L8 0 L2.2 2.2 L0 8 L-2.2 2.2 L-8 0 L-2.2 -2.2 Z" fill="${c}" opacity="${o}"/></g>`;
+  const sparks = (pts, cls = '', c = '#fff') => pts.map(([x, y, s = 1], i) => spark(x, y, s, .9, cls ? `${cls} d${i % 4}` : '', c)).join('');
+  const dots = (pts, c = '#fff', o = .6) => pts.map(([x, y, r = 1.2]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" opacity="${o}"/>`).join('');
+  const txt = (t, x, y, size, fill, stroke = '#120a1a', sw = 3, anchor = 'middle') => `<text x="${x}" y="${y}" text-anchor="${anchor}" font-family="Arial Black,Segoe UI,sans-serif" font-weight="900" font-size="${size}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" paint-order="stroke" letter-spacing=".5">${t}</text>`;
+  function sword(x, y, len = 70, rot = 0, blade = '#e4ebf5', hilt = '#c8a96e') {
+    const g = U('sw');
+    return `<g transform="translate(${x} ${y}) rotate(${rot})"><defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="${blade}"/><stop offset="1" stop-color="#8a96aa"/></linearGradient></defs>
+      <path d="M-4 0 L-4 ${-len} L0 ${-len - 10} L4 ${-len} L4 0 Z" fill="url(#${g})" stroke="#3a4250" stroke-width="1.2"/>
+      <rect x="-13" y="-2" width="26" height="6" rx="2" fill="${hilt}" stroke="#4a3208" stroke-width="1.2"/>
+      <rect x="-2.6" y="4" width="5.2" height="14" rx="2" fill="#5a3a1a"/><circle cx="0" cy="20" r="3.6" fill="${hilt}" stroke="#4a3208" stroke-width="1"/></g>`;
+  }
+  function crown(x, y, s = 1, gems = ['#ff5a6a', '#5fd08a', '#6bc8ff', '#b98cff', '#ffd36b'], points = 5) {
+    const g = U('cr');
+    const w = 84, step = w / (points - 1);
+    let tips = `M${-w / 2} 30 `;
+    for (let i = 0; i < points; i++) { const px = -w / 2 + i * step; tips += `L${px} ${i % 2 ? 6 : -10} L${px + step / 2} 18 `; }
+    tips = tips.replace(/L[^L]*$/, '') + `L${w / 2} 30 Z`;
+    let gemDots = '';
+    for (let i = 0; i < points; i++) gemDots += `<circle cx="${-w / 2 + i * step}" cy="${i % 2 ? 6 : -10}" r="4.6" fill="${gems[i % gems.length]}" stroke="#fff" stroke-width="1.3"/>`;
+    return `<g transform="translate(${x} ${y}) scale(${s})"><defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2a8"/><stop offset=".5" stop-color="#f2c94c"/><stop offset="1" stop-color="#a4700e"/></linearGradient></defs>
+      <path d="${tips}" fill="url(#${g})" stroke="#5a3a06" stroke-width="2.2" stroke-linejoin="round"/>
+      <rect x="${-w / 2 - 2}" y="28" width="${w + 4}" height="14" rx="4" fill="url(#${g})" stroke="#5a3a06" stroke-width="2.2"/>${gemDots}</g>`;
+  }
+  function flame(x, y, s = 1, c1 = '#ffe46b', c2 = '#ff5a1e', cls = '') {
+    const g = U('fl');
+    return `<g class="${cls}" transform="translate(${x} ${y}) scale(${s})"><defs><linearGradient id="${g}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${c2}"/><stop offset="1" stop-color="${c1}"/></linearGradient></defs>
+      <path d="M0 30 C-22 26 -24 2 -8 -12 C-6 -2 -2 2 2 4 C0 -10 6 -24 16 -32 C14 -16 28 -6 24 10 C22 24 12 30 0 30 Z" fill="url(#${g})" stroke="#7a1a08" stroke-width="1.5"/>
+      <path d="M0 26 C-10 22 -10 10 -2 4 C0 12 6 12 8 6 C12 14 8 24 0 26 Z" fill="#fff6c8" opacity=".85"/></g>`;
+  }
+  function coin(x, y, r = 10) {
+    const g = U('co');
+    return `<g><defs><radialGradient id="${g}" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff2b0"/><stop offset=".6" stop-color="#e2b23c"/><stop offset="1" stop-color="#9a6a12"/></radialGradient></defs>
+      <circle cx="${x}" cy="${y}" r="${r}" fill="url(#${g})" stroke="#6a4508" stroke-width="1.2"/><circle cx="${x}" cy="${y}" r="${r * .66}" fill="none" stroke="#9a6a12" stroke-width="1"/></g>`;
+  }
+  const bush = (x, y, w, c = '#2f8a4a', c2 = '#256e3a') => `<g transform="translate(${x} ${y})">${[0, 1, 2, 3, 4].map(i => `<circle cx="${(i - 2) * w / 5}" cy="${(i % 2) * -4}" r="${w / 4.2}" fill="${i % 2 ? c : c2}"/>`).join('')}</g>`;
+  function rune(x, y, r, c1, c2, glyph, cls = '') {
+    const g = U('ru');
+    return `<g class="${cls}" style="transform-origin:${x}px ${y}px"><defs><radialGradient id="${g}"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></radialGradient></defs>
+      <circle cx="${x}" cy="${y}" r="${r}" fill="url(#${g})" stroke="#fff" stroke-width="2" opacity=".95"/>
+      <circle cx="${x}" cy="${y}" r="${r * .72}" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 3" opacity=".7"/>
+      <path d="${glyph}" transform="translate(${x} ${y})" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+  }
+  const ground = (y, c, c2) => `<path d="M0 ${y} Q30 ${y - 6} 60 ${y} T120 ${y} V120 H0 Z" fill="${c}"/>${c2 ? `<path d="M0 ${y + 8} Q40 ${y + 2} 80 ${y + 8} T120 ${y + 6} V120 H0 Z" fill="${c2}"/>` : ''}`;
+  const tower = (x, y, s = 1, c = '#6a7488') => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-14 0 L-10 -60 L10 -60 L14 0 Z" fill="${c}" stroke="#2a3040" stroke-width="2"/><path d="M-16 -60 H16 V-70 H-16 Z" fill="#8a96aa" stroke="#2a3040" stroke-width="2"/>
+    <path d="M-16 -70 V-78 H-8 V-72 H-2 V-78 H4 V-72 H10 V-78 H16 V-70" fill="#8a96aa" stroke="#2a3040" stroke-width="2"/><circle cx="0" cy="-86" r="7" fill="#6bc8ff" stroke="#fff" stroke-width="1.5"/>${glow(0, -86, 16, '#6bc8ff', .7)}</g>`;
+  const minion = (x, y, c = '#4a7ad8', s = 1) => `<g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="0" cy="0" rx="7" ry="9" fill="${c}" stroke="#1a2440" stroke-width="1.2"/><circle cx="0" cy="-12" r="6" fill="${c}" stroke="#1a2440" stroke-width="1.2"/><circle cx="-2" cy="-13" r="1.4" fill="#fff"/><circle cx="2.4" cy="-13" r="1.4" fill="#fff"/><path d="M-6 -16 L0 -22 L6 -16" fill="#d8e0ee" stroke="#1a2440" stroke-width="1"/></g>`;
+  const dragonEye = (x, y, r, c1, c2) => { const g = U('de'); return `<g><defs><radialGradient id="${g}"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></radialGradient></defs><path d="M${x - r * 1.8} ${y} Q${x} ${y - r * 1.5} ${x + r * 1.8} ${y} Q${x} ${y + r * 1.5} ${x - r * 1.8} ${y} Z" fill="url(#${g})" stroke="#1a0a00" stroke-width="2"/><ellipse cx="${x}" cy="${y}" rx="${r * .28}" ry="${r * 1.05}" fill="#0a0400"/><circle cx="${x + r * .4}" cy="${y - r * .45}" r="${r * .18}" fill="#fff" opacity=".9"/></g>`; };
+
+  // ---------- Die 50 Motive ----------
+  const ART = {
+    // ===== Common =====
+    'smite': () => `${bg('#0d1d44', '#2346a8', '#ffe46b')}<ellipse cx="60" cy="108" rx="52" ry="10" fill="#0a1430"/>
+      <path d="M70 6 L38 62 H58 L46 116 L88 48 H64 L80 6 Z" fill="#ffe46b" stroke="#fff6c8" stroke-width="2" stroke-linejoin="round"/><path d="M70 6 L56 34 H66 Z" fill="#fff" opacity=".7"/>
+      ${sparks([[20, 30], [98, 24, .8], [100, 82], [16, 86, .7]])}`,
+    'one-more-game': () => `${bg('#2a1838', '#5b2c4a')}<rect x="16" y="86" width="88" height="30" rx="4" fill="#3a2440"/><rect x="24" y="80" width="72" height="10" rx="3" fill="#7b5a8a"/>
+      <rect x="30" y="92" width="22" height="16" rx="2" fill="#6bc8ff" opacity=".7"/><rect x="58" y="96" width="32" height="4" rx="2" fill="#9a7ab0"/>
+      <circle cx="60" cy="46" r="30" fill="#f6efe2" stroke="#3a2a1a" stroke-width="4"/>
+      ${[...Array(12)].map((_, i) => { const a = i / 12 * Math.PI * 2; return `<line x1="${(60 + Math.sin(a) * 24).toFixed(1)}" y1="${(46 - Math.cos(a) * 24).toFixed(1)}" x2="${(60 + Math.sin(a) * 27).toFixed(1)}" y2="${(46 - Math.cos(a) * 27).toFixed(1)}" stroke="#3a2a1a" stroke-width="${i % 3 ? 1.5 : 3}"/>`; }).join('')}
+      <path d="M60 46 L60 26 M60 46 L74 54" stroke="#3a2a1a" stroke-width="4" stroke-linecap="round"/><circle cx="60" cy="46" r="3" fill="#c0392b"/>${txt('3:47 AM', 60, 114, 11, '#ff7a8a', '#2a1838', 2)}`,
+    'ward': () => `${bg('#071a12', '#0f3a26')}${bush(14, 112, 50, '#123a22', '#0e2e1a')}${bush(104, 114, 50, '#123a22', '#0e2e1a')}${glow(60, 44, 46, '#ffe9a0', .85)}
+      <path d="M54 62 L52 108 H68 L66 62 Z" fill="#6b4a2e" stroke="#3a2614" stroke-width="2"/>
+      <path d="M40 46 C40 28 80 28 80 46 C80 58 70 64 60 64 C50 64 40 58 40 46 Z" fill="#ffd36b" stroke="#a87a1e" stroke-width="2.5"/>
+      <ellipse cx="60" cy="46" rx="13" ry="9" fill="#fff"/><circle cx="60" cy="46" r="6" fill="#2b6e3a"/><circle cx="60" cy="46" r="3" fill="#0a1a0e"/><circle cx="62" cy="44" r="1.4" fill="#fff"/>${sparks([[26, 22, .6], [94, 30, .5]])}`,
+    'first-blood': () => `${bg('#2a0a0a', '#5a1010', '#ff3a3a')}${sword(60, 100, 72, 0)}
+      <path d="M60 30 C55 40 52 46 52 52 C52 57 56 60 60 60 C64 60 68 57 68 52 C68 46 65 40 60 30 Z" fill="#e01e2e" stroke="#5a0008" stroke-width="2"/><ellipse cx="57" cy="50" rx="2.4" ry="4" fill="#fff" opacity=".6"/>
+      ${txt('FIRST BLOOD', 60, 114, 12, '#ff5a6a', '#2a0a0a', 2.6)}`,
+    'blue-buff': () => `${bg('#041428', '#0d3a6e', '#3ab4ff')}${rune(60, 54, 32, '#6bd8ff', '#1a5ab0', 'M-10 -12 L0 -20 L10 -12 M-12 0 H12 M-10 12 L0 20 L10 12')}${dots([[20, 20], [100, 26], [24, 96], [96, 98], [60, 104]], '#9ae4ff', .8)}`,
+    'red-buff': () => `${bg('#2a0604', '#6a1408', '#ff6a2a')}${rune(60, 54, 32, '#ffb46b', '#b02a0a', 'M0 -20 L6 -4 L20 -4 L8 6 L12 20 L0 12 L-12 20 L-8 6 L-20 -4 L-6 -4 Z')}${flame(20, 96, .45)}${flame(100, 98, .45)}`,
+    'river-crab': () => `${bg('#0a2a3a', '#0e5a6a')}<path d="M0 74 Q30 66 60 74 T120 72 V120 H0 Z" fill="#1a7a8a" opacity=".8"/>${[0, 1, 2].map(i => `<path d="M${10 + i * 38} ${86 + i * 6} q8 -4 16 0" stroke="#9ae4ff" stroke-width="2" fill="none" opacity=".6"/>`).join('')}
+      <ellipse cx="60" cy="70" rx="26" ry="16" fill="#ff8a5a" stroke="#7a2a10" stroke-width="2"/><ellipse cx="54" cy="64" rx="10" ry="5" fill="#ffb48a" opacity=".7"/>
+      <path d="M34 66 Q22 58 22 46 M86 66 Q98 58 98 46" stroke="#ff8a5a" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M16 42 Q22 36 28 42 L22 48 Z M92 42 Q98 36 104 42 L98 48 Z" fill="#ff8a5a" stroke="#7a2a10" stroke-width="1.5"/>
+      <circle cx="52" cy="56" r="4" fill="#fff"/><circle cx="68" cy="56" r="4" fill="#fff"/><circle cx="52.6" cy="56.6" r="2" fill="#111"/><circle cx="68.6" cy="56.6" r="2" fill="#111"/>${[0, 1, 2].map(i => `<path d="M${42 + i * 4} 82 l-6 8 M${78 - i * 4} 82 l6 8" stroke="#7a2a10" stroke-width="2.4"/>`).join('')}`,
+    'full-clear': () => `${bg('#0e2418', '#1f4a2c')}${pony({ x: 6, y: 30, s: .7, eye: 'happy' })}
+      <circle cx="88" cy="38" r="20" fill="#f6efe2" stroke="#3a2a1a" stroke-width="3"/><path d="M88 38 V24 M88 38 L98 44" stroke="#3a2a1a" stroke-width="3" stroke-linecap="round"/><rect x="84" y="12" width="8" height="6" rx="1.5" fill="#3a2a1a"/>
+      ${['#6bc8ff', '#ff6a2a', '#5fd08a', '#ffd36b'].map((c, i) => `<g transform="translate(${64 + i * 13} 98)"><circle r="5.5" fill="${c}"/><path d="M-2.6 0 L-.6 2.4 L3 -2.4" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></g>`).join('')}`,
+    'recall': () => `${bg('#0a1030', '#1a2a6a')}<ellipse cx="60" cy="96" rx="44" ry="12" fill="none" stroke="#6bc8ff" stroke-width="3"/><ellipse cx="60" cy="96" rx="34" ry="8" fill="#6bc8ff" opacity=".25"/>
+      ${[0, 1, 2, 3, 4].map(i => `<rect x="${22 + i * 18}" y="${30 + (i % 2) * 14}" width="2.4" height="${50 - (i % 2) * 14}" fill="#9ae4ff" opacity=".55"/>`).join('')}${pony({ x: 22, y: 22, s: .72, eye: 'closed' })}${sparks([[18, 30, .6], [102, 40, .7], [96, 80, .5]], '', '#9ae4ff')}`,
+    'ping': () => `${bg('#1a1a2a', '#2e2e4a')}${pony({ x: 20, y: 40, s: .78, eye: 'wide' })}
+      <circle cx="78" cy="30" r="22" fill="#ffd36b" stroke="#7a5a10" stroke-width="3"/>${txt('?', 78, 42, 32, '#3a2a00', '#ffd36b', 0)}${[0, 1].map(i => `<circle cx="78" cy="30" r="${28 + i * 8}" fill="none" stroke="#ffd36b" stroke-width="2" opacity="${.5 - i * .2}"/>`).join('')}`,
+    'gg': () => `${bg('#0e2a1e', '#1e5a3a', '#5fd08a')}<path d="M20 22 H100 Q108 22 108 30 V64 Q108 72 100 72 H52 L36 86 L38 72 H20 Q12 72 12 64 V30 Q12 22 20 22 Z" fill="#f6efe2" stroke="#1a3a28" stroke-width="3"/>
+      ${txt('GG', 60, 60, 34, '#2a8a4a', '#f6efe2', 0)}${['#c8a96e', '#8a6a40'].map((c, i) => `<path d="M${36 + i * 30} 112 C${36 + i * 30} 96 ${44 + i * 30} 90 ${52 + i * 30} 90 C${60 + i * 30} 90 ${62 + i * 30} 100 ${58 + i * 30} 112 Z" fill="${c}" stroke="#3a2a10" stroke-width="2"/>`).join('')}`,
+    'afk': () => `${bg('#1a1418', '#3a2a30')}<rect x="30" y="40" width="44" height="50" rx="6" fill="#6a3a4a" stroke="#2a1018" stroke-width="2.5"/><rect x="24" y="78" width="56" height="12" rx="4" fill="#7a4a5a" stroke="#2a1018" stroke-width="2.5"/>
+      <path d="M32 90 L28 112 M72 90 L76 112" stroke="#2a1018" stroke-width="4"/><path d="M84 70 h18 v14 q0 10 -9 10 q-9 0 -9 -10 z" fill="#f6efe2" stroke="#3a2a1a" stroke-width="2"/><path d="M102 74 q8 0 6 8 q-2 4 -6 4" stroke="#3a2a1a" stroke-width="2" fill="none"/>
+      <path d="M88 64 q3 -6 0 -12 M96 64 q3 -6 0 -12" stroke="#c8b8a8" stroke-width="2" fill="none"/>${txt('AFK', 52, 30, 18, '#ff8a9a', '#1a1418', 2.4)}`,
+    'minion-wave': () => `${bg('#16203a', '#2a3a5a')}${ground(92, '#2a4a2a', '#1e3a20')}${[[20, 92, '#4a7ad8'], [42, 96, '#4a7ad8'], [64, 92, '#8a6ad8'], [86, 96, '#4a7ad8'], [104, 92, '#4a7ad8']].map(([x, y, c]) => minion(x, y, c, 1.1)).join('')}${txt('WAVE', 60, 34, 18, '#9ab8ff', '#16203a', 2.6)}`,
+    'tower-dive': () => `${bg('#1a1028', '#3a2048', '#ff6a8a')}${tower(84, 108, 1)}<path d="M84 22 L56 70" stroke="#6bc8ff" stroke-width="4" opacity=".8"/>${pony({ x: 4, y: 40, s: .66, eye: 'angry' })}${sparks([[56, 70, .8]], '', '#6bc8ff')}`,
+    'gold-fever': () => `${bg('#2a1a04', '#5a3a08', '#ffd36b')}${[[34, 96, 14], [60, 100, 16], [86, 96, 14], [46, 80, 13], [74, 80, 13], [60, 64, 14]].map(([x, y, r]) => coin(x, y, r)).join('')}${sparks([[24, 36], [96, 30, .8], [60, 30, .6]], '', '#fff2b0')}`,
+    'in-queue': () => `${bg('#0e1428', '#1e2a4a')}<circle cx="60" cy="52" r="32" fill="none" stroke="#2a3a5a" stroke-width="7"/><path d="M60 20 A32 32 0 1 1 28 52" fill="none" stroke="#6bc8ff" stroke-width="7" stroke-linecap="round"/>
+      ${txt('4:59', 60, 60, 20, '#e6ecff', '#0e1428', 2)}${txt('IN QUEUE', 60, 108, 12, '#9ab8ff', '#0e1428', 2)}`,
+    'dodge': () => `${bg('#2a1414', '#4a2020')}<rect x="20" y="30" width="80" height="44" rx="6" fill="#f6efe2" stroke="#4a2020" stroke-width="3" transform="rotate(-6 60 52)"/>${txt('DODGED', 60, 58, 16, '#c0392b', '#f6efe2', 0)}
+      <path d="M40 74 L36 104 M80 70 L84 104" stroke="#6a4a2e" stroke-width="5"/>${txt('-5 LP', 60, 112, 12, '#ff8a9a', '#2a1414', 2)}`,
+    'flash': () => `${bg('#1a1a04', '#4a4a10', '#ffe46b')}${[0, 1, 2].map(i => `<g opacity="${.2 + i * .25}">${pony({ x: 4 + i * 22, y: 30, s: .6, eye: 'normal' })}</g>`).join('')}${sparks([[100, 34], [104, 70, .7], [90, 96, .6]], '', '#ffe46b')}`,
+    'ignite': () => `${bg('#2a0a04', '#5a1a08', '#ff6a1e')}${flame(60, 70, 1.4)}${dots([[30, 30, 1.6], [90, 24, 1.4], [26, 80], [96, 86, 1.6]], '#ffb46b', .9)}`,
+    'health-potion': () => `${bg('#2a0a14', '#4a1424')}${glow(60, 70, 40, '#ff3a5a', .5)}<path d="M50 20 H70 V38 Q92 50 90 76 Q88 104 60 104 Q32 104 30 76 Q28 50 50 38 Z" fill="#e01e3a" stroke="#4a0a14" stroke-width="2.5"/>
+      <path d="M36 70 Q60 62 84 70 Q86 98 60 100 Q34 98 36 70 Z" fill="#ff5a7a"/><rect x="48" y="12" width="24" height="10" rx="3" fill="#a87a4e" stroke="#4a2a14" stroke-width="2"/><ellipse cx="46" cy="58" rx="5" ry="10" fill="#fff" opacity=".45"/>`,
+    'lens-sweep': () => `${bg('#120a0a', '#2a1414')}<path d="M60 96 L14 30 Q60 10 106 30 Z" fill="#ff3a3a" opacity=".22"/>${[[32, 42], [60, 34], [86, 46]].map(([x, y]) => `<g opacity=".9"><circle cx="${x}" cy="${y}" r="6" fill="#ffd36b"/><path d="M${x - 8} ${y - 8} L${x + 8} ${y + 8} M${x + 8} ${y - 8} L${x - 8} ${y + 8}" stroke="#ff3a3a" stroke-width="2.6"/></g>`).join('')}
+      <circle cx="60" cy="96" r="12" fill="#c0392b" stroke="#fff" stroke-width="2"/><circle cx="60" cy="96" r="5" fill="#ff8a8a"/>`,
+    'wolf-camp': () => `${bg('#060a12', '#121a2a')}${bush(30, 104, 60, '#0e2a1a', '#0a2014')}${bush(92, 106, 60, '#0e2a1a', '#0a2014')}${[[30, 56], [60, 46], [90, 58]].map(([x, y]) => `<g><path d="M${x - 9} ${y} L${x - 2} ${y - 4} L${x - 3} ${y + 3} Z M${x + 9} ${y} L${x + 2} ${y - 4} L${x + 3} ${y + 3} Z" fill="#ffd36b"/>${glow(x, y, 12, '#ffd36b', .35)}</g>`).join('')}`,
+    'lag-spike': () => `${bg('#0a1414', '#143030')}<path d="M8 90 L30 86 L44 88 L54 84 L62 24 L70 88 L90 86 L112 88" fill="none" stroke="#ff5a6a" stroke-width="4" stroke-linejoin="round"/><path d="M8 100 H112" stroke="#2a5a5a" stroke-width="1.5"/>
+      ${txt('999 ms', 60, 114, 13, '#ff8a9a', '#0a1414', 2)}${[0, 1, 2, 3].map(i => `<rect x="${86 + i * 6}" y="${20 + (3 - i) * 4}" width="4" height="${8 + i * 4}" fill="${i ? '#3a5a5a' : '#ff5a6a'}"/>`).join('')}`,
+    'mute-all': () => `${bg('#1a1424', '#2a2040')}<path d="M24 26 H96 Q104 26 104 34 V70 Q104 78 96 78 H52 L36 92 L38 78 H24 Q16 78 16 70 V34 Q16 26 24 26 Z" fill="#e6e0f0" stroke="#2a2040" stroke-width="3"/>
+      ${[0, 1, 2].map(i => `<rect x="30" y="${38 + i * 12}" width="${60 - i * 12}" height="5" rx="2.5" fill="#8a80a0"/>`).join('')}<path d="M14 100 L106 20" stroke="#ff4a5a" stroke-width="8" stroke-linecap="round"/>`,
+    'honor': () => `${bg('#0a1a2a', '#1a3a5a', '#ffd36b')}<path d="M60 18 L94 32 V62 C94 84 78 98 60 106 C42 98 26 84 26 62 V32 Z" fill="#e2b23c" stroke="#6a4508" stroke-width="3"/>
+      <path d="M60 28 L84 38 V62 C84 78 72 90 60 96 C48 90 36 78 36 62 V38 Z" fill="#1a3a6a"/><path d="M60 40 L64 52 L76 52 L66 60 L70 72 L60 64 L50 72 L54 60 L44 52 L56 52 Z" fill="#ffd36b"/>`,
+    // ===== Uncommon =====
+    'gank': () => `${bg('#0c1f16', '#1c4a2c')}${rays(60, 40, '#ff4d5e', 12, .08)}${[...Array(9)].map((_, i) => `<path d="M${i * 15 - 6} 120 Q${i * 15 + 2} ${58 + (i % 3) * 8} ${i * 15 + 10} 120 Z" fill="${i % 2 ? '#2f8a4a' : '#256e3a'}"/>`).join('')}
+      <ellipse cx="60" cy="98" rx="60" ry="26" fill="#2a7a40"/><circle cx="44" cy="90" r="9" fill="#fff"/><circle cx="76" cy="90" r="9" fill="#fff"/><circle cx="47" cy="92" r="4.2" fill="#1a1a1a"/><circle cx="79" cy="92" r="4.2" fill="#1a1a1a"/>
+      <path d="M36 79 L52 83 M84 79 L68 83" stroke="#0e2a16" stroke-width="3" stroke-linecap="round"/><path d="M60 10 L76 50 H44 Z" fill="#ff4d5e" stroke="#7a0d16" stroke-width="2.5" stroke-linejoin="round"/><rect x="57" y="22" width="6" height="16" rx="2" fill="#fff"/><circle cx="60" cy="43" r="3" fill="#fff"/>`,
+    'tilted': () => `${bg('#3a1010', '#6e1e14', '#ff5a3c')}${[0, 1, 2].map(i => `<path d="M${82 + i * 11} 42 q8 -9 0 -18 q-8 -9 0 -18" stroke="rgba(255,255,255,.55)" stroke-width="3.5" fill="none" stroke-linecap="round"/>`).join('')}
+      <g transform="rotate(-16 60 70)">${pony({ x: 14, y: 24, s: .88, eye: 'angry', body: '#e8c48c', shade: '#b88848' })}</g>${txt('0 / 10 / 0', 60, 114, 12, '#ffb4a0', '#3a1010', 2)}`,
+    'counter-jungle': () => `${bg('#140a24', '#2a1448', '#b98cff')}${bush(18, 108, 60, '#3a1a5a', '#2a1048')}${bush(104, 110, 60, '#3a1a5a', '#2a1048')}${rune(84, 40, 16, '#ff9a6b', '#a02a0a', 'M0 -8 L3 -2 L8 -2 L4 2 L6 8 L0 4 L-6 8 L-4 2 L-8 -2 L-3 -2 Z')}
+      ${pony({ x: 6, y: 44, s: .6, eye: 'angry', body: '#8a7aa8', shade: '#4a3a6a', mane: '#2a1a40' })}${txt('SHHH', 30, 30, 12, '#d8c8ff', '#140a24', 2)}`,
+    'dragon-soul': () => `${bg('#1a0a04', '#3a1a0a', '#ff9a3a')}${rays(60, 58, '#ffb46b', 16, .1)}${dragonEye(60, 58, 22, '#ffe46b', '#c0392b')}
+      ${['#ff5a1e', '#3ab4ff', '#5fd08a', '#9aa6b8'].map((c, i) => { const a = i / 4 * Math.PI * 2 - Math.PI / 4; return `<circle cx="${(60 + Math.cos(a) * 40).toFixed(1)}" cy="${(58 + Math.sin(a) * 40).toFixed(1)}" r="7" fill="${c}" stroke="#fff" stroke-width="1.5"/>`; }).join('')}`,
+    'herald-charge': () => `${bg('#141a2e', '#2a2048', '#b98cff')}${tower(96, 112, .8)}<path d="M10 80 Q40 60 70 70 L84 64 L74 80 Q40 96 10 92 Z" fill="#6a4ab0" stroke="#24104a" stroke-width="2.5"/>
+      <path d="M70 70 L92 58 L80 76 Z" fill="#e6e0f0" stroke="#24104a" stroke-width="2"/><circle cx="56" cy="72" r="4" fill="#ffd36b"/>${[0, 1, 2].map(i => `<path d="M${6 - i * 4} ${76 + i * 6} H${-12}" stroke="#d8c8ff" stroke-width="3" stroke-linecap="round"/>`).join('')}${sparks([[90, 54, .8]], '', '#ffd36b')}`,
+    'double-kill': () => `${bg('#200a14', '#4a1424', '#ff5a6a')}${rays(60, 50, '#ff8a9a', 12, .09)}${sword(46, 96, 64, -24)}${sword(74, 96, 64, 24)}${txt('DOUBLE', 60, 112, 14, '#ffb4c0', '#200a14', 2.6)}`,
+    'triple-kill': () => `${bg('#1e0a24', '#401448', '#e05aff')}${rays(60, 50, '#e8a0ff', 12, .09)}${sword(40, 98, 62, -30)}${sword(60, 100, 66, 0)}${sword(80, 98, 62, 30)}${txt('TRIPLE', 60, 114, 14, '#f0c8ff', '#1e0a24', 2.6)}`,
+    'shutdown': () => `${bg('#2a1a08', '#4a2a10')}<rect x="24" y="14" width="72" height="88" rx="3" fill="#e8d4a8" stroke="#6a4a20" stroke-width="2.5" transform="rotate(3 60 58)"/>
+      ${txt('WANTED', 60, 32, 13, '#5a2a0a', '#e8d4a8', 0)}<g transform="translate(36 36) scale(.48)">${pony({ x: 0, y: 0, s: 1, eye: 'angry' })}</g>${coin(84, 92, 13)}${txt('+1000', 50, 96, 12, '#5a2a0a', '#e8d4a8', 0)}`,
+    'backdoor': () => `${bg('#0a0e1e', '#1a2240', '#6bc8ff')}<path d="M70 108 L84 36 L98 108 Z" fill="#3a4a6a" stroke="#1a2240" stroke-width="2"/><path d="M84 36 L78 20 L84 6 L90 20 Z" fill="#6bc8ff" stroke="#fff" stroke-width="1.5"/>${glow(84, 20, 20, '#6bc8ff', .7)}
+      ${pony({ x: 4, y: 48, s: .56, eye: 'closed', body: '#9aa6b8', shade: '#5a6478', mane: '#3a4258' })}<path d="M44 96 q8 -6 16 0" stroke="#9ab8ff" stroke-width="2" fill="none" stroke-dasharray="3 3"/>${txt('SHH...', 34, 30, 12, '#9ab8ff', '#0a0e1e', 2)}`,
+    'elder-dragon': () => `${bg('#0e0e14', '#24242e', '#d8d8ff')}${rays(60, 50, '#e6e6ff', 14, .07)}<path d="M8 104 C20 60 40 30 64 26 C92 22 112 48 112 104 Z" fill="#4a4a5e" stroke="#16161e" stroke-width="2.5"/>
+      ${[[34, 50], [86, 44], [62, 34]].map(([x, y]) => `<path d="M${x} ${y} l-6 -14 l12 6 Z" fill="#8a8aa8"/>`).join('')}${dragonEye(46, 66, 9, '#e6e6ff', '#6a6aff')}${dragonEye(78, 66, 9, '#e6e6ff', '#6a6aff')}<path d="M40 90 Q60 100 80 90" stroke="#16161e" stroke-width="3" fill="none"/>`,
+    'promo-series': () => `${bg('#0a1a14', '#14302a', '#5fd08a')}${['#5fd08a', '#5fd08a', '#3a4a5a'].map((c, i) => `<g transform="translate(${30 + i * 30} 56)"><rect x="-12" y="-12" width="24" height="24" rx="5" fill="${c}" stroke="#fff" stroke-width="2"/>${i < 2 ? '<path d="M-6 0 L-1 5 L7 -5" stroke="#fff" stroke-width="3.4" fill="none" stroke-linecap="round"/>' : txt('?', 0, 7, 18, '#fff', '#3a4a5a', 0)}</g>`).join('')}${txt('PROMOS', 60, 100, 15, '#9aeec0', '#0a1a14', 2.4)}`,
+    'smurf-alert': () => `${bg('#0a1a3a', '#1a3a7a', '#6bc8ff')}${pony({ x: 16, y: 18, s: .84, eye: 'happy', body: '#7ab8ff', shade: '#3a6ad8', mane: '#ffffff', extra: '<path d="M8 66 Q16 60 22 66 Q28 60 34 66 Q26 74 21 70 Q16 74 8 66 Z" fill="#3a2a1a"/>' })}${txt('LVL 31', 30, 26, 11, '#fff', '#0a1a3a', 2)}`,
+    'buff-steal': () => `${bg('#1a0a04', '#3a1a0a', '#ff8a3a')}${rune(60, 50, 26, '#ffb46b', '#b02a0a', 'M0 -14 L4 -3 L14 -3 L6 4 L9 14 L0 8 L-9 14 L-6 4 L-14 -3 L-4 -3 Z')}
+      ${['#c8a96e', '#8a6a40'].map((c, i) => `<path d="M${i ? 108 : 12} 112 C${i ? 100 : 20} 92 ${i ? 92 : 28} 80 ${i ? 82 : 38} 72" stroke="${c}" stroke-width="12" fill="none" stroke-linecap="round"/>`).join('')}${sparks([[30, 24, .7], [94, 22, .6]], '', '#ffd36b')}`,
+    'inhib-down': () => `${bg('#120a1e', '#2a1440', '#b98cff')}${[[-1, 0], [1, 0]].map(([d]) => `<path d="M${60 + d * 6} 22 L${60 + d * 26} 60 L${60 + d * 8} 100 L${60 + d * 2} 60 Z" fill="#b98cff" stroke="#fff" stroke-width="1.5" transform="rotate(${d * 12} 60 60) translate(${d * 8} 0)"/>`).join('')}
+      ${glow(60, 60, 30, '#d8b8ff', .7)}${dots([[30, 40, 2], [92, 46, 2], [40, 90, 1.6], [86, 92, 1.8], [60, 106, 1.4]], '#e8d8ff', .9)}`,
+    'vision-king': () => `${bg('#06140c', '#123a22', '#ffe9a0')}${crown(60, 26, .62, ['#ffd36b', '#ffd36b', '#ffd36b', '#ffd36b', '#ffd36b'])}${pony({ x: 18, y: 36, s: .74, eye: 'happy' })}${[[16, 30], [104, 34], [100, 92]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5" fill="#ffd36b"/>${glow(x, y, 10, '#ffe9a0', .6)}`).join('')}`,
+    // ===== Holo Rare =====
+    'pentakill': () => `${bg('#1a0f30', '#3a1d5c', '#ffd36b')}${rays(60, 52, '#fff', 18, .07)}${crown(60, 44, 1)}${txt('PENTAKILL', 60, 110, 14, '#fff2a8', '#3a1d5c', 3)}${sparks([[16, 20], [104, 22, .8], [14, 86, .6], [106, 84, .7]])}`,
+    'baron-steal': () => `${bg('#12061e', '#2e0f4a', '#9a5af0')}<path d="M6 120 C8 70 30 30 64 26 C98 22 118 56 114 120 Z" fill="#6a2ab8" stroke="#1e0838" stroke-width="2.5"/>
+      ${[[30, 70], [44, 50], [88, 52], [100, 78]].map(([x, y]) => `<path d="M${x} ${y} l-6 -10 l10 4 Z" fill="#c9a0ff" opacity=".8"/>`).join('')}
+      <ellipse cx="50" cy="62" rx="8" ry="10" fill="#ffe46b"/><ellipse cx="78" cy="62" rx="8" ry="10" fill="#ffe46b"/><ellipse cx="50" cy="64" rx="3" ry="7" fill="#1a0a2a"/><ellipse cx="78" cy="64" rx="3" ry="7" fill="#1a0a2a"/>
+      <path d="M40 92 Q64 106 88 92 L84 100 L76 94 L70 102 L64 95 L58 102 L52 94 L44 100 Z" fill="#fff" stroke="#1e0838" stroke-width="2"/>
+      <path d="M94 6 L72 46 H86 L76 84 L110 34 H92 L102 6 Z" fill="#ffe46b" stroke="#fff6c8" stroke-width="2" stroke-linejoin="round"/>${glow(90, 44, 26, '#ffe46b', .5)}`,
+    'quadra-kill': () => `${bg('#0a1430', '#1a2a6a', '#6bc8ff')}${rays(60, 50, '#bfe4ff', 16, .08)}${[-36, -12, 12, 36].map(r => sword(60, 100, 66, r, '#e4f2ff', '#9ab8ff')).join('')}${txt('QUADRA', 60, 114, 15, '#d8f0ff', '#0a1430', 3)}${sparks([[18, 24], [102, 26, .8]])}`,
+    'ace': () => `${bg('#1a0a04', '#4a2008', '#ffb43a')}${rays(60, 44, '#ffd36b', 18, .1)}${[[10, 58], [44, 64], [78, 58]].map(([x, y], i) => pony({ x, y, s: .36, eye: i === 1 ? 'happy' : 'normal' })).join('')}
+      <path d="M14 28 H106 L98 44 L106 60 H14 L22 44 Z" fill="#c0392b" stroke="#4a0a04" stroke-width="2.5"/>${txt('ACE', 60, 52, 22, '#fff2a8', '#4a0a04', 3)}`,
+    'comeback': () => `${bg('#04140e', '#0e3a24', '#5fd08a')}<path d="M0 120 L0 92 L30 104 L52 70 L74 82 L120 18 V120 Z" fill="#14462e"/><path d="M0 92 L30 104 L52 70 L74 82 L118 20" fill="none" stroke="#5fd08a" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M118 20 L104 22 L112 34 Z" fill="#5fd08a"/>${pony({ x: 2, y: 30, s: .56, eye: 'angry' })}${txt('-10K → WIN', 60, 114, 11, '#c8ffe0', '#04140e', 2.4)}`,
+    'rank-up': () => `${bg('#0a1028', '#1a2a5a', '#ffd36b')}${[0, 1, 2, 3].map(i => `<rect x="${14 + i * 22}" y="${96 - i * 16}" width="22" height="${24 + i * 16}" fill="${['#6a4a2a', '#9aa6b8', '#e2b23c', '#6bd8d8'][i]}" stroke="#0a1028" stroke-width="2"/>`).join('')}
+      ${pony({ x: 66, y: 8, s: .44, eye: 'happy' })}${rays(92, 30, '#fff2a8', 12, .1, 60)}${sparks([[20, 30], [50, 20, .7]])}`,
+    'flawless': () => `${bg('#0e1a2a', '#2a3a5a', '#ffffff')}<ellipse cx="58" cy="18" rx="24" ry="6" fill="none" stroke="#ffe46b" stroke-width="4"/>${glow(58, 18, 30, '#fff6c8', .6)}${pony({ x: 14, y: 24, s: .84, eye: 'closed', body: '#f6efe2', shade: '#c8b89a', mane: '#ffd36b' })}${txt('0 DEATHS', 60, 114, 12, '#fff6c8', '#0e1a2a', 2.4)}`,
+    // ===== Animated Rare (CSS-Klassen a-*) =====
+    'golden-pony': () => `${bg('#2a1a04', '#5a3a08')}${rays(60, 56, '#ffe08a', 16, .14, 95, 'a-spin')}${glow(60, 56, 48, '#fff2b0', .9, 'a-pulse')}
+      <g class="a-float">${pony({ x: 16, y: 14, s: .88, eye: 'star', body: '#ffe08a', shade: '#c8941c', mane: '#fff4c8' })}</g>${sparks([[18, 22, 1], [100, 30, .8], [96, 96, 1], [22, 92, .7]], 'a-twinkle')}`,
+    'three-trick-legend': () => `${bg('#120a2a', '#2a1a5a')}${rays(60, 60, '#d8c8ff', 18, .12, 95, 'a-spin')}${glow(60, 62, 46, '#b98cff', .8, 'a-pulse')}
+      <g class="a-orbit" style="transform-origin:60px 62px">${[0, 1, 2].map(i => { const a = i / 3 * Math.PI * 2 - Math.PI / 2; const x = 60 + Math.cos(a) * 30 - 18, y = 62 + Math.sin(a) * 30 - 18; return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${pony({ x: 0, y: 0, s: .38, eye: 'happy', body: ['#ffe08a', '#7ab8ff', '#ff9ac8'][i], shade: ['#c8941c', '#3a6ad8', '#c84a8a'][i], mane: '#fff' })}</g>`; }).join('')}</g>
+      ${txt('3', 60, 72, 26, '#fff', '#2a1a5a', 3)}${sparks([[14, 18], [106, 20, .8], [16, 104, .7], [104, 102, .9]], 'a-twinkle')}`,
+    'secretly-a-unicorn': () => `${bg('#2a0a3a', '#5a1a6a')}<g class="a-hue">${rays(60, 56, '#ff9ae4', 16, .16, 95, 'a-spin')}</g>${glow(60, 56, 46, '#ffd6f1', .8, 'a-pulse')}
+      <g class="a-float">${pony({ x: 16, y: 16, s: .86, eye: 'happy', body: '#ffffff', shade: '#e0c8f0', mane: '#ff7ad9', extra: '<path d="M42 12 L28 -16 L50 8 Z" fill="#ffe08a" stroke="#c8941c" stroke-width="1.5" stroke-linejoin="round"/><circle cx="26" cy="54" r="4" fill="#ff9ec8" opacity=".8"/>' })}</g>
+      <g class="a-hue">${sparks([[16, 24, 1], [102, 26, .9], [98, 98, 1], [20, 96, .8]], 'a-twinkle', '#ffd6f1')}</g>`
+  };
+
+  // Set-Liste: Nummer, Id, Name, Raritaet
+  const LIST = [
+    ['smite', 'Smite!'], ['one-more-game', 'One More Game'], ['ward', 'Ward Placed'], ['first-blood', 'First Blood'], ['blue-buff', 'Blue Buff'],
+    ['red-buff', 'Red Buff'], ['river-crab', 'River Crab'], ['full-clear', 'Full Clear'], ['recall', 'Recall'], ['ping', 'Ping!'],
+    ['gg', 'GG'], ['afk', 'AFK'], ['minion-wave', 'Minion Wave'], ['tower-dive', 'Tower Dive'], ['gold-fever', 'Gold Fever'],
+    ['in-queue', 'In Queue'], ['dodge', 'Dodge'], ['flash', 'Flash'], ['ignite', 'Ignite'], ['health-potion', 'Health Potion'],
+    ['lens-sweep', 'Lens Sweep'], ['wolf-camp', 'Wolf Camp'], ['lag-spike', 'Lag Spike'], ['mute-all', 'Mute All'], ['honor', 'Honor'],
+    ['gank', 'Gank Incoming'], ['tilted', 'Tilted'], ['counter-jungle', 'Counter Jungle'], ['dragon-soul', 'Dragon Soul'], ['herald-charge', 'Herald Charge'],
+    ['double-kill', 'Double Kill'], ['triple-kill', 'Triple Kill'], ['shutdown', 'Shutdown'], ['backdoor', 'Backdoor'], ['elder-dragon', 'Elder Dragon'],
+    ['promo-series', 'Promo Series'], ['smurf-alert', 'Smurf Alert'], ['buff-steal', 'Buff Steal'], ['inhib-down', 'Inhib Down'], ['vision-king', 'Vision King'],
+    ['pentakill', 'Pentakill'], ['baron-steal', 'Baron Steal'], ['quadra-kill', 'Quadra Kill'], ['ace', 'Ace'], ['comeback', 'Comeback'], ['rank-up', 'Rank Up'], ['flawless', 'Flawless'],
+    ['golden-pony', 'Golden Pony'], ['three-trick-legend', 'Three-Trick Legend'], ['secretly-a-unicorn', 'Secretly a Unicorn']
+  ];
+  const rarityOf = n => n <= 25 ? 'common' : n <= 40 ? 'uncommon' : n <= 47 ? 'holo' : 'anim';
+  const SET = LIST.map(([id, name], i) => ({ n: i + 1, id, name, r: rarityOf(i + 1) }));
+  const RL = { common: 'Common', uncommon: 'Uncommon', holo: 'Holo Rare', anim: 'Animated Rare' };
+  const RC = { common: '#b8c2d2', uncommon: '#5fd08a', holo: '#b98cff', anim: '#ff5ab4' };
+
+  // Kartenfront (Traegerkarte) - Rahmen/Effekte je Raritaet per CSS unten
+  const art = id => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${ART[id]()}</svg>`;
+  const frontHtml = s => `<div class="face front r-${s.r}" style="--rc:${RC[s.r]}">
+      <div class="art">${art(s.id)}</div>
+      <div class="name">${s.name}</div>
+      <div class="meta"><span class="rar">${RL[s.r]}</span><span>#${String(s.n).padStart(3, '0')}</span></div>
+    </div>`;
+
+  const CSS = `
+  .front { background: linear-gradient(160deg, #1b2a4a, #0e182c); border: 2px solid var(--rc); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 7% 6% 5%; position: absolute; inset: 0; border-radius: 12px; overflow: hidden; }
+  .front .art { width: 100%; aspect-ratio: 1; border-radius: 8px; overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), 0 3px 8px rgba(0,0,0,.4); }
+  .front .art svg { width: 100%; height: 100%; display: block; }
+  .front .name { font-family: 'Cinzel', Georgia, serif; font-size: .7em; letter-spacing: .5px; text-align: center; color: #fff; line-height: 1.15; margin-top: 5%; }
+  .front .meta { display: flex; justify-content: space-between; width: 100%; font-size: .5em; color: #8a8270; padding: 0 2px; }
+  .front .rar { color: var(--rc); letter-spacing: 1px; text-transform: uppercase; }
+  /* Common: gebuerstetes Silber */
+  .front.r-common { border-color: transparent; background: linear-gradient(160deg, #1b2a4a, #0e182c) padding-box, linear-gradient(135deg, #e6ecf5, #7a8496 45%, #d8dee8 70%, #6a7486) border-box; }
+  /* Uncommon: gruen-metallisch mit sanftem Innenleuchten */
+  .front.r-uncommon { border-color: transparent; background: radial-gradient(circle at 50% 35%, #1e3a3a, #0e182c 70%) padding-box, linear-gradient(135deg, #b8ffd8, #2a8a4a 40%, #8affc0 65%, #1e6a3a) border-box; box-shadow: inset 0 0 18px rgba(95,208,138,.18); }
+  .front.r-uncommon .name { color: #c8ffe0; }
+  /* Holo: Regenbogen-Rahmen, Sternfolie, gerichteter Schimmer, goldgepraegter Name */
+  .front.r-holo { border-color: transparent; border-width: 3px; background: linear-gradient(160deg, #241a4a, #120c2a) padding-box, linear-gradient(var(--hb, 0deg), #ff7ad9, #ffd36b, #7bffb4, #6bc8ff, #b98cff, #ff7ad9) border-box; animation: holoFrame 4s linear infinite; }
+  @property --hb { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+  @keyframes holoFrame { to { --hb: 360deg; } }
+  .front.r-holo .art::after { content: ''; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color-dodge; opacity: .4;
+    background: linear-gradient(115deg, transparent 20%, #ff7ad9 32%, #ffd36b 42%, #7bffb4 52%, #6bc8ff 62%, #b98cff 72%, transparent 84%); background-size: 300% 300%; animation: holoSweep 3.2s linear infinite; }
+  .front.r-holo .art::before { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: .35; mix-blend-mode: screen;
+    background-image: radial-gradient(1.2px 1.2px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 38% 62%, #fff, transparent), radial-gradient(1.4px 1.4px at 72% 28%, #fff, transparent), radial-gradient(1px 1px at 86% 76%, #fff, transparent), radial-gradient(1.2px 1.2px at 22% 84%, #fff, transparent), radial-gradient(1px 1px at 58% 12%, #fff, transparent); background-size: 50% 50%; }
+  @keyframes holoSweep { from { background-position: 100% 100%; } to { background-position: 0% 0%; } }
+  .front.r-holo .name { background: linear-gradient(180deg, #fff6c8, #e2b23c 60%, #a4700e); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: bold; filter: drop-shadow(0 1px 0 #3a2400); }
+  /* Animated: pulsierender Pink-Gold-Rahmen, bewegte Kunst */
+  .front.r-anim { border-color: transparent; border-width: 3px; background: radial-gradient(circle at 50% 30%, #3a1040, #120a24 70%) padding-box, linear-gradient(var(--hb, 0deg), #ff5ab4, #ffd36b, #ff5ab4, #b98cff, #ff5ab4) border-box; animation: holoFrame 2.6s linear infinite, animPulse 1.6s ease-in-out infinite; }
+  @keyframes animPulse { 0%,100% { box-shadow: 0 0 8px rgba(255,90,180,.45), inset 0 0 14px rgba(255,90,180,.25); } 50% { box-shadow: 0 0 22px rgba(255,211,107,.75), inset 0 0 22px rgba(255,211,107,.35); } }
+  .front.r-anim .name { background: linear-gradient(90deg, #ffd6f1, #ffd36b, #ff9ae4, #ffd36b, #ffd6f1); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: bold; animation: nameShine 2.4s linear infinite; }
+  @keyframes nameShine { to { background-position: 200% 0; } }
+  .a-spin { animation: aSpin 14s linear infinite; transform-box: view-box; }
+  @keyframes aSpin { to { transform: rotate(360deg); } }
+  .a-orbit { animation: aSpin 9s linear infinite; transform-box: view-box; }
+  .a-float { animation: aFloat 2.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes aFloat { 0%,100% { transform: translateY(2px) rotate(-1.5deg); } 50% { transform: translateY(-5px) rotate(1.5deg); } }
+  .a-pulse { animation: aPulse 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes aPulse { 0%,100% { opacity: .55; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.06); } }
+  .a-twinkle { animation: aTwinkle 1.2s ease-in-out infinite; transform-box: fill-box; }
+  .a-twinkle.d1 { animation-delay: .3s; } .a-twinkle.d2 { animation-delay: .6s; } .a-twinkle.d3 { animation-delay: .9s; }
+  @keyframes aTwinkle { 0%,100% { opacity: .2; transform: scale(.5); } 50% { opacity: 1; transform: scale(1.15); } }
+  .a-hue { animation: aHue 4s linear infinite; }
+  @keyframes aHue { to { filter: hue-rotate(360deg); } }
+  `;
+  const style = document.createElement('style'); style.textContent = CSS; document.head.appendChild(style);
+
+  window.STICKERS = { SET, RL, RC, art, frontHtml, TOTAL: SET.length, HEAD };
+})();

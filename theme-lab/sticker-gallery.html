@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sticker Gallery</title>
+<style>
+  :root { --bg: #0a1424; --panel: #111d33; --line: #2a3550; --gold: #c8a96e; --text: #e6dcc6; --dim: #8a8270; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: radial-gradient(1400px 800px at 50% 0%, #142443, var(--bg)); color: var(--text); font-family: Georgia, serif; min-height: 100vh; }
+  header { text-align: center; padding: 28px 0 8px; }
+  h1 { margin: 0; color: var(--gold); font-family: 'Cinzel', Georgia, serif; letter-spacing: 2px; font-size: 2.2rem; }
+  .sub { color: var(--dim); font-style: italic; letter-spacing: 3px; font-size: .85rem; margin-top: 4px; }
+  main { max-width: 1320px; margin: 0 auto; padding: 10px 24px 60px; }
+  h2 { font-family: 'Cinzel', Georgia, serif; letter-spacing: 1px; font-weight: normal; margin: 28px 0 14px; display: flex; align-items: baseline; gap: 12px; }
+  h2 small { color: var(--dim); font-size: .8rem; font-family: Georgia, serif; letter-spacing: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px; }
+  .grid.big { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+  .sc { position: relative; aspect-ratio: 190 / 266; border-radius: 12px; cursor: zoom-in; transition: transform .2s; font-size: 15px; }
+  .grid.big .sc { font-size: 19px; }
+  .sc:hover { transform: translateY(-4px); }
+  .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.88); backdrop-filter: blur(6px); display: grid; place-items: center; perspective: 1100px; cursor: zoom-out; opacity: 0; transition: opacity .25s; }
+  .insp.on { opacity: 1; }
+  .insp .sc { width: min(360px, 70vw); font-size: 26px; cursor: default; transition: transform .12s ease-out; transform-style: preserve-3d; }
+  .insp .sc:hover { transform: none; }
+  .insp .glare { position: absolute; inset: 0; border-radius: 12px; pointer-events: none; z-index: 4; background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgba(255,255,255,.3), transparent 45%); mix-blend-mode: soft-light; }
+  .insp-cap { position: absolute; bottom: 5vh; left: 0; right: 0; text-align: center; color: var(--dim); font-size: .85rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Base Set</h1>
+  <div class="sub">ALL 50 STICKERS · DRAFT</div>
+</header>
+<main id="main"></main>
+<script src="sticker-set.js"></script>
+<script>
+  const { SET, RL, RC, frontHtml } = window.STICKERS;
+  const groups = [['anim', 'Animated Rare', '3 · rarest'], ['holo', 'Holo Rare', '7'], ['uncommon', 'Uncommon', '15'], ['common', 'Common', '25']];
+  document.getElementById('main').innerHTML = groups.map(([r, label, cnt]) => `
+    <h2 style="color:${RC[r]}">${label} <small>${cnt}</small></h2>
+    <div class="grid${r === 'anim' || r === 'holo' ? ' big' : ''}">${SET.filter(s => s.r === r).map(s => `<div class="sc" data-n="${s.n}">${frontHtml(s)}</div>`).join('')}</div>`).join('');
+  // Inspizieren mit 3D-Neigung
+  document.getElementById('main').addEventListener('click', e => {
+    const el = e.target.closest('.sc'); if (!el) return;
+    const s = SET.find(x => x.n === Number(el.dataset.n));
+    const ov = document.createElement('div'); ov.className = 'insp';
+    ov.innerHTML = `<div class="sc">${frontHtml(s)}<div class="glare"></div></div><div class="insp-cap">#${String(s.n).padStart(3, '0')} · ${s.name} · ${RL[s.r]} - move the mouse to tilt, click to close</div>`;
+    document.body.appendChild(ov); requestAnimationFrame(() => ov.classList.add('on'));
+    const c = ov.querySelector('.sc'), glare = ov.querySelector('.glare');
+    ov.addEventListener('mousemove', ev => {
+      const r = c.getBoundingClientRect();
+      const px = Math.max(-1, Math.min(1, (ev.clientX - (r.left + r.width / 2)) / (r.width * 1.2)));
+      const py = Math.max(-1, Math.min(1, (ev.clientY - (r.top + r.height / 2)) / (r.height * 1.2)));
+      c.style.transform = `rotateY(${px * 20}deg) rotateX(${-py * 20}deg)`;
+      glare.style.setProperty('--gx', `${50 + px * 50}%`); glare.style.setProperty('--gy', `${40 + py * 50}%`);
+    });
+    ov.addEventListener('click', () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); });
+  });
+</script>
+</body>
+</html>
