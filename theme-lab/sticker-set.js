@@ -277,7 +277,12 @@
   const popLayers = id => {
     const svg = POP[id](), wrap = c => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${c}</svg>`;
     let out = `<div class="pop-shadow">${wrap(svg)}</div>`;
-    for (let k = 0; k < SLABS; k++) out += `<div class="pop slab" style="--i:${k};--shade:${(.42 + k / SLABS * .36).toFixed(2)}">${wrap(svg)}</div>`;
+    // Schichten in Bild-Einheiten etwas dicker als die Vorderseite (feMorphology):
+    // der Rand waechst mit der Kartengroesse mit - klein und gross gleich massiv
+    for (let k = 0; k < SLABS; k++) {
+      const f = U('dl');
+      out += `<div class="pop slab" style="--i:${k};--shade:${(.28 + k / SLABS * .3).toFixed(2)}">${wrap(`<defs><filter id="${f}" x="-10%" y="-10%" width="120%" height="120%"><feMorphology operator="dilate" radius="1.6"/></filter></defs><g filter="url(#${f})">${svg}</g>`)}</div>`;
+    }
     return out + `<div class="pop" style="--i:${SLABS}">${wrap(svg)}</div>`;
   };
   const frontHtml = s => `<div class="face front r-${s.r}" style="--rc:${RC[s.r]}">
