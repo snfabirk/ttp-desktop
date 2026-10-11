@@ -50,7 +50,7 @@
   .stack { position: absolute; left: 50%; top: 20px; width: 190px; height: 266px; transform: translateX(-50%); cursor: pointer; }
   .stack .sticker-card { position: absolute; inset: 0; }
   .stack-hint { position: absolute; left: 0; right: 0; top: 296px; text-align: center; color: var(--dim); font-size: .8rem; }
-  .spread { position: absolute; left: 0; right: 0; top: 340px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+  .spread { position: absolute; left: 0; right: 0; top: 340px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; padding-bottom: 20px; }
   .slot { aspect-ratio: 190 / 266; border-radius: 12px; border: 1px dashed var(--line); }
   .actions { position: absolute; right: 0; top: 20px; display: flex; flex-direction: column; gap: 8px; }
   .sticker-card.slot-card { position: relative; aspect-ratio: 190 / 266; }
@@ -108,25 +108,27 @@
 <header>
   <h1>Album</h1>
   <div class="sub">BASE SET · DRAFT</div>
-  <p class="note">Design draft: click the booster to open it, then click the stack to reveal one sticker at a time. Rare cards shine through before you flip them. The album below fills as you collect.</p>
+  <p class="note">Design draft: boosters are bought in the shop and opened here. Open one or all of them, then click the stack to reveal one sticker at a time - rare ones shine through before you flip them. The album below fills as you collect.</p>
 </header>
 
 <div class="wrap">
   <section class="card-box pack-area">
-    <h3>Base Set Booster</h3>
+    <h3>Your Boosters</h3>
     <div class="pack" id="pack" title="Open a booster">
       <div class="crimp top"></div>
       <div class="logo" id="packLogo"></div>
       <div class="title"><b>Three-Trick-Pony</b><small>BASE SET</small></div>
-      <div class="count">7 stickers</div>
+      <div class="count" id="packCount">5 unopened</div>
       <div class="crimp bot"></div>
     </div>
-    <button class="btn" id="openBtn">Open · 🪙 100</button>
+    <div style="display:flex;gap:8px"><button class="btn" id="openBtn">Open 1</button><button class="btn" id="openAllBtn">Open all</button></div>
+    <button class="btn" id="refillBtn" style="font-size:.75rem;padding:4px 12px;opacity:.7" title="Draft only - in the app you buy them in the shop">+5 (draft refill)</button>
     <div class="odds">
       <div><span class="dot" style="background:var(--c-common)"></span><b>4×</b> Common</div>
       <div><span class="dot" style="background:var(--c-uncommon)"></span><b>2×</b> Uncommon</div>
-      <div><span class="dot" style="background:var(--c-rare)"></span><b>1×</b> Rare slot: Rare 82% · <span style="color:var(--c-holo)">Holo</span> 15% · <span style="color:var(--c-anim)">Animated</span> 3%</div>
-      <div style="margin-top:6px">Duplicates give coins back: 3 / 8 / 20 / 50 / 150</div>
+      <div><span class="dot" style="background:var(--c-holo)"></span><b>1×</b> Rare slot: <span style="color:var(--c-holo)">Holo Rare</span> 90% · <span style="color:var(--c-anim)">Animated Rare</span> 10%</div>
+      <div style="margin-top:6px">Base Set: 50 stickers - 25 common, 15 uncommon, 7 holo rare, 3 animated rare</div>
+      <div style="margin-top:4px">Duplicates give coins back: 3 / 8 / 50 / 150</div>
     </div>
   </section>
 
@@ -168,22 +170,21 @@ const SET = [
   { n: 1, id: 'smite', name: 'Smite!', r: 'common' },
   { n: 2, id: 'one-more-game', name: 'One More Game', r: 'common' },
   { n: 3, id: 'ward', name: 'Ward Placed', r: 'common' },
-  { n: 4, id: 'gank', name: 'Gank Incoming', r: 'uncommon' },
-  { n: 5, id: 'tilted', name: 'Tilted', r: 'uncommon' },
-  { n: 6, id: 'pentakill', name: 'Pentakill', r: 'rare' },
-  { n: 7, id: 'baron-steal', name: 'Baron Steal', r: 'rare' },
-  { n: 8, id: 'golden-pony', name: 'Golden Pony', r: 'rare' }
+  { n: 26, id: 'gank', name: 'Gank Incoming', r: 'uncommon' },
+  { n: 27, id: 'tilted', name: 'Tilted', r: 'uncommon' },
+  { n: 41, id: 'pentakill', name: 'Pentakill', r: 'holo' },
+  { n: 42, id: 'baron-steal', name: 'Baron Steal', r: 'holo' },
+  { n: 48, id: 'golden-pony', name: 'Golden Pony', r: 'anim' }
 ];
-const TOTAL_IN_SET = 96;   // Entwurf: geplante Groesse des Base Sets
-const DUPE = { common: 3, uncommon: 8, rare: 20, holo: 50, anim: 150 };
+const TOTAL_IN_SET = 50;   // Base Set (Nutzer): 25 common, 15 uncommon, 7 holo, 3 animated
+const DUPE = { common: 3, uncommon: 8, holo: 50, anim: 150 };
 const owned = {};          // key "id|variant" -> Anzahl
 
 const pick = list => list[Math.floor(Math.random() * list.length)];
 function rollPack() {
-  const C = SET.filter(s => s.r === 'common'), U = SET.filter(s => s.r === 'uncommon'), R = SET.filter(s => s.r === 'rare');
-  const roll = Math.random();
-  const variant = roll < .03 ? 'anim' : roll < .18 ? 'holo' : 'rare';
-  return [pick(C), pick(C), pick(C), pick(C), pick(U), pick(U), { ...pick(R), v: variant }].map(s => ({ ...s, v: s.v || s.r }));
+  const C = SET.filter(s => s.r === 'common'), U = SET.filter(s => s.r === 'uncommon');
+  const H = SET.filter(s => s.r === 'holo'), A = SET.filter(s => s.r === 'anim');
+  return [pick(C), pick(C), pick(C), pick(C), pick(U), pick(U), Math.random() < .10 ? pick(A) : pick(H)].map(s => ({ ...s, v: s.r }));
 }
 
 function cardHtml(s) {
@@ -198,14 +199,17 @@ function cardHtml(s) {
 
 // ---------- Oeffnen ----------
 const stage = document.getElementById('stage');
-let queue = [], revealed = 0, busy = false;
-function openPack() {
-  if (busy) return;
+let queue = [], revealed = 0, busy = false, unopened = 5;
+const updCount = () => { document.getElementById('packCount').textContent = `${unopened} unopened`; document.getElementById('openBtn').disabled = document.getElementById('openAllBtn').disabled = !unopened; };
+function openPack(all) {
+  if (busy || !unopened) return;
   busy = true;
+  const n = all ? unopened : 1;
+  unopened -= n; updCount();
   const pack = document.getElementById('pack');
   pack.classList.remove('gone', 'torn'); pack.classList.add('shake');
   setTimeout(() => { pack.classList.remove('shake'); pack.classList.add('torn'); }, 500);
-  setTimeout(() => { pack.classList.add('gone'); buildStage(rollPack()); }, 950);
+  setTimeout(() => { pack.classList.add('gone'); buildStage(Array.from({ length: n }, rollPack).flat()); }, 950);
   setTimeout(() => { pack.classList.remove('gone', 'torn'); busy = false; }, 1600);
 }
 function buildStage(cards) {
@@ -214,6 +218,8 @@ function buildStage(cards) {
     <div class="stack-hint" id="stackHint">Click the stack to reveal · ${cards.length} left</div>
     <div class="actions"><button class="btn" id="revealAll">Reveal all</button></div>
     <div class="spread" id="spread">${cards.map(() => '<div class="slot"></div>').join('')}</div>`;
+  // Hoehe der Buehne an die Zahl der Reihen anpassen (grosses Opening)
+  stage.style.minHeight = `${360 + Math.ceil(cards.length / 7) * 150}px`;
   const stack = document.getElementById('stack');
   // Stapel: unterste Karte zuerst ins DOM, die oberste (naechste) liegt oben
   [...cards].reverse().forEach((c, i) => {
@@ -256,8 +262,10 @@ function revealNext() {
   document.getElementById('stackHint').textContent = left ? `Click the stack to reveal · ${left} left` : 'All revealed - open another booster!';
   return left > 0;
 }
-document.getElementById('pack').addEventListener('click', openPack);
-document.getElementById('openBtn').addEventListener('click', openPack);
+document.getElementById('pack').addEventListener('click', () => openPack(false));
+document.getElementById('openBtn').addEventListener('click', () => openPack(false));
+document.getElementById('openAllBtn').addEventListener('click', () => openPack(true));
+document.getElementById('refillBtn').addEventListener('click', () => { unopened += 5; updCount(); });
 
 // Holo-Schimmer folgt der Maus
 document.addEventListener('mousemove', e => {
@@ -274,7 +282,7 @@ function renderAlbum() {
   const have = n => SET.filter(s => s.n === n).flatMap(s => ['common', 'uncommon', 'rare', 'holo', 'anim'].map(v => owned[s.id + '|' + v] ? { ...s, v, cnt: owned[s.id + '|' + v] } : null)).filter(Boolean);
   let html = '';
   let got = 0;
-  for (let n = 1; n <= 24; n++) {
+  for (let n = 1; n <= TOTAL_IN_SET; n++) {
     const h = have(n);
     if (h.length) {
       got++;
@@ -282,10 +290,11 @@ function renderAlbum() {
       html += `<div class="album-slot have" style="--rc:${RC[best.v]}"><span class="num">#${String(n).padStart(3, '0')}</span><svg viewBox="0 0 120 120">${ART[best.id]()}</svg><span class="x">×${h.reduce((a, x) => a + x.cnt, 0)}</span></div>`;
     } else html += `<div class="album-slot"><span class="num">#${String(n).padStart(3, '0')}</span>?</div>`;
   }
-  document.getElementById('albumProgress').textContent = `Collected ${got} / ${TOTAL_IN_SET} · showing the first 24 slots of the draft`;
+  document.getElementById('albumProgress').textContent = `Collected ${got} / ${TOTAL_IN_SET} · #1-25 common · #26-40 uncommon · #41-47 holo rare · #48-50 animated rare`;
   grid.innerHTML = html;
 }
 renderAlbum();
+updCount();
 </script>
 </body>
 </html>
