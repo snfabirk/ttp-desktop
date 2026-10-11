@@ -48,11 +48,23 @@
   .pack .crimp { position: absolute; left: 0; right: 0; height: 6%; background: repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 4px, rgba(0,0,0,.15) 4px 8px); }
   .pack .crimp.top { top: 0; } .pack .crimp.bot { bottom: 0; }
   .pack .logo { position: absolute; top: 16%; left: 0; right: 0; text-align: center; }
-  .pack .logo svg { width: 54%; filter: drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
+  .pack .logo > svg { width: 54%; filter: drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
   .pack .title { position: absolute; bottom: 21%; left: 0; right: 0; text-align: center; font-family: 'Cinzel', Georgia, serif; color: #fff; letter-spacing: 1px; text-shadow: 0 2px 6px rgba(0,0,0,.6); font-size: 1.35em; }
   .pack .title b { display: block; font-size: 1em; } .pack .title small { font-size: .55em; opacity: .85; letter-spacing: 2px; }
   .pack .count { position: absolute; bottom: 9%; left: 0; right: 0; text-align: center; font-size: .9em; color: rgba(255,255,255,.85); }
   .pack.big .switch { display: none; }
+  /* Hover: klar sagen, was ein Klick tut (Set-Auswahl, nicht oeffnen) */
+  .pack:not(.big)::after { content: 'Choose booster'; position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(4, 8, 16, .62); color: #fff; font-family: 'Cinzel', Georgia, serif; font-size: 1.25em; letter-spacing: 1px; opacity: 0; transition: opacity .2s; border-radius: inherit; }
+  .pack:not(.big):hover::after { opacity: 1; }
+  /* Top-Hits vorne auf dem Pack (wie bei echten Sammelkarten): die 3 Animated Rares aufgefaechert */
+  .pack .logo { top: 17%; }
+  .pack-fan { position: relative; height: 8.4em; }
+  .fan-card { position: absolute; left: 50%; top: .6em; width: 4.9em; height: 4.9em; margin-left: -2.45em; transform-origin: 50% 120%; filter: drop-shadow(0 .3em .5em rgba(0,0,0,.55)); }
+  .fan-card .stk-square { border: .14em solid #fff; box-sizing: border-box; }
+  .fan-card.f0 { transform: translateX(-1.9em) rotate(-16deg); }
+  .fan-card.f2 { transform: translateX(1.9em) rotate(16deg); }
+  .fan-card.f1 { transform: translateY(-.5em) scale(1.12); z-index: 2; }
+  .pack-hits { position: absolute; left: 0; right: 0; top: 52%; text-align: center; font-family: 'Cinzel', Georgia, serif; font-size: .78em; letter-spacing: 1.5px; color: #ffd6f1; text-shadow: 0 1px 4px rgba(0,0,0,.8); }
   .pack:not(.big):hover { transform: translateY(-4px) rotate(-1.5deg); transition: transform .25s; }
   .pack .switch { position: absolute; top: 9%; right: 7%; font-size: .75em; color: rgba(255,255,255,.85); background: rgba(0,0,0,.35); border-radius: 8px; padding: 1px 7px; }
   /* Set-Auswahl: alle Booster-Sorten, die man besitzt (bzw. die es gibt) */
@@ -550,6 +562,9 @@ document.getElementById('albumGrid').addEventListener('click', e => {
   });
   ov.addEventListener('click', () => { document.removeEventListener('mouseleave', rest); ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); });
 });
+// Pack-Vorderseite: die 3 Top-Hits (Animated Rares) statt nur des Logos
+document.querySelector('#pack .logo').innerHTML = `<div class="pack-fan">${ALL.filter(s => s.r === 'anim').map((s, i) => `<div class="fan-card f${i}">${window.STICKERS.square(s)}</div>`).join('')}</div>`;
+document.querySelector('#pack .title').insertAdjacentHTML('beforebegin', '<div class="pack-hits">★ TOP HITS ★</div>');
 window.STICKERS.enableTilt(document.getElementById('albumGrid'));
 loadAlbum();
 document.getElementById('settingsGearBtn').addEventListener('click', () => { if (window.ttpMain) window.ttpMain.openSettings(); });
