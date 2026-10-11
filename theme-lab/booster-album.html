@@ -351,18 +351,31 @@ function openPacks(n) {
     hint(`Click to reveal · ${cards.length} stickers`);
     stackEl.addEventListener('click', next);
   }
+  // Abgelegte Karte: verschwindet HINTER den Stapel, gleitet seitlich an ihm
+  // vorbei heraus und faehrt dann in ihren Platz - sie liegt nie ueber dem
+  // neuen Sticker (Nutzerwunsch)
   function sendToSlot({ el, s, i }) {
     const a = el.getBoundingClientRect(), slot = ov.querySelectorAll('.ov-slot')[i], b = slot.getBoundingClientRect();
+    const st = stackEl.getBoundingClientRect();
     el.getAnimations().forEach(x => x.cancel());
-    Object.assign(el.style, { left: a.left + 'px', top: a.top + 'px', width: a.width + 'px', height: a.height + 'px', transform: 'none', fontSize: '20px' });
-    el.classList.add('fly'); ov.appendChild(el);
-    requestAnimationFrame(() => Object.assign(el.style, { left: b.left + 'px', top: b.top + 'px', width: b.width + 'px', height: b.height + 'px', fontSize: (b.width / 92 * 9) + 'px' }));
-    setTimeout(() => {
-      el.classList.remove('fly'); el.removeAttribute('style'); el.style.fontSize = (b.width / 92 * 9) + 'px'; slot.appendChild(el);
+    // Endlage = Platz; Weg per transform (Ursprung oben links)
+    Object.assign(el.style, { position: 'fixed', left: b.left + 'px', top: b.top + 'px', width: b.width + 'px', height: b.height + 'px', zIndex: 5, transformOrigin: '0 0', fontSize: (b.width / 92 * 9) + 'px' });
+    ov.insertBefore(el, stackEl); // im DOM vor dem Stapel = darunter
+    const sc = a.width / b.width;
+    const goLeft = b.left + b.width / 2 < st.left + st.width / 2;
+    const sideX = goLeft ? st.left - a.width - 24 : st.right + 24;
+    const at = (x, y, k) => `translate(${x - b.left}px, ${y - b.top}px) scale(${k})`;
+    const anim = el.animate([
+      { transform: at(a.left, a.top, sc), offset: 0 },
+      { transform: at(sideX, a.top + 10, sc * .92), offset: .45 },
+      { transform: at(b.left, b.top, 1), offset: 1 }
+    ], { duration: 700, easing: 'cubic-bezier(.35,.1,.25,1)' });
+    anim.onfinish = () => {
+      el.removeAttribute('style'); el.style.fontSize = (b.width / 92 * 9) + 'px'; slot.appendChild(el);
       const isNew = !owned[s.n]; owned[s.n] = (owned[s.n] || 0) + 1;
       const t = document.createElement('span'); t.className = isNew ? 'tag-new' : 'tag-dupe'; t.textContent = isNew ? 'NEW' : `+${DUPE[s.r]} 🪙`; el.appendChild(t);
       renderAlbum();
-    }, 580);
+    };
   }
   function next() {
     if (shown) { sendToSlot(shown); shown = null; }
