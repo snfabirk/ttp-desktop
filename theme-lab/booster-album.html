@@ -5,38 +5,16 @@
 <title>Booster & Album</title>
 <style>
   :root { --bg: #0a1424; --panel: #111d33; --line: #2a3550; --gold: #c8a96e; --text: #e6dcc6; --dim: #8a8270;
-    --c-common: #9aa6b8; --c-uncommon: #5fd08a; --c-rare: #f2c94c; --c-holo: #b98cff; --c-anim: #ff5ab4; }
+    --c-common: #9aa6b8; --c-uncommon: #5fd08a; --c-holo: #b98cff; --c-anim: #ff5ab4; }
   * { box-sizing: border-box; }
   body { margin: 0; background: radial-gradient(1200px 700px at 50% 0%, #142443, var(--bg)); color: var(--text); font-family: Georgia, serif; min-height: 100vh; }
   header { text-align: center; padding: 26px 0 6px; }
   h1 { margin: 0; color: var(--gold); font-family: 'Cinzel', Georgia, serif; letter-spacing: 2px; font-size: 2.1rem; }
   .sub { color: var(--dim); font-style: italic; letter-spacing: 3px; font-size: .85rem; margin-top: 4px; }
   .note { max-width: 980px; margin: 6px auto 0; color: var(--dim); font-size: .8rem; text-align: center; }
-  .wrap { max-width: 1180px; margin: 18px auto 60px; padding: 0 20px; display: grid; grid-template-columns: 300px 1fr; gap: 22px; }
+  .wrap { max-width: 1180px; margin: 18px auto 60px; padding: 0 20px; display: grid; grid-template-columns: 300px 1fr; gap: 22px; align-items: start; }
   .card-box { background: color-mix(in srgb, var(--panel) 85%, transparent); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
   h3 { margin: 0 0 12px; color: var(--gold); font-family: 'Cinzel', Georgia, serif; letter-spacing: 1px; font-size: 1.05rem; }
-
-  /* ---------- Booster-Pack ---------- */
-  .pack-area { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-  .pack { width: 170px; height: 250px; position: relative; border-radius: 10px; cursor: pointer; transform-style: preserve-3d;
-    background: linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%);
-    box-shadow: 0 18px 40px rgba(0,0,0,.55), inset 0 0 0 2px rgba(255,255,255,.15); overflow: hidden; transition: transform .25s; }
-  .pack:hover { transform: translateY(-4px) rotate(-1.5deg); }
-  .pack::before { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.35) 45%, transparent 60%); background-size: 250% 100%; animation: foil 3.2s linear infinite; mix-blend-mode: screen; }
-  @keyframes foil { from { background-position: 150% 0; } to { background-position: -100% 0; } }
-  .pack .crimp { position: absolute; left: 0; right: 0; height: 14px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 4px, rgba(0,0,0,.15) 4px 8px); }
-  .pack .crimp.top { top: 0; } .pack .crimp.bot { bottom: 0; }
-  .pack .logo { position: absolute; top: 46px; left: 0; right: 0; text-align: center; }
-  .pack .logo svg { width: 92px; height: 92px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
-  .pack .title { position: absolute; bottom: 52px; left: 0; right: 0; text-align: center; font-family: 'Cinzel', Georgia, serif; color: #fff; letter-spacing: 1px; text-shadow: 0 2px 6px rgba(0,0,0,.6); }
-  .pack .title b { display: block; font-size: 1.05rem; } .pack .title small { font-size: .7rem; opacity: .85; letter-spacing: 2px; }
-  .pack .count { position: absolute; bottom: 24px; left: 0; right: 0; text-align: center; font-size: .7rem; color: rgba(255,255,255,.8); }
-  .pack.shake { animation: shake .5s ease-in-out; }
-  @keyframes shake { 0%,100% { transform: rotate(0); } 20% { transform: rotate(-4deg) scale(1.03); } 40% { transform: rotate(4deg) scale(1.05); } 60% { transform: rotate(-3deg) scale(1.05); } 80% { transform: rotate(2deg); } }
-  .pack.torn .crimp.top { animation: tear .45s ease-in forwards; }
-  @keyframes tear { to { transform: translate(40px, -60px) rotate(25deg); opacity: 0; } }
-  .pack.gone { animation: packGone .5s ease-in forwards; }
-  @keyframes packGone { to { transform: translateY(40px) scale(.85); opacity: 0; } }
   .btn { padding: 8px 18px; border-radius: 16px; border: 1px solid var(--gold); background: transparent; color: var(--gold); font-family: inherit; font-size: .9rem; cursor: pointer; }
   .btn:hover { background: color-mix(in srgb, var(--gold) 16%, transparent); }
   .btn:disabled { opacity: .4; cursor: default; }
@@ -44,71 +22,100 @@
   .odds b { color: var(--text); font-weight: normal; }
   .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 
-  /* ---------- Oeffnen: Stapel + Auslage ---------- */
-  .stage { position: relative; min-height: 640px; }
-  .stage-empty { color: var(--dim); text-align: center; padding-top: 220px; font-style: italic; }
-  .stack { position: absolute; left: 50%; top: 20px; width: 190px; height: 266px; transform: translateX(-50%); cursor: pointer; }
-  .stack .sticker-card { position: absolute; inset: 0; }
-  .stack-hint { position: absolute; left: 0; right: 0; top: 296px; text-align: center; color: var(--dim); font-size: .8rem; }
-  .spread { position: absolute; left: 0; right: 0; top: 340px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; padding-bottom: 20px; }
-  .slot { aspect-ratio: 190 / 266; border-radius: 12px; border: 1px dashed var(--line); }
-  .actions { position: absolute; right: 0; top: 20px; display: flex; flex-direction: column; gap: 8px; }
-  .sticker-card.slot-card { position: relative; aspect-ratio: 190 / 266; }
+  /* ---------- Booster-Pack ---------- */
+  .pack-area { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .pack { width: 170px; height: 250px; position: relative; border-radius: 10px; cursor: pointer; font-size: 11px;
+    background: linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%);
+    box-shadow: 0 18px 40px rgba(0,0,0,.55), inset 0 0 0 2px rgba(255,255,255,.15); overflow: hidden; }
+  .pack::before { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.35) 45%, transparent 60%); background-size: 250% 100%; animation: foil 3.2s linear infinite; mix-blend-mode: screen; pointer-events: none; }
+  @keyframes foil { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+  .pack .crimp { position: absolute; left: 0; right: 0; height: 6%; background: repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 4px, rgba(0,0,0,.15) 4px 8px); }
+  .pack .crimp.top { top: 0; } .pack .crimp.bot { bottom: 0; }
+  .pack .logo { position: absolute; top: 16%; left: 0; right: 0; text-align: center; }
+  .pack .logo svg { width: 54%; filter: drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
+  .pack .title { position: absolute; bottom: 21%; left: 0; right: 0; text-align: center; font-family: 'Cinzel', Georgia, serif; color: #fff; letter-spacing: 1px; text-shadow: 0 2px 6px rgba(0,0,0,.6); font-size: 1.35em; }
+  .pack .title b { display: block; font-size: 1em; } .pack .title small { font-size: .55em; opacity: .85; letter-spacing: 2px; }
+  .pack .count { position: absolute; bottom: 9%; left: 0; right: 0; text-align: center; font-size: .9em; color: rgba(255,255,255,.85); }
+  .pack:not(.big):hover { transform: translateY(-4px) rotate(-1.5deg); transition: transform .25s; }
 
-  /* Karte (Sticker auf Traegerkarte) */
-  .sticker-card { border-radius: 12px; perspective: 900px; }
-  .sticker-card .inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .55s cubic-bezier(.3,.7,.3,1); }
-  .sticker-card.flipped .inner { transform: rotateY(180deg); }
+  /* ---------- Oeffnen: Vollbild-Overlay ---------- */
+  .ov { position: fixed; inset: 0; z-index: 100; background: rgba(4, 8, 16, .84); backdrop-filter: blur(6px); opacity: 0; transition: opacity .35s; }
+  .ov.on { opacity: 1; }
+  .ov-grid { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; gap: 10px; opacity: .35; transition: opacity .5s; }
+  .ov-grid.done { opacity: 1; }
+  .ov-slot { width: 92px; aspect-ratio: 190 / 266; border-radius: 9px; border: 1px dashed rgba(200,169,110,.25); position: relative; }
+  .ov-hint { position: absolute; left: 0; right: 0; bottom: 6vh; text-align: center; color: var(--text); font-size: .95rem; letter-spacing: .5px; text-shadow: 0 2px 8px #000; pointer-events: none; }
+  .ov-close { position: absolute; top: 22px; right: 26px; z-index: 8; }
+  .ov-done { position: absolute; left: 50%; bottom: 4vh; transform: translateX(-50%); z-index: 8; display: none; }
+  .pack.big { position: absolute; z-index: 5; cursor: default; transition: left .55s cubic-bezier(.3,.7,.3,1), top .55s cubic-bezier(.3,.7,.3,1), width .55s cubic-bezier(.3,.7,.3,1), height .55s cubic-bezier(.3,.7,.3,1), font-size .55s; }
+  .tear-strip { position: absolute; left: 0; right: 0; top: 0; height: 14%; z-index: 6; cursor: ew-resize; }
+  .tear-strip::after { content: '‹  tear  ›'; position: absolute; left: 0; right: 0; top: 30%; text-align: center; color: rgba(255,255,255,.75); font-size: .8em; letter-spacing: 3px; animation: tearHint 1.4s ease-in-out infinite; }
+  @keyframes tearHint { 50% { opacity: .25; } }
+  .tear-line { position: absolute; top: 6%; height: 3px; width: 0; background: #fff; box-shadow: 0 0 10px 3px rgba(255,240,200,.9); z-index: 7; pointer-events: none; }
+  .pack.big.drop { transition: transform .75s cubic-bezier(.6,0,.8,.4), opacity .75s; transform: translateY(120vh) rotate(5deg); }
+
+  .ov-stack { position: absolute; z-index: 6; width: min(250px, 24vw); aspect-ratio: 190 / 266; left: 50%; top: 47%; transform: translate(-50%, -50%); cursor: pointer; font-size: 20px; }
+  .ov-stack .sc { position: absolute; inset: 0; transition: transform .35s; }
+
+  /* Karte (Traegerkarte mit Sticker) */
+  .sc { border-radius: 12px; perspective: 1000px; }
+  .sc .inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .5s cubic-bezier(.3,.7,.3,1); }
+  .sc.flipped .inner { transform: rotateY(180deg); }
   .face { position: absolute; inset: 0; border-radius: 12px; backface-visibility: hidden; overflow: hidden; }
   .back { background: radial-gradient(circle at 50% 40%, #24365e, #0c1426 70%); border: 2px solid #3a4a70; display: grid; place-items: center; }
   .back svg { width: 54%; opacity: .55; }
-  /* "Durchscheinen": seltene Karten leuchten schon auf der Rueckseite */
-  .back.glow-rare { box-shadow: 0 0 22px 4px color-mix(in srgb, var(--c-rare) 70%, transparent), inset 0 0 26px color-mix(in srgb, var(--c-rare) 55%, transparent); border-color: var(--c-rare); }
   .back.glow-holo { box-shadow: 0 0 26px 6px color-mix(in srgb, var(--c-holo) 75%, transparent), inset 0 0 30px rgba(255,255,255,.25); border-color: #e0d0ff; animation: holoBack 2.2s linear infinite; }
-  @keyframes holoBack { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+  @keyframes holoBack { to { filter: hue-rotate(360deg); } }
   .back.glow-anim { box-shadow: 0 0 30px 8px color-mix(in srgb, var(--c-anim) 80%, transparent), inset 0 0 34px color-mix(in srgb, var(--c-anim) 60%, transparent); border-color: #ffd0ea; animation: pulseBack .9s ease-in-out infinite alternate; }
   @keyframes pulseBack { to { box-shadow: 0 0 44px 14px color-mix(in srgb, var(--c-anim) 90%, transparent), inset 0 0 40px color-mix(in srgb, var(--c-anim) 70%, transparent); } }
-  .front { transform: rotateY(180deg); background: linear-gradient(160deg, #1b2a4a, #0e182c); border: 2px solid var(--rc, #555); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 8px 6px 7px; }
-  .front .art { width: 86%; flex: 1; display: grid; place-items: center; }
-  .front .art svg { width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 4px 6px rgba(0,0,0,.5)); }
-  .front .name { font-family: 'Cinzel', Georgia, serif; font-size: .72rem; letter-spacing: .5px; text-align: center; color: #fff; line-height: 1.15; }
-  .front .meta { display: flex; justify-content: space-between; width: 100%; font-size: .58rem; color: var(--dim); padding: 0 4px; }
+  .front { transform: rotateY(180deg); background: linear-gradient(160deg, #1b2a4a, #0e182c); border: 2px solid var(--rc, #555); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 7% 6% 5%; }
+  .front .art { width: 100%; flex: 1; display: grid; place-items: center; border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+  .front .art svg { width: 100%; height: auto; display: block; }
+  .front .name { font-family: 'Cinzel', Georgia, serif; font-size: .7em; letter-spacing: .5px; text-align: center; color: #fff; line-height: 1.15; margin-top: 5%; }
+  .front .meta { display: flex; justify-content: space-between; width: 100%; font-size: .5em; color: var(--dim); padding: 0 2px; }
   .front .rar { color: var(--rc); letter-spacing: 1px; text-transform: uppercase; }
-  .tag-new, .tag-dupe { position: absolute; top: 6px; right: 6px; font-size: .58rem; padding: 1px 6px; border-radius: 8px; letter-spacing: 1px; z-index: 3; }
+  .tag-new, .tag-dupe { position: absolute; top: 4px; right: 4px; font-size: .55rem; padding: 1px 6px; border-radius: 8px; letter-spacing: 1px; z-index: 3; }
   .tag-new { background: var(--c-uncommon); color: #062; font-weight: bold; }
-  .tag-dupe { background: rgba(0,0,0,.55); color: var(--gold); border: 1px solid var(--gold); }
-  /* Holo: Regenbogen-Schimmer folgt der Maus */
-  .front.holo::after { content: ''; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color-dodge; opacity: .55;
+  .tag-dupe { background: rgba(0,0,0,.65); color: var(--gold); border: 1px solid var(--gold); }
+  .front.holo::after { content: ''; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color-dodge; opacity: .5;
     background: linear-gradient(var(--ha, 115deg), transparent 20%, #ff7ad9 32%, #ffd36b 42%, #7bffb4 52%, #6bc8ff 62%, #b98cff 72%, transparent 84%); background-size: 200% 200%; background-position: var(--hx, 50%) var(--hy, 50%); }
-  /* Animated: Kunst bewegt sich + Funken */
-  .front.anim .art svg { animation: bob 1.8s ease-in-out infinite; }
-  @keyframes bob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-6px) rotate(2deg); } }
-  .front.anim::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(2px 2px at 20% 30%, #fff, transparent), radial-gradient(2px 2px at 75% 25%, #fff, transparent), radial-gradient(1.5px 1.5px at 60% 70%, #fff, transparent), radial-gradient(2px 2px at 30% 80%, #fff, transparent); animation: sparkle 1.4s steps(2) infinite; }
-  @keyframes sparkle { 50% { opacity: .2; } }
-  .flying { position: fixed; z-index: 50; transition: left .5s cubic-bezier(.3,.7,.3,1), top .5s cubic-bezier(.3,.7,.3,1), width .5s, height .5s; }
-  .burst { position: absolute; inset: -30px; border-radius: 50%; pointer-events: none; animation: burst .7s ease-out forwards; }
-  @keyframes burst { from { transform: scale(.4); opacity: .9; } to { transform: scale(1.6); opacity: 0; } }
+  .front.anim .art svg .float { animation: bob 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes bob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-5px) rotate(2deg); } }
+  .front.anim::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(2px 2px at 20% 30%, #fff, transparent), radial-gradient(2px 2px at 75% 25%, #fff, transparent), radial-gradient(1.5px 1.5px at 60% 62%, #fff, transparent), radial-gradient(2px 2px at 30% 72%, #fff, transparent); animation: sparkle 1.4s steps(2) infinite; }
+  @keyframes sparkle { 50% { opacity: .15; } }
+  .burst { position: absolute; inset: -40px; border-radius: 50%; pointer-events: none; animation: burst .8s ease-out forwards; }
+  @keyframes burst { from { transform: scale(.4); opacity: .95; } to { transform: scale(1.7); opacity: 0; } }
+  .fly { position: fixed; z-index: 7; transition: left .55s cubic-bezier(.3,.7,.3,1), top .55s cubic-bezier(.3,.7,.3,1), width .55s cubic-bezier(.3,.7,.3,1), height .55s cubic-bezier(.3,.7,.3,1), font-size .55s; }
+  .ov-slot .sc { position: absolute; inset: 0; font-size: 9px; }
 
   /* ---------- Album ---------- */
-  .album { grid-column: 1 / -1; }
   .album-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
   .album-tabs span { padding: 3px 12px; border-radius: 12px; border: 1px solid var(--line); font-size: .8rem; color: var(--dim); }
   .album-tabs span.on { border-color: var(--gold); color: var(--gold); }
   .album-tabs span.soon { opacity: .45; }
   .album-progress { font-size: .8rem; color: var(--dim); margin: -4px 0 12px; }
-  .album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+  .album-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px; }
   .album-slot { aspect-ratio: 190 / 266; border-radius: 9px; border: 1px dashed var(--line); position: relative; display: grid; place-items: center; color: #34405c; font-size: .8rem; }
-  .album-slot .num { position: absolute; top: 4px; left: 6px; font-size: .6rem; color: var(--dim); }
-  .album-slot.have { border: 1px solid var(--rc); background: linear-gradient(160deg, #1b2a4a, #0e182c); }
-  .album-slot.have svg { width: 76%; filter: drop-shadow(0 3px 4px rgba(0,0,0,.45)); }
-  .album-slot .x { position: absolute; bottom: 4px; right: 6px; font-size: .6rem; color: var(--gold); }
+  .album-slot .num { position: absolute; top: 4px; left: 6px; font-size: .6rem; color: var(--dim); z-index: 3; }
+  .album-slot.have { border: none; cursor: zoom-in; font-size: 9px; }
+  .album-slot.have .sc { position: absolute; inset: 0; transition: transform .2s; }
+  .album-slot.have:hover .sc { transform: translateY(-3px); }
+  .album-slot .x { position: absolute; bottom: 3px; right: 6px; font-size: .6rem; color: var(--gold); z-index: 3; }
+
+  /* ---------- Inspizieren: 3D-Neigung mit dem Cursor ---------- */
+  .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.86); backdrop-filter: blur(6px); display: grid; place-items: center; perspective: 1100px; cursor: zoom-out; opacity: 0; transition: opacity .25s; }
+  .insp.on { opacity: 1; }
+  .insp .sc { position: relative; width: min(340px, 70vw); aspect-ratio: 190 / 266; font-size: 24px; transition: transform .12s ease-out; transform-style: preserve-3d; }
+  .insp .sc .inner { transition: none; }
+  .insp .glare { position: absolute; inset: 0; border-radius: 12px; pointer-events: none; z-index: 4; background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgba(255,255,255,.3), transparent 45%); mix-blend-mode: soft-light; }
+  .insp-cap { position: absolute; bottom: 6vh; left: 0; right: 0; text-align: center; color: var(--dim); font-size: .85rem; }
 </style>
 </head>
 <body>
 <header>
   <h1>Album</h1>
   <div class="sub">BASE SET · DRAFT</div>
-  <p class="note">Design draft: boosters are bought in the shop and opened here. Open one or all of them, then click the stack to reveal one sticker at a time - rare ones shine through before you flip them. The album below fills as you collect.</p>
+  <p class="note">Design draft (v3): boosters are bought in the shop and opened here. Open a booster, drag across its top edge to tear it, then click the stack - every click shows the next sticker and sends the last one to its place. Click a sticker in the album to inspect it.</p>
 </header>
 
 <div class="wrap">
@@ -116,9 +123,9 @@
     <h3>Your Boosters</h3>
     <div class="pack" id="pack" title="Open a booster">
       <div class="crimp top"></div>
-      <div class="logo" id="packLogo"></div>
+      <div class="logo"></div>
       <div class="title"><b>Three-Trick-Pony</b><small>BASE SET</small></div>
-      <div class="count" id="packCount">5 unopened</div>
+      <div class="count" id="packCount"></div>
       <div class="crimp bot"></div>
     </div>
     <div style="display:flex;gap:8px"><button class="btn" id="openBtn">Open 1</button><button class="btn" id="openAllBtn">Open all</button></div>
@@ -126,17 +133,13 @@
     <div class="odds">
       <div><span class="dot" style="background:var(--c-common)"></span><b>4×</b> Common</div>
       <div><span class="dot" style="background:var(--c-uncommon)"></span><b>2×</b> Uncommon</div>
-      <div><span class="dot" style="background:var(--c-holo)"></span><b>1×</b> Rare slot: <span style="color:var(--c-holo)">Holo Rare</span> 90% · <span style="color:var(--c-anim)">Animated Rare</span> 10%</div>
+      <div><span class="dot" style="background:var(--c-holo)"></span><b>1×</b> <span style="color:var(--c-holo)">Holo Rare</span> 90% · <span style="color:var(--c-anim)">Animated Rare</span> 10%</div>
       <div style="margin-top:6px">Base Set: 50 stickers - 25 common, 15 uncommon, 7 holo rare, 3 animated rare</div>
-      <div style="margin-top:4px">Duplicates give coins back: 3 / 8 / 50 / 150</div>
+      <div style="margin-top:4px">Booster: 🪙 150 in the shop · duplicates give back 3 / 8 / 50 / 300</div>
     </div>
   </section>
 
-  <section class="card-box stage" id="stage">
-    <div class="stage-empty" id="stageEmpty">Open a booster to start.</div>
-  </section>
-
-  <section class="card-box album">
+  <section class="card-box">
     <h3>Album</h3>
     <div class="album-tabs"><span class="on">Base Set</span><span class="soon">Set 2 · coming later</span></div>
     <div class="album-progress" id="albumProgress"></div>
@@ -145,27 +148,86 @@
 </div>
 
 <script>
-// ---------- Sticker-Kunst (Entwurf, eigene Motive) ----------
+// ===================== Sticker-Kunst (detailliert, ohne Die-Cut-Rand) =====================
 const HEAD = 'M42 4 L48 15 L54 3 L60 18 C74 20 86 30 90 48 C93 62 92 80 92 96 L48 96 C50 84 52 72 50 62 C40 64 28 74 16 75 C8 75 4 69 6 62 C10 52 26 36 37 22 Z';
-// Sticker = Motiv mit weissem Die-Cut-Rand (stroke unter der Fuellung)
-const die = inner => `<g stroke="#fff" stroke-width="10" stroke-linejoin="round" paint-order="stroke">${inner}</g>`;
-const pony = (fill, x = 0, y = 0, sc = 1) => `<g transform="translate(${x} ${y}) scale(${sc})"><path d="${HEAD}" fill="${fill}"/><circle cx="36" cy="33" r="3.2" fill="#1a1a1a" stroke="none"/></g>`;
+const MANE = 'M60 18 L66 9 L69 20 L77 13 L79 26 L87 22 L87 35 L95 35 L91 47 L99 51 L93 59 L99 67 L93 73 L97 81 L92 85 L92 96 C92 80 93 62 90 48 C86 30 74 20 60 18 Z';
+let gid = 0;
+function ponyHead(body, shade, mane, x, y, sc) {
+  const id = 'pg' + (++gid);
+  return `<g transform="translate(${x} ${y}) scale(${sc})">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${body}"/><stop offset="1" stop-color="${shade}"/></linearGradient></defs>
+    <path d="${HEAD}" fill="url(#${id})" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/>
+    <path d="${MANE}" fill="${mane}" stroke="rgba(0,0,0,.3)" stroke-width="1"/>
+    <path d="M14 66 C22 70 30 68 36 64" stroke="rgba(0,0,0,.25)" stroke-width="1.6" fill="none"/>
+    <circle cx="13" cy="64" r="2" fill="rgba(0,0,0,.45)"/>
+    <ellipse cx="36" cy="33" rx="4" ry="4.6" fill="#1a1410"/><circle cx="37.3" cy="31.6" r="1.4" fill="#fff"/>
+  </g>`;
+}
+const grad = (a, b) => { const id = 'sk' + (++gid); return { id, def: `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>` }; };
+const sparkle = (x, y, s = 1, o = .85) => `<path transform="translate(${x} ${y}) scale(${s})" d="M0 -8 L2.4 -2.4 L8 0 L2.4 2.4 L0 8 L-2.4 2.4 L-8 0 L-2.4 -2.4 Z" fill="#fff" opacity="${o}"/>`;
 const ART = {
-  'smite': () => die(`<circle cx="60" cy="60" r="44" fill="#2d5bd6"/><path d="M66 18 L38 66 H58 L50 102 L84 50 H62 Z" fill="#ffe46b"/>`),
-  'one-more-game': () => die(`<circle cx="60" cy="58" r="42" fill="#f2efe6"/><circle cx="60" cy="58" r="34" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><path d="M60 58 V34 M60 58 L76 66" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round" fill="none"/>`) + `<text x="60" y="114" text-anchor="middle" font-family="Arial Black,Segoe UI,sans-serif" font-weight="900" font-size="14" fill="#ff5a6a" stroke="#fff" stroke-width="4" paint-order="stroke">ONE MORE</text>`,
-  'ward': () => die(`<rect x="50" y="56" width="20" height="44" rx="5" fill="#6b4a2e"/><circle cx="60" cy="44" r="24" fill="#ffd36b"/><ellipse cx="60" cy="44" rx="12" ry="8" fill="#fff"/><circle cx="60" cy="44" r="5" fill="#2b2b2b"/>`),
-  'gank': () => die(`<ellipse cx="60" cy="72" rx="48" ry="30" fill="#2f8a4a"/><circle cx="44" cy="68" r="7" fill="#fff"/><circle cx="76" cy="68" r="7" fill="#fff"/><circle cx="46" cy="69" r="3" fill="#111"/><circle cx="78" cy="69" r="3" fill="#111"/><path d="M60 10 L70 40 H50 Z M54 44 h12 v8 h-12z" fill="#ff5a6a"/>`),
-  'tilted': () => die(`<g transform="rotate(-18 60 60)">${pony('#d9b98a', 14, 14, .95)}</g><path d="M86 24 q8 -8 0 -16 M98 30 q8 -8 0 -16" stroke="#9aa6b8" stroke-width="4" fill="none" stroke-linecap="round"/>`),
-  'pentakill': () => die(`<path d="M18 74 L28 34 L46 58 L60 26 L74 58 L92 34 L102 74 Z" fill="#f2c94c"/><rect x="18" y="74" width="84" height="16" rx="4" fill="#d9a23a"/>`) + `<text x="60" y="114" text-anchor="middle" font-family="Arial Black,Segoe UI,sans-serif" font-weight="900" font-size="15" fill="#f2c94c" stroke="#3a2a00" stroke-width="3" paint-order="stroke">PENTA!</text>`,
-  'baron-steal': () => die(`<path d="M20 90 C20 40 40 18 64 18 C92 18 104 44 98 70 C94 88 80 98 60 98 Z" fill="#7a3fd1"/><circle cx="52" cy="50" r="7" fill="#ffe46b"/><circle cx="76" cy="50" r="7" fill="#ffe46b"/><path d="M44 74 q16 12 32 0" stroke="#2a0d4a" stroke-width="5" fill="none" stroke-linecap="round"/>`) + die(`<path d="M86 86 L104 66 L110 72 L92 92 Z" fill="#ffe46b"/>`),
-  'golden-pony': () => die(`<circle cx="60" cy="58" r="46" fill="#f2c94c"/>${pony('#b07d18', 18, 12, .86)}`)
+  'smite': () => { const g = grad('#0d1d44', '#2346a8'); return `<defs>${g.def}<radialGradient id="smg${gid}"><stop offset="0" stop-color="#fff7c0"/><stop offset="1" stop-color="#ffd23f" stop-opacity="0"/></radialGradient></defs>
+    <rect width="120" height="120" fill="url(#${g.id})"/><ellipse cx="60" cy="106" rx="50" ry="10" fill="#0a1430"/>
+    <circle cx="62" cy="58" r="42" fill="url(#smg${gid})" opacity=".8"/>
+    <path d="M70 6 L38 62 H58 L46 116 L88 48 H64 L80 6 Z" fill="#ffe46b" stroke="#fff6c8" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M70 6 L56 34 H66 Z" fill="#fff" opacity=".7"/>
+    ${sparkle(20, 30)}${sparkle(98, 24, .8)}${sparkle(100, 82)}${sparkle(16, 86, .7)}`; },
+  'one-more-game': () => { const g = grad('#2a1838', '#5b2c4a'); return `<defs>${g.def}</defs><rect width="120" height="120" fill="url(#${g.id})"/>
+    <rect x="16" y="86" width="88" height="30" rx="4" fill="#3a2440"/><rect x="24" y="80" width="72" height="10" rx="3" fill="#7b5a8a"/>
+    <rect x="30" y="92" width="22" height="16" rx="2" fill="#6bc8ff" opacity=".7"/><rect x="58" y="96" width="32" height="4" rx="2" fill="#9a7ab0"/>
+    <circle cx="60" cy="48" r="30" fill="#f6efe2" stroke="#3a2a1a" stroke-width="4"/>
+    ${[...Array(12)].map((_, i) => { const a = i / 12 * Math.PI * 2; return `<line x1="${(60 + Math.sin(a) * 24).toFixed(1)}" y1="${(48 - Math.cos(a) * 24).toFixed(1)}" x2="${(60 + Math.sin(a) * 27).toFixed(1)}" y2="${(48 - Math.cos(a) * 27).toFixed(1)}" stroke="#3a2a1a" stroke-width="${i % 3 ? 1.5 : 3}"/>`; }).join('')}
+    <path d="M60 48 L60 28 M60 48 L74 56" stroke="#3a2a1a" stroke-width="4" stroke-linecap="round"/><circle cx="60" cy="48" r="3" fill="#c0392b"/>
+    <text x="60" y="114" text-anchor="middle" font-family="Arial Black,Segoe UI,sans-serif" font-weight="900" font-size="11" fill="#ff7a8a">3:47 AM</text>`; },
+  'ward': () => { const g = grad('#071a12', '#0f3a26'); return `<defs>${g.def}<radialGradient id="wg${gid}"><stop offset="0" stop-color="#ffe9a0" stop-opacity=".9"/><stop offset="1" stop-color="#ffe9a0" stop-opacity="0"/></radialGradient></defs>
+    <rect width="120" height="120" fill="url(#${g.id})"/>
+    ${[[8, 110, 30], [94, 112, 34], [30, 118, 22], [70, 120, 26]].map(([x, y, r]) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * .55}" fill="#123a22"/>`).join('')}
+    <circle cx="60" cy="44" r="46" fill="url(#wg${gid})"/>
+    <path d="M54 62 L52 108 H68 L66 62 Z" fill="#6b4a2e" stroke="#3a2614" stroke-width="2"/>
+    <path d="M40 46 C40 28 80 28 80 46 C80 58 70 64 60 64 C50 64 40 58 40 46 Z" fill="#ffd36b" stroke="#a87a1e" stroke-width="2.5"/>
+    <ellipse cx="60" cy="46" rx="13" ry="9" fill="#fff"/><circle cx="60" cy="46" r="6" fill="#2b6e3a"/><circle cx="60" cy="46" r="3" fill="#0a1a0e"/><circle cx="62" cy="44" r="1.4" fill="#fff"/>
+    ${sparkle(26, 22, .6, .6)}${sparkle(94, 30, .5, .6)}`; },
+  'gank': () => { const g = grad('#0c1f16', '#1c4a2c'); return `<defs>${g.def}</defs><rect width="120" height="120" fill="url(#${g.id})"/>
+    ${[...Array(9)].map((_, i) => `<path d="M${i * 15 - 6} 120 Q${i * 15 + 2} ${58 + (i % 3) * 8} ${i * 15 + 10} 120 Z" fill="${i % 2 ? '#2f8a4a' : '#256e3a'}"/>`).join('')}
+    <ellipse cx="60" cy="98" rx="60" ry="26" fill="#2a7a40"/>
+    <circle cx="44" cy="90" r="9" fill="#fff"/><circle cx="76" cy="90" r="9" fill="#fff"/>
+    <circle cx="47" cy="92" r="4.2" fill="#1a1a1a"/><circle cx="79" cy="92" r="4.2" fill="#1a1a1a"/><circle cx="48.5" cy="90.5" r="1.4" fill="#fff"/><circle cx="80.5" cy="90.5" r="1.4" fill="#fff"/>
+    <path d="M36 79 L52 83 M84 79 L68 83" stroke="#0e2a16" stroke-width="3" stroke-linecap="round"/>
+    <path d="M60 10 L76 50 H44 Z" fill="#ff4d5e" stroke="#7a0d16" stroke-width="2.5" stroke-linejoin="round"/>
+    <rect x="57" y="22" width="6" height="16" rx="2" fill="#fff"/><circle cx="60" cy="43" r="3" fill="#fff"/>`; },
+  'tilted': () => { const g = grad('#3a1010', '#6e1e14'); return `<defs>${g.def}</defs><rect width="120" height="120" fill="url(#${g.id})"/>
+    ${[0, 1, 2].map(i => `<path d="M${82 + i * 11} 42 q8 -9 0 -18 q-8 -9 0 -18" stroke="rgba(255,255,255,.55)" stroke-width="3.5" fill="none" stroke-linecap="round"/>`).join('')}
+    <g transform="rotate(-16 60 70)">${ponyHead('#e8c48c', '#b88848', '#7a4a20', 14, 24, .88)}</g>
+    <path d="M30 42 L44 48 M34 52 L44 48" stroke="#ff5a3c" stroke-width="3" stroke-linecap="round"/>
+    <text x="14" y="114" font-family="Arial Black,Segoe UI,sans-serif" font-weight="900" font-size="12" fill="#ffb4a0">0 / 10 / 0</text>`; },
+  'pentakill': () => { const g = grad('#1a0f30', '#3a1d5c'); return `<defs>${g.def}<linearGradient id="crg${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2a8"/><stop offset=".5" stop-color="#f2c94c"/><stop offset="1" stop-color="#b07d18"/></linearGradient></defs>
+    <rect width="120" height="120" fill="url(#${g.id})"/>
+    ${[...Array(14)].map((_, i) => { const a = i / 14 * Math.PI * 2; return `<path d="M60 56 L${(60 + Math.cos(a) * 80).toFixed(1)} ${(56 + Math.sin(a) * 80).toFixed(1)} L${(60 + Math.cos(a + .12) * 80).toFixed(1)} ${(56 + Math.sin(a + .12) * 80).toFixed(1)} Z" fill="#fff" opacity=".06"/>`; }).join('')}
+    <path d="M20 74 L28 34 L44 56 L60 22 L76 56 L92 34 L100 74 Z" fill="url(#crg${gid})" stroke="#6a4508" stroke-width="2.5" stroke-linejoin="round"/>
+    <rect x="18" y="72" width="84" height="16" rx="4" fill="url(#crg${gid})" stroke="#6a4508" stroke-width="2.5"/>
+    ${[[28, 34], [44, 56], [60, 22], [76, 56], [92, 34]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="5" fill="${['#ff5a6a', '#5fd08a', '#6bc8ff', '#b98cff', '#ffd36b'][i]}" stroke="#fff" stroke-width="1.5"/>`).join('')}
+    ${[30, 45, 60, 75, 90].map(x => `<circle cx="${x}" cy="80" r="3" fill="#6a4508"/>`).join('')}
+    <text x="60" y="110" text-anchor="middle" font-family="Arial Black,Segoe UI,sans-serif" font-weight="900" font-size="14" fill="#fff2a8" stroke="#3a1d5c" stroke-width="3" paint-order="stroke">PENTAKILL</text>`; },
+  'baron-steal': () => { const g = grad('#12061e', '#2e0f4a'); return `<defs>${g.def}<radialGradient id="bg2${gid}" cx=".5" cy=".4"><stop offset="0" stop-color="#9a5af0"/><stop offset="1" stop-color="#4a1a8a"/></radialGradient></defs>
+    <rect width="120" height="120" fill="url(#${g.id})"/>
+    <path d="M6 120 C8 70 30 30 64 26 C98 22 118 56 114 120 Z" fill="url(#bg2${gid})" stroke="#1e0838" stroke-width="2.5"/>
+    ${[[30, 70], [44, 50], [88, 52], [100, 78]].map(([x, y]) => `<path d="M${x} ${y} l-6 -10 l10 4 Z" fill="#c9a0ff" opacity=".8"/>`).join('')}
+    <ellipse cx="50" cy="62" rx="8" ry="10" fill="#ffe46b"/><ellipse cx="78" cy="62" rx="8" ry="10" fill="#ffe46b"/><ellipse cx="50" cy="64" rx="3" ry="7" fill="#1a0a2a"/><ellipse cx="78" cy="64" rx="3" ry="7" fill="#1a0a2a"/>
+    <path d="M40 92 Q64 106 88 92 L84 100 L76 94 L70 102 L64 95 L58 102 L52 94 L44 100 Z" fill="#fff" stroke="#1e0838" stroke-width="2"/>
+    <path d="M94 8 L72 48 H86 L76 84 L108 36 H92 L102 8 Z" fill="#ffe46b" stroke="#fff6c8" stroke-width="2" stroke-linejoin="round"/>`; },
+  'golden-pony': () => { const g = grad('#2a1a04', '#5a3a08'); return `<defs>${g.def}<radialGradient id="gpg${gid}"><stop offset="0" stop-color="#fff2b0"/><stop offset="1" stop-color="#ffcc33" stop-opacity="0"/></radialGradient></defs>
+    <rect width="120" height="120" fill="url(#${g.id})"/>
+    ${[...Array(16)].map((_, i) => { const a = i / 16 * Math.PI * 2; return `<path d="M60 58 L${(60 + Math.cos(a) * 90).toFixed(1)} ${(58 + Math.sin(a) * 90).toFixed(1)} L${(60 + Math.cos(a + .1) * 90).toFixed(1)} ${(58 + Math.sin(a + .1) * 90).toFixed(1)} Z" fill="#ffe08a" opacity=".12"/>`; }).join('')}
+    <circle cx="60" cy="58" r="48" fill="url(#gpg${gid})"/>
+    <g class="float">${ponyHead('#ffe08a', '#c8941c', '#fff4c8', 16, 14, .88)}</g>
+    ${sparkle(18, 22, 1, 1)}${sparkle(100, 30, .8, 1)}${sparkle(96, 96, 1, 1)}${sparkle(22, 92, .7, 1)}`; }
 };
-const BACK_LOGO = `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="#c8a96e" stroke-width="4"/>${pony('#c8a96e', 20, 14, .82)}</svg>`;
-document.getElementById('packLogo').innerHTML = `<svg viewBox="0 0 120 120">${die(`<circle cx="60" cy="60" r="50" fill="#0b1424"/>${pony('#c8a96e', 18, 12, .86)}`)}</svg>`;
+const BACK_LOGO = `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="#c8a96e" stroke-width="4"/><g transform="translate(20 14) scale(.82)"><path d="${HEAD}" fill="#c8a96e"/></g></svg>`;
+document.querySelector('#pack .logo').innerHTML = `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="#0b1424" stroke="#c8a96e" stroke-width="4"/>${ponyHead('#e8c48c', '#b07d18', '#7a4a20', 18, 12, .86)}</svg>`;
 
-// Base-Set-Ausschnitt fuer den Entwurf (echtes Set: deutlich mehr Sticker)
-const RC = { common: 'var(--c-common)', uncommon: 'var(--c-uncommon)', rare: 'var(--c-rare)', holo: 'var(--c-holo)', anim: 'var(--c-anim)' };
-const RL = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', holo: 'Holo Rare', anim: 'Animated Rare' };
+// ===================== Set (Entwurfsausschnitt aus 50) =====================
+const RC = { common: 'var(--c-common)', uncommon: 'var(--c-uncommon)', holo: 'var(--c-holo)', anim: 'var(--c-anim)' };
+const RL = { common: 'Common', uncommon: 'Uncommon', holo: 'Holo Rare', anim: 'Animated Rare' };
 const SET = [
   { n: 1, id: 'smite', name: 'Smite!', r: 'common' },
   { n: 2, id: 'one-more-game', name: 'One More Game', r: 'common' },
@@ -176,95 +238,133 @@ const SET = [
   { n: 42, id: 'baron-steal', name: 'Baron Steal', r: 'holo' },
   { n: 48, id: 'golden-pony', name: 'Golden Pony', r: 'anim' }
 ];
-const TOTAL_IN_SET = 50;   // Base Set (Nutzer): 25 common, 15 uncommon, 7 holo, 3 animated
-const DUPE = { common: 3, uncommon: 8, holo: 50, anim: 150 };
-const owned = {};          // key "id|variant" -> Anzahl
-
-const pick = list => list[Math.floor(Math.random() * list.length)];
+const TOTAL_IN_SET = 50;
+const DUPE = { common: 3, uncommon: 8, holo: 50, anim: 300 };
+const owned = {};
+let unopened = 5;
+const pick = l => l[Math.floor(Math.random() * l.length)];
+// Keine steigenden Chancen: jeder Pack ist ein unabhaengiger Wurf (Nutzer)
 function rollPack() {
-  const C = SET.filter(s => s.r === 'common'), U = SET.filter(s => s.r === 'uncommon');
-  const H = SET.filter(s => s.r === 'holo'), A = SET.filter(s => s.r === 'anim');
-  return [pick(C), pick(C), pick(C), pick(C), pick(U), pick(U), Math.random() < .10 ? pick(A) : pick(H)].map(s => ({ ...s, v: s.r }));
+  const by = r => SET.filter(s => s.r === r);
+  return [pick(by('common')), pick(by('common')), pick(by('common')), pick(by('common')), pick(by('uncommon')), pick(by('uncommon')), Math.random() < .10 ? pick(by('anim')) : pick(by('holo'))];
 }
-
 function cardHtml(s) {
-  const front = `<div class="face front${s.v === 'holo' ? ' holo' : ''}${s.v === 'anim' ? ' anim' : ''}" style="--rc:${RC[s.v]}">
+  const glow = s.r === 'holo' ? ' glow-holo' : s.r === 'anim' ? ' glow-anim' : '';
+  return `<div class="inner"><div class="face back${glow}">${BACK_LOGO}</div>
+    <div class="face front${s.r === 'holo' ? ' holo' : ''}${s.r === 'anim' ? ' anim' : ''}" style="--rc:${RC[s.r]}">
       <div class="art"><svg viewBox="0 0 120 120">${ART[s.id]()}</svg></div>
       <div class="name">${s.name}</div>
-      <div class="meta"><span class="rar">${RL[s.v]}</span><span>#${String(s.n).padStart(3, '0')}</span></div>
-    </div>`;
-  const glow = s.v === 'rare' ? ' glow-rare' : s.v === 'holo' ? ' glow-holo' : s.v === 'anim' ? ' glow-anim' : '';
-  return `<div class="inner"><div class="face back${glow}">${BACK_LOGO}</div>${front}</div>`;
+      <div class="meta"><span class="rar">${RL[s.r]}</span><span>#${String(s.n).padStart(3, '0')}</span></div>
+    </div></div>`;
 }
+const card = (s, flipped) => { const d = document.createElement('div'); d.className = 'sc' + (flipped ? ' flipped' : ''); d.innerHTML = cardHtml(s); return d; };
 
-// ---------- Oeffnen ----------
-const stage = document.getElementById('stage');
-let queue = [], revealed = 0, busy = false, unopened = 5;
-const updCount = () => { document.getElementById('packCount').textContent = `${unopened} unopened`; document.getElementById('openBtn').disabled = document.getElementById('openAllBtn').disabled = !unopened; };
-function openPack(all) {
-  if (busy || !unopened) return;
-  busy = true;
-  const n = all ? unopened : 1;
-  unopened -= n; updCount();
-  const pack = document.getElementById('pack');
-  pack.classList.remove('gone', 'torn'); pack.classList.add('shake');
-  setTimeout(() => { pack.classList.remove('shake'); pack.classList.add('torn'); }, 500);
-  setTimeout(() => { pack.classList.add('gone'); buildStage(Array.from({ length: n }, rollPack).flat()); }, 950);
-  setTimeout(() => { pack.classList.remove('gone', 'torn'); busy = false; }, 1600);
-}
-function buildStage(cards) {
-  queue = cards; revealed = 0;
-  stage.innerHTML = `<div class="stack" id="stack"></div>
-    <div class="stack-hint" id="stackHint">Click the stack to reveal · ${cards.length} left</div>
-    <div class="actions"><button class="btn" id="revealAll">Reveal all</button></div>
-    <div class="spread" id="spread">${cards.map(() => '<div class="slot"></div>').join('')}</div>`;
-  // Hoehe der Buehne an die Zahl der Reihen anpassen (grosses Opening)
-  stage.style.minHeight = `${360 + Math.ceil(cards.length / 7) * 150}px`;
-  const stack = document.getElementById('stack');
-  // Stapel: unterste Karte zuerst ins DOM, die oberste (naechste) liegt oben
-  [...cards].reverse().forEach((c, i) => {
-    const el = document.createElement('div');
-    el.className = 'sticker-card';
-    el.style.transform = `translate(${(cards.length - 1 - i) * -1.5}px, ${(cards.length - 1 - i) * -1.5}px)`;
-    el.innerHTML = cardHtml(c);
-    stack.appendChild(el);
+// ===================== Oeffnen =====================
+const updCount = () => {
+  document.getElementById('packCount').textContent = `${unopened} unopened`;
+  document.getElementById('openBtn').disabled = document.getElementById('openAllBtn').disabled = !unopened;
+};
+function openPacks(n) {
+  if (!unopened) return;
+  n = Math.min(n, unopened); unopened -= n; updCount();
+  const cards = Array.from({ length: n }, rollPack).flat();
+  const ov = document.createElement('div'); ov.className = 'ov';
+  const cols = Math.min(7, cards.length), rows = Math.ceil(cards.length / cols);
+  const slotW = Math.min(92, ((innerHeight * .78) / rows - 10) * 190 / 266);
+  ov.innerHTML = `<button class="btn ov-close" id="ovSkip">Skip ›</button>
+    <div class="ov-grid" style="grid-template-columns:repeat(${cols}, ${slotW}px)">${cards.map(() => `<div class="ov-slot" style="width:${slotW}px"></div>`).join('')}</div>
+    <div class="ov-hint" id="ovHint">Drag across the top edge to tear the booster open</div>
+    <button class="btn ov-done" id="ovDone">Done</button>`;
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => ov.classList.add('on'));
+  const grid = ov.querySelector('.ov-grid');
+  const hint = t => { ov.querySelector('#ovHint').textContent = t; };
+
+  // 1) Booster tritt in den Vordergrund
+  const src = document.getElementById('pack').getBoundingClientRect();
+  const big = document.getElementById('pack').cloneNode(true); big.removeAttribute('id'); big.classList.add('big');
+  big.querySelector('.count').textContent = n > 1 ? `${n} boosters` : '7 stickers';
+  Object.assign(big.style, { left: src.left + 'px', top: src.top + 'px', width: src.width + 'px', height: src.height + 'px' });
+  ov.appendChild(big);
+  const W = Math.min(300, innerWidth * .28), H = W * 250 / 170;
+  requestAnimationFrame(() => requestAnimationFrame(() => Object.assign(big.style, { left: (innerWidth - W) / 2 + 'px', top: (innerHeight - H) / 2 + 'px', width: W + 'px', height: H + 'px', fontSize: (W / 170 * 11) + 'px' })));
+
+  // 2) Aufreissen: ueber die obere Kante ziehen (links->rechts oder rechts->links)
+  const strip = document.createElement('div'); strip.className = 'tear-strip'; big.appendChild(strip);
+  const line = document.createElement('div'); line.className = 'tear-line'; big.appendChild(line);
+  let startX = null, dir = 1, torn = false;
+  strip.addEventListener('pointerdown', e => { startX = e.clientX; strip.setPointerCapture(e.pointerId); });
+  strip.addEventListener('pointermove', e => {
+    if (startX == null || torn) return;
+    const dx = e.clientX - startX; if (dx) dir = Math.sign(dx);
+    const p = Math.min(1, Math.abs(dx) / big.clientWidth), w = big.clientWidth * p;
+    line.style.width = w + 'px'; line.style.left = dir > 0 ? '0' : (big.clientWidth - w) + 'px';
+    if (p > .8) tearOpen();
   });
-  stack.addEventListener('click', revealNext);
-  document.getElementById('revealAll').addEventListener('click', () => { const t = setInterval(() => { if (!revealNext()) clearInterval(t); }, 260); });
-}
-function revealNext() {
-  const stack = document.getElementById('stack');
-  if (!stack || revealed >= queue.length) return false;
-  const el = stack.lastElementChild; const s = queue[revealed];
-  const slot = document.getElementById('spread').children[revealed]; // Position in der Auslage, nicht n-ter freier Platz
-  revealed++;
-  // Karte sofort aus dem Stapel loesen (fixiert an Ort und Stelle), dann
-  // umdrehen und in ihre Auslage-Position fliegen
-  const a = el.getBoundingClientRect();
-  Object.assign(el.style, { position: 'fixed', left: a.left + 'px', top: a.top + 'px', width: a.width + 'px', height: a.height + 'px', transform: 'none', zIndex: 50 });
-  document.body.appendChild(el);
-  requestAnimationFrame(() => el.classList.add('flipped'));
-  const key = s.id + '|' + s.v; const isNew = !owned[key]; owned[key] = (owned[key] || 0) + 1;
-  if (['rare', 'holo', 'anim'].includes(s.v)) { const b = document.createElement('div'); b.className = 'burst'; b.style.background = `radial-gradient(circle, ${RC[s.v]}, transparent 60%)`; el.appendChild(b); }
-  setTimeout(() => {
-    const b = slot.getBoundingClientRect();
-    el.classList.add('flying');
-    requestAnimationFrame(() => Object.assign(el.style, { left: b.left + 'px', top: b.top + 'px', width: b.width + 'px', height: b.height + 'px' }));
+  strip.addEventListener('pointerup', () => { if (!torn) { startX = null; line.style.width = '0'; } });
+  function tearOpen() {
+    if (torn) return; torn = true;
+    strip.remove();
+    const top = big.querySelector('.crimp.top');
+    top.style.transition = 'transform .6s cubic-bezier(.3,.7,.3,1), opacity .6s';
+    top.style.transform = `translate(${dir * 160}px, -90px) rotate(${dir * 28}deg)`; top.style.opacity = '0';
+    line.style.transition = 'opacity .3s'; line.style.opacity = '0';
+    hint('');
+    setTimeout(() => { big.classList.add('drop'); buildStack(); }, 380);
+    setTimeout(() => big.remove(), 1200);
+  }
+
+  // 3) Stapel: jeder Klick zeigt den naechsten Sticker, der vorige faehrt in
+  //    seinen Platz im Hintergrund
+  const stackEl = document.createElement('div'); stackEl.className = 'ov-stack';
+  let idx = -1, shown = null, built = false;
+  function buildStack() {
+    if (built) return; built = true;
+    [...cards].reverse().forEach((s, i) => { const c = card(s); const d = (cards.length - 1 - i) * -1.2; c.style.transform = `translate(${d}px, ${d}px)`; stackEl.appendChild(c); });
+    stackEl.style.opacity = '0'; ov.appendChild(stackEl);
+    requestAnimationFrame(() => { stackEl.style.transition = 'opacity .4s'; stackEl.style.opacity = '1'; });
+    hint(`Click to reveal · ${cards.length} stickers`);
+    stackEl.addEventListener('click', next);
+  }
+  function sendToSlot({ el, s, i }) {
+    const a = el.getBoundingClientRect(), slot = ov.querySelectorAll('.ov-slot')[i], b = slot.getBoundingClientRect();
+    Object.assign(el.style, { left: a.left + 'px', top: a.top + 'px', width: a.width + 'px', height: a.height + 'px', transform: 'none', fontSize: '20px' });
+    el.classList.add('fly'); ov.appendChild(el);
+    requestAnimationFrame(() => Object.assign(el.style, { left: b.left + 'px', top: b.top + 'px', width: b.width + 'px', height: b.height + 'px', fontSize: (b.width / 92 * 9) + 'px' }));
     setTimeout(() => {
-      el.classList.remove('flying'); el.removeAttribute('style'); el.classList.add('slot-card');
-      slot.replaceWith(el);
-      const tag = document.createElement('span'); tag.className = isNew ? 'tag-new' : 'tag-dupe'; tag.textContent = isNew ? 'NEW' : `+${DUPE[s.v]} 🪙`;
-      el.appendChild(tag);
+      el.classList.remove('fly'); el.removeAttribute('style'); el.style.fontSize = (b.width / 92 * 9) + 'px'; slot.appendChild(el);
+      const isNew = !owned[s.n]; owned[s.n] = (owned[s.n] || 0) + 1;
+      const t = document.createElement('span'); t.className = isNew ? 'tag-new' : 'tag-dupe'; t.textContent = isNew ? 'NEW' : `+${DUPE[s.r]} 🪙`; el.appendChild(t);
       renderAlbum();
-    }, 520);
-  }, s.v === 'common' || s.v === 'uncommon' ? 420 : 800);
-  const left = queue.length - revealed;
-  document.getElementById('stackHint').textContent = left ? `Click the stack to reveal · ${left} left` : 'All revealed - open another booster!';
-  return left > 0;
+    }, 580);
+  }
+  function next() {
+    if (shown) { sendToSlot(shown); shown = null; }
+    idx++;
+    if (idx >= cards.length) { finish(); return; }
+    const el = stackEl.lastElementChild, s = cards[idx];
+    el.style.transform = 'scale(1.06)';
+    requestAnimationFrame(() => el.classList.add('flipped'));
+    if (s.r === 'holo' || s.r === 'anim') { const b = document.createElement('div'); b.className = 'burst'; b.style.background = `radial-gradient(circle, ${RC[s.r]}, transparent 62%)`; el.appendChild(b); }
+    shown = { el, s, i: idx };
+    const left = cards.length - idx - 1;
+    hint(left ? `Click for the next sticker · ${left} left` : 'Click to put it away');
+  }
+  function finish() {
+    stackEl.remove(); grid.classList.add('done'); hint('');
+    ov.querySelector('#ovSkip').style.display = 'none';
+    ov.querySelector('#ovDone').style.display = 'block';
+  }
+  ov.querySelector('#ovDone').addEventListener('click', () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 350); });
+  // Ueberspringen: aufreissen und alles zuegig in die Plaetze
+  ov.querySelector('#ovSkip').addEventListener('click', () => {
+    if (!torn) { torn = true; big.remove(); buildStack(); }
+    const t = setInterval(() => { if (idx >= cards.length) { clearInterval(t); return; } next(); }, 140);
+  });
 }
-document.getElementById('pack').addEventListener('click', () => openPack(false));
-document.getElementById('openBtn').addEventListener('click', () => openPack(false));
-document.getElementById('openAllBtn').addEventListener('click', () => openPack(true));
+document.getElementById('pack').addEventListener('click', () => openPacks(1));
+document.getElementById('openBtn').addEventListener('click', () => openPacks(1));
+document.getElementById('openAllBtn').addEventListener('click', () => openPacks(unopened));
 document.getElementById('refillBtn').addEventListener('click', () => { unopened += 5; updCount(); });
 
 // Holo-Schimmer folgt der Maus
@@ -276,25 +376,35 @@ document.addEventListener('mousemove', e => {
   });
 });
 
-// ---------- Album ----------
+// ===================== Album + Inspizieren =====================
 function renderAlbum() {
-  const grid = document.getElementById('albumGrid');
-  const have = n => SET.filter(s => s.n === n).flatMap(s => ['common', 'uncommon', 'rare', 'holo', 'anim'].map(v => owned[s.id + '|' + v] ? { ...s, v, cnt: owned[s.id + '|' + v] } : null)).filter(Boolean);
-  let html = '';
-  let got = 0;
+  let html = '', got = 0;
   for (let n = 1; n <= TOTAL_IN_SET; n++) {
-    const h = have(n);
-    if (h.length) {
-      got++;
-      const best = h[h.length - 1];
-      html += `<div class="album-slot have" style="--rc:${RC[best.v]}"><span class="num">#${String(n).padStart(3, '0')}</span><svg viewBox="0 0 120 120">${ART[best.id]()}</svg><span class="x">×${h.reduce((a, x) => a + x.cnt, 0)}</span></div>`;
-    } else html += `<div class="album-slot"><span class="num">#${String(n).padStart(3, '0')}</span>?</div>`;
+    const s = SET.find(x => x.n === n);
+    if (s && owned[n]) { got++; html += `<div class="album-slot have" data-n="${n}"><span class="num">#${String(n).padStart(3, '0')}</span><div class="sc flipped">${cardHtml(s)}</div><span class="x">×${owned[n]}</span></div>`; }
+    else html += `<div class="album-slot"><span class="num">#${String(n).padStart(3, '0')}</span>?</div>`;
   }
+  document.getElementById('albumGrid').innerHTML = html;
   document.getElementById('albumProgress').textContent = `Collected ${got} / ${TOTAL_IN_SET} · #1-25 common · #26-40 uncommon · #41-47 holo rare · #48-50 animated rare`;
-  grid.innerHTML = html;
 }
-renderAlbum();
-updCount();
+document.getElementById('albumGrid').addEventListener('click', e => {
+  const slot = e.target.closest('.album-slot.have'); if (!slot) return;
+  const s = SET.find(x => x.n === Number(slot.dataset.n));
+  const ov = document.createElement('div'); ov.className = 'insp';
+  ov.innerHTML = `<div class="sc flipped">${cardHtml(s)}<div class="glare"></div></div><div class="insp-cap">${s.name} · ${RL[s.r]} · #${String(s.n).padStart(3, '0')} · you own ${owned[s.n]} - move the mouse to tilt, click to close</div>`;
+  document.body.appendChild(ov); requestAnimationFrame(() => ov.classList.add('on'));
+  const c = ov.querySelector('.sc'), glare = ov.querySelector('.glare');
+  // 3D-Neigung: Karte folgt dem Cursor, Glanzlicht wandert mit
+  ov.addEventListener('mousemove', ev => {
+    const r = c.getBoundingClientRect();
+    const px = Math.max(-1, Math.min(1, (ev.clientX - (r.left + r.width / 2)) / (r.width * 1.2)));
+    const py = Math.max(-1, Math.min(1, (ev.clientY - (r.top + r.height / 2)) / (r.height * 1.2)));
+    c.style.transform = `rotateY(${px * 20}deg) rotateX(${-py * 20}deg)`;
+    glare.style.setProperty('--gx', `${50 + px * 50}%`); glare.style.setProperty('--gy', `${40 + py * 50}%`);
+  });
+  ov.addEventListener('click', () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); });
+});
+renderAlbum(); updCount();
 </script>
 </body>
 </html>
