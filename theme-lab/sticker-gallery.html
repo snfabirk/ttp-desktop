@@ -17,7 +17,7 @@
   .grid.big { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
   .sc { position: relative; aspect-ratio: 190 / 266; border-radius: 12px; cursor: zoom-in; transition: transform .2s; font-size: 15px; }
   .grid.big .sc { font-size: 19px; }
-  .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.88); backdrop-filter: blur(6px); display: grid; place-items: center; perspective: 1100px; cursor: zoom-out; opacity: 0; transition: opacity .25s; }
+  .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.88); backdrop-filter: blur(6px); display: grid; place-items: center; cursor: zoom-out; opacity: 0; transition: opacity .25s; }
   .insp.on { opacity: 1; }
   .insp .sc { width: min(360px, 70vw); font-size: 26px; cursor: default; transition: transform .12s ease-out; transform-style: preserve-3d; }
   .insp .sc:hover { transform: none; }
@@ -51,7 +51,7 @@
       const r = c.getBoundingClientRect();
       const px = Math.max(-1, Math.min(1, (ev.clientX - (r.left + r.width / 2)) / (r.width * 1.2)));
       const py = Math.max(-1, Math.min(1, (ev.clientY - (r.top + r.height / 2)) / (r.height * 1.2)));
-      c.style.transform = `rotateY(${px * 20}deg) rotateX(${-py * 20}deg)`;
+      window.STICKERS.tiltTo(c, px / 2, py / 2, 20);
       glare.style.setProperty('--gx', `${50 + px * 50}%`); glare.style.setProperty('--gy', `${40 + py * 50}%`);
     });
     ov.addEventListener('click', () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); });

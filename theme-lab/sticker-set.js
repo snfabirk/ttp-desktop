@@ -273,7 +273,7 @@
   const art = id => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${ART[id]()}</svg>`;
   const frontHtml = s => `<div class="face front r-${s.r}" style="--rc:${RC[s.r]}">
       <div class="art">${art(s.id)}</div>
-      ${POP[s.id] ? `<div class="pop"><svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${POP[s.id]()}</svg></div>` : ''}
+      ${POP[s.id] ? `<div class="pop-shadow"><svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${POP[s.id]()}</svg></div><div class="pop"><svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${POP[s.id]()}</svg></div>` : ''}
       <div class="name">${s.name}</div>
       <div class="meta"><span class="rar">${RL[s.r]}</span><span>#${String(s.n).padStart(3, '0')}</span></div>
     </div>`;
@@ -305,16 +305,19 @@
   @keyframes animPulse { 0%,100% { box-shadow: 0 0 8px rgba(255,90,180,.45), inset 0 0 14px rgba(255,90,180,.25); } 50% { box-shadow: 0 0 22px rgba(255,211,107,.75), inset 0 0 22px rgba(255,211,107,.35); } }
   .front.r-anim .name { background: linear-gradient(90deg, #ffd6f1, #ffd36b, #ff9ae4, #ffd36b, #ffd6f1); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: bold; animation: nameShine 2.4s linear infinite; }
   @keyframes nameShine { to { background-position: 200% 0; } }
-  /* Pop-out: Figur auf eigener Ebene deckungsgleich ueber dem Bild. Der Schatten
-     auf dem Hintergrund imitiert Hoehe; beim Daraufgehen neigt sich die Karte
-     (enableTilt) und die Figur hebt sich per translateZ deutlich davor */
+  /* Hologramm-Effekt der Animated Rares: Die Figur liegt auf einer Ebene
+     ueber der Karte (wie ~2 cm ueber einer Karte in der Hand), ihr Schatten
+     liegt AUF der Karte. Abstand (--lift) und Perspektive skalieren mit der
+     Kartenbreite (tiltTo), damit klein und gross gleich raeumlich wirken; die
+     Figur wird per --comp so skaliert, dass sie von vorn gleich gross bleibt
+     und nur durch den Blickwinkel versetzt erscheint. */
   .sc { transform-style: preserve-3d; }
   .front.r-anim { overflow: visible; transform-style: preserve-3d; }
-  .front .pop { position: absolute; left: 6%; right: 6%; top: 5%; aspect-ratio: 1; pointer-events: none; z-index: 3;
-    transform: translateZ(0); transition: transform .25s ease-out, filter .25s ease-out;
-    filter: drop-shadow(5px 9px 5px rgba(0,0,0,.5)); }
-  .front .pop svg { width: 100%; height: 100%; overflow: visible; }
-  .sc.tilting .front .pop, .insp .front .pop { transform: translateZ(46px) scale(.96); filter: drop-shadow(12px 20px 12px rgba(0,0,0,.55)); }
+  .front .pop, .front .pop-shadow { position: absolute; left: 6%; right: 6%; top: 5%; aspect-ratio: 1; pointer-events: none; }
+  .front .pop { z-index: 3; transform: translateZ(var(--lift, 0px)) scale(var(--comp, 1)); transition: transform .3s ease-out; }
+  .front .pop-shadow { z-index: 2; transform: translate(3%, 5%); filter: brightness(0) blur(3px); opacity: .5; transition: filter .3s, opacity .3s; }
+  .sc.tilting .front .pop-shadow, .insp .front .pop-shadow { filter: brightness(0) blur(6px); opacity: .42; }
+  .front .pop svg, .front .pop-shadow svg { width: 100%; height: 100%; overflow: visible; }
   .sc.tilting { transition: transform .08s linear; }
   .sc.tilt-reset { transition: transform .35s ease-out; }
   .a-spin { animation: aSpin 14s linear infinite; transform-box: view-box; }
@@ -332,20 +335,28 @@
   `;
   const style = document.createElement('style'); style.textContent = CSS; document.head.appendChild(style);
 
+  // Neigt eine Karte (px/py = -0.5..0.5, Blickrichtung) mit groessenabhaengiger
+  // Tiefe: Augenabstand ~3 Kartenbreiten, Hologramm-Abstand ~22 % der Breite
+  function tiltTo(c, px, py, max = 16) {
+    const w = c.offsetWidth || 150, P = w * 3, lift = w * .3;
+    c.style.setProperty('--lift', `${lift}px`);
+    c.style.setProperty('--comp', ((P - lift) / P).toFixed(4));
+    c.style.transform = `perspective(${P}px) rotateY(${px * max * 2}deg) rotateX(${-py * max * 2}deg)`;
+  }
+  function untilt(c) { c.style.removeProperty('--lift'); c.style.removeProperty('--comp'); c.style.transform = ''; }
   // Karte neigt sich zum Cursor, solange man darauf ist (nur Karten in root)
-  function enableTilt(root, max = 14) {
+  function enableTilt(root, max = 16) {
     root.addEventListener('mousemove', e => {
       const c = e.target.closest('.sc'); if (!c || !root.contains(c)) return;
       const r = c.getBoundingClientRect();
-      const px = (e.clientX - r.left) / r.width - .5, py = (e.clientY - r.top) / r.height - .5;
       c.classList.add('tilting'); c.classList.remove('tilt-reset');
-      c.style.transform = `perspective(700px) rotateY(${px * max * 2}deg) rotateX(${-py * max * 2}deg) scale(1.04)`;
+      tiltTo(c, (e.clientX - r.left) / r.width - .5, (e.clientY - r.top) / r.height - .5, max);
     });
     root.addEventListener('mouseout', e => {
       const c = e.target.closest('.sc'); if (!c || c.contains(e.relatedTarget)) return;
-      c.classList.remove('tilting'); c.classList.add('tilt-reset'); c.style.transform = '';
+      c.classList.remove('tilting'); c.classList.add('tilt-reset'); untilt(c);
     });
   }
 
-  window.STICKERS = { SET, RL, RC, art, frontHtml, enableTilt, TOTAL: SET.length, HEAD };
+  window.STICKERS = { SET, RL, RC, art, frontHtml, enableTilt, tiltTo, untilt, TOTAL: SET.length, HEAD };
 })();

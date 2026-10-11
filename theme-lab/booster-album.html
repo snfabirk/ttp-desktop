@@ -132,7 +132,7 @@
   .album-slot .x { position: absolute; bottom: 3px; right: 6px; font-size: .6rem; color: var(--gold); z-index: 3; }
 
   /* ---------- Inspizieren: 3D-Neigung mit dem Cursor ---------- */
-  .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.86); backdrop-filter: blur(6px); display: grid; place-items: center; perspective: 1100px; cursor: zoom-out; opacity: 0; transition: opacity .25s; }
+  .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.86); backdrop-filter: blur(6px); display: grid; place-items: center; cursor: zoom-out; opacity: 0; transition: opacity .25s; }
   .insp.on { opacity: 1; }
   .insp .sc { position: relative; width: min(340px, 70vw); aspect-ratio: 190 / 266; font-size: 24px; transition: transform .12s ease-out; transform-style: preserve-3d; }
   .insp .glare { position: absolute; inset: 0; border-radius: 12px; pointer-events: none; z-index: 4; background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgba(255,255,255,.3), transparent 45%); mix-blend-mode: soft-light; }
@@ -553,7 +553,7 @@ document.getElementById('albumGrid').addEventListener('click', e => {
     const r = c.getBoundingClientRect();
     const px = Math.max(-1, Math.min(1, (ev.clientX - (r.left + r.width / 2)) / (r.width * 1.2)));
     const py = Math.max(-1, Math.min(1, (ev.clientY - (r.top + r.height / 2)) / (r.height * 1.2)));
-    c.style.transform = `rotateY(${px * 20}deg) rotateX(${-py * 20}deg)`;
+    window.STICKERS.tiltTo(c, px / 2, py / 2, 20);
     glare.style.setProperty('--gx', `${50 + px * 50}%`); glare.style.setProperty('--gy', `${40 + py * 50}%`);
   });
   ov.addEventListener('click', () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); });
