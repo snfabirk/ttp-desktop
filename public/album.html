@@ -69,7 +69,17 @@
   /* ---------- Oeffnen: Vollbild-Overlay ---------- */
   .ov { user-select: none; -webkit-user-select: none; position: fixed; inset: 0; z-index: 100; background: rgba(4, 8, 16, .84); backdrop-filter: blur(6px); opacity: 0; transition: opacity .35s; }
   .ov.on { opacity: 1; }
-  .ov-grid { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; gap: 10px; opacity: .35; transition: opacity .5s; }
+  .ov-grid { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; gap: 10px; opacity: .35; transition: opacity .5s; max-height: 76vh; overflow-y: auto; overflow-x: hidden; padding: 10px; scrollbar-width: thin; }
+  /* Doppelte -> Coins */
+  .ov-coins { position: absolute; top: 22px; left: 50%; transform: translateX(-50%); z-index: 8; font-family: 'Cinzel', Georgia, serif; color: var(--gold); font-size: 1rem; padding: 4px 14px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--gold) 50%, transparent); background: rgba(0,0,0,.45); opacity: 0; transition: opacity .3s; }
+  .ov-coins.on { opacity: 1; }
+  .ov-coins.bump { animation: coinBump .4s ease-out; }
+  @keyframes coinBump { 40% { transform: translateX(-50%) scale(1.18); } }
+  .ov-slot .stk-card.dupe { filter: grayscale(.85) brightness(.55); transition: filter .5s; }
+  .dupe-stamp { position: absolute; inset: 0; display: grid; place-items: center; z-index: 4; pointer-events: none; }
+  .dupe-stamp b { font-family: 'Cinzel', Georgia, serif; color: var(--gold); font-size: .8rem; background: rgba(0,0,0,.7); border: 1px solid var(--gold); border-radius: 10px; padding: 2px 8px; animation: stampIn .35s cubic-bezier(.3,1.6,.5,1); white-space: nowrap; }
+  @keyframes stampIn { from { transform: scale(2.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .fly-coin { position: fixed; left: 0; top: 0; z-index: 9999; pointer-events: none; font-size: 16px; filter: drop-shadow(0 0 6px rgba(255,200,80,.8)); }
   .ov-grid.done { opacity: 1; }
   .ov-slot { width: 92px; aspect-ratio: 190 / 266; border-radius: 9px; border: 1px dashed rgba(200,169,110,.25); position: relative; }
   .ov-hint { position: absolute; left: 0; right: 0; bottom: 6vh; text-align: center; color: var(--text); font-size: .95rem; letter-spacing: .5px; text-shadow: 0 2px 8px #000; pointer-events: none; }
@@ -133,7 +143,7 @@
   .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.86); backdrop-filter: blur(6px); display: grid; place-items: center; cursor: zoom-out; opacity: 0; transition: opacity .25s; }
   .insp.on { opacity: 1; }
   .insp .stk-card { position: relative; width: min(340px, 70vw); aspect-ratio: 190 / 266; font-size: 24px; transition: transform .12s ease-out; transform-style: preserve-3d; }
-  .insp .glare { position: absolute; inset: 0; border-radius: 12px; pointer-events: none; z-index: 4; background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgba(255,255,255,.14), transparent 45%); transform: translateZ(1px); } /* KEIN mix-blend-mode: der flacht die 3D-Ebenen der Karte ab */
+  .insp .stk-card.resting { transition: transform .5s cubic-bezier(.3,.7,.3,1); }
   .insp-cap { position: absolute; bottom: 6vh; left: 0; right: 0; text-align: center; color: var(--text-dim); font-size: .85rem; }
 
 </style>
@@ -224,16 +234,25 @@ const card = s => { const d = document.createElement('div'); d.className = 'stk-
 // Umdrehen in 2D: anheben, zur Kante falten (dunkler werdend), Seite tauschen,
 // aufklappen, absetzen - eine einzige Karte, kein durchscheinender Rest
 function flipCard(el, s, done) {
+  // Ohne fill:'forwards' - Chrome hielt bei entfernten "gefuellten" Animationen
+  // teils einen Zwischenzustand (scaleX(0)) fest und Karten blieben unsichtbar.
+  // Stattdessen wird der Endzustand jeder Stufe direkt als Stil gesetzt.
   const up = 'translateY(-10px) scale(1.04)';
-  el.animate([{ transform: 'none' }, { transform: up }], { duration: 110, easing: 'ease-out', fill: 'forwards' }).onfinish = () => {
-    el.animate([{ transform: `${up} scaleX(1)`, filter: 'brightness(1)' }, { transform: `${up} scaleX(0)`, filter: 'brightness(.55)' }], { duration: 130, easing: 'ease-in', fill: 'forwards' }).onfinish = () => {
-      el.innerHTML = frontHtml(s);
-      el.animate([{ transform: `${up} scaleX(0)`, filter: 'brightness(1.5)' }, { transform: `${up} scaleX(1)`, filter: 'brightness(1)' }], { duration: 170, easing: 'ease-out', fill: 'forwards' }).onfinish = () => {
-        el.animate([{ transform: up }, { transform: 'none' }], { duration: 140, easing: 'ease-in-out', fill: 'forwards' });
-        if (done) done();
-      };
-    };
-  };
+  const step = (frames, opts) => new Promise(r => {
+    const end = frames[frames.length - 1];
+    const a = el.animate(frames, opts);
+    const fin = () => { el.style.transform = end.transform || ''; el.style.filter = end.filter || ''; r(); };
+    a.onfinish = fin; a.oncancel = fin;
+  });
+  (async () => {
+    await step([{ transform: 'none' }, { transform: up }], { duration: 110, easing: 'ease-out' });
+    await step([{ transform: `${up} scaleX(1)`, filter: 'brightness(1)' }, { transform: `${up} scaleX(0)`, filter: 'brightness(.55)' }], { duration: 130, easing: 'ease-in' });
+    el.innerHTML = frontHtml(s);
+    await step([{ transform: `${up} scaleX(0)`, filter: 'brightness(1.5)' }, { transform: `${up} scaleX(1)`, filter: 'brightness(1)' }], { duration: 170, easing: 'ease-out' });
+    await step([{ transform: up }, { transform: 'none' }], { duration: 140, easing: 'ease-in-out' });
+    el.style.transform = ''; el.style.filter = '';
+    if (done) done();
+  })();
 }
 
 // ===================== Oeffnen =====================
@@ -269,10 +288,16 @@ async function openPacks(n) {
   unopened = res.owned; updCount();
   const cards = res.cards.map(c => ({ ...ALL.find(x => x.n === c.n), isNew: c.isNew, refund: c.refund }));
   const ov = document.createElement('div'); ov.className = 'ov';
-  const cols = Math.min(7, cards.length), rows = Math.ceil(cards.length / cols);
-  const slotW = Math.min(92, ((innerHeight * .78) / rows - 10) * 190 / 266);
+  // Plaetze nie kleiner als MIN_W (Sticker bleiben erkennbar); so viele Spalten
+  // wie ins Fenster passen, der Rest scrollt im Raster
+  const MIN_W = 78;
+  const rows7 = Math.ceil(cards.length / 7);
+  const slotW = Math.max(MIN_W, Math.min(92, ((innerHeight * .74) / rows7 - 10) * 190 / 266));
+  const fitCols = Math.max(7, Math.floor((innerWidth * .92 - 20) / (slotW + 10)));
+  const cols = Math.min(cards.length <= 7 ? 7 : fitCols, cards.length);
   ov.innerHTML = `<button class="btn ov-close" id="ovSkip" title="Reveal every sticker at once">Show all</button>
     <div class="ov-grid" style="grid-template-columns:repeat(${cols}, ${slotW}px)">${cards.map(() => `<div class="ov-slot" style="width:${slotW}px"></div>`).join('')}</div>
+    <div class="ov-coins" id="ovCoins">Duplicates: 🪙 <b>0</b></div>
     <div class="ov-hint" id="ovHint">Drag across the top edge to tear the booster open</div>
     <button class="btn ov-done" id="ovDone">Done</button>`;
   document.body.appendChild(ov);
@@ -332,7 +357,31 @@ async function openPacks(n) {
   let idx = -1, shown = null, built = false, skipAll = false;
   // "Show all": alle restlichen Sticker sofort verdeckt in ihre Plaetze legen
   // und in einer schnellen Welle aufdecken (fuer Ungeduldige)
-  const tagFor = (el, s) => { owned[s.n] = (owned[s.n] || 0) + 1; const t = document.createElement('span'); t.className = s.isNew ? 'tag-new' : 'tag-dupe'; t.textContent = s.isNew ? 'NEW' : `+${s.refund} 🪙`; el.appendChild(t); };
+  let dupeCoins = 0;
+  const coinBox = ov.querySelector('#ovCoins');
+  const reduce = document.documentElement.classList.contains('fx-off');
+  function coinsToCounter(el, amount) {
+    coinBox.classList.add('on');
+    const a = el.getBoundingClientRect(), b = coinBox.getBoundingClientRect();
+    const n = reduce ? 0 : Math.max(2, Math.min(8, Math.round(amount / 8)));
+    const add = () => { dupeCoins += amount; coinBox.querySelector('b').textContent = dupeCoins; coinBox.classList.remove('bump'); void coinBox.offsetWidth; coinBox.classList.add('bump'); };
+    if (!n) { add(); return; }
+    let landed = 0;
+    for (let i = 0; i < n; i++) {
+      const c = document.createElement('span'); c.className = 'fly-coin'; c.textContent = '🪙'; ov.appendChild(c);
+      const x0 = a.left + a.width / 2 - 8 + (Math.random() - .5) * a.width * .5, y0 = a.top + a.height / 2 - 8;
+      const x1 = b.left + b.width / 2 - 8, y1 = b.top + b.height / 2 - 8;
+      c.animate([{ transform: `translate(${x0}px, ${y0}px) scale(.5)`, opacity: 0 }, { transform: `translate(${x0}px, ${y0 - 18}px) scale(1.1)`, opacity: 1, offset: .2 }, { transform: `translate(${x1}px, ${y1}px) scale(.7)`, opacity: .9 }],
+        { duration: 650 + i * 40, delay: i * 50, easing: 'cubic-bezier(.45,0,.35,1)', fill: 'forwards' }).onfinish = () => { c.remove(); if (++landed === n) add(); };
+    }
+  }
+  // NEW-Abzeichen bzw. Doppelte: Karte wird grau, Stempel "+X", Muenzen fliegen zum Zaehler
+  const tagFor = (el, s) => {
+    if (s.isNew) { const t = document.createElement('span'); t.className = 'tag-new'; t.textContent = 'NEW'; el.appendChild(t); return; }
+    el.classList.add('dupe');
+    const st = document.createElement('div'); st.className = 'dupe-stamp'; st.innerHTML = `<b>+${s.refund} 🪙</b>`; el.parentElement.appendChild(st);
+    coinsToCounter(el, s.refund);
+  };
   const autoRun = () => {
     flipping = true;
     const slots = ov.querySelectorAll('.ov-slot');
@@ -399,11 +448,11 @@ async function openPacks(n) {
     // Phase 1: oben ueber dem Stapel zur Seite (eigene Ebene ueber dem Stapel)
     Object.assign(el.style, { position: 'fixed', left: a.left + 'px', top: a.top + 'px', width: a.width + 'px', height: a.height + 'px', zIndex: 7, transform: 'none' });
     ov.appendChild(el);
-    el.animate([{ transform: 'translate(0, 0) rotate(0deg)' }, { transform: `translate(${sideX - a.left}px, 8px) rotate(${goLeft ? -4 : 4}deg)` }], { duration: 300, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }).onfinish = () => {
+    el.animate([{ transform: 'translate(0, 0) rotate(0deg)' }, { transform: `translate(${sideX - a.left}px, 8px) rotate(${goLeft ? -4 : 4}deg)` }], { duration: 300, easing: 'cubic-bezier(.4,0,.2,1)' }).onfinish = () => {
       if (onClear) onClear();
       // Phase 2: hinter den Stapel wechseln und in den Platz fahren
       el.getAnimations().forEach(x => x.cancel());
-      Object.assign(el.style, { left: b.left + 'px', top: b.top + 'px', width: b.width + 'px', height: b.height + 'px', zIndex: 5, transformOrigin: '0 0', fontSize: (b.width / 92 * 9) + 'px' });
+      Object.assign(el.style, { left: b.left + 'px', top: b.top + 'px', width: b.width + 'px', height: b.height + 'px', zIndex: 5, transformOrigin: '0 0', transform: `translate(${sideX - b.left}px, ${a.top + 8 - b.top}px) rotate(${goLeft ? -4 : 4}deg) scale(${a.width / b.width})`, fontSize: (b.width / 92 * 9) + 'px' });
       if (stackEl.isConnected) ov.insertBefore(el, stackEl); else ov.appendChild(el);
       const k = a.width / b.width;
       el.animate([
@@ -469,7 +518,7 @@ function renderAlbum() {
   let html = '', got = 0;
   for (let n = 1; n <= TOTAL_IN_SET(); n++) {
     const s = setCards().find(x => x.n === n);
-    if (s && owned[n]) { got++; html += `<div class="album-slot have" data-n="${n}"><span class="num">#${String(n).padStart(3, '0')}</span><div class="stk-card">${frontHtml(s)}</div><span class="x">×${owned[n]}</span></div>`; }
+    if (s && owned[n]) { got++; html += `<div class="album-slot have" data-n="${n}"><span class="num">#${String(n).padStart(3, '0')}</span><div class="stk-card">${frontHtml(s)}</div></div>`; }
     else html += `<div class="album-slot"><span class="num">#${String(n).padStart(3, '0')}</span>?</div>`;
   }
   document.getElementById('albumGrid').innerHTML = html;
@@ -482,18 +531,24 @@ document.getElementById('albumGrid').addEventListener('click', e => {
   const slot = e.target.closest('.album-slot.have'); if (!slot) return;
   const s = setCards().find(x => x.n === Number(slot.dataset.n));
   const ov = document.createElement('div'); ov.className = 'insp';
-  ov.innerHTML = `<div class="stk-card">${frontHtml(s)}<div class="glare"></div></div><div class="insp-cap">${s.name} · ${RL[s.r]} · #${String(s.n).padStart(3, '0')} · you own ${owned[s.n]} - move the mouse to tilt, click to close</div>`;
+  ov.innerHTML = `<div class="stk-card">${frontHtml(s)}</div><div class="insp-cap">${s.name} · ${RL[s.r]} · #${String(s.n).padStart(3, '0')} - hover the sticker to tilt it, click to close</div>`;
   document.body.appendChild(ov); requestAnimationFrame(() => ov.classList.add('on'));
-  const c = ov.querySelector('.stk-card'), glare = ov.querySelector('.glare');
-  // 3D-Neigung: Karte folgt dem Cursor, Glanzlicht wandert mit
+  const c = ov.querySelector('.stk-card');
+  // 3D-Neigung: startet erst, wenn der Cursor ueber die Karte faehrt, folgt ihm
+  // dann auch darueber hinaus; verlaesst er das Fenster, kippt die Karte sanft
+  // zurueck und wartet auf den naechsten Hover
+  let armed = false;
+  c.addEventListener('mouseenter', () => { armed = true; c.classList.remove('resting'); });
+  const rest = () => { armed = false; c.classList.add('resting'); window.STICKERS.untilt(c); };
+  document.addEventListener('mouseleave', rest);
   ov.addEventListener('mousemove', ev => {
+    if (!armed) return;
     const r = c.getBoundingClientRect();
     const px = Math.max(-1, Math.min(1, (ev.clientX - (r.left + r.width / 2)) / (r.width / 2)));
     const py = Math.max(-1, Math.min(1, (ev.clientY - (r.top + r.height / 2)) / (r.height / 2)));
     window.STICKERS.tiltTo(c, px / 2, py / 2, 18); // relativ zur Karte: am Rand volle Neigung
-    glare.style.setProperty('--gx', `${50 + px * 50}%`); glare.style.setProperty('--gy', `${40 + py * 50}%`);
   });
-  ov.addEventListener('click', () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); });
+  ov.addEventListener('click', () => { document.removeEventListener('mouseleave', rest); ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); });
 });
 window.STICKERS.enableTilt(document.getElementById('albumGrid'));
 loadAlbum();

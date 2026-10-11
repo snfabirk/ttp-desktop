@@ -1,5 +1,13 @@
 # Internal Changelog
 
+## 5.29.1 — 2026-10-11
+
+- Big openings: slots never smaller than 78px, as many columns as fit the window, the grid scrolls beyond that (order no longer kept per pack).
+- Duplicates -> coins: dupes grey out, get a "+X 🪙" stamp and coins fly into a "Duplicates: 🪙 N" counter. Server stores each sticker once (dupes don't increase the count); album/profile show no counts.
+- Inspect: no light circle around the cursor; tilt starts only after hovering the sticker, and the card eases back when the cursor leaves the window (also for hover-tilt in the album grid).
+- Holo shimmer loops seamlessly (rotated tiled band moved by exactly one tile) instead of jumping back.
+- Fix: some stickers stayed invisible after "Show all" - Chrome kept a removed fill-forwards animation state (scaleX(0)); the flip now sets each step's end state inline instead of using fill:'forwards'.
+
 ## 5.29.0 — 2026-10-11
 
 - Sticker system (user design, drafts in theme-lab/booster-album.html + sticker-set.js + sticker-gallery.html):

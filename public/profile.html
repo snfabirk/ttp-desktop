@@ -1314,7 +1314,7 @@
         const have = all.filter(s => col[s.n]);
         const order = ['anim', 'holo', 'uncommon', 'common'];
         const cell = s => col[s.n]
-          ? `<div class="inv-item" data-sticker="${s.n}" title="Drag onto your profile"><div class="inv-sticker">${window.STICKERS.square(s)}</div>${esc(s.name)}<span class="inv-cnt">×${col[s.n]}</span></div>`
+          ? `<div class="inv-item" data-sticker="${s.n}" title="Drag onto your profile"><div class="inv-sticker">${window.STICKERS.square(s)}</div>${esc(s.name)}</div>`
           : `<div class="inv-item locked" title="Not in your album yet" aria-disabled="true"><div class="inv-sticker" style="display:grid;place-items:center;border:1px dashed var(--border);border-radius:10px">?</div>#${String(s.n).padStart(3, '0')}</div>`;
         const vis = s => showLocked || col[s.n];
         list.innerHTML = countLine([have.length, all.length]) +

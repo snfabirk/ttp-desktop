@@ -461,8 +461,9 @@ function openBoosters(setId, count = 1) {
   let refund = 0;
   for (let p = 0; p < count; p++) {
     for (const s of STICKERS.rollPack(st)) {
+      // Doppelte werden zu Coins - man besitzt jeden Sticker genau einmal
       const isNew = !col[s.n];
-      col[s.n] = (col[s.n] || 0) + 1;
+      if (isNew) col[s.n] = 1;
       const back = isNew ? 0 : STICKERS.DUPE_REFUND[s.r];
       refund += back;
       cards.push({ n: s.n, id: s.id, r: s.r, isNew, refund: back });

@@ -308,8 +308,10 @@
   .front.r-holo { border-color: transparent; border-width: 3px; background: linear-gradient(160deg, #241a4a, #120c2a) padding-box, linear-gradient(var(--hb, 0deg), #ff7ad9, #ffd36b, #7bffb4, #6bc8ff, #b98cff, #ff7ad9) border-box; animation: holoFrame 4s linear infinite; }
   @property --hb { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
   @keyframes holoFrame { to { --hb: 360deg; } }
-  .front.r-holo .art::after { content: ''; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color-dodge; opacity: .4;
-    background: linear-gradient(115deg, transparent 20%, #ff7ad9 32%, #ffd36b 42%, #7bffb4 52%, #6bc8ff 62%, #b98cff 72%, transparent 84%); background-size: 300% 300%; animation: holoSweep 3.2s linear infinite; }
+  .front.r-holo .art::after { content: ''; position: absolute; left: -150%; top: -150%; width: 400%; height: 400%; pointer-events: none; mix-blend-mode: color-dodge; opacity: .4;
+    background: linear-gradient(90deg, transparent 0 20%, #ff7ad9 32%, #ffd36b 42%, #7bffb4 52%, #6bc8ff 62%, #b98cff 72%, transparent 84% 100%); background-size: 25% 100%; background-repeat: repeat-x;
+    transform: rotate(25deg) translateX(0); animation: holoLoop 3.2s linear infinite; }
+  @keyframes holoLoop { from { transform: rotate(25deg) translateX(0); } to { transform: rotate(25deg) translateX(-25%); } }
   .front.r-holo .art::before { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: .35; mix-blend-mode: screen;
     background-image: radial-gradient(1.2px 1.2px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 38% 62%, #fff, transparent), radial-gradient(1.4px 1.4px at 72% 28%, #fff, transparent), radial-gradient(1px 1px at 86% 76%, #fff, transparent), radial-gradient(1.2px 1.2px at 22% 84%, #fff, transparent), radial-gradient(1px 1px at 58% 12%, #fff, transparent); background-size: 50% 50%; }
   @keyframes holoSweep { from { background-position: 100% 100%; } to { background-position: 0% 0%; } }
@@ -373,6 +375,8 @@
       c.classList.remove('tilting'); c.classList.add('tilt-reset'); untilt(c);
     });
   }
+  // Maus verlaesst das Fenster: alle geneigten Karten sanft in die Grundstellung
+  document.addEventListener('mouseleave', () => document.querySelectorAll('.sc.tilting').forEach(c => { c.classList.remove('tilting'); c.classList.add('tilt-reset'); untilt(c); }));
 
   window.STICKERS = { SET, RL, RC, art, frontHtml, enableTilt, tiltTo, untilt, TOTAL: SET.length, HEAD };
 })();

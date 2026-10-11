@@ -21,7 +21,6 @@
   .insp.on { opacity: 1; }
   .insp .sc { width: min(360px, 70vw); font-size: 26px; cursor: default; transition: transform .12s ease-out; transform-style: preserve-3d; }
   .insp .sc:hover { transform: none; }
-  .insp .glare { position: absolute; inset: 0; border-radius: 12px; pointer-events: none; z-index: 4; background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgba(255,255,255,.14), transparent 45%); transform: translateZ(1px); } /* KEIN mix-blend-mode: der flacht die 3D-Ebenen der Karte ab */
   .insp-cap { position: absolute; bottom: 5vh; left: 0; right: 0; text-align: center; color: var(--dim); font-size: .85rem; }
 </style>
 </head>
@@ -44,15 +43,14 @@
     const el = e.target.closest('.sc'); if (!el) return;
     const s = SET.find(x => x.n === Number(el.dataset.n));
     const ov = document.createElement('div'); ov.className = 'insp';
-    ov.innerHTML = `<div class="sc">${frontHtml(s)}<div class="glare"></div></div><div class="insp-cap">#${String(s.n).padStart(3, '0')} · ${s.name} · ${RL[s.r]} - move the mouse to tilt, click to close</div>`;
+    ov.innerHTML = `<div class="sc">${frontHtml(s)}</div><div class="insp-cap">#${String(s.n).padStart(3, '0')} · ${s.name} · ${RL[s.r]} - move the mouse to tilt, click to close</div>`;
     document.body.appendChild(ov); requestAnimationFrame(() => ov.classList.add('on'));
-    const c = ov.querySelector('.sc'), glare = ov.querySelector('.glare');
+    const c = ov.querySelector('.sc');
     ov.addEventListener('mousemove', ev => {
       const r = c.getBoundingClientRect();
       const px = Math.max(-1, Math.min(1, (ev.clientX - (r.left + r.width / 2)) / (r.width / 2)));
       const py = Math.max(-1, Math.min(1, (ev.clientY - (r.top + r.height / 2)) / (r.height / 2)));
       window.STICKERS.tiltTo(c, px / 2, py / 2, 18); // relativ zur Karte: am Rand volle Neigung
-      glare.style.setProperty('--gx', `${50 + px * 50}%`); glare.style.setProperty('--gy', `${40 + py * 50}%`);
     });
     ov.addEventListener('click', () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); });
   });
