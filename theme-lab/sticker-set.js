@@ -246,9 +246,9 @@
 
   // Pop-out-Figuren der Animated Rares (eigene Ebene, ragt oben ueber den Bildrand)
   const POP = {
-    'golden-pony': () => `<g class="a-float">${pony({ x: 12, y: -2, s: 1, eye: 'star', body: '#ffe08a', shade: '#c8941c', mane: '#fff4c8' })}</g>`,
-    'three-trick-legend': () => `<g class="a-orbit" style="transform-origin:60px 58px">${[0, 1, 2].map(i => { const a = i / 3 * Math.PI * 2 - Math.PI / 2; const x = 60 + Math.cos(a) * 36 - 22, y = 58 + Math.sin(a) * 36 - 22; return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${pony({ x: 0, y: 0, s: .46, eye: 'happy', body: ['#ffe08a', '#7ab8ff', '#ff9ac8'][i], shade: ['#c8941c', '#3a6ad8', '#c84a8a'][i], mane: '#fff' })}</g>`; }).join('')}</g>`,
-    'secretly-a-unicorn': () => `<g class="a-float">${pony({ x: 12, y: 0, s: .98, eye: 'happy', body: '#ffffff', shade: '#e0c8f0', mane: '#ff7ad9', extra: '<path d="M42 12 L26 -22 L50 8 Z" fill="#ffe08a" stroke="#c8941c" stroke-width="1.5" stroke-linejoin="round"/><circle cx="26" cy="54" r="4" fill="#ff9ec8" opacity=".8"/>' })}</g>`
+    'golden-pony': () => `<g class="a-float">${pony({ x: 16, y: 14, s: .88, eye: 'star', body: '#ffe08a', shade: '#c8941c', mane: '#fff4c8' })}</g>`,
+    'three-trick-legend': () => `<g class="a-orbit" style="transform-origin:60px 62px">${[0, 1, 2].map(i => { const a = i / 3 * Math.PI * 2 - Math.PI / 2; const x = 60 + Math.cos(a) * 30 - 18, y = 62 + Math.sin(a) * 30 - 18; return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${pony({ x: 0, y: 0, s: .38, eye: 'happy', body: ['#ffe08a', '#7ab8ff', '#ff9ac8'][i], shade: ['#c8941c', '#3a6ad8', '#c84a8a'][i], mane: '#fff' })}</g>`; }).join('')}</g>`,
+    'secretly-a-unicorn': () => `<g class="a-float">${pony({ x: 18, y: 22, s: .82, eye: 'happy', body: '#ffffff', shade: '#e0c8f0', mane: '#ff7ad9', extra: '<path d="M42 12 L26 -22 L50 8 Z" fill="#ffe08a" stroke="#c8941c" stroke-width="1.5" stroke-linejoin="round"/><circle cx="26" cy="54" r="4" fill="#ff9ec8" opacity=".8"/>' })}</g>`
   };
 
   // Set-Liste: Nummer, Id, Name, Raritaet
@@ -273,7 +273,7 @@
   const art = id => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${ART[id]()}</svg>`;
   const frontHtml = s => `<div class="face front r-${s.r}" style="--rc:${RC[s.r]}">
       <div class="art">${art(s.id)}</div>
-      ${POP[s.id] ? `<div class="pop"><svg viewBox="0 -24 120 144" xmlns="http://www.w3.org/2000/svg">${POP[s.id]()}</svg></div>` : ''}
+      ${POP[s.id] ? `<div class="pop"><svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${POP[s.id]()}</svg></div>` : ''}
       <div class="name">${s.name}</div>
       <div class="meta"><span class="rar">${RL[s.r]}</span><span>#${String(s.n).padStart(3, '0')}</span></div>
     </div>`;
@@ -305,12 +305,18 @@
   @keyframes animPulse { 0%,100% { box-shadow: 0 0 8px rgba(255,90,180,.45), inset 0 0 14px rgba(255,90,180,.25); } 50% { box-shadow: 0 0 22px rgba(255,211,107,.75), inset 0 0 22px rgba(255,211,107,.35); } }
   .front.r-anim .name { background: linear-gradient(90deg, #ffd6f1, #ffd36b, #ff9ae4, #ffd36b, #ffd6f1); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: bold; animation: nameShine 2.4s linear infinite; }
   @keyframes nameShine { to { background-position: 200% 0; } }
-  /* Pop-out: Figur auf eigener Ebene ueber dem Bild, ragt oben ueber den Rand */
+  /* Pop-out: Figur auf eigener Ebene deckungsgleich ueber dem Bild. Der Schatten
+     auf dem Hintergrund imitiert Hoehe; beim Daraufgehen neigt sich die Karte
+     (enableTilt) und die Figur hebt sich per translateZ deutlich davor */
+  .sc { transform-style: preserve-3d; }
   .front.r-anim { overflow: visible; transform-style: preserve-3d; }
-  .front .pop { position: absolute; left: 6%; right: 6%; top: -14.6%; aspect-ratio: 120 / 144; pointer-events: none; z-index: 3; transform: translateZ(40px) scale(1.04);
-    filter: drop-shadow(0 6px 4px rgba(0,0,0,.55)) drop-shadow(0 14px 14px rgba(0,0,0,.45));
-    -webkit-mask-image: linear-gradient(to bottom, #000 75%, transparent 92%); mask-image: linear-gradient(to bottom, #000 75%, transparent 92%); }
+  .front .pop { position: absolute; left: 6%; right: 6%; top: 5%; aspect-ratio: 1; pointer-events: none; z-index: 3;
+    transform: translateZ(0); transition: transform .25s ease-out, filter .25s ease-out;
+    filter: drop-shadow(5px 9px 5px rgba(0,0,0,.5)); }
   .front .pop svg { width: 100%; height: 100%; overflow: visible; }
+  .sc.tilting .front .pop, .insp .front .pop { transform: translateZ(46px) scale(.96); filter: drop-shadow(12px 20px 12px rgba(0,0,0,.55)); }
+  .sc.tilting { transition: transform .08s linear; }
+  .sc.tilt-reset { transition: transform .35s ease-out; }
   .a-spin { animation: aSpin 14s linear infinite; transform-box: view-box; }
   @keyframes aSpin { to { transform: rotate(360deg); } }
   .a-orbit { animation: aSpin 9s linear infinite; transform-box: view-box; }
@@ -326,5 +332,20 @@
   `;
   const style = document.createElement('style'); style.textContent = CSS; document.head.appendChild(style);
 
-  window.STICKERS = { SET, RL, RC, art, frontHtml, TOTAL: SET.length, HEAD };
+  // Karte neigt sich zum Cursor, solange man darauf ist (nur Karten in root)
+  function enableTilt(root, max = 14) {
+    root.addEventListener('mousemove', e => {
+      const c = e.target.closest('.sc'); if (!c || !root.contains(c)) return;
+      const r = c.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - .5, py = (e.clientY - r.top) / r.height - .5;
+      c.classList.add('tilting'); c.classList.remove('tilt-reset');
+      c.style.transform = `perspective(700px) rotateY(${px * max * 2}deg) rotateX(${-py * max * 2}deg) scale(1.04)`;
+    });
+    root.addEventListener('mouseout', e => {
+      const c = e.target.closest('.sc'); if (!c || c.contains(e.relatedTarget)) return;
+      c.classList.remove('tilting'); c.classList.add('tilt-reset'); c.style.transform = '';
+    });
+  }
+
+  window.STICKERS = { SET, RL, RC, art, frontHtml, enableTilt, TOTAL: SET.length, HEAD };
 })();

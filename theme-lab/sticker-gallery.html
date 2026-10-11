@@ -17,7 +17,6 @@
   .grid.big { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
   .sc { position: relative; aspect-ratio: 190 / 266; border-radius: 12px; cursor: zoom-in; transition: transform .2s; font-size: 15px; }
   .grid.big .sc { font-size: 19px; }
-  .sc:hover { transform: translateY(-4px); }
   .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.88); backdrop-filter: blur(6px); display: grid; place-items: center; perspective: 1100px; cursor: zoom-out; opacity: 0; transition: opacity .25s; }
   .insp.on { opacity: 1; }
   .insp .sc { width: min(360px, 70vw); font-size: 26px; cursor: default; transition: transform .12s ease-out; transform-style: preserve-3d; }
@@ -39,6 +38,7 @@
   document.getElementById('main').innerHTML = groups.map(([r, label, cnt]) => `
     <h2 style="color:${RC[r]}">${label} <small>${cnt}</small></h2>
     <div class="grid${r === 'anim' || r === 'holo' ? ' big' : ''}">${SET.filter(s => s.r === r).map(s => `<div class="sc" data-n="${s.n}">${frontHtml(s)}</div>`).join('')}</div>`).join('');
+  window.STICKERS.enableTilt(document.getElementById('main'));
   // Inspizieren mit 3D-Neigung
   document.getElementById('main').addEventListener('click', e => {
     const el = e.target.closest('.sc'); if (!el) return;

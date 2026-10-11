@@ -129,7 +129,6 @@
   .album-slot .num { position: absolute; top: 4px; left: 6px; font-size: .6rem; color: var(--dim); z-index: 3; }
   .album-slot.have { border: none; cursor: zoom-in; font-size: 9px; }
   .album-slot.have .sc { position: absolute; inset: 0; transition: transform .2s; }
-  .album-slot.have:hover .sc { transform: translateY(-3px); }
   .album-slot .x { position: absolute; bottom: 3px; right: 6px; font-size: .6rem; color: var(--gold); z-index: 3; }
 
   /* ---------- Inspizieren: 3D-Neigung mit dem Cursor ---------- */
@@ -560,6 +559,7 @@ document.getElementById('albumGrid').addEventListener('click', e => {
   ov.addEventListener('click', () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); });
 });
 renderAlbum(); updCount();
+window.STICKERS.enableTilt(document.getElementById('albumGrid'));
 </script>
 </body>
 </html>
