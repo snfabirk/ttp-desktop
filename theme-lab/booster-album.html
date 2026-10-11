@@ -135,7 +135,7 @@
   .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.86); backdrop-filter: blur(6px); display: grid; place-items: center; cursor: zoom-out; opacity: 0; transition: opacity .25s; }
   .insp.on { opacity: 1; }
   .insp .sc { position: relative; width: min(340px, 70vw); aspect-ratio: 190 / 266; font-size: 24px; transition: transform .12s ease-out; transform-style: preserve-3d; }
-  .insp .glare { position: absolute; inset: 0; border-radius: 12px; pointer-events: none; z-index: 4; background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgba(255,255,255,.3), transparent 45%); mix-blend-mode: soft-light; }
+  .insp .glare { position: absolute; inset: 0; border-radius: 12px; pointer-events: none; z-index: 4; background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgba(255,255,255,.14), transparent 45%); transform: translateZ(1px); } /* KEIN mix-blend-mode: der flacht die 3D-Ebenen der Karte ab */
   .insp-cap { position: absolute; bottom: 6vh; left: 0; right: 0; text-align: center; color: var(--dim); font-size: .85rem; }
 </style>
 </head>
