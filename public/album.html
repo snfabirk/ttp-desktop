@@ -66,6 +66,24 @@
   .pack .title b { display: block; font-size: 1em; } .pack .title small { font-size: .55em; opacity: .85; letter-spacing: 2px; }
   .pack .count { position: absolute; bottom: 8.5%; left: 0; right: 0; text-align: center; font-size: .9em; color: rgba(255,255,255,.85); }
   .pack.big .switch { display: none; }
+  /* Booster-Wahl: eigenes Fenster ueber abgedunkeltem Hintergrund */
+  .pick-ov { position: fixed; inset: 0; z-index: 150; background: rgba(4, 8, 16, .78); backdrop-filter: blur(5px); display: grid; place-items: center; opacity: 0; transition: opacity .25s; }
+  .pick-ov.on { opacity: 1; }
+  .pick-box { position: relative; background: var(--input-bg); border: 1px solid var(--border); border-radius: 16px; padding: 22px 28px 26px; box-shadow: 0 24px 60px rgba(0,0,0,.6); max-width: 90vw; transform: scale(.96); transition: transform .25s; }
+  .pick-ov.on .pick-box { transform: none; }
+  .pick-box h3 { margin: 0 0 18px; text-align: center; color: var(--gold); font-family: 'Cinzel', Georgia, serif; letter-spacing: 1px; }
+  .pick-x { position: absolute; top: 10px; right: 12px; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-size: .95rem; cursor: pointer; }
+  .pick-x:hover { border-color: var(--gold); color: var(--gold); }
+  .pick-list { display: flex; gap: 22px; flex-wrap: wrap; justify-content: center; }
+  .pick-opt { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 12px 10px; border-radius: 12px; border: 1px solid transparent; background: transparent; color: var(--text); font-family: inherit; cursor: pointer; }
+  .pick-opt:hover { border-color: var(--border); background: rgba(255,255,255,.03); }
+  .pick-opt.sel { border-color: var(--gold); }
+  .pick-opt.soon { cursor: default; opacity: .5; }
+  .pick-opt .pack { width: 128px; height: 188px; font-size: 8.3px; cursor: pointer; }
+  .pick-opt .pack:not(.big)::after { display: none; }
+  .pick-soon { width: 128px; height: 188px; border-radius: 6px; border: 2px dashed var(--border); display: grid; place-items: center; font-size: 2.4rem; color: var(--text-faint); }
+  .pick-name { font-family: 'Cinzel', Georgia, serif; color: var(--gold); font-size: .9rem; }
+  .pick-sub { color: var(--text-dim); font-size: .72rem; }
   /* Hover: klar sagen, was ein Klick tut (Set-Auswahl, nicht oeffnen) */
   .pack:not(.big)::after { content: 'Choose booster'; position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(4, 8, 16, .62); color: #fff; font-family: 'Cinzel', Georgia, serif; font-size: 1.25em; letter-spacing: 1px; opacity: 0; transition: opacity .2s; border-radius: inherit; }
   .pack:not(.big):hover::after { opacity: 1; }
@@ -193,7 +211,6 @@
       <div class="count" id="packCount"></div>
       <div class="crimp bot"></div>
     </div></div>
-    <div class="set-picker" id="setPicker"></div>
     <div style="display:flex;gap:8px"><button class="btn" id="openBtn">Open 1</button><button class="btn" id="openAllBtn">Open all</button></div>
     <p class="album-empty" id="noBoosters" style="display:none">No boosters left.<br>Get more in the <a href="shop.html">shop</a> or from your monthly pass.</p>
     <span class="rates-hint" tabindex="0">Pull rates <span class="q">?</span>
@@ -295,12 +312,33 @@ const updCount = () => {
   document.getElementById('noBoosters').style.display = unopened ? 'none' : 'block';
   renderPicker();
 };
-function renderPicker() {
-  document.getElementById('setPicker').innerHTML = DATA.sets.map((st, i) =>
-    `<div class="set-opt${i === sel ? ' sel' : ''}${st.owned ? '' : ' none'}" data-set="${i}">
-      <span class="mini" style="background:${(SET_STYLE[st.id] || {}).grad || '#333'}"></span>
-      <span><b>${st.name}</b><small>${st.owned ? `${st.owned} unopened` : st.released ? 'none - buy some in the shop' : 'not released yet'}</small></span>
-    </div>`).join('');
+function renderPicker() {}
+// Booster-Wahl als eigenes Fenster (Nutzer): Hintergrund abgedunkelt, zurueck
+// nur ueber einen Booster oder das X
+function openPicker() {
+  if (!DATA || document.querySelector('.pick-ov')) return;
+  const ov = document.createElement('div'); ov.className = 'pick-ov';
+  const tile = (st, i) => {
+    const p = document.getElementById('pack').cloneNode(true);
+    p.removeAttribute('id'); p.removeAttribute('title'); p.classList.add('pick-pack');
+    p.style.background = (SET_STYLE[st.id] || {}).grad || '#333';
+    p.querySelector('#packSetName') && p.querySelector('#packSetName').removeAttribute('id');
+    p.querySelector('.title small').textContent = ((SET_STYLE[st.id] || {}).name || st.name).toUpperCase();
+    const c = p.querySelector('.count'); c.removeAttribute('id'); c.textContent = `${st.owned} unopened`;
+    p.querySelectorAll('.switch').forEach(x => x.remove());
+    return `<button type="button" class="pick-opt${i === sel ? ' sel' : ''}" data-set="${i}">${p.outerHTML}<span class="pick-name">${st.name}</span><span class="pick-sub">${st.owned ? `${st.owned} unopened` : 'none - get some in the shop'} · album ${st.collected} / ${st.total}</span></button>`;
+  };
+  ov.innerHTML = `<div class="pick-box" role="dialog" aria-label="Choose booster">
+      <button type="button" class="pick-x" aria-label="Close">✕</button>
+      <h3>Choose booster</h3>
+      <div class="pick-list">${DATA.sets.map(tile).join('')}
+        <div class="pick-opt soon"><span class="pick-soon">?</span><span class="pick-name">More sets</span><span class="pick-sub">coming later</span></div></div>
+    </div>`;
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => ov.classList.add('on'));
+  const close = () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); };
+  ov.querySelector('.pick-x').addEventListener('click', close);
+  ov.querySelectorAll('.pick-opt[data-set]').forEach(b => b.addEventListener('click', () => { sel = Number(b.dataset.set); close(); loadAlbum(); }));
 }
 let opening = false;
 async function openPacks(n) {
@@ -530,12 +568,7 @@ async function openPacks(n) {
   });
 }
 // Klick auf den Pack OEFFNET nicht, sondern zeigt die Set-Auswahl (Nutzer)
-document.getElementById('pack').addEventListener('click', () => document.getElementById('setPicker').classList.toggle('on'));
-document.getElementById('setPicker').addEventListener('click', e => {
-  const o = e.target.closest('.set-opt'); if (!o || o.classList.contains('none')) return;
-  sel = Number(o.dataset.set); loadAlbum();
-  document.getElementById('setPicker').classList.remove('on');
-});
+document.getElementById('pack').addEventListener('click', openPicker);
 document.getElementById('openBtn').addEventListener('click', () => openPacks(1));
 document.getElementById('openAllBtn').addEventListener('click', () => openPacks(unopened));
 

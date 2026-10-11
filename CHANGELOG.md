@@ -1,7 +1,8 @@
 # Internal Changelog
 
-## 5.29.6 — 2026-10-11 (incl. unreleased 5.29.1-5.29.5)
+## 5.29.7 — 2026-10-11 (incl. unreleased 5.29.1-5.29.6)
 
+- Album: clicking the pack opens "Choose booster" as its own window over a dimmed background (each set as a mini pack with unopened count + album progress, "More sets - coming later" placeholder); it closes only via a booster or the X (inline set list removed).
 - Booster pack: foil sheen as a seamless 45deg tile without blend mode (no restart, no glitches); "TOP HITS" label removed; "Three-Trick-Pony" + set name at the very top, top-hit fan below, set-switch badge moved next to the unopened count. Same layout for the shop mini pack.
 - Fix holo shimmer: the huge rotated overlay layer broke GPU tiling (a rectangle bottom-right stopped rendering) and color-dodge produced pixel noise. Now a seamless 45deg tile (colour cycle twice per diagonal, 9em tile shifted by exactly one tile) with screen blend, clipped by clip-path round so corners stay rounded. Profile stickers: 12px rounded corners, drop shadow on the widget.
 - Booster looks like a real foil pack: zigzag crimped seals (CSS mask), pillow shading, ribbed seams, "BOOSTER PACK · 7 STICKERS" band; drop shadow on a wrapper because the mask clips box-shadows. Shop thumbnail uses the same mini pack with the 3 top hits.
