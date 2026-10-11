@@ -13,5 +13,6 @@ contextBridge.exposeInMainWorld('ttpMain', {
   onManualUpdateCheckStatus: (callback) => {
     ipcRenderer.on('manual-update-check-status', (event, status, extra) => callback(status, extra));
   },
-  quitApp: () => ipcRenderer.send('app-quit')
+  quitApp: () => ipcRenderer.send('app-quit'),
+  applyAppIcon: () => ipcRenderer.send('apply-app-icon')
 });

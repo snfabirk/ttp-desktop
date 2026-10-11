@@ -130,6 +130,8 @@
   .offer-pv:has(.cos-border-dev-optic) { padding-top: 14px; box-sizing: border-box; }
   .offer-pv .pv-frame-big > .pframe { position: absolute; left: 0; top: 0; transform-origin: 0 0; border-radius: 24px; background: rgba(255,255,255,.04); }
   .offer-pv .mini-theme { width: 72px; height: 72px; border-radius: 50%; }
+  .offer-pv .pv-app-icon { width: 64px; height: 64px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.45)); }
+  .weekly .offer-pv .pv-app-icon { width: 84px; height: 84px; }
   .offer-pv canvas.theme-pv { width: 120px; height: 72px; border-radius: 10px; border: 1px solid rgba(255,255,255,.15); }
   .weekly .offer-pv canvas.theme-pv { width: 170px; height: 100px; }
   .weekly .offer-pv .mini-theme { width: 96px; height: 96px; }
@@ -363,7 +365,7 @@
   <script>
     const fmtNum = n => Number(n || 0).toLocaleString('en-US');
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    const TYPE_LABEL = { border: 'Border', frame: 'Profile frame', theme: 'Theme' };
+    const TYPE_LABEL = { border: 'Border', frame: 'Profile frame', theme: 'Theme', icon: 'App icon' };
     const RARITY_LABEL = { basic: 'Basic', refined: 'Refined', fancy: 'Fancy', animated: 'Animated', animatedplus: 'Animated+' };
     let shop = null;
 
@@ -383,6 +385,7 @@
     function previewHtml(o) {
       let inner;
       if (o.type === 'border') inner = `<span class="cos-border cos-${o.id}"><img src="${ICON}" alt=""></span>`;
+      else if (o.type === 'icon') inner = `<img class="pv-app-icon" src="app-icons/${o.id}.png" alt="" title="Changes your app icon in the taskbar and tray">`;
       else if (o.type === 'frame' && BIG_FRAME_PV[o.id]) {
         // Grosse Rahmen (Kreatur ragt weit ueber den Rand): in Originalgroesse
         // zeichnen und verkleinert einpassen, sonst ueberdecken sie die Karte
@@ -559,7 +562,7 @@
       const offerEl = e.target.closest('.offer');
       if (!offerEl || (pop && pop.dataset.for === offerEl.dataset.id)) return;
       const o = [...shop.daily, ...shop.weekly].find(x => x.id === offerEl.dataset.id);
-      if (!o) return;
+      if (!o || o.type === 'icon') return;
       clearTimeout(popTimer);
       // Von Vorschau zu Vorschau springen: sofort statt erneut 250 ms warten
       const warm = pop || performance.now() - lastPopHiddenAt < 400;

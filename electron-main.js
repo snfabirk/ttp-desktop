@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, Tray, ipcMain, screen, session, dialog } = require('electron');
+const { app, BrowserWindow, Menu, Tray, ipcMain, screen, session, dialog, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const windowStateKeeper = require('electron-window-state');
@@ -26,6 +26,24 @@ let updateWin = null;
 let settingsWin = null;
 let mainWin = null;
 let tray = null;
+
+// ----- App-Icon-Skins (v5.28.0): Fenster-/Taskleisten- und Tray-Icon live -----
+// Ausgeruestetes Icon kommt aus dem Fortschritt (Server laeuft im selben
+// Prozess); ohne Skin bzw. "Classic 3TP" bleibt es beim Original-Icon.
+// Desktop-Verknuepfung/Startmenue/exe behalten das Original (bei der
+// Installation eingebrannt).
+function currentAppIcon() {
+  let id = null;
+  try { id = require('./server/lib/progression').getEquippedIcon(); } catch (e) { id = null; }
+  const file = id && id !== 'icon-base-classic' ? path.join(__dirname, 'public', 'app-icons', `${id}.png`) : null;
+  return file && fs.existsSync(file) ? nativeImage.createFromPath(file) : nativeImage.createFromPath(ICON_PATH);
+}
+function applyAppIcon() {
+  const img = currentAppIcon();
+  BrowserWindow.getAllWindows().forEach(w => { if (!w.isDestroyed()) w.setIcon(img); });
+  if (tray && !tray.isDestroyed()) tray.setImage(img.resize({ width: 32, height: 32, quality: 'best' }));
+}
+ipcMain.on('apply-app-icon', applyAppIcon);
 let serverPort = null;
 
 // Wird nur beim echten Beenden (Tray-Menu "Quit" oder der Beenden-Button in
@@ -46,7 +64,7 @@ function showMainWindow() {
 app.on('second-instance', () => showMainWindow());
 
 function createTray() {
-  tray = new Tray(ICON_PATH);
+  tray = new Tray(currentAppIcon().resize({ width: 32, height: 32, quality: 'best' }));
   tray.setToolTip('Three-Trick-Pony');
   const contextMenu = Menu.buildFromTemplate([
     { label: 'Open', click: () => showMainWindow() },
@@ -132,7 +150,7 @@ function showUpdateWindow() {
     frame: false,
     show: false,
     title: 'Three-Trick-Pony Update',
-    icon: ICON_PATH,
+    icon: currentAppIcon(),
     webPreferences: {
       preload: path.join(__dirname, 'build', 'update-preload.js'),
       contextIsolation: true,
@@ -205,7 +223,7 @@ function showSettingsWindow() {
     center: true,
     parent: mainWin || undefined,
     title: 'Settings',
-    icon: ICON_PATH,
+    icon: currentAppIcon(),
     webPreferences: {
       preload: path.join(__dirname, 'build', 'settings-preload.js'),
       contextIsolation: true,
@@ -585,7 +603,7 @@ function createWindow(port) {
     show: !startHidden,
     title: windowTitle,
     autoHideMenuBar: true,
-    icon: ICON_PATH,
+    icon: currentAppIcon(),
     webPreferences: {
       preload: path.join(__dirname, 'build', 'main-preload.js'),
       contextIsolation: true,

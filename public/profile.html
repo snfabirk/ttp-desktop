@@ -442,6 +442,7 @@
     .inv-item.locked::after { content: '🔒'; position: absolute; top: 4px; right: 5px; font-size: 0.7rem; filter: grayscale(1); }
     .inv-count { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-bottom: 10px; color: var(--text-dim); font-size: 0.72rem; }
     .inv-count > span:first-child { white-space: nowrap; }
+    .mini-app-icon { width: 34px; height: 34px; display: block; margin: 0 auto 4px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.4)); }
     .inv-lock-toggle {
       flex-shrink: 0; margin-left: auto; padding: 2px 9px; border-radius: 10px; border: 1px solid var(--border);
       background: transparent; color: var(--text-dim); font-family: inherit; font-size: 0.68rem; cursor: pointer; white-space: nowrap;
@@ -1165,6 +1166,7 @@
       { id: 'theme', label: 'Themes' },
       { id: 'border', label: 'Borders' },
       { id: 'frame', label: 'Frames' },
+      { id: 'icon', label: 'Icons' },
       { id: 'sticker', label: 'Stickers' }
     ];
     // Die 8 Grund-Themes hat jeder (seit v5.11.0 nur noch hier waehlbar,
@@ -1211,7 +1213,8 @@
       const counts = {
         theme: [BASE_THEMES.length + ofType('theme').filter(c => ownedIds.has(c.id)).length, BASE_THEMES.length + ofType('theme').length],
         border: [ofType('border').filter(c => ownedIds.has(c.id)).length, ofType('border').length],
-        frame: [ofType('frame').filter(c => ownedIds.has(c.id)).length, ofType('frame').length]
+        frame: [ofType('frame').filter(c => ownedIds.has(c.id)).length, ofType('frame').length],
+        icon: [ofType('icon').filter(c => ownedIds.has(c.id)).length, ofType('icon').length]
       };
       document.getElementById('invTabs').innerHTML = INV_TABS
         .map(t => `<button type="button" class="inv-tab${t.id === invTab ? ' active' : ''}" data-invtab="${t.id}">${t.label}${counts[t.id] ? `<small>${counts[t.id][0]}/${counts[t.id][1]}</small>` : ''}</button>`).join('');
@@ -1259,6 +1262,18 @@
           (sel && sel.hasBackground
             ? `<label class="inv-toggle"><input type="checkbox" id="frameBgToggle"${editState.frameBg ? ' checked' : ''}> Show profile background</label>`
             : '');
+      } else if (invTab === 'icon') {
+        // App-Icon (v5.28.0): wie Themes persoenlich und sofort aktiv -
+        // Taskleiste + Tray wechseln live, nicht Teil von Speichern/Abbrechen
+        const active = (S() && S().equipped && S().equipped.icon) || 'icon-base-classic';
+        const cell = c => {
+          const has = usableIds.has(c.id);
+          return `<div ${has ? `class="inv-item${c.id === active ? ' equipped' : ''}" data-app-icon="${c.id}"` : lockAttr(c)}>
+            <img class="mini-app-icon" src="app-icons/${c.id}.png" alt="">${esc(c.name)}${rarTag(c)}
+          </div>`;
+        };
+        list.innerHTML = countLine(counts.icon) + sections(ofType('icon'), cell) +
+          '<p class="inv-note">Changes your app icon in the taskbar, window and tray right away. The desktop shortcut keeps the original.</p>';
       } else if (invTab === 'theme') {
         // Themes sind persoenlich (nur die eigene App), daher sofort aktiv
         // und nicht Teil von Speichern/Abbrechen.
@@ -1296,6 +1311,17 @@
       const b = e.target.closest('[data-equip]');
       const f = e.target.closest('[data-frame]');
       const t = e.target.closest('[data-theme-key]');
+      const ic = e.target.closest('[data-app-icon]');
+      if (ic) {
+        const id = ic.dataset.appIcon;
+        fetch('/api/cosmetics/equip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'icon', id: id === 'icon-base-classic' ? null : id }) })
+          .then(r => r.json()).then(r => {
+            if (r.ok && S()) S().equipped = r.equipped;
+            if (window.ttpMain && window.ttpMain.applyAppIcon) window.ttpMain.applyAppIcon();
+            renderPanels();
+          }).catch(() => {});
+        return;
+      }
       if (b) { editState.border = b.dataset.equip; render(); }
       if (f) { editState.frame = f.dataset.frame; render(); }
       if (t) {

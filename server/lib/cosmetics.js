@@ -23,10 +23,11 @@
 // Themes) -> Refined -> Fancy -> Animated. Pass: Stufe 5/10/15 Refined,
 // 20/25 Fancy, 30 Animated. Shop-Preise nach Seltenheit x Typ.
 const RARITIES = ['basic', 'refined', 'fancy', 'animated', 'animatedplus'];
+// icon (v5.28.0, App-Icon-Skins): bewusst guenstig - Spass-Kauf (Nutzeridee)
 const PRICES = {
-  basic: { border: 0, frame: 0, theme: 0 },
-  refined: { border: 500, frame: 650, theme: 900 },
-  fancy: { border: 1000, frame: 1300, theme: 1600 },
+  basic: { border: 0, frame: 0, theme: 0, icon: 0 },
+  refined: { border: 500, frame: 650, theme: 900, icon: 250 },
+  fancy: { border: 1000, frame: 1300, theme: 1600, icon: 500 },
   animated: { border: 1600, frame: 1900, theme: 2400 },
   // Animated+ (v5.20.0): bisher nur Themes; Border/Rahmen-Preise fuer spaeter
   animatedplus: { border: 2600, frame: 3000, theme: 4000 }
@@ -104,9 +105,23 @@ const COSMETICS = [
   { id: 'border-shop-bronze', type: 'border', name: 'Bronze Ring', rarity: 'basic', source: 'shop' },
   { id: 'frame-shop-linen', type: 'frame', name: 'Linen Frame', rarity: 'basic', source: 'shop' },
   { id: 'frame-shop-night', type: 'frame', name: 'Night Frame', rarity: 'basic', source: 'shop' },
+  // ----- App-Icon-Skins (v5.28.0, Nutzeridee): aendern Taskleisten- und
+  // Tray-Icon live (electron-main.js applyAppIcon). Statisch, Designs aus
+  // theme-lab/shop-app-icons.html, Bilder in public/app-icons/<id>.png -----
+  { id: 'icon-shop-golden', type: 'icon', name: 'Golden Pony', rarity: 'refined', source: 'shop' },
+  { id: 'icon-shop-pixel', type: 'icon', name: 'Pixel Pony', rarity: 'refined', source: 'shop' },
+  { id: 'icon-shop-sunset', type: 'icon', name: 'Sunset Pony', rarity: 'refined', source: 'shop' },
+  { id: 'icon-shop-lowpoly', type: 'icon', name: 'Low-Poly Pony', rarity: 'refined', source: 'shop' },
+  { id: 'icon-shop-coin', type: 'icon', name: 'Lucky Coin', rarity: 'refined', source: 'shop' },
+  { id: 'icon-shop-neon', type: 'icon', name: 'Neon Pony', rarity: 'fancy', source: 'shop' },
+  { id: 'icon-shop-crystal', type: 'icon', name: 'Crystal Core', rarity: 'fancy', source: 'shop' },
+  { id: 'icon-shop-galaxy', type: 'icon', name: 'Galaxy Pony', rarity: 'fancy', source: 'shop' },
+  { id: 'icon-shop-crest', type: 'icon', name: 'Royal Crest', rarity: 'fancy', source: 'shop' },
+  { id: 'icon-shop-unicorn', type: 'icon', name: 'Secretly a Unicorn', rarity: 'fancy', source: 'shop' },
   // ----- Basic (v5.17.0): zu jedem Grund-Theme eine schlichte Border + ein
   // schlichter Rahmen in dessen Farben. Hat jeder (base: true), frei
   // kombinierbar mit jedem Theme (Nutzerwunsch: alles mit allem). -----
+  { id: 'icon-base-classic', type: 'icon', name: 'Classic 3TP', rarity: 'basic', base: true },
   { id: 'border-base-classic', type: 'border', name: 'Classic Ring', rarity: 'basic', base: true },
   { id: 'frame-base-classic', type: 'frame', name: 'Classic Frame', rarity: 'basic', base: true },
   { id: 'border-base-graphite', type: 'border', name: 'Graphite Ring', rarity: 'basic', base: true },

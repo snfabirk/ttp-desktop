@@ -505,6 +505,13 @@ function equipCosmetic(type, id) {
   return { ok: true, equipped: state.equipped };
 }
 
+// Fuer electron-main.js: welches App-Icon ist ausgeruestet (nur wenn besessen)
+function getEquippedIcon() {
+  const state = readState();
+  const id = state.equipped && state.equipped.icon;
+  return id && getCosmetic(id) && ownsCosmetic(state, id) ? id : null;
+}
+
 // ----- Profil-Layout -----
 const LAYOUT_COLS = 6;
 const LAYOUT_MAX_WIDGETS = 40;
@@ -535,7 +542,7 @@ function emptyState() {
   return {
     version: 2, totalXp: 0, ledger: [], rerolls: {},
     // passes['YYYY-MM'] = { xp, claimedTier, claimedOverflow }
-    passes: {}, coins: 0, inventory: [], equipped: { border: null, frame: null, frameBg: true },
+    passes: {}, coins: 0, inventory: [], equipped: { border: null, frame: null, frameBg: true, icon: null },
     // Profil-Layout (Widget-Raster auf profile.html), null = Standard-Layout
     // des Clients. [{ id, type, x, y, w, h, config }]
     profileLayout: null,
@@ -932,7 +939,9 @@ const ownsOrRents = (state, id) => ownsCosmetic(state, id) || rentedIds(state).i
 // laufende Pass (Nutzer: den vorher testen waere unfair), noch nicht besessen
 function lootableCosmetics(state) {
   const current = monthKey(new Date());
-  return COSMETICS.filter(c => !c.base && c.passMonth !== current && !state.inventory.includes(c.id));
+  // App-Icons nicht (v5.28.0): ein geliehenes Icon liesse die Taskleiste nach
+  // Ablauf nicht zurueckspringen, und als Mystery-Gewinn waere es enttaeuschend
+  return COSMETICS.filter(c => !c.base && c.type !== 'icon' && c.passMonth !== current && !state.inventory.includes(c.id));
 }
 
 function consumableUnavailable(state, id) {
@@ -1229,6 +1238,7 @@ module.exports = {
   rerollDaily,
   creditQuests,
   claimPassCoins,
+  getEquippedIcon,
   buyConsumable,
   buyShopItem,
   discardBuff,

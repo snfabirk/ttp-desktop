@@ -25,6 +25,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.28.0',
+      date: '2026-10-11',
+      notable: ["New in the shop: app icons! 10 skins for your taskbar, window and tray icon (250 / 500 coins). Pick one in your profile under 'Icons' - it changes right away."],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.27.0',
       date: '2026-10-11',
       notable: [
