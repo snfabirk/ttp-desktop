@@ -48,27 +48,34 @@
   .ov-close { position: absolute; top: 22px; right: 26px; z-index: 8; }
   .ov-done { position: absolute; left: 50%; bottom: 4vh; transform: translateX(-50%); z-index: 8; display: none; }
   .pack.big { position: absolute; z-index: 5; cursor: default; transition: left .55s cubic-bezier(.3,.7,.3,1), top .55s cubic-bezier(.3,.7,.3,1), width .55s cubic-bezier(.3,.7,.3,1), height .55s cubic-bezier(.3,.7,.3,1), font-size .55s; }
-  .tear-strip { position: absolute; left: 0; right: 0; top: 0; height: 14%; z-index: 6; cursor: ew-resize; }
-  .tear-strip::after { content: '‹  tear  ›'; position: absolute; left: 0; right: 0; top: 30%; text-align: center; color: rgba(255,255,255,.75); font-size: .8em; letter-spacing: 3px; animation: tearHint 1.4s ease-in-out infinite; }
-  @keyframes tearHint { 50% { opacity: .25; } }
-  .tear-line { position: absolute; top: 6%; height: 3px; width: 0; background: #fff; box-shadow: 0 0 10px 3px rgba(255,240,200,.9); z-index: 7; pointer-events: none; }
-  .pack.big.drop { transition: transform .75s cubic-bezier(.6,0,.8,.4), opacity .75s; transform: translateY(120vh) rotate(5deg); }
+  /* Reiss-Band ueber die ganze Breite: man kann auch neben dem Pack ansetzen */
+  .tear-band { position: absolute; left: 0; right: 0; z-index: 9; cursor: ew-resize; }
+  .tear-band::after { content: '‹   drag to tear   ›'; position: absolute; left: 0; right: 0; top: -26px; text-align: center; color: rgba(255,255,255,.8); font-size: .85rem; letter-spacing: 3px; animation: tearHint 1.4s ease-in-out infinite; pointer-events: none; }
+  .tear-band.active::after { display: none; }
+  @keyframes tearHint { 50% { opacity: .3; } }
+  /* Pack aus zwei Teilen: Kopfstreifen + Rest, getrennt an einer geraden Kante */
+  .pk-wrap { position: absolute; z-index: 5; transition: left .55s cubic-bezier(.3,.7,.3,1), top .55s cubic-bezier(.3,.7,.3,1), width .55s cubic-bezier(.3,.7,.3,1), height .55s cubic-bezier(.3,.7,.3,1); }
+  .pk-wrap .pack { position: absolute; inset: 0; width: 100%; height: 100%; cursor: default; font-size: inherit; transition: none; }
+  .pk-wrap .pk-top { clip-path: inset(0 0 calc(100% - var(--cut)) 0); }
+  .pk-wrap .pk-bot { clip-path: inset(var(--cut) 0 0 0); }
+  .pk-wrap .cut { position: absolute; left: 0; height: 2px; width: 0; z-index: 7; pointer-events: none; background: linear-gradient(90deg, rgba(255,255,255,.2), #fff); box-shadow: 0 0 6px 1px rgba(255,255,255,.8); }
+  .pk-wrap .cut.rtl { background: linear-gradient(270deg, rgba(255,255,255,.2), #fff); }
+  .pk-top.off { transition: transform .7s cubic-bezier(.25,.8,.35,1), opacity .7s; }
+  .pk-bot.drop { transition: transform .75s cubic-bezier(.6,0,.8,.4); transform: translateY(120vh) rotate(4deg); }
 
   .ov-stack { position: absolute; z-index: 6; width: min(250px, 24vw); aspect-ratio: 190 / 266; left: 50%; top: 47%; transform: translate(-50%, -50%); cursor: pointer; font-size: 20px; }
   .ov-stack .sc { position: absolute; inset: 0; transition: transform .35s; }
 
   /* Karte (Traegerkarte mit Sticker) */
-  .sc { border-radius: 12px; perspective: 1000px; }
-  .sc .inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .5s cubic-bezier(.3,.7,.3,1); }
-  .sc.flipped .inner { transform: rotateY(180deg); }
-  .face { position: absolute; inset: 0; border-radius: 12px; backface-visibility: hidden; overflow: hidden; }
+  .sc { border-radius: 12px; }
+  .face { position: absolute; inset: 0; border-radius: 12px; overflow: hidden; }
   .back { background: radial-gradient(circle at 50% 40%, #24365e, #0c1426 70%); border: 2px solid #3a4a70; display: grid; place-items: center; }
   .back svg { width: 54%; opacity: .55; }
   .back.glow-holo { box-shadow: 0 0 26px 6px color-mix(in srgb, var(--c-holo) 75%, transparent), inset 0 0 30px rgba(255,255,255,.25); border-color: #e0d0ff; animation: holoBack 2.2s linear infinite; }
   @keyframes holoBack { to { filter: hue-rotate(360deg); } }
   .back.glow-anim { box-shadow: 0 0 30px 8px color-mix(in srgb, var(--c-anim) 80%, transparent), inset 0 0 34px color-mix(in srgb, var(--c-anim) 60%, transparent); border-color: #ffd0ea; animation: pulseBack .9s ease-in-out infinite alternate; }
   @keyframes pulseBack { to { box-shadow: 0 0 44px 14px color-mix(in srgb, var(--c-anim) 90%, transparent), inset 0 0 40px color-mix(in srgb, var(--c-anim) 70%, transparent); } }
-  .front { transform: rotateY(180deg); background: linear-gradient(160deg, #1b2a4a, #0e182c); border: 2px solid var(--rc, #555); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 7% 6% 5%; }
+  .front { background: linear-gradient(160deg, #1b2a4a, #0e182c); border: 2px solid var(--rc, #555); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 7% 6% 5%; }
   .front .art { width: 100%; flex: 1; display: grid; place-items: center; border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
   .front .art svg { width: 100%; height: auto; display: block; }
   .front .name { font-family: 'Cinzel', Georgia, serif; font-size: .7em; letter-spacing: .5px; text-align: center; color: #fff; line-height: 1.15; margin-top: 5%; }
@@ -78,7 +85,8 @@
   .tag-new { background: var(--c-uncommon); color: #062; font-weight: bold; }
   .tag-dupe { background: rgba(0,0,0,.65); color: var(--gold); border: 1px solid var(--gold); }
   .front.holo::after { content: ''; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color-dodge; opacity: .5;
-    background: linear-gradient(var(--ha, 115deg), transparent 20%, #ff7ad9 32%, #ffd36b 42%, #7bffb4 52%, #6bc8ff 62%, #b98cff 72%, transparent 84%); background-size: 200% 200%; background-position: var(--hx, 50%) var(--hy, 50%); }
+    background: linear-gradient(115deg, transparent 20%, #ff7ad9 32%, #ffd36b 42%, #7bffb4 52%, #6bc8ff 62%, #b98cff 72%, transparent 84%); background-size: 300% 300%; animation: holoSweep 3.2s linear infinite; }
+  @keyframes holoSweep { from { background-position: 100% 100%; } to { background-position: 0% 0%; } }
   .front.anim .art svg .float { animation: bob 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
   @keyframes bob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-5px) rotate(2deg); } }
   .front.anim::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(2px 2px at 20% 30%, #fff, transparent), radial-gradient(2px 2px at 75% 25%, #fff, transparent), radial-gradient(1.5px 1.5px at 60% 62%, #fff, transparent), radial-gradient(2px 2px at 30% 72%, #fff, transparent); animation: sparkle 1.4s steps(2) infinite; }
@@ -106,7 +114,6 @@
   .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.86); backdrop-filter: blur(6px); display: grid; place-items: center; perspective: 1100px; cursor: zoom-out; opacity: 0; transition: opacity .25s; }
   .insp.on { opacity: 1; }
   .insp .sc { position: relative; width: min(340px, 70vw); aspect-ratio: 190 / 266; font-size: 24px; transition: transform .12s ease-out; transform-style: preserve-3d; }
-  .insp .sc .inner { transition: none; }
   .insp .glare { position: absolute; inset: 0; border-radius: 12px; pointer-events: none; z-index: 4; background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgba(255,255,255,.3), transparent 45%); mix-blend-mode: soft-light; }
   .insp-cap { position: absolute; bottom: 6vh; left: 0; right: 0; text-align: center; color: var(--dim); font-size: .85rem; }
 </style>
@@ -115,7 +122,7 @@
 <header>
   <h1>Album</h1>
   <div class="sub">BASE SET · DRAFT</div>
-  <p class="note">Design draft (v3): boosters are bought in the shop and opened here. Open a booster, drag across its top edge to tear it, then click the stack - every click shows the next sticker and sends the last one to its place. Click a sticker in the album to inspect it.</p>
+  <p class="note">Design draft (v3): boosters are bought in the shop and opened here. Open a booster, press next to (or on) its top edge and drag across to tear it, then click the stack - every click shows the next sticker and sends the last one to its place. Click a sticker in the album to inspect it.</p>
 </header>
 
 <div class="wrap">
@@ -248,16 +255,21 @@ function rollPack() {
   const by = r => SET.filter(s => s.r === r);
   return [pick(by('common')), pick(by('common')), pick(by('common')), pick(by('common')), pick(by('uncommon')), pick(by('uncommon')), Math.random() < .10 ? pick(by('anim')) : pick(by('holo'))];
 }
-function cardHtml(s) {
-  const glow = s.r === 'holo' ? ' glow-holo' : s.r === 'anim' ? ' glow-anim' : '';
-  return `<div class="inner"><div class="face back${glow}">${BACK_LOGO}</div>
-    <div class="face front${s.r === 'holo' ? ' holo' : ''}${s.r === 'anim' ? ' anim' : ''}" style="--rc:${RC[s.r]}">
+const backHtml = s => `<div class="face back${s.r === 'holo' ? ' glow-holo' : s.r === 'anim' ? ' glow-anim' : ''}">${BACK_LOGO}</div>`;
+const frontHtml = s => `<div class="face front${s.r === 'holo' ? ' holo' : ''}${s.r === 'anim' ? ' anim' : ''}" style="--rc:${RC[s.r]}">
       <div class="art"><svg viewBox="0 0 120 120">${ART[s.id]()}</svg></div>
       <div class="name">${s.name}</div>
       <div class="meta"><span class="rar">${RL[s.r]}</span><span>#${String(s.n).padStart(3, '0')}</span></div>
-    </div></div>`;
+    </div>`;
+const card = s => { const d = document.createElement('div'); d.className = 'sc'; d.innerHTML = backHtml(s); return d; };
+// Umdrehen in 2D: zur Kante zusammenklappen, Seite tauschen, wieder aufklappen
+function flipCard(el, s, scale = 1.06) {
+  const a = el.animate([{ transform: `scale(${scale}) scaleX(1)` }, { transform: `scale(${scale}) scaleX(0)` }], { duration: 150, easing: 'ease-in', fill: 'forwards' });
+  a.onfinish = () => {
+    el.innerHTML = frontHtml(s);
+    el.animate([{ transform: `scale(${scale}) scaleX(0)` }, { transform: `scale(${scale}) scaleX(1)` }], { duration: 190, easing: 'ease-out', fill: 'forwards' });
+  };
 }
-const card = (s, flipped) => { const d = document.createElement('div'); d.className = 'sc' + (flipped ? ' flipped' : ''); d.innerHTML = cardHtml(s); return d; };
 
 // ===================== Oeffnen =====================
 const updCount = () => {
@@ -280,38 +292,51 @@ function openPacks(n) {
   const grid = ov.querySelector('.ov-grid');
   const hint = t => { ov.querySelector('#ovHint').textContent = t; };
 
-  // 1) Booster tritt in den Vordergrund
+  // 1) Booster tritt in den Vordergrund - als zwei deckungsgleiche Teile
+  //    (Kopfstreifen + Rest), die spaeter an einer geraden Kante getrennt werden
   const src = document.getElementById('pack').getBoundingClientRect();
-  const big = document.getElementById('pack').cloneNode(true); big.removeAttribute('id'); big.classList.add('big');
-  big.querySelector('.count').textContent = n > 1 ? `${n} boosters` : '7 stickers';
-  Object.assign(big.style, { left: src.left + 'px', top: src.top + 'px', width: src.width + 'px', height: src.height + 'px' });
-  ov.appendChild(big);
-  const W = Math.min(300, innerWidth * .28), H = W * 250 / 170;
-  requestAnimationFrame(() => requestAnimationFrame(() => Object.assign(big.style, { left: (innerWidth - W) / 2 + 'px', top: (innerHeight - H) / 2 + 'px', width: W + 'px', height: H + 'px', fontSize: (W / 170 * 11) + 'px' })));
+  const CUT = 9; // Schnitthoehe in % der Pack-Hoehe, knapp unter der Siegelnaht
+  const wrap = document.createElement('div'); wrap.className = 'pk-wrap'; wrap.style.setProperty('--cut', CUT + '%');
+  const mk = cls => { const p = document.getElementById('pack').cloneNode(true); p.removeAttribute('id'); p.classList.add('big', cls); p.querySelector('.count').textContent = n > 1 ? `${n} boosters` : '7 stickers'; return p; };
+  const pTop = mk('pk-top'), pBot = mk('pk-bot');
+  const cutLine = document.createElement('div'); cutLine.className = 'cut'; cutLine.style.top = `calc(${CUT}% - 1px)`;
+  wrap.append(pBot, pTop, cutLine);
+  Object.assign(wrap.style, { left: src.left + 'px', top: src.top + 'px', width: src.width + 'px', height: src.height + 'px', fontSize: '11px' });
+  ov.appendChild(wrap);
+  const W = Math.min(300, innerWidth * .28), H = W * 250 / 170, L = (innerWidth - W) / 2, T = (innerHeight - H) / 2;
+  requestAnimationFrame(() => requestAnimationFrame(() => Object.assign(wrap.style, { left: L + 'px', top: T + 'px', width: W + 'px', height: H + 'px', fontSize: (W / 170 * 11) + 'px' })));
 
-  // 2) Aufreissen: ueber die obere Kante ziehen (links->rechts oder rechts->links)
-  const strip = document.createElement('div'); strip.className = 'tear-strip'; big.appendChild(strip);
-  const line = document.createElement('div'); line.className = 'tear-line'; big.appendChild(line);
-  let startX = null, dir = 1, torn = false;
-  strip.addEventListener('pointerdown', e => { startX = e.clientX; strip.setPointerCapture(e.pointerId); });
-  strip.addEventListener('pointermove', e => {
+  // 2) Aufreissen: Band ueber die ganze Breite auf Hoehe des Schnitts - man
+  //    kann links oder rechts NEBEN dem Pack ansetzen und durchziehen. Der
+  //    Schnitt waechst gerade von der Seite, von der man kommt.
+  const cutY = T + H * CUT / 100;
+  const band = document.createElement('div'); band.className = 'tear-band';
+  Object.assign(band.style, { top: (cutY - 40) + 'px', height: '80px' });
+  ov.appendChild(band);
+  let startX = null, dir = 0, torn = false;
+  band.addEventListener('pointerdown', e => { startX = e.clientX; band.setPointerCapture(e.pointerId); band.classList.add('active'); });
+  band.addEventListener('pointermove', e => {
     if (startX == null || torn) return;
-    const dx = e.clientX - startX; if (dx) dir = Math.sign(dx);
-    const p = Math.min(1, Math.abs(dx) / big.clientWidth), w = big.clientWidth * p;
-    line.style.width = w + 'px'; line.style.left = dir > 0 ? '0' : (big.clientWidth - w) + 'px';
-    if (p > .8) tearOpen();
+    if (!dir && Math.abs(e.clientX - startX) > 4) { dir = Math.sign(e.clientX - startX); cutLine.classList.toggle('rtl', dir < 0); }
+    if (!dir) return;
+    const w = dir > 0 ? e.clientX - L : L + W - e.clientX;           // wie weit der Schnitt im Pack ist
+    const p = Math.max(0, Math.min(1, w / W));
+    cutLine.style.width = (p * W) + 'px';
+    cutLine.style.left = dir > 0 ? '0' : ((1 - p) * W) + 'px';
+    if (p >= .97) tearOpen();
   });
-  strip.addEventListener('pointerup', () => { if (!torn) { startX = null; line.style.width = '0'; } });
+  band.addEventListener('pointerup', () => { if (!torn) { startX = null; dir = 0; cutLine.style.width = '0'; band.classList.remove('active'); } });
   function tearOpen() {
     if (torn) return; torn = true;
-    strip.remove();
-    const top = big.querySelector('.crimp.top');
-    top.style.transition = 'transform .6s cubic-bezier(.3,.7,.3,1), opacity .6s';
-    top.style.transform = `translate(${dir * 160}px, -90px) rotate(${dir * 28}deg)`; top.style.opacity = '0';
-    line.style.transition = 'opacity .3s'; line.style.opacity = '0';
+    band.remove();
+    cutLine.style.width = W + 'px'; cutLine.style.left = '0';
+    // sauberer Schnitt: Kopfstreifen hebt in Zugrichtung ab, der Rest faellt nach unten
+    pTop.classList.add('off');
+    requestAnimationFrame(() => { pTop.style.transform = `translate(${dir * 220}px, -140px) rotate(${dir * 16}deg)`; pTop.style.opacity = '0'; });
+    setTimeout(() => { cutLine.style.transition = 'opacity .25s'; cutLine.style.opacity = '0'; }, 120);
     hint('');
-    setTimeout(() => { big.classList.add('drop'); buildStack(); }, 380);
-    setTimeout(() => big.remove(), 1200);
+    setTimeout(() => { pBot.classList.add('drop'); buildStack(); }, 420);
+    setTimeout(() => wrap.remove(), 1300);
   }
 
   // 3) Stapel: jeder Klick zeigt den naechsten Sticker, der vorige faehrt in
@@ -328,6 +353,7 @@ function openPacks(n) {
   }
   function sendToSlot({ el, s, i }) {
     const a = el.getBoundingClientRect(), slot = ov.querySelectorAll('.ov-slot')[i], b = slot.getBoundingClientRect();
+    el.getAnimations().forEach(x => x.cancel());
     Object.assign(el.style, { left: a.left + 'px', top: a.top + 'px', width: a.width + 'px', height: a.height + 'px', transform: 'none', fontSize: '20px' });
     el.classList.add('fly'); ov.appendChild(el);
     requestAnimationFrame(() => Object.assign(el.style, { left: b.left + 'px', top: b.top + 'px', width: b.width + 'px', height: b.height + 'px', fontSize: (b.width / 92 * 9) + 'px' }));
@@ -343,8 +369,7 @@ function openPacks(n) {
     idx++;
     if (idx >= cards.length) { finish(); return; }
     const el = stackEl.lastElementChild, s = cards[idx];
-    el.style.transform = 'scale(1.06)';
-    requestAnimationFrame(() => el.classList.add('flipped'));
+    flipCard(el, s);
     if (s.r === 'holo' || s.r === 'anim') { const b = document.createElement('div'); b.className = 'burst'; b.style.background = `radial-gradient(circle, ${RC[s.r]}, transparent 62%)`; el.appendChild(b); }
     shown = { el, s, i: idx };
     const left = cards.length - idx - 1;
@@ -358,7 +383,7 @@ function openPacks(n) {
   ov.querySelector('#ovDone').addEventListener('click', () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 350); });
   // Ueberspringen: aufreissen und alles zuegig in die Plaetze
   ov.querySelector('#ovSkip').addEventListener('click', () => {
-    if (!torn) { torn = true; big.remove(); buildStack(); }
+    if (!torn) { torn = true; band.remove(); wrap.remove(); buildStack(); }
     const t = setInterval(() => { if (idx >= cards.length) { clearInterval(t); return; } next(); }, 140);
   });
 }
@@ -367,21 +392,12 @@ document.getElementById('openBtn').addEventListener('click', () => openPacks(1))
 document.getElementById('openAllBtn').addEventListener('click', () => openPacks(unopened));
 document.getElementById('refillBtn').addEventListener('click', () => { unopened += 5; updCount(); });
 
-// Holo-Schimmer folgt der Maus
-document.addEventListener('mousemove', e => {
-  document.querySelectorAll('.front.holo').forEach(f => {
-    const r = f.getBoundingClientRect();
-    f.style.setProperty('--hx', `${((e.clientX - r.left) / r.width) * 100}%`);
-    f.style.setProperty('--hy', `${((e.clientY - r.top) / r.height) * 100}%`);
-  });
-});
-
 // ===================== Album + Inspizieren =====================
 function renderAlbum() {
   let html = '', got = 0;
   for (let n = 1; n <= TOTAL_IN_SET; n++) {
     const s = SET.find(x => x.n === n);
-    if (s && owned[n]) { got++; html += `<div class="album-slot have" data-n="${n}"><span class="num">#${String(n).padStart(3, '0')}</span><div class="sc flipped">${cardHtml(s)}</div><span class="x">×${owned[n]}</span></div>`; }
+    if (s && owned[n]) { got++; html += `<div class="album-slot have" data-n="${n}"><span class="num">#${String(n).padStart(3, '0')}</span><div class="sc">${frontHtml(s)}</div><span class="x">×${owned[n]}</span></div>`; }
     else html += `<div class="album-slot"><span class="num">#${String(n).padStart(3, '0')}</span>?</div>`;
   }
   document.getElementById('albumGrid').innerHTML = html;
@@ -391,7 +407,7 @@ document.getElementById('albumGrid').addEventListener('click', e => {
   const slot = e.target.closest('.album-slot.have'); if (!slot) return;
   const s = SET.find(x => x.n === Number(slot.dataset.n));
   const ov = document.createElement('div'); ov.className = 'insp';
-  ov.innerHTML = `<div class="sc flipped">${cardHtml(s)}<div class="glare"></div></div><div class="insp-cap">${s.name} · ${RL[s.r]} · #${String(s.n).padStart(3, '0')} · you own ${owned[s.n]} - move the mouse to tilt, click to close</div>`;
+  ov.innerHTML = `<div class="sc">${frontHtml(s)}<div class="glare"></div></div><div class="insp-cap">${s.name} · ${RL[s.r]} · #${String(s.n).padStart(3, '0')} · you own ${owned[s.n]} - move the mouse to tilt, click to close</div>`;
   document.body.appendChild(ov); requestAnimationFrame(() => ov.classList.add('on'));
   const c = ov.querySelector('.sc'), glare = ov.querySelector('.glare');
   // 3D-Neigung: Karte folgt dem Cursor, Glanzlicht wandert mit
