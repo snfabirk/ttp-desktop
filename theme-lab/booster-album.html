@@ -20,6 +20,12 @@
   .btn:disabled { opacity: .4; cursor: default; }
   .odds { font-size: .75rem; color: var(--dim); line-height: 1.6; width: 100%; }
   .odds b { color: var(--text); font-weight: normal; }
+  .rates-hint { position: relative; color: var(--dim); font-size: .8rem; cursor: help; display: inline-flex; align-items: center; gap: 6px; }
+  .rates-hint .q { width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--dim); display: inline-grid; place-items: center; font-size: .7rem; }
+  .rates-hint:hover, .rates-hint:focus { color: var(--gold); } .rates-hint:hover .q, .rates-hint:focus .q { border-color: var(--gold); }
+  .rates-pop { position: absolute; left: 50%; top: calc(100% + 8px); transform: translateX(-50%); width: 260px; z-index: 20; background: #0d172b; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: .75rem; line-height: 1.6; color: var(--dim); box-shadow: 0 10px 24px rgba(0,0,0,.5); opacity: 0; visibility: hidden; transition: opacity .15s; }
+  .rates-pop b { color: var(--text); font-weight: normal; }
+  .rates-hint:hover .rates-pop, .rates-hint:focus .rates-pop { opacity: 1; visibility: visible; }
   .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 
   /* ---------- Booster-Pack ---------- */
@@ -142,13 +148,13 @@
     </div>
     <div style="display:flex;gap:8px"><button class="btn" id="openBtn">Open 1</button><button class="btn" id="openAllBtn">Open all</button></div>
     <button class="btn" id="refillBtn" style="font-size:.75rem;padding:4px 12px;opacity:.7" title="Draft only - in the app you buy them in the shop">+5 (draft refill)</button>
-    <div class="odds">
-      <div><span class="dot" style="background:var(--c-common)"></span><b>4×</b> Common</div>
+    <span class="rates-hint" tabindex="0">Pull rates <span class="q">?</span>
+      <span class="rates-pop"><div><span class="dot" style="background:var(--c-common)"></span><b>4×</b> Common</div>
       <div><span class="dot" style="background:var(--c-uncommon)"></span><b>2×</b> Uncommon</div>
       <div><span class="dot" style="background:var(--c-holo)"></span><b>1×</b> <span style="color:var(--c-holo)">Holo Rare</span> 90% · <span style="color:var(--c-anim)">Animated Rare</span> 10%</div>
       <div style="margin-top:6px">Base Set: 50 stickers - 25 common, 15 uncommon, 7 holo rare, 3 animated rare</div>
-      <div style="margin-top:4px">Booster: 🪙 150 in the shop · duplicates give back 3 / 8 / 50 / 300</div>
-    </div>
+      <div style="margin-top:4px">Booster: 🪙 150 in the shop · duplicates give back 3 / 8 / 50 / 300</div></span>
+    </span>
   </section>
 
   <section class="card-box">
