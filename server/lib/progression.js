@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { dataSubdir } = require('./dataPaths');
 const { COSMETICS, PRICES, priceOf, getCosmetic, passCosmetic } = require('./cosmetics');
+const STICKERS = require('./stickers');
 
 // XP-/Level-System (v5.0.0, PROVISORISCH): Profil-Level (laeuft fuer immer,
 // jedes Level etwas teurer), Monats-Pass (seit v5.3.0: ein Pass pro
@@ -331,7 +332,11 @@ function passProgress(xp) {
   };
 }
 
+// Gratis-Booster im Pass (v5.29.0, Nutzer: unregelmaessig verteilt, 8 Stueck,
+// gelten fuer jedes Set - aktuell gibt es nur das Base Set)
+const BOOSTER_TIERS = [3, 7, 12, 16, 19, 23, 27, 29];
 function tierReward(month, tier) {
+  if (BOOSTER_TIERS.includes(tier)) return { type: 'booster', set: 'base', amount: 1 };
   if (tier % 5 === 0) {
     const cosmetic = passCosmetic(month, tier);
     if (cosmetic) return { type: 'cosmetic', id: cosmetic.id, name: cosmetic.name, cosmeticType: cosmetic.type, themeKey: cosmetic.themeKey, animated: !!cosmetic.animated };
@@ -376,7 +381,8 @@ function settleOldPasses(state, now = new Date()) {
     if (month === cur) return;
     (pass.pendingTiers || []).forEach(t => {
       const r = tierReward(month, t);
-      if (r.type === 'cosmetic') { if (!state.inventory.includes(r.id)) state.inventory.push(r.id); } else state.coins += r.amount || 0;
+      if (r.type === 'booster') state.boosters[r.set] = (state.boosters[r.set] || 0) + 1;
+      else if (r.type === 'cosmetic') { if (!state.inventory.includes(r.id)) state.inventory.push(r.id); } else state.coins += r.amount || 0;
     });
     state.coins += (pass.pendingOverflow || 0) * COINS_PER_OVERFLOW_STEP;
     pass.pendingTiers = []; pass.pendingOverflow = 0;
@@ -392,12 +398,15 @@ function claimPassCoins({ tier, overflow, all } = {}) {
   if (!pass) return { ok: false, error: 'Nothing to claim yet.' };
   pass.pendingTiers = pass.pendingTiers || [];
   let amount = 0;
-  const cosmetics = [];
+  const cosmetics = [], boosters = [];
   const takeTier = t => {
     const i = pass.pendingTiers.indexOf(t); if (i < 0) return false;
     pass.pendingTiers.splice(i, 1);
     const r = tierReward(month, t);
-    if (r.type === 'cosmetic') {
+    if (r.type === 'booster') {
+      state.boosters[r.set] = (state.boosters[r.set] || 0) + 1;
+      boosters.push({ tier: t, set: r.set });
+    } else if (r.type === 'cosmetic') {
       if (!state.inventory.includes(r.id)) state.inventory.push(r.id);
       cosmetics.push({ tier: t, id: r.id, name: r.name, type: r.cosmeticType });
     } else amount += r.amount || 0;
@@ -411,10 +420,67 @@ function claimPassCoins({ tier, overflow, all } = {}) {
   } else if (!takeTier(Number(tier))) {
     return { ok: false, error: 'Nothing to claim on this tier.' };
   }
-  if (!amount && !cosmetics.length) return { ok: false, error: 'Nothing to claim.' };
+  if (!amount && !cosmetics.length && !boosters.length) return { ok: false, error: 'Nothing to claim.' };
   state.coins += amount;
   writeState(state);
-  return { ok: true, amount, cosmetics, coins: state.coins };
+  return { ok: true, amount, cosmetics, boosters, coins: state.coins };
+}
+
+// ----- Booster & Sticker (v5.29.0) -----
+function boosterSetsView(state) {
+  return STICKERS.SETS.map(st => ({
+    id: st.id, name: st.name, price: st.price, released: st.released,
+    owned: state.boosters[st.id] || 0,
+    total: st.stickers.length,
+    collected: Object.keys(state.stickers[st.id] || {}).length
+  }));
+}
+function buyBooster(setId, qty = 1) {
+  const st = STICKERS.getSet(setId);
+  if (!st || !st.released) return { ok: false, error: 'This booster is not available.' };
+  qty = Math.max(1, Math.min(10, Math.floor(Number(qty) || 1)));
+  const state = readState();
+  const cost = st.price * qty;
+  if (state.coins < cost) return { ok: false, error: 'Not enough coins.' };
+  state.coins -= cost;
+  state.boosters[setId] = (state.boosters[setId] || 0) + qty;
+  writeState(state);
+  return { ok: true, coins: state.coins, owned: state.boosters[setId] };
+}
+// Oeffnet count Booster: jeder Sticker ist "neu", wenn man ihn bis dahin noch
+// nicht hatte (auch innerhalb desselben Openings); Doppelte geben Coins zurueck
+function openBoosters(setId, count = 1) {
+  const st = STICKERS.getSet(setId);
+  if (!st) return { ok: false, error: 'Unknown booster.' };
+  const state = readState();
+  const have = state.boosters[setId] || 0;
+  count = Math.max(1, Math.min(have, Math.floor(Number(count) || 1)));
+  if (!have) return { ok: false, error: 'You have no boosters of this set.' };
+  const col = state.stickers[setId] = state.stickers[setId] || {};
+  const cards = [];
+  let refund = 0;
+  for (let p = 0; p < count; p++) {
+    for (const s of STICKERS.rollPack(st)) {
+      const isNew = !col[s.n];
+      col[s.n] = (col[s.n] || 0) + 1;
+      const back = isNew ? 0 : STICKERS.DUPE_REFUND[s.r];
+      refund += back;
+      cards.push({ n: s.n, id: s.id, r: s.r, isNew, refund: back });
+    }
+  }
+  state.boosters[setId] = have - count;
+  state.coins += refund;
+  writeState(state);
+  return { ok: true, cards, refund, coins: state.coins, owned: state.boosters[setId], stickers: col };
+}
+function getAlbum() {
+  const state = readState();
+  return {
+    coins: state.coins,
+    sets: boosterSetsView(state),
+    stickers: state.stickers,
+    rates: { pack: STICKERS.PACK, animChance: STICKERS.ANIM_CHANCE, dupeRefund: STICKERS.DUPE_REFUND }
+  };
 }
 
 // Abgelaufenen Gutschein entfernen; liefert true bei Aenderung
@@ -524,7 +590,13 @@ function saveProfileLayout(layout) {
     const ints = ['x', 'y', 'w', 'h'].every(k => Number.isInteger(w && w[k]));
     if (!ints || typeof w.type !== 'string' || typeof w.id !== 'string') return { ok: false, error: 'Invalid widget.' };
     if (w.x < 0 || w.y < 0 || w.w < 1 || w.h < 1 || w.x + w.w > LAYOUT_COLS || w.y + w.h > 60) return { ok: false, error: 'Widget out of bounds.' };
-    const config = w.config && typeof w.config === 'object' ? { text: typeof w.config.text === 'string' ? w.config.text.slice(0, 280) : undefined } : {};
+    const c = w.config && typeof w.config === 'object' ? w.config : {};
+    const config = {
+      text: typeof c.text === 'string' ? c.text.slice(0, 280) : undefined,
+      champId: typeof c.champId === 'string' ? c.champId.slice(0, 40) : undefined,
+      set: typeof c.set === 'string' ? c.set.slice(0, 20) : undefined,
+      n: Number.isInteger(c.n) ? c.n : undefined
+    };
     clean.push({ id: w.id.slice(0, 40), type: w.type.slice(0, 30), x: w.x, y: w.y, w: w.w, h: w.h, config });
   }
   const state = readState();
@@ -543,6 +615,8 @@ function emptyState() {
     version: 2, totalXp: 0, ledger: [], rerolls: {},
     // passes['YYYY-MM'] = { xp, claimedTier, claimedOverflow }
     passes: {}, coins: 0, inventory: [], equipped: { border: null, frame: null, frameBg: true, icon: null },
+    // Sticker (v5.29.0): ungeoeffnete Booster je Set + gesammelte Sticker je Set ({ n: Anzahl })
+    boosters: {}, stickers: {},
     // Profil-Layout (Widget-Raster auf profile.html), null = Standard-Layout
     // des Clients. [{ id, type, x, y, w, h, config }]
     profileLayout: null,
@@ -571,6 +645,7 @@ function readState() {
     return emptyState();
   }
   const state = { ...emptyState(), ...raw };
+  state.boosters = state.boosters || {}; state.stickers = state.stickers || {};
   // Cosmetics, die es nicht (mehr) gibt (z.B. die Test-Borders des ersten
   // Oktober-Passes), fallen still aus Inventar und Ausruestung.
   state.inventory = (state.inventory || []).filter(id => getCosmetic(id));
@@ -740,6 +815,7 @@ function getLifetimeStats() {
     // ausgegraut mit Schloss + "x / y gesammelt", Nutzerwunsch v5.15.0)
     catalog: COSMETICS.map(c => ({ ...c, source: c.passMonth ? `${monthLabel(c.passMonth)} Pass · tier ${c.tier}` : c.base ? 'Basic' : 'Shop' })),
     profileLayout: state.profileLayout,
+    stickers: state.stickers,
     // Fuer weitere Profil-Widgets (v5.6.0)
     pass: (({ label, tier, tiers, xpIntoTier, xpPerTier }) => ({ label, tier, tiers, xpIntoTier, xpPerTier }))(getPassOverview(state, new Date())),
     lpBank: { progress: state.lpBank.progress, size: LP_BANK_SIZE },
@@ -1157,6 +1233,8 @@ function getShopState() {
     consumablesResetAt: nextDailyReset(now).toISOString(),
     buffs: buffsView(state),
     voucher: voucherView(state),
+    boosters: boosterSetsView(state),
+    boosterRates: { pack: STICKERS.PACK, animChance: STICKERS.ANIM_CHANCE, dupeRefund: STICKERS.DUPE_REFUND },
     tryOn: lootableCosmetics(state).filter(c => !rentedIds(state).includes(c.id)).map(c => ({ id: c.id, name: c.name, type: c.type, rarity: c.rarity, themeKey: c.themeKey || null })),
     daily: state.shop.daily.map(id => offerView(id, owned)).filter(Boolean),
     weekly: state.shop.weekly.map(id => offerView(id, owned)).filter(Boolean),
@@ -1241,6 +1319,9 @@ module.exports = {
   getEquippedIcon,
   buyConsumable,
   buyShopItem,
+  buyBooster,
+  openBoosters,
+  getAlbum,
   discardBuff,
   themeAccess,
   getShopState,

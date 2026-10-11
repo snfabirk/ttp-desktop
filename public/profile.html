@@ -12,6 +12,7 @@
   <script src="nav.js"></script>
   <script src="update-indicator.js"></script>
   <script src="changelog.js"></script>
+  <script src="stickers.js"></script>
   <style>
     /* Spielerprofil (v5.5.0): eine Widget-Flaeche, die genau so aussieht, wie
        Freunde sie spaeter sehen. "Edit profile" oeffnet den Bearbeitungsmodus
@@ -59,6 +60,12 @@
       border-radius: 10px;
       pointer-events: none;
     }
+    .widget:has(> .sticker-w) { background: transparent; border-color: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+    .sticker-w { position: absolute; inset: 4px; }
+    body.editing .widget:has(> .sticker-w) { border: 1px dashed var(--border); }
+    .inv-sticker { width: 100%; aspect-ratio: 1; margin-bottom: 4px; }
+    .inv-item[data-sticker] { cursor: grab; }
+    .inv-item[data-sticker] .inv-cnt { color: var(--gold); font-size: .65rem; margin-left: 4px; }
     .widget {
       position: relative;
       z-index: 1;
@@ -755,6 +762,17 @@
         }
       },
 
+      // ----- Sticker (v5.29.0): nur das Sticker-Quadrat, ohne Kartenrahmen.
+      // Kommt per Ziehen aus dem Inventar (Reiter Stickers), mehrfach erlaubt.
+      sticker: {
+        group: 'Collectables', name: 'Sticker', desc: 'From your album', sizes: [[1, 1], [2, 2]],
+        render(w) {
+          const n = w.config && w.config.n;
+          const s = window.STICKERS && window.STICKERS.SET.find(x => x.n === n);
+          return `<div class="sticker-w">${s ? window.STICKERS.square(s) : ''}</div>`;
+        }
+      },
+
       // ----- Stats -----
       challenges: {
         group: 'Stats', name: 'Challenges', desc: 'Started, goals, trophies', sizes: [[3, 1], [1, 1], [2, 1], [4, 1], [6, 1], [2, 2]],
@@ -1129,12 +1147,13 @@
     document.addEventListener('pointermove', e => { if (drag && drag.mode === 'new') moveNew(e); });
     document.addEventListener('pointerup', () => {
       if (!drag || drag.mode !== 'new') return;
-      const { type, next, ok } = drag;
+      const { type, next, ok, config } = drag;
       drag.ghost.remove();
       chip.style.display = 'none';
       drag = null;
       if (ok && next) {
-        layout.push({ id: type, type, ...next, config: type === 'bio' ? { text: '' } : {} });
+        const id = type === 'sticker' ? `sticker-${Date.now().toString(36)}` : type;
+        layout.push({ id, type, ...next, config: config || (type === 'bio' ? { text: '' } : {}) });
       }
       render();
     });
@@ -1288,10 +1307,42 @@
         list.innerHTML = countLine(counts.theme) +
           sections(passThemes, item, BASE_THEMES) +
           '<p class="inv-note">Only you see your theme.</p>';
+      } else if (invTab === 'sticker') {
+        // Sticker aus dem Album aufs Profil ziehen (beliebig oft)
+        const col = (S() && S().stickers && S().stickers.base) || {};
+        const all = (window.STICKERS && window.STICKERS.SET) || [];
+        const have = all.filter(s => col[s.n]);
+        const order = ['anim', 'holo', 'uncommon', 'common'];
+        const cell = s => col[s.n]
+          ? `<div class="inv-item" data-sticker="${s.n}" title="Drag onto your profile"><div class="inv-sticker">${window.STICKERS.square(s)}</div>${esc(s.name)}<span class="inv-cnt">×${col[s.n]}</span></div>`
+          : `<div class="inv-item locked" title="Not in your album yet" aria-disabled="true"><div class="inv-sticker" style="display:grid;place-items:center;border:1px dashed var(--border);border-radius:10px">?</div>#${String(s.n).padStart(3, '0')}</div>`;
+        const vis = s => showLocked || col[s.n];
+        list.innerHTML = countLine([have.length, all.length]) +
+          (have.length || showLocked ? order.map(r => {
+            const items = all.filter(s => s.r === r && vis(s));
+            return items.length ? `<div class="inv-sub">${window.STICKERS.RL[r]}</div><div class="inv-grid">${items.map(cell).join('')}</div>` : '';
+          }).join('') : '<p class="inv-empty">No stickers yet - open boosters in your <a href="album.html">Album</a>.</p>') +
+          '<p class="inv-note">Drag a sticker onto your profile. You can place the same sticker more than once.</p>';
       } else {
         list.innerHTML = '<p class="inv-empty">Coming soon.</p>';
       }
     }
+
+    // Sticker aus dem Inventar aufs Profil ziehen (gleiche Logik wie neue Widgets)
+    document.getElementById('invList').addEventListener('pointerdown', e => {
+      const item = e.target.closest('[data-sticker]');
+      if (!item || !editState) return;
+      e.preventDefault();
+      const n = Number(item.dataset.sticker);
+      const [w, h] = WIDGETS.sticker.sizes[0];
+      const ghost = document.createElement('div');
+      ghost.className = 'widget ghost';
+      ghost.innerHTML = WIDGETS.sticker.render({ id: '_ghost', type: 'sticker', w, h, config: { set: 'base', n } });
+      drag = { mode: 'new', type: 'sticker', w, h, ghost, ok: false, next: null, config: { set: 'base', n } };
+      chip.textContent = `Sticker · ${w}×${h}`;
+      chip.style.display = 'block';
+      moveNew(e);
+    });
 
     document.getElementById('invList').addEventListener('click', e => {
       if (!e.target.closest('[data-toggle-locked]')) return;

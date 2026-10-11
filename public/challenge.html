@@ -857,6 +857,11 @@
       opacity: 1;
     }
     /* Coins abholbereit (v5.25.0): pulsiert, Klick schickt sie in den Kontostand */
+    /* Mini-Booster (v5.29.0): Gratis-Booster-Stufen im Pass */
+    .mini-pack { display: inline-block; width: 16px; height: 22px; border-radius: 3px; background: linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%); box-shadow: 0 2px 5px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.25); position: relative; }
+    .mini-pack::before, .mini-pack::after { content: ''; position: absolute; left: 0; right: 0; height: 2px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.5) 0 2px, transparent 2px 4px); }
+    .mini-pack::before { top: 1px; } .mini-pack::after { bottom: 1px; }
+    .pass-tier .mini-pack.tier-cos { width: 16px; height: 22px; }
     .pass-tier.claimable { cursor: pointer; animation: tierReady 1.6s ease-in-out infinite; }
     .pass-tier.claimable .tier-check { display: none; }
     .pass-tier.claimable::after {
@@ -1159,7 +1164,7 @@
         </div>
         <div class="prog-card pass-card">
           <div class="prog-card-head">
-            <h3><span id="passTitle">Monthly Pass</span> <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">A new pass starts every month. Tiers 5, 10, 15, 20, 25 and 30 unlock this month's exclusive cosmetics (yours forever), all other tiers give coins for the shop. After tier 30 you keep earning 200 coins per step - the first step takes 2,000 XP, every further one 300 XP more. Step 30+5 also gives a free voucher for 1 Refined or Fancy item in that day's daily shop - it expires when the daily shop changes. Every reward is given once per tier - resetting a challenge doesn't reset the pass.</span></span></h3>
+            <h3><span id="passTitle">Monthly Pass</span> <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">A new pass starts every month. Tiers 5, 10, 15, 20, 25 and 30 unlock this month's exclusive cosmetics (yours forever), 8 tiers give a free sticker booster, all other tiers give coins for the shop. After tier 30 you keep earning 200 coins per step - the first step takes 2,000 XP, every further one 300 XP more. Step 30+5 also gives a free voucher for 1 Refined or Fancy item in that day's daily shop - it expires when the daily shop changes. Every reward is given once per tier - resetting a challenge doesn't reset the pass.</span></span></h3>
             <span class="reset-in" id="passEndsIn"></span>
           </div>
           <div class="xp-bar"><div class="xp-bar-fill" id="passXpFill"></div></div>
@@ -1843,7 +1848,7 @@
       shownCoins = coins;
       const claimables = pass.rewards.filter(r => r.claimable);
       const pendingTotal = claimables.reduce((a, r) => a + (r.type === 'coins' ? r.amount || 0 : 0), 0) + (pass.overflow.pending || 0) * pass.overflow.coinsPerStep;
-      const pendingItems = claimables.filter(r => r.type === 'cosmetic').length;
+      const pendingItems = claimables.filter(r => r.type === 'cosmetic' || r.type === 'booster').length;
       const pendingCount = claimables.length + (pass.overflow.pending ? 1 : 0);
       const ca = document.getElementById('claimAll');
       ca.hidden = pendingCount < 2;
@@ -1862,14 +1867,16 @@
         const current = t === pass.tier + 1;
         const progress = current ? `<span class="tier-progress" style="width:${(pass.xpIntoTier / pass.xpPerTier) * 100}%"></span>` : '';
         const COS_LABEL = { border: 'profile picture border', frame: 'profile frame', theme: 'app theme' };
-        const reward = r.type !== 'cosmetic'
+        const reward = r.type === 'booster'
+          ? '<span class="mini-pack tier-cos" title="Free booster"></span>'
+          : r.type !== 'cosmetic'
           ? `<span class="tier-reward">🪙 ${r.amount}</span>`
           : r.cosmeticType === 'frame'
             ? `<span class="mini-frame mini-frame-${r.id} tier-cos"></span>`
             : r.cosmeticType === 'theme'
               ? `<span class="mini-theme mini-theme-${r.themeKey} tier-cos"></span>`
               : `<span class="cos-border cos-${r.id} tier-cos"><span class="cos-fill"></span></span>`;
-        const label = r.type === 'cosmetic' ? `${r.name} (${COS_LABEL[r.cosmeticType] || r.cosmeticType}${r.animated ? ', animated' : ''})` : `${r.amount} coins`;
+        const label = r.type === 'booster' ? 'a free booster (opens in your Album)' : r.type === 'cosmetic' ? `${r.name} (${COS_LABEL[r.cosmeticType] || r.cosmeticType}${r.animated ? ', animated' : ''})` : `${r.amount} coins`;
         html += `<div class="pass-tier${milestone ? ' milestone' : ''}${unlocked ? ' unlocked' : ''}${current ? ' current' : ''}${r.claimable ? ' claimable' : ''}"${r.claimable ? ` data-claim-tier="${t}"` : ''} title="Tier ${t} - ${label}${r.claimable ? ' - click to claim' : unlocked ? ' - unlocked' : ''}${current ? ` (${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP)` : ''}">` +
           `<span class="tier-num">${t}</span>${reward}${unlocked ? '<span class="tier-check">✓</span>' : ''}${progress}</div>`;
       });
@@ -2029,9 +2036,9 @@
       }
     }
     // Cosmetic fliegt als Kopie seines Icons zum "Profile"-Reiter oben
-    function flyCosmetic(tileEl) {
+    function flyCosmetic(tileEl, target = 'profile.html') {
       const icon = tileEl && tileEl.querySelector('.tier-cos');
-      const navLink = document.querySelector('.top-nav a[href="profile.html"]');
+      const navLink = document.querySelector(`.top-nav a[href="${target}"]`);
       if (!icon || !navLink || document.documentElement.classList.contains('fx-off')) { if (navLink) ping(navLink); return; }
       const a = icon.getBoundingClientRect(), b = navLink.getBoundingClientRect();
       const fly = document.createElement('div');
@@ -2078,6 +2085,8 @@
       if (!r.ok) { loadProgression(); return; }
       const before = shownCoins;
       (r.cosmetics || []).forEach(c => flyCosmetic(document.querySelector(`[data-claim-tier="${c.tier}"]`) || fromEl));
+      // Booster fliegen zum Album (dort werden sie geoeffnet)
+      (r.boosters || []).forEach(b => flyCosmetic(document.querySelector(`[data-claim-tier="${b.tier}"]`) || fromEl, 'album.html'));
       fromEl.classList.remove('claimable');
       fromEl.removeAttribute('data-claim-tier');
       if (r.amount) flyCoins(fromEl, r.amount, () => { countTo(before, r.coins); shownCoins = r.coins; loadProgression(); });

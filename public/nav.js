@@ -10,6 +10,7 @@
   const ITEMS = [
     { href: 'overview.html', label: 'Overview', home: true, title: 'Home' },
     { href: 'profile.html', label: 'Profile' },
+    { href: 'album.html', label: 'Album' },
     { href: 'challenge.html', label: 'Challenge', also: ['role.html', 'champion.html'] },
     { href: 'challenge.html?view=pass', label: 'Pass' },
     { href: 'trophies.html', label: 'Trophies' },

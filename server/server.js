@@ -776,6 +776,19 @@ app.post('/api/shop/consumable', (req, res) => {
   const result = progression.buyConsumable(Number(slot), choice || null, progressionContext(req.body || {}));
   res.status(result.ok ? 200 : 400).json(result);
 });
+// Booster & Album (v5.29.0)
+app.get('/api/album', (req, res) => res.json(progression.getAlbum()));
+app.post('/api/boosters/buy', (req, res) => {
+  const { set, qty } = req.body || {};
+  const result = progression.buyBooster(set || 'base', qty);
+  res.status(result.ok ? 200 : 400).json(result);
+});
+app.post('/api/boosters/open', (req, res) => {
+  const { set, count } = req.body || {};
+  const result = progression.openBoosters(set || 'base', count);
+  res.status(result.ok ? 200 : 400).json(result);
+});
+
 // Pass-Coins selbst abholen (v5.25.0): { tier } | { overflow: true } | { all: true }
 app.post('/api/pass/claim', (req, res) => {
   const result = progression.claimPassCoins(req.body || {});

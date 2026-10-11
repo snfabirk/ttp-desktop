@@ -314,6 +314,26 @@
   .pv-app .box div.who { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
   .pv-app .who .cos-border { width: 22px; height: 22px; }
   .pv-pop .pv-label { position: absolute; left: 0; right: 0; bottom: -22px; text-align: center; font-size: .72rem; color: var(--text-dim); font-style: italic; }
+  /* ----- Booster ----- */
+  .boosters { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+  .booster { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: color-mix(in srgb, var(--input-bg) 55%, transparent); }
+  .booster.soon { opacity: .5; }
+  .booster .bpack { width: 58px; height: 84px; flex-shrink: 0; border-radius: 6px; position: relative; overflow: hidden; box-shadow: 0 8px 18px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.18); }
+  .booster .bpack::before, .booster .bpack::after { content: ''; position: absolute; left: 0; right: 0; height: 5px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.4) 0 3px, rgba(0,0,0,.15) 3px 6px); }
+  .booster .bpack::before { top: 0; } .booster .bpack::after { bottom: 0; }
+  .booster .bpack i { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.35) 45%, transparent 60%); background-size: 250% 100%; animation: bfoil 3.2s linear infinite; }
+  @keyframes bfoil { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+  html.fx-off .booster .bpack i { animation: none; }
+  .booster .binfo { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
+  .booster .bname { font-family: 'Cinzel', Georgia, serif; color: var(--gold); font-size: .95rem; }
+  .booster .bown { color: var(--text-dim); font-size: .75rem; }
+  .booster .bown b { color: var(--text); font-weight: normal; }
+  .booster .bbuy { display: flex; gap: 6px; flex-wrap: wrap; }
+  .booster .rates { color: var(--text-faint); font-size: .72rem; cursor: help; position: relative; }
+  .booster .rates:hover .rates-pop, .booster .rates:focus .rates-pop { opacity: 1; visibility: visible; }
+  .booster .rates-pop { position: absolute; left: 0; bottom: calc(100% + 6px); width: 250px; z-index: 30; background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: .74rem; line-height: 1.6; color: var(--text-dim); box-shadow: 0 10px 24px rgba(0,0,0,.5); opacity: 0; visibility: hidden; transition: opacity .15s; }
+  .booster-msg { grid-column: 1 / -1; color: var(--gold); font-size: .78rem; min-height: 1em; }
+  .album-link { color: var(--text-faint); text-decoration: none; } .album-link:hover { color: var(--gold); }
   .shop-note { color: var(--text-faint); font-size: 0.78rem; text-align: center; margin-top: 12px; font-style: italic; }
   /* (privat) - unsichtbar, Mauszeiger bleibt normal */
   .corner-spot { position: fixed; left: 0; bottom: 0; width: 64px; height: 64px; z-index: 50; cursor: default; background: transparent; }
@@ -342,6 +362,11 @@
       <section class="shop-card">
         <div class="sc-head"><h3>Daily Offers</h3><span class="sc-reset" id="dailyReset"></span></div>
         <div class="offers daily" id="dailyOffers"></div>
+      </section>
+      <!-- Booster (v5.29.0): alle Booster-Sorten an einem Ort, immer kaufbar -->
+      <section class="shop-card">
+        <div class="sc-head"><h3>Boosters</h3><span class="sc-reset"><a href="album.html" class="album-link">open them in your Album →</a></span></div>
+        <div class="boosters" id="boosterOffers"></div>
       </section>
     </div>
     <aside class="col">
@@ -737,7 +762,46 @@
       document.getElementById('weeklyReset').textContent = `new in ${until(shop.weeklyResetAt)}`;
       document.getElementById('dailyReset').textContent = `new in ${until(shop.dailyResetAt)}`;
       renderWheelSmall();
+      renderBoosters();
     }
+
+    // ----- Booster: Kauf mit Zwei-Klick-Bestaetigung; Pull Rates nur hinter "?" -----
+    const BOOSTER_GRAD = { base: 'linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%)' };
+    let boosterConfirm = null, boosterMsg = '';
+    function renderBoosters() {
+      const list = shop.boosters || [];
+      const rt = shop.boosterRates || { animChance: .1, dupeRefund: { common: 3, uncommon: 8, holo: 50, anim: 300 } };
+      document.getElementById('boosterOffers').innerHTML = list.map(b => {
+        const btn = (q) => {
+          const cost = b.price * q, key = `${b.id}:${q}`, conf = boosterConfirm === key, short = shop.coins < cost;
+          return `<button type="button" class="offer-buy${conf ? ' confirm' : ''}${short ? ' short' : ''}" data-booster="${b.id}" data-qty="${q}"${short ? ' disabled title="Not enough coins"' : ''}>${conf ? `Buy ${q} for 🪙 <b>${fmtNum(cost)}</b>?` : `${q > 1 ? `${q}× · ` : ''}🪙 <b>${fmtNum(cost)}</b>`}</button>`;
+        };
+        return `<div class="booster${b.released ? '' : ' soon'}">
+          <span class="bpack" style="background:${BOOSTER_GRAD[b.id] || '#333'}"><i></i></span>
+          <span class="binfo">
+            <span class="bname">${esc(b.name)}</span>
+            <span class="bown">You own <b>${b.owned}</b> unopened · album ${b.collected} / ${b.total}</span>
+            <span class="bbuy">${b.released ? btn(1) + btn(5) : '<em>coming later</em>'}</span>
+            <span class="rates" tabindex="0">Pull rates ?<span class="rates-pop">7 stickers per booster: 4 common, 2 uncommon and 1 rare slot (Holo Rare ${Math.round((1 - rt.animChance) * 100)}% · Animated Rare ${Math.round(rt.animChance * 100)}%).<br>Duplicates give coins back: ${rt.dupeRefund.common} / ${rt.dupeRefund.uncommon} / ${rt.dupeRefund.holo} / ${rt.dupeRefund.anim}.</span></span>
+          </span>
+        </div>`;
+      }).join('') + `<div class="booster-msg">${esc(boosterMsg)}</div>`;
+    }
+    document.getElementById('boosterOffers').addEventListener('click', async e => {
+      const b = e.target.closest('[data-booster]');
+      if (!b || b.disabled) return;
+      const key = `${b.dataset.booster}:${b.dataset.qty}`;
+      if (boosterConfirm !== key) {
+        boosterConfirm = key; renderBoosters();
+        setTimeout(() => { if (boosterConfirm === key) { boosterConfirm = null; renderBoosters(); } }, 4000);
+        return;
+      }
+      boosterConfirm = null;
+      let r;
+      try { r = await (await fetch('/api/boosters/buy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ set: b.dataset.booster, qty: Number(b.dataset.qty) }) })).json(); } catch (err) { r = { ok: false, error: 'Could not reach the app server.' }; }
+      boosterMsg = r.ok ? `Got ${b.dataset.qty > 1 ? `${b.dataset.qty} boosters` : 'a booster'}! Open them in your Album.` : (r.error || 'Something went wrong.');
+      await load();
+    });
 
     // shop-scenes-2.js laedt evtl. erst nach dem Shop - kurz nachfassen
     function warmThemes(keys, tries = 0) {

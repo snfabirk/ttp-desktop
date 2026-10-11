@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Album – Three-Trick-Pony</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Spiegel:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script src="nav.js"></script>
+<script src="update-indicator.js"></script>
+<script src="changelog.js"></script>
+<!-- Album (v5.29.0): Sticker-Sammlung + Booster oeffnen. Gekauft werden die
+     Booster im Shop. Design freigegeben in theme-lab/booster-album.html,
+     Sticker-Kunst in stickers.js (Freigabe: theme-lab/sticker-set.js). -->
+<style>
+  :root { --c-common: #9aa6b8; --c-uncommon: #5fd08a; --c-holo: #b98cff; --c-anim: #ff5ab4; }
+  body { display: flex; flex-direction: column; align-items: center; }
+  .site-header { text-align: center; padding: 30px 30px 0; }
+  .panel-heading.centered { color: var(--gold); text-align: center; margin: 14px 0 0; font-family: 'Cinzel', Georgia, serif; font-size: 1.3rem; letter-spacing: 1px; }
+  .album-empty { color: var(--text-dim); font-size: .8rem; text-align: center; line-height: 1.5; }
+  .album-empty a { color: var(--gold); }
+  .album-tabs span.on { cursor: default; }
+  .album-wrap { width: 100%; max-width: 1180px; margin: 18px auto 60px; padding: 0 20px; box-sizing: border-box; display: grid; grid-template-columns: 300px 1fr; gap: 22px; align-items: start; }
+  .card-box { background: var(--panel-bg); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .card-box h3 { margin: 0 0 12px; color: var(--gold); font-family: 'Cinzel', Georgia, serif; letter-spacing: 1px; font-size: 1.05rem; }
+  .album-wrap .btn, .ov .btn { padding: 8px 18px; border-radius: 16px; border: 1px solid var(--gold); background: transparent; color: var(--gold); font-family: inherit; font-size: .9rem; cursor: pointer; }
+  .album-wrap .btn:hover, .ov .btn:hover { background: color-mix(in srgb, var(--gold) 16%, transparent); }
+  .album-wrap .btn:disabled, .ov .btn:disabled { opacity: .4; cursor: default; }
+  .odds { font-size: .75rem; color: var(--text-dim); line-height: 1.6; width: 100%; }
+  .odds b { color: var(--text); font-weight: normal; }
+  .rates-hint { position: relative; color: var(--text-dim); font-size: .8rem; cursor: help; display: inline-flex; align-items: center; gap: 6px; }
+  .rates-hint .q { width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--text-dim); display: inline-grid; place-items: center; font-size: .7rem; }
+  .rates-hint:hover, .rates-hint:focus { color: var(--gold); } .rates-hint:hover .q, .rates-hint:focus .q { border-color: var(--gold); }
+  .rates-pop { position: absolute; left: 50%; top: calc(100% + 8px); transform: translateX(-50%); width: 260px; z-index: 20; background: #0d172b; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: .75rem; line-height: 1.6; color: var(--text-dim); box-shadow: 0 10px 24px rgba(0,0,0,.5); opacity: 0; visibility: hidden; transition: opacity .15s; }
+  .rates-pop b { color: var(--text); font-weight: normal; }
+  .rates-hint:hover .rates-pop, .rates-hint:focus .rates-pop { opacity: 1; visibility: visible; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
+  /* ---------- Booster-Pack ---------- */
+  .pack-area { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .pack { width: 170px; height: 250px; position: relative; border-radius: 10px; cursor: pointer; font-size: 11px;
+    background: linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%);
+    box-shadow: 0 18px 40px rgba(0,0,0,.55), inset 0 0 0 2px rgba(255,255,255,.15); overflow: hidden; }
+  .pack::before { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.35) 45%, transparent 60%); background-size: 250% 100%; animation: foil 3.2s linear infinite; mix-blend-mode: screen; pointer-events: none; }
+  @keyframes foil { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+  .pack .crimp { position: absolute; left: 0; right: 0; height: 6%; background: repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 4px, rgba(0,0,0,.15) 4px 8px); }
+  .pack .crimp.top { top: 0; } .pack .crimp.bot { bottom: 0; }
+  .pack .logo { position: absolute; top: 16%; left: 0; right: 0; text-align: center; }
+  .pack .logo svg { width: 54%; filter: drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
+  .pack .title { position: absolute; bottom: 21%; left: 0; right: 0; text-align: center; font-family: 'Cinzel', Georgia, serif; color: #fff; letter-spacing: 1px; text-shadow: 0 2px 6px rgba(0,0,0,.6); font-size: 1.35em; }
+  .pack .title b { display: block; font-size: 1em; } .pack .title small { font-size: .55em; opacity: .85; letter-spacing: 2px; }
+  .pack .count { position: absolute; bottom: 9%; left: 0; right: 0; text-align: center; font-size: .9em; color: rgba(255,255,255,.85); }
+  .pack.big .switch { display: none; }
+  .pack:not(.big):hover { transform: translateY(-4px) rotate(-1.5deg); transition: transform .25s; }
+  .pack .switch { position: absolute; top: 9%; right: 7%; font-size: .75em; color: rgba(255,255,255,.85); background: rgba(0,0,0,.35); border-radius: 8px; padding: 1px 7px; }
+  /* Set-Auswahl: alle Booster-Sorten, die man besitzt (bzw. die es gibt) */
+  .set-picker { display: none; width: 100%; flex-direction: column; gap: 6px; }
+  .set-picker.on { display: flex; }
+  .set-opt { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 9px; border: 1px solid var(--border); cursor: pointer; background: rgba(255,255,255,.02); }
+  .set-opt:hover { border-color: var(--gold); }
+  .set-opt.sel { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+  .set-opt.none { opacity: .45; cursor: default; }
+  .set-opt .mini { width: 26px; height: 38px; border-radius: 4px; flex-shrink: 0; box-shadow: 0 3px 8px rgba(0,0,0,.5); }
+  .set-opt b { display: block; font-family: 'Cinzel', Georgia, serif; font-size: .8rem; color: var(--text); font-weight: normal; }
+  .set-opt small { color: var(--text-dim); font-size: .7rem; }
+
+  /* ---------- Oeffnen: Vollbild-Overlay ---------- */
+  .ov { user-select: none; -webkit-user-select: none; position: fixed; inset: 0; z-index: 100; background: rgba(4, 8, 16, .84); backdrop-filter: blur(6px); opacity: 0; transition: opacity .35s; }
+  .ov.on { opacity: 1; }
+  .ov-grid { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; gap: 10px; opacity: .35; transition: opacity .5s; }
+  .ov-grid.done { opacity: 1; }
+  .ov-slot { width: 92px; aspect-ratio: 190 / 266; border-radius: 9px; border: 1px dashed rgba(200,169,110,.25); position: relative; }
+  .ov-hint { position: absolute; left: 0; right: 0; bottom: 6vh; text-align: center; color: var(--text); font-size: .95rem; letter-spacing: .5px; text-shadow: 0 2px 8px #000; pointer-events: none; }
+  .ov-close { position: absolute; top: 22px; right: 26px; z-index: 8; }
+  .ov-done { position: absolute; left: 50%; bottom: 4vh; transform: translateX(-50%); z-index: 8; display: none; }
+  .pack.big { position: absolute; z-index: 5; cursor: default; transition: left .55s cubic-bezier(.3,.7,.3,1), top .55s cubic-bezier(.3,.7,.3,1), width .55s cubic-bezier(.3,.7,.3,1), height .55s cubic-bezier(.3,.7,.3,1), font-size .55s; }
+  /* Reiss-Band ueber die ganze Breite: man kann auch neben dem Pack ansetzen */
+  .tear-band { position: absolute; left: 0; right: 0; z-index: 9; cursor: ew-resize; }
+  .tear-band::after { content: '‹   drag to tear   ›'; position: absolute; left: 0; right: 0; top: -26px; text-align: center; color: rgba(255,255,255,.8); font-size: .85rem; letter-spacing: 3px; animation: tearHint 1.4s ease-in-out infinite; pointer-events: none; }
+  .tear-band.active::after { display: none; }
+  @keyframes tearHint { 50% { opacity: .3; } }
+  /* Pack aus zwei Teilen: Kopfstreifen + Rest, getrennt an einer geraden Kante */
+  .pk-wrap { position: absolute; z-index: 5; transition: left .55s cubic-bezier(.3,.7,.3,1), top .55s cubic-bezier(.3,.7,.3,1), width .55s cubic-bezier(.3,.7,.3,1), height .55s cubic-bezier(.3,.7,.3,1); }
+  .pk-wrap .pack { position: absolute; inset: 0; width: 100%; height: 100%; cursor: default; font-size: inherit; transition: none; }
+  .pk-wrap .pk-top { clip-path: inset(0 0 calc(100% - var(--cut)) 0); }
+  .pk-wrap .pk-bot { clip-path: inset(var(--cut) 0 0 0); }
+  .pk-wrap .cut { position: absolute; left: 0; height: 2px; width: 0; z-index: 7; pointer-events: none; background: linear-gradient(90deg, rgba(255,255,255,.2), #fff); box-shadow: 0 0 6px 1px rgba(255,255,255,.8); }
+  .pk-wrap .cut.rtl { background: linear-gradient(270deg, rgba(255,255,255,.2), #fff); }
+  .pk-top.off { transition: transform 1.5s cubic-bezier(.3,.6,.4,1); }
+  .pk-bot.drop { transition: transform .5s cubic-bezier(.55,0,.9,.45); transform: translateY(120vh) rotate(3deg); }
+
+  .ov-stack { position: absolute; z-index: 6; width: min(250px, 24vw); aspect-ratio: 190 / 266; left: 50%; top: 47%; transform: translate(-50%, -50%); cursor: pointer; font-size: 20px; }
+  .ov-stack .stk-card { position: absolute; inset: 0; }
+  /* Tiefe ueber Schatten statt versetzter Kartenkanten */
+  .ov-stack::before { content: ''; position: absolute; inset: 0; border-radius: 12px; box-shadow: 0 18px 34px rgba(0,0,0,.6); }
+  .ov-stack.empty::before { display: none; }
+
+  /* Karte (Traegerkarte mit Sticker) */
+  .stk-card { border-radius: 12px; }
+  .face { position: absolute; inset: 0; border-radius: 12px; overflow: hidden; }
+  .back { background: radial-gradient(circle at 50% 40%, #24365e, #0c1426 70%); border: 2px solid #3a4a70; display: grid; place-items: center; }
+  .back svg { width: 54%; opacity: .55; }
+  .back.shake { animation: suspense .12s linear infinite; }
+  @keyframes suspense { 0% { transform: translate(0, 0); } 25% { transform: translate(-1.5px, .5px); } 50% { transform: translate(1px, -1px); } 75% { transform: translate(1.5px, .5px); } }
+  .back.glow-holo { box-shadow: 0 0 26px 6px color-mix(in srgb, var(--c-holo) 75%, transparent), inset 0 0 30px rgba(255,255,255,.25); border-color: #e0d0ff; animation: holoBack 2.2s linear infinite; }
+  @keyframes holoBack { to { filter: hue-rotate(360deg); } }
+  .back.glow-anim { box-shadow: 0 0 30px 8px color-mix(in srgb, var(--c-anim) 80%, transparent), inset 0 0 34px color-mix(in srgb, var(--c-anim) 60%, transparent); border-color: #ffd0ea; animation: pulseBack .9s ease-in-out infinite alternate; }
+  @keyframes pulseBack { to { box-shadow: 0 0 44px 14px color-mix(in srgb, var(--c-anim) 90%, transparent), inset 0 0 40px color-mix(in srgb, var(--c-anim) 70%, transparent); } }
+  .tag-new, .tag-dupe { position: absolute; top: 4px; right: 4px; font-size: .55rem; padding: 1px 6px; border-radius: 8px; letter-spacing: 1px; z-index: 3; }
+  .tag-new { background: var(--c-uncommon); color: #062; font-weight: bold; }
+  .tag-dupe { background: rgba(0,0,0,.65); color: var(--gold); border: 1px solid var(--gold); }
+  .burst { position: absolute; inset: -40px; border-radius: 50%; pointer-events: none; animation: burst .8s ease-out forwards; }
+  @keyframes burst { from { transform: scale(.4); opacity: .95; } to { transform: scale(1.7); opacity: 0; } }
+  .fly { position: fixed; z-index: 7; transition: left .55s cubic-bezier(.3,.7,.3,1), top .55s cubic-bezier(.3,.7,.3,1), width .55s cubic-bezier(.3,.7,.3,1), height .55s cubic-bezier(.3,.7,.3,1), font-size .55s; }
+  .ov-slot .stk-card { position: absolute; inset: 0; font-size: 9px; }
+
+  /* ---------- Album ---------- */
+  .album-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .album-tabs span { padding: 3px 12px; border-radius: 12px; border: 1px solid var(--border); font-size: .8rem; color: var(--text-dim); }
+  .album-tabs span.on { border-color: var(--gold); color: var(--gold); }
+  .album-tabs span.soon { opacity: .45; }
+  .album-progress { font-size: .8rem; color: var(--text-dim); margin: -4px 0 12px; }
+  .album-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px; }
+  .album-slot { aspect-ratio: 190 / 266; border-radius: 9px; border: 1px dashed var(--border); position: relative; display: grid; place-items: center; color: #34405c; font-size: .8rem; }
+  .album-slot .num { position: absolute; top: 4px; left: 6px; font-size: .6rem; color: var(--text-dim); z-index: 3; }
+  .album-slot.have { border: none; cursor: zoom-in; font-size: 9px; }
+  .album-slot.have .stk-card { position: absolute; inset: 0; transition: transform .2s; }
+  .album-slot .x { position: absolute; top: -6px; right: -6px; font-size: .6rem; color: var(--gold); z-index: 4; background: var(--input-bg); border: 1px solid var(--gold); border-radius: 8px; padding: 0 5px; line-height: 1.4; }
+
+  /* ---------- Inspizieren: 3D-Neigung mit dem Cursor ---------- */
+  .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.86); backdrop-filter: blur(6px); display: grid; place-items: center; cursor: zoom-out; opacity: 0; transition: opacity .25s; }
+  .insp.on { opacity: 1; }
+  .insp .stk-card { position: relative; width: min(340px, 70vw); aspect-ratio: 190 / 266; font-size: 24px; transition: transform .12s ease-out; transform-style: preserve-3d; }
+  .insp .glare { position: absolute; inset: 0; border-radius: 12px; pointer-events: none; z-index: 4; background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgba(255,255,255,.14), transparent 45%); transform: translateZ(1px); } /* KEIN mix-blend-mode: der flacht die 3D-Ebenen der Karte ab */
+  .insp-cap { position: absolute; bottom: 6vh; left: 0; right: 0; text-align: center; color: var(--text-dim); font-size: .85rem; }
+
+</style>
+</head>
+<body>
+  <button type="button" class="settings-gear-btn" id="settingsGearBtn" title="Settings" aria-label="Settings">⚙</button>
+  <button type="button" class="quit-btn" id="quitBtn" title="Quit completely" aria-label="Quit completely">⏻</button>
+  <header class="site-header">
+    <h1>League of Legends</h1>
+    <p class="subtitle">Three-Trick-Pony</p>
+    <h2 class="panel-heading centered">Album</h2>
+  </header>
+
+<div class="album-wrap wrap">
+  <section class="card-box pack-area">
+    <h3>Your Boosters</h3>
+    <div class="pack" id="pack" title="Choose which booster to open">
+      <div class="crimp top"></div>
+      <div class="logo"></div>
+      <div class="title"><b>Three-Trick-Pony</b><small id="packSetName">BASE SET</small></div>
+      <div class="count" id="packCount"></div>
+      <div class="crimp bot"></div>
+    </div>
+    <div class="set-picker" id="setPicker"></div>
+    <div style="display:flex;gap:8px"><button class="btn" id="openBtn">Open 1</button><button class="btn" id="openAllBtn">Open all</button></div>
+    <p class="album-empty" id="noBoosters" style="display:none">No boosters left.<br>Get more in the <a href="shop.html">shop</a> or from your monthly pass.</p>
+    <span class="rates-hint" tabindex="0">Pull rates <span class="q">?</span>
+      <span class="rates-pop"><div><span class="dot" style="background:var(--c-common)"></span><b>4×</b> Common</div>
+      <div><span class="dot" style="background:var(--c-uncommon)"></span><b>2×</b> Uncommon</div>
+      <div><span class="dot" style="background:var(--c-holo)"></span><b>1×</b> <span style="color:var(--c-holo)">Holo Rare</span> 90% · <span style="color:var(--c-anim)">Animated Rare</span> 10%</div>
+      <div style="margin-top:6px">Base Set: 50 stickers - 25 common, 15 uncommon, 7 holo rare, 3 animated rare</div>
+      <div style="margin-top:4px">Duplicates give coins back: 3 / 8 / 50 / 300</div></span>
+    </span>
+  </section>
+
+  <section class="card-box">
+    <h3>Album</h3>
+    <div class="album-tabs" id="albumTabs"></div>
+    <div class="album-progress" id="albumProgress"></div>
+    <div class="album-grid" id="albumGrid"></div>
+  </section>
+</div>
+
+<script src="stickers.js"></script>
+<script>
+// ===================== Sticker-Kunst (detailliert, ohne Die-Cut-Rand) =====================
+const HEAD = 'M42 4 L48 15 L54 3 L60 18 C74 20 86 30 90 48 C93 62 92 80 92 96 L48 96 C50 84 52 72 50 62 C40 64 28 74 16 75 C8 75 4 69 6 62 C10 52 26 36 37 22 Z';
+const MANE = 'M60 18 L66 9 L69 20 L77 13 L79 26 L87 22 L87 35 L95 35 L91 47 L99 51 L93 59 L99 67 L93 73 L97 81 L92 85 L92 96 C92 80 93 62 90 48 C86 30 74 20 60 18 Z';
+let gid = 0;
+function ponyHead(body, shade, mane, x, y, sc) {
+  const id = 'pg' + (++gid);
+  return `<g transform="translate(${x} ${y}) scale(${sc})">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${body}"/><stop offset="1" stop-color="${shade}"/></linearGradient></defs>
+    <path d="${HEAD}" fill="url(#${id})" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/>
+    <path d="${MANE}" fill="${mane}" stroke="rgba(0,0,0,.3)" stroke-width="1"/>
+    <path d="M14 66 C22 70 30 68 36 64" stroke="rgba(0,0,0,.25)" stroke-width="1.6" fill="none"/>
+    <circle cx="13" cy="64" r="2" fill="rgba(0,0,0,.45)"/>
+    <ellipse cx="36" cy="33" rx="4" ry="4.6" fill="#1a1410"/><circle cx="37.3" cy="31.6" r="1.4" fill="#fff"/>
+  </g>`;
+}
+const BACK_LOGO = `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="#c8a96e" stroke-width="4"/><g transform="translate(20 14) scale(.82)"><path d="${HEAD}" fill="#c8a96e"/></g></svg>`;
+document.querySelector('#pack .logo').innerHTML = `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="#0b1424" stroke="#c8a96e" stroke-width="4"/>${ponyHead('#e8c48c', '#b07d18', '#7a4a20', 18, 12, .86)}</svg>`;
+
+// ===================== Set (Entwurfsausschnitt aus 50) =====================
+const RC = { common: 'var(--c-common)', uncommon: 'var(--c-uncommon)', holo: 'var(--c-holo)', anim: 'var(--c-anim)' };
+const RL = { common: 'Common', uncommon: 'Uncommon', holo: 'Holo Rare', anim: 'Animated Rare' };
+// Die echten 50 Sticker aus sticker-set.js
+const ALL = window.STICKERS.SET;
+const frontHtml = window.STICKERS.frontHtml;
+// Daten vom Server (/api/album): Sets, ungeoeffnete Booster, gesammelte Sticker
+let DATA = null;
+let owned = {};                        // { n: Anzahl } fuer das gewaehlte Set
+const SET_STYLE = { base: { name: 'BASE SET', grad: 'linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%)' } };
+const setCards = () => ALL;           // aktuell nur das Base Set
+const TOTAL_IN_SET = () => (cur() ? cur().total : 50);
+let sel = 0;
+const cur = () => DATA && DATA.sets[sel];
+let unopened = 0;
+async function loadAlbum() {
+  try { DATA = await (await fetch('/api/album')).json(); } catch (e) { DATA = { sets: [], stickers: {} }; }
+  owned = { ...((DATA.stickers || {})[cur() ? cur().id : 'base'] || {}) };
+  unopened = cur() ? cur().owned : 0;
+  updCount(); renderAlbum(); renderTabs();
+}
+const pick = l => l[Math.floor(Math.random() * l.length)];
+const backHtml = s => `<div class="face back${s.r === 'holo' ? ' glow-holo' : s.r === 'anim' ? ' glow-anim' : ''}">${BACK_LOGO}</div>`;
+const card = s => { const d = document.createElement('div'); d.className = 'stk-card'; d.innerHTML = `<div class="face back">${BACK_LOGO}</div>`; return d; };
+// Umdrehen in 2D: anheben, zur Kante falten (dunkler werdend), Seite tauschen,
+// aufklappen, absetzen - eine einzige Karte, kein durchscheinender Rest
+function flipCard(el, s, done) {
+  const up = 'translateY(-10px) scale(1.04)';
+  el.animate([{ transform: 'none' }, { transform: up }], { duration: 110, easing: 'ease-out', fill: 'forwards' }).onfinish = () => {
+    el.animate([{ transform: `${up} scaleX(1)`, filter: 'brightness(1)' }, { transform: `${up} scaleX(0)`, filter: 'brightness(.55)' }], { duration: 130, easing: 'ease-in', fill: 'forwards' }).onfinish = () => {
+      el.innerHTML = frontHtml(s);
+      el.animate([{ transform: `${up} scaleX(0)`, filter: 'brightness(1.5)' }, { transform: `${up} scaleX(1)`, filter: 'brightness(1)' }], { duration: 170, easing: 'ease-out', fill: 'forwards' }).onfinish = () => {
+        el.animate([{ transform: up }, { transform: 'none' }], { duration: 140, easing: 'ease-in-out', fill: 'forwards' });
+        if (done) done();
+      };
+    };
+  };
+}
+
+// ===================== Oeffnen =====================
+const updCount = () => {
+  if (!cur()) return;
+  cur().owned = unopened;
+  const st = SET_STYLE[cur().id] || {};
+  const pack = document.getElementById('pack');
+  pack.style.background = st.grad || '';
+  document.getElementById('packSetName').textContent = st.name || cur().name.toUpperCase();
+  document.getElementById('packCount').textContent = `${unopened} unopened`;
+  if (!pack.querySelector('.switch')) { const sw = document.createElement('span'); sw.className = 'switch'; sw.textContent = '⇄ set'; pack.appendChild(sw); }
+  document.getElementById('openBtn').disabled = document.getElementById('openAllBtn').disabled = !unopened;
+  document.getElementById('noBoosters').style.display = unopened ? 'none' : 'block';
+  renderPicker();
+};
+function renderPicker() {
+  document.getElementById('setPicker').innerHTML = DATA.sets.map((st, i) =>
+    `<div class="set-opt${i === sel ? ' sel' : ''}${st.owned ? '' : ' none'}" data-set="${i}">
+      <span class="mini" style="background:${(SET_STYLE[st.id] || {}).grad || '#333'}"></span>
+      <span><b>${st.name}</b><small>${st.owned ? `${st.owned} unopened` : st.released ? 'none - buy some in the shop' : 'not released yet'}</small></span>
+    </div>`).join('');
+}
+let opening = false;
+async function openPacks(n) {
+  if (!unopened || opening) return;
+  opening = true;
+  n = Math.min(n, unopened);
+  let res;
+  try { res = await (await fetch('/api/boosters/open', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ set: cur().id, count: n }) })).json(); } catch (e) { res = { ok: false }; }
+  opening = false;
+  if (!res.ok) { loadAlbum(); return; }
+  unopened = res.owned; updCount();
+  const cards = res.cards.map(c => ({ ...ALL.find(x => x.n === c.n), isNew: c.isNew, refund: c.refund }));
+  const ov = document.createElement('div'); ov.className = 'ov';
+  const cols = Math.min(7, cards.length), rows = Math.ceil(cards.length / cols);
+  const slotW = Math.min(92, ((innerHeight * .78) / rows - 10) * 190 / 266);
+  ov.innerHTML = `<button class="btn ov-close" id="ovSkip" title="Reveal every sticker at once">Show all</button>
+    <div class="ov-grid" style="grid-template-columns:repeat(${cols}, ${slotW}px)">${cards.map(() => `<div class="ov-slot" style="width:${slotW}px"></div>`).join('')}</div>
+    <div class="ov-hint" id="ovHint">Drag across the top edge to tear the booster open</div>
+    <button class="btn ov-done" id="ovDone">Done</button>`;
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => ov.classList.add('on'));
+  const grid = ov.querySelector('.ov-grid');
+  const hint = t => { ov.querySelector('#ovHint').textContent = t; };
+
+  // 1) Booster tritt in den Vordergrund - als zwei deckungsgleiche Teile
+  //    (Kopfstreifen + Rest), die spaeter an einer geraden Kante getrennt werden
+  const src = document.getElementById('pack').getBoundingClientRect();
+  const CUT = 9; // Schnitthoehe in % der Pack-Hoehe, knapp unter der Siegelnaht
+  const wrap = document.createElement('div'); wrap.className = 'pk-wrap'; wrap.style.setProperty('--cut', CUT + '%');
+  const mk = cls => { const p = document.getElementById('pack').cloneNode(true); p.removeAttribute('id'); p.classList.add('big', cls); p.querySelector('.count').textContent = n > 1 ? `${n} boosters` : '7 stickers'; return p; };
+  const pTop = mk('pk-top'), pBot = mk('pk-bot');
+  const cutLine = document.createElement('div'); cutLine.className = 'cut'; cutLine.style.top = `calc(${CUT}% - 1px)`;
+  wrap.append(pBot, pTop, cutLine);
+  Object.assign(wrap.style, { left: src.left + 'px', top: src.top + 'px', width: src.width + 'px', height: src.height + 'px', fontSize: '11px' });
+  ov.appendChild(wrap);
+  const W = Math.min(300, innerWidth * .28), H = W * 250 / 170, L = (innerWidth - W) / 2, T = (innerHeight - H) / 2;
+  requestAnimationFrame(() => requestAnimationFrame(() => Object.assign(wrap.style, { left: L + 'px', top: T + 'px', width: W + 'px', height: H + 'px', fontSize: (W / 170 * 11) + 'px' })));
+
+  // 2) Aufreissen: Band ueber die ganze Breite auf Hoehe des Schnitts - man
+  //    kann links oder rechts NEBEN dem Pack ansetzen und durchziehen. Der
+  //    Schnitt waechst gerade von der Seite, von der man kommt.
+  const cutY = T + H * CUT / 100;
+  const band = document.createElement('div'); band.className = 'tear-band';
+  Object.assign(band.style, { top: (cutY - 40) + 'px', height: '80px' });
+  ov.appendChild(band);
+  let startX = null, dir = 0, torn = false;
+  band.addEventListener('pointerdown', e => { e.preventDefault(); startX = e.clientX; band.setPointerCapture(e.pointerId); band.classList.add('active'); });
+  band.addEventListener('pointermove', e => {
+    if (startX == null || torn) return;
+    if (!dir && Math.abs(e.clientX - startX) > 4) { dir = Math.sign(e.clientX - startX); cutLine.classList.toggle('rtl', dir < 0); }
+    if (!dir) return;
+    const w = dir > 0 ? e.clientX - L : L + W - e.clientX;           // wie weit der Schnitt im Pack ist
+    const p = Math.max(0, Math.min(1, w / W));
+    cutLine.style.width = (p * W) + 'px';
+    cutLine.style.left = dir > 0 ? '0' : ((1 - p) * W) + 'px';
+    if (p >= .97) tearOpen();
+  });
+  band.addEventListener('pointerup', () => { if (!torn) { startX = null; dir = 0; cutLine.style.width = '0'; band.classList.remove('active'); } });
+  function tearOpen() {
+    if (torn) return; torn = true;
+    band.remove();
+    cutLine.style.width = W + 'px'; cutLine.style.left = '0';
+    // sauberer Schnitt: Kopfstreifen hebt in Zugrichtung ab, der Rest faellt nach unten
+    pTop.classList.add('off');
+    cutLine.remove();
+    requestAnimationFrame(() => { pTop.style.transform = `translate(${dir * innerWidth * .55}px, -${innerHeight * .45}px) rotate(${dir * 24}deg)`; });
+    hint('');
+    setTimeout(buildStack, 250);
+  }
+
+  // 3) Stapel: jeder Klick zeigt den naechsten Sticker, der vorige faehrt in
+  //    seinen Platz im Hintergrund
+  const stackEl = document.createElement('div'); stackEl.className = 'ov-stack';
+  let idx = -1, shown = null, built = false, skipAll = false;
+  // "Show all": alle restlichen Sticker sofort verdeckt in ihre Plaetze legen
+  // und in einer schnellen Welle aufdecken (fuer Ungeduldige)
+  const tagFor = (el, s) => { owned[s.n] = (owned[s.n] || 0) + 1; const t = document.createElement('span'); t.className = s.isNew ? 'tag-new' : 'tag-dupe'; t.textContent = s.isNew ? 'NEW' : `+${s.refund} 🪙`; el.appendChild(t); };
+  const autoRun = () => {
+    flipping = true;
+    const slots = ov.querySelectorAll('.ov-slot');
+    const fs = i => (slots[i].getBoundingClientRect().width / 92 * 9) + 'px';
+    if (shown) { const { el, s, i } = shown; shown = null; el.getAnimations().forEach(x => x.cancel()); el.removeAttribute('style'); el.style.fontSize = fs(i); slots[i].appendChild(el); tagFor(el, s); }
+    // Karte, die gerade noch verdeckt zappelt, gehoert mit dazu
+    let start = idx + 1;
+    if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; start = idx; }
+    const rest = cards.slice(start).map((s, k) => ({ s, i: start + k }));
+    idx = cards.length;
+    stackEl.remove(); grid.classList.add('done'); hint('');
+    rest.forEach(({ s, i }, k) => {
+      const el = card(s); el.style.fontSize = fs(i); slots[i].appendChild(el);
+      setTimeout(() => flipCard(el, s, () => { tagFor(el, s); if (k === rest.length - 1) { renderAlbum(); finish(); } }), 120 + k * 70);
+    });
+    if (!rest.length) { renderAlbum(); finish(); }
+  };
+  function buildStack() {
+    if (built) return; built = true;
+    [...cards].reverse().forEach(s => stackEl.appendChild(card(s)));
+    // Herausziehen: der Stapel steigt aus der Pack-Oeffnung direkt in seine
+    // ENDLAGE, waehrend der Pack gleichzeitig nach unten wegzieht. Danach faellt
+    // der Pack weg - der Stapel bewegt sich nicht mehr (kein Nachrutschen).
+    ov.insertBefore(stackEl, wrap);                     // im DOM vor dem Pack = dahinter
+    stackEl.style.zIndex = 4;
+    const sr = stackEl.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
+    const cy = sr.top + sr.height / 2;                   // Mitte der Endlage
+    const cutY = wr.top + wr.height * CUT / 100;         // Schnittkante des Packs
+    const inside = cutY + 6 + sr.height / 2 - cy;        // Start: Oberkante knapp unter dem Schnitt
+    // Pack-Weg, damit am Ende 85% des Stapels draussen sind
+    const packDown = (sr.top + sr.height * .85) - cutY;
+    const T = y => `translate(-50%, calc(-50% + ${y}px))`;
+    const D = 650, ease = 'cubic-bezier(.3,.7,.3,1)';
+    pBot.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${packDown}px)` }], { duration: D, easing: ease, fill: 'forwards' });
+    stackEl.animate([{ transform: T(inside) }, { transform: T(0) }], { duration: D, easing: ease, fill: 'forwards' }).onfinish = () => {
+      stackEl.getAnimations().forEach(a => a.cancel());   // Endlage = CSS-Lage, kein Sprung
+      // Pack faellt scharf nach unten aus dem Bild - der Stapel bleibt HINTER
+      // ihm, bis er ganz weg ist, erst dann kommt der Stapel nach vorne
+      pBot.animate([{ transform: `translateY(${packDown}px)` }, { transform: `translateY(${innerHeight}px) rotate(3deg)` }], { duration: 480, easing: 'cubic-bezier(.55,0,.9,.45)', fill: 'forwards' }).onfinish = () => { wrap.remove(); stackEl.style.zIndex = 6; };
+      hint(`Click to reveal · ${cards.length} stickers`);
+      stackEl.addEventListener('click', next);
+      prepareTop();
+      if (skipAll) autoRun();
+    };
+  }
+  // Oberste verdeckte Karte: nur SIE darf seltene Ware durchscheinen lassen
+  function prepareTop() {
+    const top = stackEl.lastElementChild, s = cards[idx + 1];
+    if (!top || !s) return;
+    const back = top.querySelector('.back');
+    if (s.r === 'holo') back.classList.add('glow-holo');
+    if (s.r === 'anim') back.classList.add('glow-anim');
+  }
+  // Wegstecken wie bei einem echten Stapel: die Karte bleibt OBEN und gleitet
+  // zur Seite, bis sie ganz neben dem Stapel liegt (darunter wird der Stapel
+  // frei); erst dann wandert sie NACH HINTEN und faehrt hinter dem Stapel in
+  // ihren Platz. onClear: sobald der Stapel frei ist.
+  function sendToSlot({ el, s, i }, onClear) {
+    const a = el.getBoundingClientRect(), slot = ov.querySelectorAll('.ov-slot')[i], b = slot.getBoundingClientRect();
+    const st = stackEl.getBoundingClientRect();
+    el.getAnimations().forEach(x => x.cancel());
+    const goLeft = b.left + b.width / 2 < st.left + st.width / 2;
+    const sideX = goLeft ? st.left - a.width - 18 : st.right + 18;
+    // Phase 1: oben ueber dem Stapel zur Seite (eigene Ebene ueber dem Stapel)
+    Object.assign(el.style, { position: 'fixed', left: a.left + 'px', top: a.top + 'px', width: a.width + 'px', height: a.height + 'px', zIndex: 7, transform: 'none' });
+    ov.appendChild(el);
+    el.animate([{ transform: 'translate(0, 0) rotate(0deg)' }, { transform: `translate(${sideX - a.left}px, 8px) rotate(${goLeft ? -4 : 4}deg)` }], { duration: 300, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }).onfinish = () => {
+      if (onClear) onClear();
+      // Phase 2: hinter den Stapel wechseln und in den Platz fahren
+      el.getAnimations().forEach(x => x.cancel());
+      Object.assign(el.style, { left: b.left + 'px', top: b.top + 'px', width: b.width + 'px', height: b.height + 'px', zIndex: 5, transformOrigin: '0 0', fontSize: (b.width / 92 * 9) + 'px' });
+      if (stackEl.isConnected) ov.insertBefore(el, stackEl); else ov.appendChild(el);
+      const k = a.width / b.width;
+      el.animate([
+        { transform: `translate(${sideX - b.left}px, ${a.top + 8 - b.top}px) rotate(${goLeft ? -4 : 4}deg) scale(${k})` },
+        { transform: 'translate(0, 0) rotate(0deg) scale(1)' }
+      ], { duration: 460, easing: 'cubic-bezier(.35,.1,.25,1)' }).onfinish = () => {
+        el.removeAttribute('style'); el.style.fontSize = (b.width / 92 * 9) + 'px'; slot.appendChild(el);
+        tagFor(el, s);
+        renderAlbum();
+      };
+    };
+  }
+  let flipping = false, revealTimer = null;
+  function next() {
+    if (flipping) return;
+    flipping = true;
+    const reveal = () => {
+      idx++;
+      if (idx >= cards.length) { flipping = false; finish(); return; }
+      const el = stackEl.lastElementChild, s = cards[idx];
+      if (stackEl.children.length <= 1) stackEl.classList.add('empty');
+      const rare = s.r === 'holo' || s.r === 'anim';
+      const back = el.querySelector('.back');
+      // jetzt frei und verdeckt oben: seltene Ware scheint durch und zappelt kurz
+      if (rare) back.classList.add(s.r === 'holo' ? 'glow-holo' : 'glow-anim', 'shake');
+      revealTimer = setTimeout(() => {
+        revealTimer = null;
+        if (rare) { const b = document.createElement('div'); b.className = 'burst'; b.style.background = `radial-gradient(circle, ${RC[s.r]}, transparent 62%)`; el.appendChild(b); }
+        flipCard(el, s, () => { flipping = false; });
+        shown = { el, s, i: idx };
+        const left = cards.length - idx - 1;
+        hint(left ? `Click for the next sticker · ${left} left` : 'Click to put it away');
+      }, rare ? 650 : 90);
+    };
+    if (shown) { const sh = shown; shown = null; sendToSlot(sh, reveal); }
+    else reveal();
+  }
+  function finish() {
+    if (stackEl.isConnected) stackEl.remove();
+    grid.classList.add('done'); hint('');
+    ov.querySelector('#ovSkip').style.display = 'none';
+    ov.querySelector('#ovDone').style.display = 'block';
+  }
+  ov.querySelector('#ovDone').addEventListener('click', () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 350); loadAlbum(); });
+  // Ueberspringen: aufreissen und alles zuegig in die Plaetze
+  ov.querySelector('#ovSkip').addEventListener('click', () => {
+    skipAll = true;
+    if (!torn) tearOpen(); else if (built && stackEl.isConnected) autoRun();
+  });
+}
+// Klick auf den Pack OEFFNET nicht, sondern zeigt die Set-Auswahl (Nutzer)
+document.getElementById('pack').addEventListener('click', () => document.getElementById('setPicker').classList.toggle('on'));
+document.getElementById('setPicker').addEventListener('click', e => {
+  const o = e.target.closest('.set-opt'); if (!o || o.classList.contains('none')) return;
+  sel = Number(o.dataset.set); loadAlbum();
+  document.getElementById('setPicker').classList.remove('on');
+});
+document.getElementById('openBtn').addEventListener('click', () => openPacks(1));
+document.getElementById('openAllBtn').addEventListener('click', () => openPacks(unopened));
+
+// ===================== Album + Inspizieren =====================
+function renderAlbum() {
+  let html = '', got = 0;
+  for (let n = 1; n <= TOTAL_IN_SET(); n++) {
+    const s = setCards().find(x => x.n === n);
+    if (s && owned[n]) { got++; html += `<div class="album-slot have" data-n="${n}"><span class="num">#${String(n).padStart(3, '0')}</span><div class="stk-card">${frontHtml(s)}</div><span class="x">×${owned[n]}</span></div>`; }
+    else html += `<div class="album-slot"><span class="num">#${String(n).padStart(3, '0')}</span>?</div>`;
+  }
+  document.getElementById('albumGrid').innerHTML = html;
+  document.getElementById('albumProgress').textContent = `Collected ${got} / ${TOTAL_IN_SET()} · #1-25 common · #26-40 uncommon · #41-47 holo rare · #48-50 animated rare`;
+}
+function renderTabs() {
+  document.getElementById('albumTabs').innerHTML = (DATA.sets || []).map((st, i) => `<span class="${i === sel ? 'on' : ''}">${st.name}</span>`).join('') + '<span class="soon">More sets coming later</span>';
+}
+document.getElementById('albumGrid').addEventListener('click', e => {
+  const slot = e.target.closest('.album-slot.have'); if (!slot) return;
+  const s = setCards().find(x => x.n === Number(slot.dataset.n));
+  const ov = document.createElement('div'); ov.className = 'insp';
+  ov.innerHTML = `<div class="stk-card">${frontHtml(s)}<div class="glare"></div></div><div class="insp-cap">${s.name} · ${RL[s.r]} · #${String(s.n).padStart(3, '0')} · you own ${owned[s.n]} - move the mouse to tilt, click to close</div>`;
+  document.body.appendChild(ov); requestAnimationFrame(() => ov.classList.add('on'));
+  const c = ov.querySelector('.stk-card'), glare = ov.querySelector('.glare');
+  // 3D-Neigung: Karte folgt dem Cursor, Glanzlicht wandert mit
+  ov.addEventListener('mousemove', ev => {
+    const r = c.getBoundingClientRect();
+    const px = Math.max(-1, Math.min(1, (ev.clientX - (r.left + r.width / 2)) / (r.width / 2)));
+    const py = Math.max(-1, Math.min(1, (ev.clientY - (r.top + r.height / 2)) / (r.height / 2)));
+    window.STICKERS.tiltTo(c, px / 2, py / 2, 18); // relativ zur Karte: am Rand volle Neigung
+    glare.style.setProperty('--gx', `${50 + px * 50}%`); glare.style.setProperty('--gy', `${40 + py * 50}%`);
+  });
+  ov.addEventListener('click', () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); });
+});
+window.STICKERS.enableTilt(document.getElementById('albumGrid'));
+loadAlbum();
+document.getElementById('settingsGearBtn').addEventListener('click', () => { if (window.ttpMain) window.ttpMain.openSettings(); });
+document.getElementById('quitBtn').addEventListener('click', () => {
+  const ok = confirm('Quit Three-Trick-Pony completely? It will no longer run in the background (no more update checks or LP tracking until you start it again).');
+  if (window.ttpMain) window.ttpMain.restoreFocus();
+  if (ok && window.ttpMain) window.ttpMain.quitApp();
+});
+
+</script>
+</body>
+</html>

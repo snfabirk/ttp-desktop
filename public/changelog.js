@@ -25,6 +25,18 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.29.0',
+      date: '2026-10-11',
+      notable: [
+        'Stickers! The Base Set has 50 stickers - common, uncommon, holo rare and animated rare. Buy boosters in the shop (new Boosters section) and open them in the new Album tab: tear the pack open and flip through your stickers one by one.',
+        'Animated rare stickers float above their card like a hologram - hover or inspect them and tilt the card.',
+        'Duplicates turn into coins, and your monthly pass now gives 8 free boosters.',
+        "Place your favourite stickers on your profile: in the profile editor, drag them from the new 'Stickers' tab onto your board."
+      ],
+      refinements: 1,
+      bugfixes: 1
+    },
+    {
       version: '5.28.0',
       date: '2026-10-11',
       notable: ["New in the shop: app icons! 10 skins for your taskbar, window and tray icon (250 / 500 coins). Pick one in your profile under 'Icons' - it changes right away."],

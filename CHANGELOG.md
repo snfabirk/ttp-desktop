@@ -1,5 +1,17 @@
 # Internal Changelog
 
+## 5.29.0 — 2026-10-11
+
+- Sticker system (user design, drafts in theme-lab/booster-album.html + sticker-set.js + sticker-gallery.html):
+  - server/lib/stickers.js: Base Set (50: 25 common, 15 uncommon, 7 holo, 3 animated), pack = 4 common + 2 uncommon + rare slot (90 % holo / 10 % animated), NO pity. Dupe refunds 3 / 8 / 50 / 300.
+  - progression: state.boosters { set: count }, state.stickers { set: { n: count } }; buyBooster (150 each, 1 or 5), openBoosters (server rolls, isNew/refund per card), getAlbum. API: GET /api/album, POST /api/boosters/buy, POST /api/boosters/open. Shop state carries boosters + rates.
+  - Pass: tiers 3, 7, 12, 16, 19, 23, 27, 29 give a free booster (claimed by hand, flies to the Album tab; old months auto-credited). Pass coins per month drop accordingly.
+  - public/stickers.js = app copy of the approved sticker art (classes prefixed stk- to avoid clashes like .shop-scene.front). Animated rares: hologram figure (centred, shadow on card, 12 dilated slab layers, tilt relative to the card, depth scaled to card size; no mix-blend-mode inside the 3D card).
+  - public/album.html (new nav tab between Profile and Challenge): set picker on pack click, tear-to-open, click-through stack, Show all, album grid with inspect + hover tilt. Pull rates only behind "Pull rates ?".
+  - Shop: "Boosters" section with all booster sets, owned count, 1× / 5× buy (two-click), pull rates behind "?".
+  - Profile editor: "Stickers" inventory tab, drag stickers onto the board as frameless sticker squares (1×1 / 2×2, same sticker any number of times).
+- Fix: saving the profile layout dropped the favourite-champion choice (config only kept text) - champId (and sticker set/n) are kept now.
+
 ## 5.28.0 — 2026-10-11
 
 - App icon skins (user idea): new cosmetic type 'icon' - 10 shop icons (5 refined 250, 5 fancy 500) + base 'icon-base-classic' (original 3TP). PNGs rendered from theme-lab/shop-app-icons.html into public/app-icons/<id>.png. electron-main.js: currentAppIcon()/applyAppIcon() set window + tray icon from progression.getEquippedIcon() (server runs in-process); IPC 'apply-app-icon' after equipping. Profile inventory tab "Icons" (applies immediately like themes). Shop: "App icon" offers, no profile hover preview. Icons excluded from Mystery/Try It On (a rented icon would not switch back). Desktop shortcut/start menu/exe keep the original icon.
