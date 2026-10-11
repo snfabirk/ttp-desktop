@@ -376,30 +376,30 @@ function openPacks(n) {
   function buildStack() {
     if (built) return; built = true;
     [...cards].reverse().forEach(s => stackEl.appendChild(card(s)));
-    // Start: Stapel steckt im Pack (hinter der Vorderseite), schiebt sich nach
-    // oben aus der Oeffnung, dann faehrt der Pack scharf nach unten weg und der
-    // Stapel in die Mitte - nichts wird ausgeblendet
+    // Herausziehen: der Stapel steigt aus der Pack-Oeffnung direkt in seine
+    // ENDLAGE, waehrend der Pack gleichzeitig nach unten wegzieht. Danach faellt
+    // der Pack weg - der Stapel bewegt sich nicht mehr (kein Nachrutschen).
     ov.insertBefore(stackEl, wrap);                     // im DOM vor dem Pack = dahinter
     stackEl.style.zIndex = 4;
     const sr = stackEl.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
     const cy = sr.top + sr.height / 2;                   // Mitte der Endlage
-    const inside = wr.top + wr.height * .14 + sr.height / 2 - cy;   // Oberkante knapp unter dem Schnitt
-    const out = wr.top - sr.height * .35 + sr.height / 2 - cy;      // zu zwei Dritteln herausgezogen
+    const cutY = wr.top + wr.height * CUT / 100;         // Schnittkante des Packs
+    const inside = cutY + 6 + sr.height / 2 - cy;        // Start: Oberkante knapp unter dem Schnitt
+    // Pack-Weg, damit am Ende 85% des Stapels draussen sind
+    const packDown = (sr.top + sr.height * .85) - cutY;
     const T = y => `translate(-50%, calc(-50% + ${y}px))`;
-    stackEl.animate([{ transform: T(inside) }, { transform: T(out) }], { duration: 520, easing: 'cubic-bezier(.3,.7,.3,1)', fill: 'forwards' }).onfinish = () => {
-      pBot.classList.add('drop');                        // Pack faellt scharf nach unten aus dem Bild
-      setTimeout(() => {                                  // erst wenn er weg ist, gleitet der Stapel in die Mitte
+    const D = 650, ease = 'cubic-bezier(.3,.7,.3,1)';
+    pBot.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${packDown}px)` }], { duration: D, easing: ease, fill: 'forwards' });
+    stackEl.animate([{ transform: T(inside) }, { transform: T(0) }], { duration: D, easing: ease, fill: 'forwards' }).onfinish = () => {
+      stackEl.getAnimations().forEach(a => a.cancel());   // Endlage = CSS-Lage, kein Sprung
       stackEl.style.zIndex = 6;
-      stackEl.animate([{ transform: T(out) }, { transform: T(0) }], { duration: 420, easing: 'cubic-bezier(.3,.7,.3,1)', fill: 'forwards' }).onfinish = () => {
-        stackEl.getAnimations().forEach(a => a.commitStyles && a.commitStyles());
-        stackEl.style.transform = ''; stackEl.getAnimations().forEach(a => a.cancel());
-        setTimeout(() => wrap.remove(), 400);
-        hint(`Click to reveal · ${cards.length} stickers`);
-        stackEl.addEventListener('click', next);
-        prepareTop();
-        if (skipAll) autoRun();
-      };
-      }, 470);
+      // Pack faellt scharf nach unten aus dem Bild
+      pBot.animate([{ transform: `translateY(${packDown}px)` }, { transform: `translateY(${innerHeight}px) rotate(3deg)` }], { duration: 480, easing: 'cubic-bezier(.55,0,.9,.45)', fill: 'forwards' });
+      setTimeout(() => wrap.remove(), 520);
+      hint(`Click to reveal · ${cards.length} stickers`);
+      stackEl.addEventListener('click', next);
+      prepareTop();
+      if (skipAll) autoRun();
     };
   }
   // Oberste verdeckte Karte: nur SIE darf seltene Ware durchscheinen lassen
