@@ -295,7 +295,7 @@
 
   const CSS = `
   .front { background: linear-gradient(160deg, #1b2a4a, #0e182c); border: 2px solid var(--rc); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 7% 6% 5%; position: absolute; inset: 0; border-radius: 12px; overflow: hidden; }
-  .front .art { width: 100%; aspect-ratio: 1; border-radius: 8px; overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), 0 3px 8px rgba(0,0,0,.4); }
+  .front .art { width: 100%; aspect-ratio: 1; border-radius: 8px; overflow: hidden; clip-path: inset(0 round 8px); position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), 0 3px 8px rgba(0,0,0,.4); }
   .front .art svg { width: 100%; height: 100%; display: block; }
   .front .name { font-family: 'Cinzel', Georgia, serif; font-size: .7em; letter-spacing: .5px; text-align: center; color: #fff; line-height: 1.15; margin-top: 5%; }
   .front .meta { display: flex; justify-content: space-between; width: 100%; font-size: .5em; color: #8a8270; padding: 0 2px; }
@@ -309,10 +309,8 @@
   .front.r-holo { border-color: transparent; border-width: 3px; background: linear-gradient(160deg, #241a4a, #120c2a) padding-box, linear-gradient(var(--hb, 0deg), #ff7ad9, #ffd36b, #7bffb4, #6bc8ff, #b98cff, #ff7ad9) border-box; animation: holoFrame 4s linear infinite; }
   @property --hb { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
   @keyframes holoFrame { to { --hb: 360deg; } }
-  .front.r-holo .art::after { content: ''; position: absolute; left: -150%; top: -150%; width: 400%; height: 400%; pointer-events: none; mix-blend-mode: color-dodge; opacity: .4;
-    background: linear-gradient(90deg, transparent 0 20%, #ff7ad9 32%, #ffd36b 42%, #7bffb4 52%, #6bc8ff 62%, #b98cff 72%, transparent 84% 100%); background-size: 25% 100%; background-repeat: repeat-x;
-    transform: rotate(25deg) translateX(0); animation: holoLoop 3.2s linear infinite; }
-  @keyframes holoLoop { from { transform: rotate(25deg) translateX(0); } to { transform: rotate(25deg) translateX(-25%); } }
+  .front.r-holo .art::after { content: ''; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; opacity: .32; background: linear-gradient(45deg, transparent 0%, transparent 8%, #ff7ad9 16%, #ffd36b 21%, #7bffb4 26%, #6bc8ff 31%, #b98cff 36%, transparent 43%, transparent 50%, transparent 58%, #ff7ad9 66%, #ffd36b 71%, #7bffb4 76%, #6bc8ff 81%, #b98cff 86%, transparent 93%, transparent 100%); background-size: 9em 9em; animation: holoTile 3.2s linear infinite; }
+  @keyframes holoTile { from { background-position: 0 0; } to { background-position: 9em 0; } }
   .front.r-holo .art::before { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: .35; mix-blend-mode: screen;
     background-image: radial-gradient(1.2px 1.2px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 38% 62%, #fff, transparent), radial-gradient(1.4px 1.4px at 72% 28%, #fff, transparent), radial-gradient(1px 1px at 86% 76%, #fff, transparent), radial-gradient(1.2px 1.2px at 22% 84%, #fff, transparent), radial-gradient(1px 1px at 58% 12%, #fff, transparent); background-size: 50% 50%; }
   @keyframes holoSweep { from { background-position: 100% 100%; } to { background-position: 0% 0%; } }
