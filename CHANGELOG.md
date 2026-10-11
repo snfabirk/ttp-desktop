@@ -1,7 +1,8 @@
 # Internal Changelog
 
-## 5.29.3 — 2026-10-11 (incl. unreleased 5.29.1/5.29.2)
+## 5.29.4 — 2026-10-11 (incl. unreleased 5.29.1-5.29.3)
 
+- Booster looks like a real foil pack: zigzag crimped seals (CSS mask), pillow shading, ribbed seams, "BOOSTER PACK · 7 STICKERS" band; drop shadow on a wrapper because the mask clips box-shadows. Shop thumbnail uses the same mini pack with the 3 top hits.
 - Album pack: hovering shows "Choose booster" (a click opens the set picker, not the pack); the pack front shows the set's 3 animated rares fanned out as "TOP HITS" like real trading-card packs.
 - Base Set renumbered rarest first (user): #1-3 animated, #4-10 holo, #11-25 uncommon, #26-50 common (server/lib/stickers.js, public/stickers.js, theme-lab/sticker-set.js). Stored collections and profile sticker widgets are migrated once in readState (state.stickerNumbering = 2, migrateBaseN).
 - Big openings: slots never smaller than 78px, as many columns as fit the window, the grid scrolls beyond that (order no longer kept per pack).

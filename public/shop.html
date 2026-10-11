@@ -12,6 +12,7 @@
 <script src="nav.js"></script>
 <script src="update-indicator.js"></script>
 <script src="changelog.js"></script>
+<script src="stickers.js"></script>
 <style>
   /* Shop (v5.13.0, provisorisch): rotierende Angebote (taeglich 3, woechentlich
      2 Highlights) + kleines Gluecksrad (einmal pro Tag gratis). Artikel und
@@ -318,11 +319,19 @@
   .boosters { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
   .booster { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: color-mix(in srgb, var(--input-bg) 55%, transparent); }
   .booster.soon { opacity: .5; }
-  .booster .bpack { width: 58px; height: 84px; flex-shrink: 0; border-radius: 6px; position: relative; overflow: hidden; box-shadow: 0 8px 18px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.18); }
-  .booster .bpack::before, .booster .bpack::after { content: ''; position: absolute; left: 0; right: 0; height: 5px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.4) 0 3px, rgba(0,0,0,.15) 3px 6px); }
-  .booster .bpack::before { top: 0; } .booster .bpack::after { bottom: 0; }
-  .booster .bpack i { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.35) 45%, transparent 60%); background-size: 250% 100%; animation: bfoil 3.2s linear infinite; }
-  @keyframes bfoil { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+  .booster .bwrap { flex-shrink: 0; filter: drop-shadow(0 8px 10px rgba(0,0,0,.5)); }
+  .booster .bpack { display: block; width: 74px; height: 109px; border-radius: 2px; position: relative; overflow: hidden; font-size: 4.8px;
+    box-shadow: inset 1.2em 0 1.6em -1.1em rgba(255,255,255,.38), inset -1.4em 0 1.8em -1.1em rgba(0,0,0,.55);
+    -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) top / .9em .5em repeat-x, conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) bottom / .9em .5em repeat-x, linear-gradient(#000 0 0) center / 100% calc(100% - .98em) no-repeat; mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) top / .9em .5em repeat-x, conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) bottom / .9em .5em repeat-x, linear-gradient(#000 0 0) center / 100% calc(100% - .98em) no-repeat; }
+  .booster .bpack .bc { position: absolute; left: 0; right: 0; height: 7.5%; z-index: 2; background: repeating-linear-gradient(90deg, rgba(255,255,255,.5) 0 1px, rgba(255,255,255,.12) 1px 2px, rgba(0,0,0,.22) 2px 3px); }
+  .booster .bpack .bc.t { top: 0; } .booster .bpack .bc.b { bottom: 0; }
+  .booster .bpack .bfan { position: absolute; left: 0; right: 0; top: 16%; height: 8.4em; }
+  .booster .bpack .bfan > div { position: absolute; left: 50%; top: .6em; width: 4.9em; height: 4.9em; margin-left: -2.45em; transform-origin: 50% 120%; }
+  .booster .bpack .bfan .stk-square { border: .2em solid #fff; box-sizing: border-box; box-shadow: none; border-radius: .7em; }
+  .booster .bpack .bfan .f0 { transform: translateX(-1.9em) rotate(-16deg); } .booster .bpack .bfan .f2 { transform: translateX(1.9em) rotate(16deg); } .booster .bpack .bfan .f1 { transform: translateY(-.5em) scale(1.12); z-index: 2; }
+  .booster .bpack .bt { position: absolute; left: 0; right: 0; bottom: 25%; text-align: center; font-family: 'Cinzel', Georgia, serif; color: #fff; font-size: 1.35em; line-height: 1.1; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
+  .booster .bpack .bb { position: absolute; left: 0; right: 0; bottom: 14%; padding: .3em 0; background: rgba(0,0,0,.32); text-align: center; font-family: 'Cinzel', Georgia, serif; font-size: .9em; color: #ffe9b0; letter-spacing: .1em; }
+  .booster .bpack i { position: absolute; inset: 0; z-index: 3; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.35) 45%, transparent 60%); background-size: 250% 100%; animation: bfoil 3.2s linear infinite; mix-blend-mode: screen; }
   html.fx-off .booster .bpack i { animation: none; }
   .booster .binfo { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
   .booster .bname { font-family: 'Cinzel', Georgia, serif; color: var(--gold); font-size: .95rem; }
@@ -777,7 +786,7 @@
           return `<button type="button" class="offer-buy${conf ? ' confirm' : ''}${short ? ' short' : ''}" data-booster="${b.id}" data-qty="${q}"${short ? ' disabled title="Not enough coins"' : ''}>${conf ? `Buy ${q} for 🪙 <b>${fmtNum(cost)}</b>?` : `${q > 1 ? `${q}× · ` : ''}🪙 <b>${fmtNum(cost)}</b>`}</button>`;
         };
         return `<div class="booster${b.released ? '' : ' soon'}">
-          <span class="bpack" style="background:${BOOSTER_GRAD[b.id] || '#333'}"><i></i></span>
+          <span class="bwrap"><span class="bpack" style="background:${BOOSTER_GRAD[b.id] || '#333'}"><span class="bc t"></span><span class="bfan">${window.STICKERS ? window.STICKERS.SET.filter(x => x.r === 'anim').map((x, i) => `<div class="f${i}">${window.STICKERS.square(x)}</div>`).join('') : ''}</span><span class="bt">Three-Trick-Pony<br><small>${esc(b.name)}</small></span><span class="bb">BOOSTER PACK</span><i></i><span class="bc b"></span></span></span>
           <span class="binfo">
             <span class="bname">${esc(b.name)}</span>
             <span class="bown">You own <b>${b.owned}</b> unopened · album ${b.collected} / ${b.total}</span>
