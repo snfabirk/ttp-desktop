@@ -5,7 +5,7 @@
 // zur Challenge.
 (function () {
   // Hauptseiten (Nutzerwunsch 2026-10-09): Overview ist die Startseite und
-  // immer hervorgehoben, Shop folgt noch. Setup ist KEIN Leisten-Eintrag
+  // immer hervorgehoben. Setup ist KEIN Leisten-Eintrag
   // mehr, sondern ein eigener Text-Knopf oben rechts neben den Patch Notes.
   const ITEMS = [
     { href: 'overview.html', label: 'Overview', home: true, title: 'Home' },

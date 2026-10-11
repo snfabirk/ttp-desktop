@@ -711,20 +711,6 @@ app.get('/api/achievements/rules-status', (req, res) => {
   res.json({ rulesUpToDate, hasFinalizedTrophies: finalizedIds.length > 0 });
 });
 
-// Loescht den finalisierten Ø-Trophy-Zustand einer puuid aktiv, statt ihn nur
-// unerreichbar werden zu lassen - vom "Reset Challenge"-Button auf Seite 1
-// bei JEDEM Reset aufgerufen (siehe [[achievements-trophies-design]]), nicht
-// nur wenn die Regeln sich geaendert haben, da ein Reset immer "frisch
-// anfangen" bedeuten soll. Ohne requireApiKey, da rein lokaler Datei-Zugriff.
-app.post('/api/achievements/clear-state', (req, res) => {
-  const { puuid } = req.body || {};
-  if (!puuid) {
-    return res.status(400).json({ error: 'puuid is required.' });
-  }
-  clearFinalizedState(puuid);
-  res.json({ ok: true });
-});
-
 // ----- XP / Level / Quests (v5.0.0, provisorisch - siehe
 // server/lib/progression.js). Rein lokal, kein requireApiKey. -----
 
@@ -923,7 +909,7 @@ app.post('/api/challenge-history/update', (req, res) => {
 // Challenge als "0 Trophaeen" sogar komplett verworfen wurde. Nur wenn die
 // Neuberechnung scheitert (kein Netz/API-Key), faellt es auf den
 // mitgeschickten Snapshot zurueck. Loescht danach den finalisierten
-// Ø-Trophy-Zustand (wie /api/achievements/clear-state) - erst NACH der
+// Ø-Trophy-Zustand - erst NACH der
 // Berechnung, die ihn noch braucht.
 app.post('/api/challenge-history/close', async (req, res) => {
   const {

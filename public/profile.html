@@ -65,7 +65,6 @@
     body.editing .widget:has(> .sticker-w) { border: 1px dashed var(--border); }
     .inv-sticker { width: 100%; aspect-ratio: 1; margin-bottom: 4px; }
     .inv-item[data-sticker] { cursor: grab; }
-    .inv-item[data-sticker] .inv-cnt { color: var(--gold); font-size: .65rem; margin-left: 4px; }
     .widget {
       position: relative;
       z-index: 1;
@@ -748,7 +747,7 @@
             <div class="id-main">
               <div class="id-top">
                 <div class="id-name">${a ? esc(`${a.gameName}#${a.tagLine}`) : esc(/^.+#.+$/.test(ls('ttp_summoner_name').trim()) ? ls('ttp_summoner_name').trim() : 'No summoner set yet')}</div>
-                ${col ? '' : `<span class="coin-pill" title="Coins from the monthly pass">🪙 ${s ? fmtNum(s.coins) : '–'}</span>`}
+                ${col ? '' : `<span class="coin-pill" title="Your coins - spend them in the shop">🪙 ${s ? fmtNum(s.coins) : '–'}</span>`}
               </div>
               ${w.w >= 6 || col ? `<div class="id-since">${s && s.challenges.firstStarted ? `Pony since ${fmtDate(s.challenges.firstStarted)}` : ''}</div>` : ''}
               <div class="level-line" title="Profile level - keeps growing across all challenges">
@@ -1323,8 +1322,6 @@
             return items.length ? `<div class="inv-sub">${window.STICKERS.RL[r]}</div><div class="inv-grid">${items.map(cell).join('')}</div>` : '';
           }).join('') : '<p class="inv-empty">No stickers yet - open boosters in your <a href="album.html">Album</a>.</p>') +
           '<p class="inv-note">Drag a sticker onto your profile. You can place the same sticker more than once.</p>';
-      } else {
-        list.innerHTML = '<p class="inv-empty">Coming soon.</p>';
       }
     }
 

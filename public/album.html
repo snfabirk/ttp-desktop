@@ -61,7 +61,6 @@
   .pack .band { position: absolute; left: 0; right: 0; bottom: 14.5%; z-index: 1; padding: .3em 0; background: rgba(0,0,0,.32); border-top: 1px solid rgba(255,255,255,.25); border-bottom: 1px solid rgba(255,255,255,.25); text-align: center; font-family: 'Cinzel', Georgia, serif; font-size: .72em; letter-spacing: .18em; color: #ffe9b0; }
   .pack .crimp.top { top: 0; } .pack .crimp.bot { bottom: 0; }
   .pack .logo { position: absolute; top: 16%; left: 0; right: 0; text-align: center; }
-  .pack .logo > svg { width: 54%; filter: drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
   .pack .title { position: absolute; top: 9.5%; left: 0; right: 0; text-align: center; font-family: 'Cinzel', Georgia, serif; color: #fff; letter-spacing: 1px; text-shadow: 0 2px 6px rgba(0,0,0,.6); font-size: 1.35em; }
   .pack .title b { display: block; font-size: 1em; } .pack .title small { font-size: .55em; opacity: .85; letter-spacing: 2px; }
   .pack .count { position: absolute; bottom: 8.5%; left: 0; right: 0; text-align: center; font-size: .9em; color: rgba(255,255,255,.85); }
@@ -95,19 +94,8 @@
   .fan-card.f0 { transform: translateX(-1.9em) rotate(-16deg); }
   .fan-card.f2 { transform: translateX(1.9em) rotate(16deg); }
   .fan-card.f1 { transform: translateY(-.5em) scale(1.12); z-index: 2; }
-  .pack-hits { position: absolute; left: 0; right: 0; top: 52%; text-align: center; font-family: 'Cinzel', Georgia, serif; font-size: .78em; letter-spacing: 1.5px; color: #ffd6f1; text-shadow: 0 1px 4px rgba(0,0,0,.8); }
   .pack:not(.big):hover { transform: translateY(-4px) rotate(-1.5deg); transition: transform .25s; }
   .pack .switch { position: absolute; bottom: 9%; right: 6%; z-index: 4; font-size: .75em; color: rgba(255,255,255,.85); background: rgba(0,0,0,.35); border-radius: 8px; padding: 1px 7px; }
-  /* Set-Auswahl: alle Booster-Sorten, die man besitzt (bzw. die es gibt) */
-  .set-picker { display: none; width: 100%; flex-direction: column; gap: 6px; }
-  .set-picker.on { display: flex; }
-  .set-opt { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 9px; border: 1px solid var(--border); cursor: pointer; background: rgba(255,255,255,.02); }
-  .set-opt:hover { border-color: var(--gold); }
-  .set-opt.sel { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
-  .set-opt.none { opacity: .45; cursor: default; }
-  .set-opt .mini { width: 26px; height: 38px; border-radius: 4px; flex-shrink: 0; box-shadow: 0 3px 8px rgba(0,0,0,.5); }
-  .set-opt b { display: block; font-family: 'Cinzel', Georgia, serif; font-size: .8rem; color: var(--text); font-weight: normal; }
-  .set-opt small { color: var(--text-dim); font-size: .7rem; }
 
   /* ---------- Oeffnen: Vollbild-Overlay ---------- */
   .ov { user-select: none; -webkit-user-select: none; position: fixed; inset: 0; z-index: 100; background: rgba(4, 8, 16, .84); backdrop-filter: blur(6px); opacity: 0; transition: opacity .35s; }
@@ -161,9 +149,7 @@
   @keyframes holoBack { to { filter: hue-rotate(360deg); } }
   .back.glow-anim { box-shadow: 0 0 30px 8px color-mix(in srgb, var(--c-anim) 80%, transparent), inset 0 0 34px color-mix(in srgb, var(--c-anim) 60%, transparent); border-color: #ffd0ea; animation: pulseBack .9s ease-in-out infinite alternate; }
   @keyframes pulseBack { to { box-shadow: 0 0 44px 14px color-mix(in srgb, var(--c-anim) 90%, transparent), inset 0 0 40px color-mix(in srgb, var(--c-anim) 70%, transparent); } }
-  .tag-new, .tag-dupe { position: absolute; top: 4px; right: 4px; font-size: .55rem; padding: 1px 6px; border-radius: 8px; letter-spacing: 1px; z-index: 3; }
-  .tag-new { background: var(--c-uncommon); color: #062; font-weight: bold; }
-  .tag-dupe { background: rgba(0,0,0,.65); color: var(--gold); border: 1px solid var(--gold); }
+  .tag-new { position: absolute; top: 4px; right: 4px; font-size: .55rem; padding: 1px 6px; border-radius: 8px; letter-spacing: 1px; z-index: 3; background: var(--c-uncommon); color: #062; font-weight: bold; }
   .burst { position: absolute; inset: -40px; border-radius: 50%; pointer-events: none; animation: burst .8s ease-out forwards; }
   @keyframes burst { from { transform: scale(.4); opacity: .95; } to { transform: scale(1.7); opacity: 0; } }
   .fly { position: fixed; z-index: 7; transition: left .55s cubic-bezier(.3,.7,.3,1), top .55s cubic-bezier(.3,.7,.3,1), width .55s cubic-bezier(.3,.7,.3,1), height .55s cubic-bezier(.3,.7,.3,1), font-size .55s; }
@@ -180,7 +166,6 @@
   .album-slot .num { position: absolute; top: 4px; left: 6px; font-size: .6rem; color: var(--text-dim); z-index: 3; }
   .album-slot.have { border: none; cursor: zoom-in; font-size: 9px; }
   .album-slot.have .stk-card { position: absolute; inset: 0; transition: transform .2s; }
-  .album-slot .x { position: absolute; top: -6px; right: -6px; font-size: .6rem; color: var(--gold); z-index: 4; background: var(--input-bg); border: 1px solid var(--gold); border-radius: 8px; padding: 0 5px; line-height: 1.4; }
 
   /* ---------- Inspizieren: 3D-Neigung mit dem Cursor ---------- */
   .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.86); backdrop-filter: blur(6px); display: grid; place-items: center; cursor: zoom-out; opacity: 0; transition: opacity .25s; }
@@ -234,21 +219,7 @@
 <script>
 // ===================== Sticker-Kunst (detailliert, ohne Die-Cut-Rand) =====================
 const HEAD = 'M42 4 L48 15 L54 3 L60 18 C74 20 86 30 90 48 C93 62 92 80 92 96 L48 96 C50 84 52 72 50 62 C40 64 28 74 16 75 C8 75 4 69 6 62 C10 52 26 36 37 22 Z';
-const MANE = 'M60 18 L66 9 L69 20 L77 13 L79 26 L87 22 L87 35 L95 35 L91 47 L99 51 L93 59 L99 67 L93 73 L97 81 L92 85 L92 96 C92 80 93 62 90 48 C86 30 74 20 60 18 Z';
-let gid = 0;
-function ponyHead(body, shade, mane, x, y, sc) {
-  const id = 'pg' + (++gid);
-  return `<g transform="translate(${x} ${y}) scale(${sc})">
-    <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${body}"/><stop offset="1" stop-color="${shade}"/></linearGradient></defs>
-    <path d="${HEAD}" fill="url(#${id})" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/>
-    <path d="${MANE}" fill="${mane}" stroke="rgba(0,0,0,.3)" stroke-width="1"/>
-    <path d="M14 66 C22 70 30 68 36 64" stroke="rgba(0,0,0,.25)" stroke-width="1.6" fill="none"/>
-    <circle cx="13" cy="64" r="2" fill="rgba(0,0,0,.45)"/>
-    <ellipse cx="36" cy="33" rx="4" ry="4.6" fill="#1a1410"/><circle cx="37.3" cy="31.6" r="1.4" fill="#fff"/>
-  </g>`;
-}
 const BACK_LOGO = `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="#c8a96e" stroke-width="4"/><g transform="translate(20 14) scale(.82)"><path d="${HEAD}" fill="#c8a96e"/></g></svg>`;
-document.querySelector('#pack .logo').innerHTML = `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="#0b1424" stroke="#c8a96e" stroke-width="4"/>${ponyHead('#e8c48c', '#b07d18', '#7a4a20', 18, 12, .86)}</svg>`;
 
 // ===================== Set (Entwurfsausschnitt aus 50) =====================
 const RC = { common: 'var(--c-common)', uncommon: 'var(--c-uncommon)', holo: 'var(--c-holo)', anim: 'var(--c-anim)' };
@@ -310,9 +281,7 @@ const updCount = () => {
   if (!pack.querySelector('.switch')) { const sw = document.createElement('span'); sw.className = 'switch'; sw.textContent = '⇄ set'; pack.appendChild(sw); }
   document.getElementById('openBtn').disabled = document.getElementById('openAllBtn').disabled = !unopened;
   document.getElementById('noBoosters').style.display = unopened ? 'none' : 'block';
-  renderPicker();
 };
-function renderPicker() {}
 // Booster-Wahl als eigenes Fenster (Nutzer): Hintergrund abgedunkelt, zurueck
 // nur ueber einen Booster oder das X
 function openPicker() {

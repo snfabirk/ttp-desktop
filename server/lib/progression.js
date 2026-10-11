@@ -1231,7 +1231,6 @@ function getShopState() {
   if (shopChanged || consChanged || buffsChanged || voucherChanged) writeState(state);
   const owned = new Set(state.inventory);
   return {
-    provisional: true,
     coins: state.coins,
     // Fuer das "?" im Shop: Preise + GRUND-Wahrscheinlichkeiten (die steigende
     // Chance bleibt bewusst unerwaehnt, Nutzerwunsch)
@@ -1284,7 +1283,6 @@ function getOverview(context) {
   if (hasCtx && creditQuestsInState(state, context, now)) writeState(state);
   const quests = questsWithProgress(state, context || {}, now);
   return {
-    provisional: true,
     level: levelFromXp(state.totalXp),
     totalXp: state.totalXp,
     gamesToday: state.ledger.filter(e => e.day === dayKey(now)).length,

@@ -1,5 +1,11 @@
 # Internal Changelog
 
+## 5.29.8 — 2026-10-11
+
+Cleanup pass (user: "veraltet oder ueberfluessig"):
+- Texts: "Reset Account Progress" hint now lists cosmetics, app icon, stickers and boosters; profile coin pill tooltip no longer says coins only come from the pass.
+- Dead code removed: album leftovers of the old inline set list (.set-picker/.set-opt), the pony logo that was immediately replaced by the top-hit fan (ponyHead/MANE/gid), TOP HITS + count-badge + tag-dupe CSS, no-op renderPicker; profile "Coming soon" fallback (all inventory tabs exist) + .inv-cnt; challenge .provisional-tag CSS; unused "provisional: true" fields in progression API responses; unused route POST /api/achievements/clear-state (the challenge close endpoint clears the state itself); stale nav.js comment.
+
 ## 5.29.7 — 2026-10-11 (incl. unreleased 5.29.1-5.29.6)
 
 - Album: clicking the pack opens "Choose booster" as its own window over a dimmed background (each set as a mini pack with unopened count + album progress, "More sets - coming later" placeholder); it closes only via a booster or the X (inline set list removed).
