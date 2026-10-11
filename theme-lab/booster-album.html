@@ -294,7 +294,7 @@ function openPacks(n) {
   const ov = document.createElement('div'); ov.className = 'ov';
   const cols = Math.min(7, cards.length), rows = Math.ceil(cards.length / cols);
   const slotW = Math.min(92, ((innerHeight * .78) / rows - 10) * 190 / 266);
-  ov.innerHTML = `<button class="btn ov-close" id="ovSkip">Skip ›</button>
+  ov.innerHTML = `<button class="btn ov-close" id="ovSkip" title="Reveal every sticker at once">Show all</button>
     <div class="ov-grid" style="grid-template-columns:repeat(${cols}, ${slotW}px)">${cards.map(() => `<div class="ov-slot" style="width:${slotW}px"></div>`).join('')}</div>
     <div class="ov-hint" id="ovHint">Drag across the top edge to tear the booster open</div>
     <button class="btn ov-done" id="ovDone">Done</button>`;
@@ -353,7 +353,26 @@ function openPacks(n) {
   //    seinen Platz im Hintergrund
   const stackEl = document.createElement('div'); stackEl.className = 'ov-stack';
   let idx = -1, shown = null, built = false, skipAll = false;
-  const autoRun = () => { const t = setInterval(() => { if (idx >= cards.length && !shown) { clearInterval(t); return; } if (!flipping) next(); }, 120); };
+  // "Show all": alle restlichen Sticker sofort verdeckt in ihre Plaetze legen
+  // und in einer schnellen Welle aufdecken (fuer Ungeduldige)
+  const tagFor = (el, s) => { const isNew = !owned[s.n]; owned[s.n] = (owned[s.n] || 0) + 1; const t = document.createElement('span'); t.className = isNew ? 'tag-new' : 'tag-dupe'; t.textContent = isNew ? 'NEW' : `+${DUPE[s.r]} 🪙`; el.appendChild(t); };
+  const autoRun = () => {
+    flipping = true;
+    const slots = ov.querySelectorAll('.ov-slot');
+    const fs = i => (slots[i].getBoundingClientRect().width / 92 * 9) + 'px';
+    if (shown) { const { el, s, i } = shown; shown = null; el.getAnimations().forEach(x => x.cancel()); el.removeAttribute('style'); el.style.fontSize = fs(i); slots[i].appendChild(el); tagFor(el, s); }
+    // Karte, die gerade noch verdeckt zappelt, gehoert mit dazu
+    let start = idx + 1;
+    if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; start = idx; }
+    const rest = cards.slice(start).map((s, k) => ({ s, i: start + k }));
+    idx = cards.length;
+    stackEl.remove(); grid.classList.add('done'); hint('');
+    rest.forEach(({ s, i }, k) => {
+      const el = card(s); el.style.fontSize = fs(i); slots[i].appendChild(el);
+      setTimeout(() => flipCard(el, s, () => { tagFor(el, s); if (k === rest.length - 1) { renderAlbum(); finish(); } }), 120 + k * 70);
+    });
+    if (!rest.length) { renderAlbum(); finish(); }
+  };
   function buildStack() {
     if (built) return; built = true;
     [...cards].reverse().forEach(s => stackEl.appendChild(card(s)));
@@ -422,7 +441,7 @@ function openPacks(n) {
       };
     };
   }
-  let flipping = false;
+  let flipping = false, revealTimer = null;
   function next() {
     if (flipping) return;
     flipping = true;
@@ -435,7 +454,8 @@ function openPacks(n) {
       const back = el.querySelector('.back');
       // jetzt frei und verdeckt oben: seltene Ware scheint durch und zappelt kurz
       if (rare) back.classList.add(s.r === 'holo' ? 'glow-holo' : 'glow-anim', 'shake');
-      setTimeout(() => {
+      revealTimer = setTimeout(() => {
+        revealTimer = null;
         if (rare) { const b = document.createElement('div'); b.className = 'burst'; b.style.background = `radial-gradient(circle, ${RC[s.r]}, transparent 62%)`; el.appendChild(b); }
         flipCard(el, s, () => { flipping = false; });
         shown = { el, s, i: idx };
@@ -447,7 +467,8 @@ function openPacks(n) {
     else reveal();
   }
   function finish() {
-    stackEl.remove(); grid.classList.add('done'); hint('');
+    if (stackEl.isConnected) stackEl.remove();
+    grid.classList.add('done'); hint('');
     ov.querySelector('#ovSkip').style.display = 'none';
     ov.querySelector('#ovDone').style.display = 'block';
   }
