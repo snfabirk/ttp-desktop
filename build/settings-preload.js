@@ -15,5 +15,8 @@ contextBridge.exposeInMainWorld('ttpSettings', {
     ipcRenderer.on('main-update-status', (event, state) => callback(state));
   },
   openUpdateWindow: () => ipcRenderer.send('open-update-window'),
-  factoryReset: () => ipcRenderer.invoke('factory-reset')
+  factoryReset: () => ipcRenderer.invoke('factory-reset'),
+  exportBackup: (localData) => ipcRenderer.invoke('backup-export', localData),
+  importBackup: (currentLocalData) => ipcRenderer.invoke('backup-import', currentLocalData),
+  reloadMainWindow: () => ipcRenderer.send('reload-main-window')
 });

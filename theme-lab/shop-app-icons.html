@@ -97,22 +97,6 @@ const icons = [
     }
   },
   {
-    id: 'icon-horseshoes', name: 'Lucky Horseshoes', rarity: 'refined',
-    desc: 'Three bronze horseshoes - one for each pony.',
-    svg: () => {
-      const shoe = (x, y, s, rot) => `
-        <g transform="translate(${x} ${y}) rotate(${rot + 180}) scale(${s})">
-          <path d="M-30 30 L-30 -2 A30 30 0 0 1 30 -2 L30 30 L16 30 L16 -2 A16 16 0 0 0 -16 -2 L-16 30 Z" fill="url(#bronze)" stroke="#3b230f" stroke-width="3" stroke-linejoin="round"/>
-          ${[[-23, 18], [-23, 2], [-14, -16], [14, -16], [23, 2], [23, 18]].map(([a, b]) => `<circle cx="${a}" cy="${b}" r="2.6" fill="#3b230f"/>`).join('')}
-        </g>`;
-      return `
-        <defs><linearGradient id="bronze" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3c98b"/><stop offset=".5" stop-color="#c47d3a"/><stop offset="1" stop-color="#7a4419"/></linearGradient></defs>
-        <circle cx="128" cy="128" r="122" fill="#1d3b2a"/>
-        <circle cx="128" cy="128" r="122" fill="none" stroke="#c47d3a" stroke-width="8"/>
-        ${shoe(128, 92, 1.2, 0)}${shoe(80, 168, 1.2, -14)}${shoe(176, 168, 1.2, 14)}`;
-    }
-  },
-  {
     id: 'icon-crystal', name: 'Crystal Core', rarity: 'fancy',
     desc: 'A faceted blue crystal set in a gold hexagon.',
     svg: () => {
@@ -131,17 +115,80 @@ const icons = [
     }
   },
   {
-    id: 'icon-ember', name: 'Ember 3TP', rarity: 'refined',
-    desc: 'The classic letters, forged in lava.',
+    id: 'icon-galaxy-pony', name: 'Galaxy Pony', rarity: 'fancy',
+    desc: 'A pony made of stars, drifting through a violet nebula.',
+    svg: () => {
+      // feste Sterne (deterministisch), damit das Icon immer gleich aussieht
+      let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      let stars = '';
+      for (let i = 0; i < 70; i++) { const x = rnd() * 100, y = rnd() * 100, r = rnd() < .12 ? 1.6 : .7; stars += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="#fff" opacity="${(.5 + rnd() * .5).toFixed(2)}"/>`; }
+      return `
+        <defs>
+          <radialGradient id="neb" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#b98cff"/><stop offset=".45" stop-color="#5b2bb5"/><stop offset="1" stop-color="#120a2e"/></radialGradient>
+          <radialGradient id="neb2" cx=".7" cy=".75" r=".6"><stop offset="0" stop-color="#ff7ad9" stop-opacity=".8"/><stop offset="1" stop-color="#ff7ad9" stop-opacity="0"/></radialGradient>
+          <clipPath id="gHead"><path transform="translate(40 34) scale(1.75)" d="${HEAD}"/></clipPath>
+        </defs>
+        <circle cx="128" cy="128" r="122" fill="#0b0720"/>
+        <circle cx="128" cy="128" r="122" fill="none" stroke="#8a6cff" stroke-width="6"/>
+        <g clip-path="url(#gHead)">
+          <rect width="256" height="256" fill="url(#neb)"/><rect width="256" height="256" fill="url(#neb2)"/>
+          <g transform="translate(40 34) scale(1.75)">${stars}</g>
+        </g>
+        <path transform="translate(40 34) scale(1.75)" d="${HEAD}" fill="none" stroke="#e6dcff" stroke-width="1.6" stroke-linejoin="round"/>
+        <circle cx="${40 + EYE[0] * 1.75}" cy="${34 + EYE[1] * 1.75}" r="5" fill="#fff"/>`;
+    }
+  },
+  {
+    id: 'icon-sunset-pony', name: 'Sunset Pony', rarity: 'refined',
+    desc: 'Retro synthwave sun behind a black pony silhouette.',
     svg: () => `
       <defs>
-        <radialGradient id="eg" cx=".5" cy=".7" r=".8"><stop offset="0" stop-color="#5a1206"/><stop offset="1" stop-color="#160403"/></radialGradient>
-        <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2a8"/><stop offset=".45" stop-color="#ffb02e"/><stop offset="1" stop-color="#e2380e"/></linearGradient>
+        <linearGradient id="sky2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a0b3a"/><stop offset="1" stop-color="#5a1460"/></linearGradient>
+        <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe46b"/><stop offset=".55" stop-color="#ff7a3c"/><stop offset="1" stop-color="#ff2f7a"/></linearGradient>
+        <clipPath id="sunClip"><circle cx="128" cy="128" r="122"/></clipPath>
       </defs>
-      <circle cx="128" cy="128" r="122" fill="url(#eg)"/>
-      <circle cx="128" cy="128" r="117" fill="none" stroke="#ff6a1a" stroke-width="7"/>
-      <path d="M40 180 Q70 168 92 186 T150 182 T216 178" fill="none" stroke="#ff6a1a" stroke-width="5" opacity=".55"/>
-      <text x="128" y="154" text-anchor="middle" font-family="Segoe UI, Arial Black, sans-serif" font-weight="900" font-size="92" fill="url(#tg)" stroke="#3a0a02" stroke-width="4" paint-order="stroke">3TP</text>`
+      <g clip-path="url(#sunClip)">
+        <rect width="256" height="256" fill="url(#sky2)"/>
+        <circle cx="128" cy="138" r="78" fill="url(#sun)"/>
+        ${[150, 168, 184, 198, 210].map((y, i) => `<rect x="40" y="${y}" width="176" height="${3 + i * 1.6}" fill="#3a0f4a"/>`).join('')}
+        <rect y="200" width="256" height="56" fill="#140726"/>
+        ${[0, 1, 2, 3].map(i => `<line x1="0" y1="${214 + i * 11}" x2="256" y2="${214 + i * 11}" stroke="#ff3ca6" stroke-width="1.5" opacity=".7"/>`).join('')}
+        <g transform="translate(46 44) scale(1.62)"><path d="${HEAD}" fill="#0b0414"/></g>
+      </g>
+      <circle cx="128" cy="128" r="122" fill="none" stroke="#ff4fb8" stroke-width="5"/>`
+  },
+  {
+    id: 'icon-royal-crest', name: 'Royal Crest', rarity: 'fancy',
+    desc: 'A heraldic shield with a crowned golden pony.',
+    svg: () => `
+      <defs>
+        <linearGradient id="gold2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0b0"/><stop offset=".5" stop-color="#e2b23c"/><stop offset="1" stop-color="#8a5e10"/></linearGradient>
+        <linearGradient id="field" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b3172e"/><stop offset="1" stop-color="#5e0a18"/></linearGradient>
+      </defs>
+      <path d="M128 18 L222 50 L222 126 C222 184 182 222 128 242 C74 222 34 184 34 126 L34 50 Z" fill="url(#gold2)"/>
+      <path d="M128 34 L208 61 L208 126 C208 176 174 208 128 226 C82 208 48 176 48 126 L48 61 Z" fill="url(#field)"/>
+      <path d="M92 86 L102 58 L116 76 L128 52 L140 76 L154 58 L164 86 Z" fill="url(#gold2)" stroke="#6a4508" stroke-width="2" stroke-linejoin="round"/>
+      <g transform="translate(70 84) scale(1.2)"><path d="${HEAD}" fill="url(#gold2)" stroke="#6a4508" stroke-width="1.6" stroke-linejoin="round"/>
+        <circle cx="${EYE[0]}" cy="${EYE[1]}" r="3" fill="#5e0a18"/></g>`
+  },
+  {
+    id: 'icon-lowpoly-pony', name: 'Low-Poly Pony', rarity: 'refined',
+    desc: 'A faceted paper pony, folded from a few flat shapes.',
+    svg: () => {
+      // Facetten: Dreiecke ueber dem Kopf, auf die Silhouette zugeschnitten
+      const pts = [[52, 8], [60, 18], [42, 4], [38, 24], [64, 30], [86, 44], [90, 70], [91, 96], [70, 96], [50, 96], [50, 62], [30, 66], [8, 62], [18, 45], [42, 44], [66, 60], [76, 80]];
+      const tris = [[2, 0, 3], [0, 1, 3], [3, 1, 4], [3, 4, 14], [4, 5, 15], [4, 15, 14], [5, 6, 15], [6, 16, 15], [6, 7, 16], [7, 8, 16], [8, 9, 10], [8, 10, 16], [10, 15, 16], [14, 15, 10], [14, 10, 11], [13, 14, 11], [13, 11, 12]];
+      const shades = ['#f2e6d0', '#e6d4b6', '#d8c19c', '#cdb38a', '#bfa27a', '#e9dcc4', '#d2ba94', '#c4a985'];
+      const poly = tris.map((t, i) => `<polygon points="${t.map(k => pts[k].join(',')).join(' ')}" fill="${shades[i % shades.length]}" stroke="${shades[i % shades.length]}" stroke-width=".6"/>`).join('');
+      return `
+        <defs><clipPath id="lpHead"><path d="${HEAD}"/></clipPath></defs>
+        <rect x="8" y="8" width="240" height="240" rx="48" fill="#2b5d6e"/>
+        <rect x="8" y="8" width="240" height="240" rx="48" fill="none" stroke="#9fd3d6" stroke-width="5"/>
+        <g transform="translate(40 34) scale(1.75)">
+          <path d="${HEAD}" fill="#d8c19c"/><g clip-path="url(#lpHead)">${poly}</g>
+          <circle cx="${EYE[0]}" cy="${EYE[1]}" r="3" fill="#2b3a40"/>
+        </g>`;
+    }
   },
   {
     id: 'icon-unicorn', name: 'Secretly a Unicorn', rarity: 'fancy',

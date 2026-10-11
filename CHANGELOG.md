@@ -1,5 +1,10 @@
 # Internal Changelog
 
+## 5.26.0 — 2026-10-11
+
+- Backup (user): Settings > Backup "Save backup… / Load backup…". Main process (IPC backup-export / backup-import / reload-main-window, native file dialogs) bundles every file under ttp-data plus the renderer's ttp_* localStorage into one JSON ({kind:'three-trick-pony-backup', version 1}). Riot API key and ttp-cache are NOT included. Loading validates the kind and rejects absolute/'..' paths, first writes a safety copy of the current state to userData/ttp-backups/before-load-*.json, then wipes and restores ttp-data and localStorage and reloads the main window.
+- theme-lab/shop-app-icons.html: Lucky Horseshoes + Ember 3TP replaced by Galaxy Pony, Sunset Pony, Royal Crest, Low-Poly Pony.
+
 ## 5.25.3 — 2026-10-10
 
 Full bug rundown: 10 pages x (real data / long names / API errors) x (default / minimum size), 22 themes x 3 pages, isolated logic tests for shop/voucher/claim - no JS errors, no overlaps.

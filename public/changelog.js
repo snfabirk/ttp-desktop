@@ -25,6 +25,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.26.0',
+      date: '2026-10-11',
+      notable: ['Backups: save all your progress (pass, coins, cosmetics, challenges, trophies, settings) into one file in Settings, and load it again on a new PC or after a reinstall.'],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.25.3',
       date: '2026-10-10',
       notable: [],

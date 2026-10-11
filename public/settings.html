@@ -236,6 +236,18 @@
       border-color: var(--border-hover);
       color: var(--text);
     }
+    /* Backup (v5.26.0) */
+    .backup-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .backup-row button {
+      background: none; border: 1px solid var(--gold); color: var(--gold); border-radius: 6px; padding: 7px 16px;
+      font-family: 'Cinzel', Georgia, serif; font-size: 0.85rem; letter-spacing: 0.5px; cursor: pointer;
+      transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    }
+    .backup-row button:hover { background: var(--gold); color: var(--input-bg); transform: translateY(-1px); }
+    .backup-row button.confirm { background: var(--gold); color: var(--input-bg); }
+    .backup-row button:disabled { opacity: 0.5; cursor: default; transform: none; }
+    .backup-status { margin: 6px 0 0; font-size: 0.75rem; color: var(--gold); min-height: 1em; word-break: break-all; }
+    .backup-status.error { color: var(--red); }
     .danger-zone {
       margin-top: 14px;
       padding-top: 12px;
@@ -332,6 +344,16 @@
     <p id="apiKeyError" class="key-error"></p>
   </div>
 
+  <div class="setting-group">
+    <label>Backup</label>
+    <div class="backup-row">
+      <button type="button" id="backupSaveBtn">Save backup…</button>
+      <button type="button" id="backupLoadBtn">Load backup…</button>
+    </div>
+    <p class="danger-hint">Saves your progress - pass, coins, cosmetics, challenges, trophies and settings - into one file. Keep it somewhere safe (e.g. a USB stick or cloud folder) to move to a new PC or restore after a reinstall. Your Riot API key is not included.</p>
+    <p class="backup-status" id="backupStatus"></p>
+  </div>
+
   <div class="setting-group danger-zone">
     <label>Danger Zone</label>
     <button type="button" id="factoryResetBtn">Reset to Factory Settings</button>
@@ -347,6 +369,51 @@
   </div>
 
   <script>
+    // ----- Backup -----
+    (() => {
+      const status = document.getElementById('backupStatus');
+      const saveBtn = document.getElementById('backupSaveBtn'), loadBtn = document.getElementById('backupLoadBtn');
+      const say = (text, err) => { status.textContent = text; status.classList.toggle('error', !!err); };
+      const localData = () => {
+        const out = {};
+        try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('ttp_')) out[k] = localStorage.getItem(k); } } catch (e) {}
+        return out;
+      };
+      if (!window.ttpSettings || !window.ttpSettings.exportBackup) { saveBtn.disabled = loadBtn.disabled = true; say('Backups only work in the desktop app.', true); return; }
+      saveBtn.addEventListener('click', async () => {
+        saveBtn.disabled = true; say('');
+        try {
+          const r = await window.ttpSettings.exportBackup(localData());
+          if (r.ok) say(`Backup saved: ${r.filePath}`); else if (!r.canceled) say(r.error || 'Could not save the backup.', true);
+        } catch (e) { say('Could not save the backup.', true); }
+        saveBtn.disabled = false;
+      });
+      let armed = null;
+      loadBtn.addEventListener('click', async () => {
+        if (!armed) {
+          loadBtn.classList.add('confirm'); loadBtn.textContent = 'Replace my progress?';
+          say('Loading a backup replaces your current progress on this PC. Your current state is saved automatically first.');
+          armed = setTimeout(() => { armed = null; loadBtn.classList.remove('confirm'); loadBtn.textContent = 'Load backup…'; }, 5000);
+          return;
+        }
+        clearTimeout(armed); armed = null; loadBtn.classList.remove('confirm'); loadBtn.textContent = 'Load backup…';
+        loadBtn.disabled = true; say('');
+        try {
+          const r = await window.ttpSettings.importBackup(localData());
+          if (r.ok) {
+            try {
+              Object.keys(localData()).forEach(k => localStorage.removeItem(k));
+              Object.entries(r.localStorage || {}).forEach(([k, v]) => { if (k.startsWith('ttp_') && typeof v === 'string') localStorage.setItem(k, v); });
+            } catch (e) {}
+            say(`Backup from ${r.createdAt ? new Date(r.createdAt).toLocaleString() : 'file'} loaded.`);
+            window.ttpSettings.reloadMainWindow();
+            setTimeout(() => location.reload(), 600);
+          } else if (!r.canceled) say(r.error || 'Could not load the backup.', true);
+        } catch (e) { say('Could not load the backup.', true); }
+        loadBtn.disabled = false;
+      });
+    })();
+
     const THEME_KEY = 'ttp_theme';
     const MIN_PERCENT = 30;
     const MAX_PERCENT = 90;

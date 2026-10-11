@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, Tray, ipcMain, screen, session } = require('electron');
+const { app, BrowserWindow, Menu, Tray, ipcMain, screen, session, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const windowStateKeeper = require('electron-window-state');
@@ -231,6 +231,71 @@ function wipeDir(dirPath) {
   fs.rmSync(dirPath, { recursive: true, force: true });
   fs.mkdirSync(dirPath, { recursive: true });
 }
+
+// ----- Backup (v5.26.0, Nutzerwunsch): alles lokal Gespeicherte in EINE Datei -----
+// Inhalt: ttp-data (Pass/Coins/Cosmetics, Challenge History, LP-Verlauf,
+// Trophaeen) + die ttp_-Eintraege aus localStorage (Setup, Theme ...), die der
+// Settings-Renderer mitschickt. NICHT drin: Riot-API-Key (Geheimnis) und
+// ttp-cache (laedt sich neu).
+const BACKUP_KIND = 'three-trick-pony-backup';
+function collectFiles(dir, base = dir, out = {}) {
+  if (!fs.existsSync(dir)) return out;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) collectFiles(full, base, out);
+    else out[path.relative(base, full).split(path.sep).join('/')] = fs.readFileSync(full, 'utf-8');
+  }
+  return out;
+}
+function buildBackup(localData) {
+  const { DATA_DIR } = require('./server/lib/dataPaths');
+  return { kind: BACKUP_KIND, version: 1, appVersion: app.getVersion(), createdAt: new Date().toISOString(), localStorage: localData || {}, files: collectFiles(DATA_DIR) };
+}
+ipcMain.handle('backup-export', async (event, localData) => {
+  const backup = buildBackup(localData);
+  const day = new Date().toISOString().slice(0, 10);
+  const { canceled, filePath } = await dialog.showSaveDialog(BrowserWindow.fromWebContents(event.sender), {
+    title: 'Save backup',
+    defaultPath: path.join(app.getPath('documents'), `Three-Trick-Pony-Backup-${day}.json`),
+    filters: [{ name: 'Three-Trick-Pony backup', extensions: ['json'] }]
+  });
+  if (canceled || !filePath) return { ok: false, canceled: true };
+  fs.writeFileSync(filePath, JSON.stringify(backup));
+  return { ok: true, filePath };
+});
+ipcMain.handle('backup-import', async (event, currentLocalData) => {
+  const { canceled, filePaths } = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), {
+    title: 'Load backup',
+    defaultPath: app.getPath('documents'),
+    filters: [{ name: 'Three-Trick-Pony backup', extensions: ['json'] }],
+    properties: ['openFile']
+  });
+  if (canceled || !filePaths || !filePaths[0]) return { ok: false, canceled: true };
+  let backup;
+  try { backup = JSON.parse(fs.readFileSync(filePaths[0], 'utf-8')); } catch (e) { return { ok: false, error: 'This file could not be read.' }; }
+  if (!backup || backup.kind !== BACKUP_KIND || typeof backup.files !== 'object') return { ok: false, error: 'This is not a Three-Trick-Pony backup.' };
+  // Nur saubere relative Pfade innerhalb von ttp-data zulassen
+  const entries = Object.entries(backup.files);
+  if (entries.some(([rel, content]) => typeof content !== 'string' || !rel || path.isAbsolute(rel) || rel.split(/[\/]/).includes('..'))) {
+    return { ok: false, error: 'This backup file is damaged.' };
+  }
+  // Sicherheitskopie des aktuellen Stands, bevor er ersetzt wird
+  const safetyDir = path.join(app.getPath('userData'), 'ttp-backups');
+  fs.mkdirSync(safetyDir, { recursive: true });
+  const safetyFile = path.join(safetyDir, `before-load-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+  fs.writeFileSync(safetyFile, JSON.stringify(buildBackup(currentLocalData)));
+  const { DATA_DIR } = require('./server/lib/dataPaths');
+  wipeDir(DATA_DIR);
+  for (const [rel, content] of entries) {
+    const target = path.join(DATA_DIR, ...rel.split('/'));
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, content);
+  }
+  return { ok: true, localStorage: backup.localStorage || {}, createdAt: backup.createdAt, safetyFile };
+});
+ipcMain.on('reload-main-window', () => {
+  if (mainWin && !mainWin.isDestroyed()) mainWin.loadURL(`http://localhost:${serverPort}/overview.html`);
+});
 
 ipcMain.handle('factory-reset', async () => {
   // Seit v4.27.0 update-fest unter userData (siehe server/lib/dataPaths.js);
