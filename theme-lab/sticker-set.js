@@ -156,17 +156,40 @@
     'honor': () => `${bg('#0a1a2a', '#1a3a5a', '#ffd36b')}<path d="M60 18 L94 32 V62 C94 84 78 98 60 106 C42 98 26 84 26 62 V32 Z" fill="#e2b23c" stroke="#6a4508" stroke-width="3"/>
       <path d="M60 28 L84 38 V62 C84 78 72 90 60 96 C48 90 36 78 36 62 V38 Z" fill="#1a3a6a"/><path d="M60 40 L64 52 L76 52 L66 60 L70 72 L60 64 L50 72 L54 60 L44 52 L56 52 Z" fill="#ffd36b"/>`,
     // ===== Uncommon =====
-    'gank': () => `${bg('#0c1f16', '#1c4a2c')}${rays(60, 40, '#ff4d5e', 12, .08)}${[...Array(9)].map((_, i) => `<path d="M${i * 15 - 6} 120 Q${i * 15 + 2} ${58 + (i % 3) * 8} ${i * 15 + 10} 120 Z" fill="${i % 2 ? '#2f8a4a' : '#256e3a'}"/>`).join('')}
-      <ellipse cx="60" cy="98" rx="60" ry="26" fill="#2a7a40"/><circle cx="44" cy="90" r="9" fill="#fff"/><circle cx="76" cy="90" r="9" fill="#fff"/><circle cx="47" cy="92" r="4.2" fill="#1a1a1a"/><circle cx="79" cy="92" r="4.2" fill="#1a1a1a"/>
-      <path d="M36 79 L52 83 M84 79 L68 83" stroke="#0e2a16" stroke-width="3" stroke-linecap="round"/><path d="M60 10 L76 50 H44 Z" fill="#ff4d5e" stroke="#7a0d16" stroke-width="2.5" stroke-linejoin="round"/><rect x="57" y="22" width="6" height="16" rx="2" fill="#fff"/><circle cx="60" cy="43" r="3" fill="#fff"/>`,
+    'gank': () => `${bg('#0c1f16', '#1c4a2c')}${rays(60, 46, '#ff4d5e', 12, .07)}
+      <g transform="translate(60 74)">
+        <path d="M-30 -22 L-44 -50 L-16 -32 Z" fill="#c0392b" stroke="#3a0a0a" stroke-width="2"/><path d="M30 -22 L44 -50 L16 -32 Z" fill="#2a2a2a" stroke="#000" stroke-width="2"/>
+        <circle cx="-44" cy="-50" r="4.5" fill="#ffd36b" stroke="#6a4508" stroke-width="1.2"/><circle cx="44" cy="-50" r="4.5" fill="#ffd36b" stroke="#6a4508" stroke-width="1.2"/>
+        <path d="M-32 -20 Q0 -40 32 -20 Q30 -8 0 -6 Q-30 -8 -32 -20 Z" fill="#8a1a1a" stroke="#3a0a0a" stroke-width="2"/>
+        <ellipse cx="0" cy="4" rx="26" ry="22" fill="#f2ebe0" stroke="#3a2a1a" stroke-width="2"/>
+        <path d="M-15 -2 L-6 0 M15 -2 L6 0" stroke="#1a1a1a" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M-14 -5 Q-10 -9 -5 -6 M14 -5 Q10 -9 5 -6" stroke="#1a1a1a" stroke-width="1.6" fill="none"/>
+        <path d="M-17 9 Q0 26 17 9 Q0 15 -17 9 Z" fill="#7a0a10" stroke="#1a1a1a" stroke-width="1.8"/>
+        ${[-11, -5, 1, 7, 13].map(x => `<path d="M${x} 10.5 l3 4 l3 -4" fill="#fff"/>`).join('')}
+        <path d="M-6 -16 L0 -10 L6 -16" stroke="#c0392b" stroke-width="2" fill="none"/></g>
+      ${[...Array(10)].map((_, i) => `<path d="M${i * 13 - 6} 120 Q${i * 13 + 2} ${78 + (i % 3) * 6} ${i * 13 + 10} 120 Z" fill="${i % 2 ? '#2f8a4a' : '#256e3a'}"/>`).join('')}
+      <ellipse cx="60" cy="112" rx="64" ry="18" fill="#2a7a40"/>
+      <path d="M100 14 L108 34 H92 Z" fill="#ff4d5e" stroke="#7a0d16" stroke-width="2" stroke-linejoin="round"/><rect x="98.6" y="20" width="2.8" height="8" rx="1" fill="#fff"/><circle cx="100" cy="31" r="1.5" fill="#fff"/>`,
     'tilted': () => `${bg('#3a1010', '#6e1e14', '#ff5a3c')}${[0, 1, 2].map(i => `<path d="M${82 + i * 11} 42 q8 -9 0 -18 q-8 -9 0 -18" stroke="rgba(255,255,255,.55)" stroke-width="3.5" fill="none" stroke-linecap="round"/>`).join('')}
       <g transform="rotate(-16 60 70)">${pony({ x: 14, y: 24, s: .88, eye: 'angry', body: '#e8c48c', shade: '#b88848' })}</g>${txt('0 / 10 / 0', 60, 114, 12, '#ffb4a0', '#3a1010', 2)}`,
-    'counter-jungle': () => `${bg('#140a24', '#2a1448', '#b98cff')}${bush(18, 108, 60, '#3a1a5a', '#2a1048')}${bush(104, 110, 60, '#3a1a5a', '#2a1048')}${rune(84, 40, 16, '#ff9a6b', '#a02a0a', 'M0 -8 L3 -2 L8 -2 L4 2 L6 8 L0 4 L-6 8 L-4 2 L-8 -2 L-3 -2 Z')}
-      ${pony({ x: 6, y: 44, s: .6, eye: 'angry', body: '#8a7aa8', shade: '#4a3a6a', mane: '#2a1a40' })}${txt('SHHH', 30, 30, 12, '#d8c8ff', '#140a24', 2)}`,
+    'counter-jungle': () => `${bg('#140a24', '#2a1448', '#b98cff')}${bush(16, 112, 60, '#3a1a5a', '#2a1048')}${bush(106, 114, 60, '#3a1a5a', '#2a1048')}
+      <g transform="translate(86 42) rotate(4)"><rect x="-22" y="-12" width="44" height="22" rx="3" fill="#7a2a2a" stroke="#2a0a0a" stroke-width="2"/><rect x="-2" y="10" width="4" height="40" fill="#5a3a1a"/>
+        ${txt('ENEMY', 0, -1, 8, '#ffd6c8', '#7a2a2a', 0)}${txt('JUNGLE', 0, 7, 8, '#ffd6c8', '#7a2a2a', 0)}</g>
+      ${pony({ x: 2, y: 40, s: .58, eye: 'angry', body: '#8a7aa8', shade: '#4a3a6a', mane: '#2a1a40' })}
+      <path d="M44 66 Q58 48 70 62 Q76 74 62 80 Q48 82 44 66 Z" fill="#b08a5a" stroke="#4a2a10" stroke-width="2"/><path d="M50 58 Q54 52 60 56" stroke="#4a2a10" stroke-width="2" fill="none"/>
+      ${txt('LOOT', 58, 72, 8, '#4a2a10', '#b08a5a', 0)}${[[30, 104], [40, 98], [50, 104], [60, 98]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="2.6" ry="1.6" fill="#d8c8ff" opacity=".5"/>`).join('')}`,
     'dragon-soul': () => `${bg('#1a0a04', '#3a1a0a', '#ff9a3a')}${rays(60, 58, '#ffb46b', 16, .1)}${dragonEye(60, 58, 22, '#ffe46b', '#c0392b')}
       ${['#ff5a1e', '#3ab4ff', '#5fd08a', '#9aa6b8'].map((c, i) => { const a = i / 4 * Math.PI * 2 - Math.PI / 4; return `<circle cx="${(60 + Math.cos(a) * 40).toFixed(1)}" cy="${(58 + Math.sin(a) * 40).toFixed(1)}" r="7" fill="${c}" stroke="#fff" stroke-width="1.5"/>`; }).join('')}`,
-    'herald-charge': () => `${bg('#141a2e', '#2a2048', '#b98cff')}${tower(96, 112, .8)}<path d="M10 80 Q40 60 70 70 L84 64 L74 80 Q40 96 10 92 Z" fill="#6a4ab0" stroke="#24104a" stroke-width="2.5"/>
-      <path d="M70 70 L92 58 L80 76 Z" fill="#e6e0f0" stroke="#24104a" stroke-width="2"/><circle cx="56" cy="72" r="4" fill="#ffd36b"/>${[0, 1, 2].map(i => `<path d="M${6 - i * 4} ${76 + i * 6} H${-12}" stroke="#d8c8ff" stroke-width="3" stroke-linecap="round"/>`).join('')}${sparks([[90, 54, .8]], '', '#ffd36b')}`,
+    'herald-charge': () => `${bg('#141a2e', '#2a2048', '#b98cff')}${rays(86, 58, '#d8c8ff', 10, .07, 70)}
+      ${tower(96, 116, .82)}<path d="M84 72 L92 60 L88 78 L96 70 L90 86" stroke="#fff" stroke-width="2" fill="none" opacity=".9"/>
+      <g transform="translate(46 76)">
+        <ellipse cx="0" cy="8" rx="40" ry="10" fill="#0a0a18" opacity=".5"/>
+        <path d="M-40 0 C-40 -30 -10 -40 14 -34 C30 -30 38 -14 36 4 L-36 10 Z" fill="#5a3aa8" stroke="#1e1040" stroke-width="2.5"/>
+        <path d="M-30 -10 C-20 -30 4 -34 20 -26" stroke="#8a6ad8" stroke-width="3" fill="none"/><path d="M-24 2 C-14 -16 6 -20 22 -14" stroke="#8a6ad8" stroke-width="3" fill="none"/>
+        <path d="M30 -22 L58 -30 L38 -8 Z" fill="#e6e0f0" stroke="#1e1040" stroke-width="2"/>
+        <circle cx="22" cy="-12" r="7" fill="#ffd36b" stroke="#1e1040" stroke-width="1.5"/><ellipse cx="23" cy="-12" rx="2" ry="5" fill="#2a1040"/>${glow(22, -12, 14, '#ffd36b', .5)}
+        ${[-30, -12, 6, 22].map(x => `<path d="M${x} 8 l-4 10 M${x + 6} 8 l2 10" stroke="#1e1040" stroke-width="3" stroke-linecap="round"/>`).join('')}</g>
+      ${[0, 1, 2].map(i => `<path d="M${6 - i * 2} ${62 + i * 12} H${-14}" stroke="#d8c8ff" stroke-width="3" stroke-linecap="round" opacity=".7"/>`).join('')}${sparks([[86, 64, .9], [92, 54, .6]], '', '#ffd36b')}`,
     'double-kill': () => `${bg('#200a14', '#4a1424', '#ff5a6a')}${rays(60, 50, '#ff8a9a', 12, .09)}${sword(46, 96, 64, -24)}${sword(74, 96, 64, 24)}${txt('DOUBLE', 60, 112, 14, '#ffb4c0', '#200a14', 2.6)}`,
     'triple-kill': () => `${bg('#1e0a24', '#401448', '#e05aff')}${rays(60, 50, '#e8a0ff', 12, .09)}${sword(40, 98, 62, -30)}${sword(60, 100, 66, 0)}${sword(80, 98, 62, 30)}${txt('TRIPLE', 60, 114, 14, '#f0c8ff', '#1e0a24', 2.6)}`,
     'shutdown': () => `${bg('#2a1a08', '#4a2a10')}<rect x="24" y="14" width="72" height="88" rx="3" fill="#e8d4a8" stroke="#6a4a20" stroke-width="2.5" transform="rotate(3 60 58)"/>
@@ -177,11 +200,22 @@
       ${[[34, 50], [86, 44], [62, 34]].map(([x, y]) => `<path d="M${x} ${y} l-6 -14 l12 6 Z" fill="#8a8aa8"/>`).join('')}${dragonEye(46, 66, 9, '#e6e6ff', '#6a6aff')}${dragonEye(78, 66, 9, '#e6e6ff', '#6a6aff')}<path d="M40 90 Q60 100 80 90" stroke="#16161e" stroke-width="3" fill="none"/>`,
     'promo-series': () => `${bg('#0a1a14', '#14302a', '#5fd08a')}${['#5fd08a', '#5fd08a', '#3a4a5a'].map((c, i) => `<g transform="translate(${30 + i * 30} 56)"><rect x="-12" y="-12" width="24" height="24" rx="5" fill="${c}" stroke="#fff" stroke-width="2"/>${i < 2 ? '<path d="M-6 0 L-1 5 L7 -5" stroke="#fff" stroke-width="3.4" fill="none" stroke-linecap="round"/>' : txt('?', 0, 7, 18, '#fff', '#3a4a5a', 0)}</g>`).join('')}${txt('PROMOS', 60, 100, 15, '#9aeec0', '#0a1a14', 2.4)}`,
     'smurf-alert': () => `${bg('#0a1a3a', '#1a3a7a', '#6bc8ff')}${pony({ x: 16, y: 18, s: .84, eye: 'happy', body: '#7ab8ff', shade: '#3a6ad8', mane: '#ffffff', extra: '<path d="M8 66 Q16 60 22 66 Q28 60 34 66 Q26 74 21 70 Q16 74 8 66 Z" fill="#3a2a1a"/>' })}${txt('LVL 31', 30, 26, 11, '#fff', '#0a1a3a', 2)}`,
-    'buff-steal': () => `${bg('#1a0a04', '#3a1a0a', '#ff8a3a')}${rune(60, 50, 26, '#ffb46b', '#b02a0a', 'M0 -14 L4 -3 L14 -3 L6 4 L9 14 L0 8 L-9 14 L-6 4 L-14 -3 L-4 -3 Z')}
-      ${['#c8a96e', '#8a6a40'].map((c, i) => `<path d="M${i ? 108 : 12} 112 C${i ? 100 : 20} 92 ${i ? 92 : 28} 80 ${i ? 82 : 38} 72" stroke="${c}" stroke-width="12" fill="none" stroke-linecap="round"/>`).join('')}${sparks([[30, 24, .7], [94, 22, .6]], '', '#ffd36b')}`,
-    'inhib-down': () => `${bg('#120a1e', '#2a1440', '#b98cff')}${[[-1, 0], [1, 0]].map(([d]) => `<path d="M${60 + d * 6} 22 L${60 + d * 26} 60 L${60 + d * 8} 100 L${60 + d * 2} 60 Z" fill="#b98cff" stroke="#fff" stroke-width="1.5" transform="rotate(${d * 12} 60 60) translate(${d * 8} 0)"/>`).join('')}
-      ${glow(60, 60, 30, '#d8b8ff', .7)}${dots([[30, 40, 2], [92, 46, 2], [40, 90, 1.6], [86, 92, 1.8], [60, 106, 1.4]], '#e8d8ff', .9)}`,
-    'vision-king': () => `${bg('#06140c', '#123a22', '#ffe9a0')}${crown(60, 26, .62, ['#ffd36b', '#ffd36b', '#ffd36b', '#ffd36b', '#ffd36b'])}${pony({ x: 18, y: 36, s: .74, eye: 'happy' })}${[[16, 30], [104, 34], [100, 92]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5" fill="#ffd36b"/>${glow(x, y, 10, '#ffe9a0', .6)}`).join('')}`,
+    'buff-steal': () => `${bg('#1a0a04', '#3a1a0a', '#ff8a3a')}
+      <g transform="translate(78 78)"><path d="M-26 30 L-30 -6 Q-30 -28 0 -30 Q30 -28 30 -6 L26 30 Z" fill="#8a3a1a" stroke="#2a0a04" stroke-width="2.5"/>
+        <path d="M-20 -8 Q0 -20 20 -8" stroke="#ff8a3a" stroke-width="3" fill="none"/><circle cx="-9" cy="-4" r="4" fill="#ffd36b"/><circle cx="9" cy="-4" r="4" fill="#ffd36b"/>
+        ${rune(0, 14, 10, '#ffb46b', '#b02a0a', 'M0 -5 L1.6 -1.6 L5 -1.6 L2.4 1 L3.4 5 L0 2.6 L-3.4 5 L-2.4 1 L-5 -1.6 L-1.6 -1.6 Z')}</g>
+      <path d="M70 4 L54 36 H64 L56 64 L80 26 H68 L76 4 Z" fill="#ffe46b" stroke="#fff6c8" stroke-width="2" stroke-linejoin="round"/>${glow(66, 40, 24, '#ffe46b', .55)}
+      ${pony({ x: 0, y: 40, s: .52, eye: 'angry' })}
+      <g transform="translate(36 22) rotate(-12)"><rect x="-26" y="-9" width="52" height="18" rx="3" fill="none" stroke="#e01e2e" stroke-width="3"/>${txt('STOLEN!', 0, 5, 11, '#e01e2e', 'none', 0)}</g>`,
+    'inhib-down': () => `${bg('#120a1e', '#2a1440', '#b98cff')}${rays(60, 52, '#e8d8ff', 14, .09)}
+      <path d="M30 108 L36 92 H84 L90 108 Z" fill="#4a3a6a" stroke="#1a0a30" stroke-width="2"/><path d="M38 92 L44 84 H76 L82 92 Z" fill="#6a5a8a" stroke="#1a0a30" stroke-width="2"/>
+      <path d="M50 84 L46 66 L58 74 Z" fill="#b98cff" stroke="#fff" stroke-width="1.5"/><path d="M70 84 L76 64 L62 74 Z" fill="#9a6ae0" stroke="#fff" stroke-width="1.5"/>
+      ${[[40, 34, -30, 10], [80, 30, 25, 9], [58, 20, 5, 12], [28, 56, -50, 7], [94, 54, 60, 7], [66, 44, 15, 6]].map(([x, y, r, k]) => `<path transform="translate(${x} ${y}) rotate(${r})" d="M0 ${-k} L${k * .5} 0 L0 ${k} L${-k * .5} 0 Z" fill="#d8b8ff" stroke="#fff" stroke-width="1.2"/>`).join('')}
+      ${glow(60, 70, 26, '#ffffff', .75)}<path d="M60 58 L56 70 L62 70 L58 82" stroke="#fff" stroke-width="2.5" fill="none"/>${txt('INHIB DOWN', 60, 118, 10, '#e8d8ff', '#120a1e', 2)}`,
+    'vision-king': () => `${bg('#04100a', '#0e2a1a')}
+      ${[...Array(5)].map((_, i) => `<path d="M0 ${30 + i * 20} H120" stroke="#1a3a24" stroke-width="1"/><path d="M${20 + i * 22} 0 V120" stroke="#1a3a24" stroke-width="1"/>`).join('')}
+      ${[[16, 22], [104, 20], [12, 96], [108, 98], [60, 108]].map(([x, y]) => `${glow(x, y, 16, '#ffe9a0', .55)}<circle cx="${x}" cy="${y}" r="4.5" fill="#ffd36b" stroke="#fff" stroke-width="1"/><circle cx="${x}" cy="${y}" r="1.8" fill="#2b6e3a"/>`).join('')}
+      ${glow(60, 56, 40, '#ffe9a0', .35)}${pony({ x: 20, y: 30, s: .7, eye: 'happy' })}${crown(58, 26, .5, ['#6bc8ff', '#5fd08a', '#ffd36b', '#5fd08a', '#6bc8ff'])}${txt('VISION SCORE 99', 60, 118, 8, '#ffe9a0', '#04100a', 2)}`,
     // ===== Holo Rare =====
     'pentakill': () => `${bg('#1a0f30', '#3a1d5c', '#ffd36b')}${rays(60, 52, '#fff', 18, .07)}${crown(60, 44, 1)}${txt('PENTAKILL', 60, 110, 14, '#fff2a8', '#3a1d5c', 3)}${sparks([[16, 20], [104, 22, .8], [14, 86, .6], [106, 84, .7]])}`,
     'baron-steal': () => `${bg('#12061e', '#2e0f4a', '#9a5af0')}<path d="M6 120 C8 70 30 30 64 26 C98 22 118 56 114 120 Z" fill="#6a2ab8" stroke="#1e0838" stroke-width="2.5"/>
@@ -190,22 +224,31 @@
       <path d="M40 92 Q64 106 88 92 L84 100 L76 94 L70 102 L64 95 L58 102 L52 94 L44 100 Z" fill="#fff" stroke="#1e0838" stroke-width="2"/>
       <path d="M94 6 L72 46 H86 L76 84 L110 34 H92 L102 6 Z" fill="#ffe46b" stroke="#fff6c8" stroke-width="2" stroke-linejoin="round"/>${glow(90, 44, 26, '#ffe46b', .5)}`,
     'quadra-kill': () => `${bg('#0a1430', '#1a2a6a', '#6bc8ff')}${rays(60, 50, '#bfe4ff', 16, .08)}${[-36, -12, 12, 36].map(r => sword(60, 100, 66, r, '#e4f2ff', '#9ab8ff')).join('')}${txt('QUADRA', 60, 114, 15, '#d8f0ff', '#0a1430', 3)}${sparks([[18, 24], [102, 26, .8]])}`,
-    'ace': () => `${bg('#1a0a04', '#4a2008', '#ffb43a')}${rays(60, 44, '#ffd36b', 18, .1)}${[[10, 58], [44, 64], [78, 58]].map(([x, y], i) => pony({ x, y, s: .36, eye: i === 1 ? 'happy' : 'normal' })).join('')}
-      <path d="M14 28 H106 L98 44 L106 60 H14 L22 44 Z" fill="#c0392b" stroke="#4a0a04" stroke-width="2.5"/>${txt('ACE', 60, 52, 22, '#fff2a8', '#4a0a04', 3)}`,
-    'comeback': () => `${bg('#04140e', '#0e3a24', '#5fd08a')}<path d="M0 120 L0 92 L30 104 L52 70 L74 82 L120 18 V120 Z" fill="#14462e"/><path d="M0 92 L30 104 L52 70 L74 82 L118 20" fill="none" stroke="#5fd08a" stroke-width="4" stroke-linejoin="round"/>
-      <path d="M118 20 L104 22 L112 34 Z" fill="#5fd08a"/>${pony({ x: 2, y: 30, s: .56, eye: 'angry' })}${txt('-10K → WIN', 60, 114, 11, '#c8ffe0', '#04140e', 2.4)}`,
-    'rank-up': () => `${bg('#0a1028', '#1a2a5a', '#ffd36b')}${[0, 1, 2, 3].map(i => `<rect x="${14 + i * 22}" y="${96 - i * 16}" width="22" height="${24 + i * 16}" fill="${['#6a4a2a', '#9aa6b8', '#e2b23c', '#6bd8d8'][i]}" stroke="#0a1028" stroke-width="2"/>`).join('')}
-      ${pony({ x: 66, y: 8, s: .44, eye: 'happy' })}${rays(92, 30, '#fff2a8', 12, .1, 60)}${sparks([[20, 30], [50, 20, .7]])}`,
+    'ace': () => `${bg('#1a0a04', '#4a2008', '#ffb43a')}${rays(60, 40, '#ffd36b', 18, .1)}
+      <path d="M12 18 H108 L100 32 L108 46 H12 L20 32 Z" fill="#c0392b" stroke="#4a0a04" stroke-width="2.5"/>${txt('ACE', 60, 40, 20, '#fff2a8', '#4a0a04', 3)}
+      ${[14, 37, 60, 83, 106].map((x, i) => `<g transform="translate(${x} ${92 + (i % 2) * 6})"><path d="M-10 18 V-6 Q-10 -18 0 -18 Q10 -18 10 -6 V18 Z" fill="#6a6a7a" stroke="#1a1a24" stroke-width="2"/>
+        <path d="M-5 -10 l4 4 m0 -4 l-4 4 M1 -10 l4 4 m0 -4 l-4 4" stroke="#e01e2e" stroke-width="1.8" stroke-linecap="round"/><path d="M-4 2 H4" stroke="#1a1a24" stroke-width="1.6"/></g>`).join('')}
+      ${sparks([[10, 60, .6], [110, 64, .7]], '', '#fff2a8')}`,
+    'comeback': () => `${bg('#04140e', '#0e3a24', '#5fd08a')}<path d="M0 120 L0 96 L28 108 L50 76 L72 86 L120 30 V120 Z" fill="#14462e"/>
+      <path d="M0 96 L28 108 L50 76 L72 86 L114 36" fill="none" stroke="#5fd08a" stroke-width="4" stroke-linejoin="round"/><path d="M118 30 L102 32 L112 44 Z" fill="#5fd08a"/>
+      ${pony({ x: 70, y: 2, s: .42, eye: 'angry' })}${txt('-10K', 20, 82, 12, '#ff8a9a', '#04140e', 2)}${txt('WIN', 34, 28, 16, '#c8ffe0', '#04140e', 2.6)}${sparks([[96, 14, .6], [64, 22, .5]], '', '#c8ffe0')}`,
+    'rank-up': () => `${bg('#0a1028', '#1a2a5a', '#ffd36b')}${rays(84, 26, '#fff2a8', 12, .11, 70)}
+      ${[0, 1, 2, 3].map(i => `<rect x="${8 + i * 26}" y="${100 - i * 18}" width="26" height="${20 + i * 18}" fill="${['#8a5a2a', '#9aa6b8', '#e2b23c', '#6bd8d8'][i]}" stroke="#0a1028" stroke-width="2"/>${txt(['B', 'S', 'G', 'P'][i], 21 + i * 26, 116 - i * 9, 9, '#0a1028', 'none', 0)}`).join('')}
+      ${pony({ x: 68, y: 6, s: .4, eye: 'happy' })}${sparks([[20, 30], [44, 16, .7], [110, 60, .6]])}`,
     'flawless': () => `${bg('#0e1a2a', '#2a3a5a', '#ffffff')}<ellipse cx="58" cy="18" rx="24" ry="6" fill="none" stroke="#ffe46b" stroke-width="4"/>${glow(58, 18, 30, '#fff6c8', .6)}${pony({ x: 14, y: 24, s: .84, eye: 'closed', body: '#f6efe2', shade: '#c8b89a', mane: '#ffd36b' })}${txt('0 DEATHS', 60, 114, 12, '#fff6c8', '#0e1a2a', 2.4)}`,
     // ===== Animated Rare (CSS-Klassen a-*) =====
-    'golden-pony': () => `${bg('#2a1a04', '#5a3a08')}${rays(60, 56, '#ffe08a', 16, .14, 95, 'a-spin')}${glow(60, 56, 48, '#fff2b0', .9, 'a-pulse')}
-      <g class="a-float">${pony({ x: 16, y: 14, s: .88, eye: 'star', body: '#ffe08a', shade: '#c8941c', mane: '#fff4c8' })}</g>${sparks([[18, 22, 1], [100, 30, .8], [96, 96, 1], [22, 92, .7]], 'a-twinkle')}`,
-    'three-trick-legend': () => `${bg('#120a2a', '#2a1a5a')}${rays(60, 60, '#d8c8ff', 18, .12, 95, 'a-spin')}${glow(60, 62, 46, '#b98cff', .8, 'a-pulse')}
-      <g class="a-orbit" style="transform-origin:60px 62px">${[0, 1, 2].map(i => { const a = i / 3 * Math.PI * 2 - Math.PI / 2; const x = 60 + Math.cos(a) * 30 - 18, y = 62 + Math.sin(a) * 30 - 18; return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${pony({ x: 0, y: 0, s: .38, eye: 'happy', body: ['#ffe08a', '#7ab8ff', '#ff9ac8'][i], shade: ['#c8941c', '#3a6ad8', '#c84a8a'][i], mane: '#fff' })}</g>`; }).join('')}</g>
-      ${txt('3', 60, 72, 26, '#fff', '#2a1a5a', 3)}${sparks([[14, 18], [106, 20, .8], [16, 104, .7], [104, 102, .9]], 'a-twinkle')}`,
-    'secretly-a-unicorn': () => `${bg('#2a0a3a', '#5a1a6a')}<g class="a-hue">${rays(60, 56, '#ff9ae4', 16, .16, 95, 'a-spin')}</g>${glow(60, 56, 46, '#ffd6f1', .8, 'a-pulse')}
-      <g class="a-float">${pony({ x: 16, y: 16, s: .86, eye: 'happy', body: '#ffffff', shade: '#e0c8f0', mane: '#ff7ad9', extra: '<path d="M42 12 L28 -16 L50 8 Z" fill="#ffe08a" stroke="#c8941c" stroke-width="1.5" stroke-linejoin="round"/><circle cx="26" cy="54" r="4" fill="#ff9ec8" opacity=".8"/>' })}</g>
-      <g class="a-hue">${sparks([[16, 24, 1], [102, 26, .9], [98, 98, 1], [20, 96, .8]], 'a-twinkle', '#ffd6f1')}</g>`
+    // Animated Rares: Hintergrund hier, die Figur kommt als Pop-out-Ebene aus POP
+    'golden-pony': () => `${bg('#2a1a04', '#5a3a08')}${rays(60, 56, '#ffe08a', 16, .14, 95, 'a-spin')}${glow(60, 56, 48, '#fff2b0', .9, 'a-pulse')}${sparks([[18, 22, 1], [100, 30, .8], [96, 96, 1], [22, 92, .7]], 'a-twinkle')}`,
+    'three-trick-legend': () => `${bg('#120a2a', '#2a1a5a')}${rays(60, 60, '#d8c8ff', 18, .12, 95, 'a-spin')}${glow(60, 62, 46, '#b98cff', .8, 'a-pulse')}${txt('3', 60, 74, 30, '#fff', '#2a1a5a', 3)}${sparks([[14, 18], [106, 20, .8], [16, 104, .7], [104, 102, .9]], 'a-twinkle')}`,
+    'secretly-a-unicorn': () => `${bg('#2a0a3a', '#5a1a6a')}<g class="a-hue">${rays(60, 56, '#ff9ae4', 16, .16, 95, 'a-spin')}</g>${glow(60, 56, 46, '#ffd6f1', .8, 'a-pulse')}<g class="a-hue">${sparks([[16, 24, 1], [102, 26, .9], [98, 98, 1], [20, 96, .8]], 'a-twinkle', '#ffd6f1')}</g>`,
+  };
+
+
+  // Pop-out-Figuren der Animated Rares (eigene Ebene, ragt oben ueber den Bildrand)
+  const POP = {
+    'golden-pony': () => `<g class="a-float">${pony({ x: 12, y: -2, s: 1, eye: 'star', body: '#ffe08a', shade: '#c8941c', mane: '#fff4c8' })}</g>`,
+    'three-trick-legend': () => `<g class="a-orbit" style="transform-origin:60px 58px">${[0, 1, 2].map(i => { const a = i / 3 * Math.PI * 2 - Math.PI / 2; const x = 60 + Math.cos(a) * 36 - 22, y = 58 + Math.sin(a) * 36 - 22; return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${pony({ x: 0, y: 0, s: .46, eye: 'happy', body: ['#ffe08a', '#7ab8ff', '#ff9ac8'][i], shade: ['#c8941c', '#3a6ad8', '#c84a8a'][i], mane: '#fff' })}</g>`; }).join('')}</g>`,
+    'secretly-a-unicorn': () => `<g class="a-float">${pony({ x: 12, y: 0, s: .98, eye: 'happy', body: '#ffffff', shade: '#e0c8f0', mane: '#ff7ad9', extra: '<path d="M42 12 L26 -22 L50 8 Z" fill="#ffe08a" stroke="#c8941c" stroke-width="1.5" stroke-linejoin="round"/><circle cx="26" cy="54" r="4" fill="#ff9ec8" opacity=".8"/>' })}</g>`
   };
 
   // Set-Liste: Nummer, Id, Name, Raritaet
@@ -230,6 +273,7 @@
   const art = id => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${ART[id]()}</svg>`;
   const frontHtml = s => `<div class="face front r-${s.r}" style="--rc:${RC[s.r]}">
       <div class="art">${art(s.id)}</div>
+      ${POP[s.id] ? `<div class="pop"><svg viewBox="0 -24 120 144" xmlns="http://www.w3.org/2000/svg">${POP[s.id]()}</svg></div>` : ''}
       <div class="name">${s.name}</div>
       <div class="meta"><span class="rar">${RL[s.r]}</span><span>#${String(s.n).padStart(3, '0')}</span></div>
     </div>`;
@@ -261,6 +305,12 @@
   @keyframes animPulse { 0%,100% { box-shadow: 0 0 8px rgba(255,90,180,.45), inset 0 0 14px rgba(255,90,180,.25); } 50% { box-shadow: 0 0 22px rgba(255,211,107,.75), inset 0 0 22px rgba(255,211,107,.35); } }
   .front.r-anim .name { background: linear-gradient(90deg, #ffd6f1, #ffd36b, #ff9ae4, #ffd36b, #ffd6f1); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: bold; animation: nameShine 2.4s linear infinite; }
   @keyframes nameShine { to { background-position: 200% 0; } }
+  /* Pop-out: Figur auf eigener Ebene ueber dem Bild, ragt oben ueber den Rand */
+  .front.r-anim { overflow: visible; transform-style: preserve-3d; }
+  .front .pop { position: absolute; left: 6%; right: 6%; top: -14.6%; aspect-ratio: 120 / 144; pointer-events: none; z-index: 3; transform: translateZ(40px) scale(1.04);
+    filter: drop-shadow(0 6px 4px rgba(0,0,0,.55)) drop-shadow(0 14px 14px rgba(0,0,0,.45));
+    -webkit-mask-image: linear-gradient(to bottom, #000 75%, transparent 92%); mask-image: linear-gradient(to bottom, #000 75%, transparent 92%); }
+  .front .pop svg { width: 100%; height: 100%; overflow: visible; }
   .a-spin { animation: aSpin 14s linear infinite; transform-box: view-box; }
   @keyframes aSpin { to { transform: rotate(360deg); } }
   .a-orbit { animation: aSpin 9s linear infinite; transform-box: view-box; }
