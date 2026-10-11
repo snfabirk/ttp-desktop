@@ -392,10 +392,9 @@ function openPacks(n) {
     pBot.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${packDown}px)` }], { duration: D, easing: ease, fill: 'forwards' });
     stackEl.animate([{ transform: T(inside) }, { transform: T(0) }], { duration: D, easing: ease, fill: 'forwards' }).onfinish = () => {
       stackEl.getAnimations().forEach(a => a.cancel());   // Endlage = CSS-Lage, kein Sprung
-      stackEl.style.zIndex = 6;
-      // Pack faellt scharf nach unten aus dem Bild
-      pBot.animate([{ transform: `translateY(${packDown}px)` }, { transform: `translateY(${innerHeight}px) rotate(3deg)` }], { duration: 480, easing: 'cubic-bezier(.55,0,.9,.45)', fill: 'forwards' });
-      setTimeout(() => wrap.remove(), 520);
+      // Pack faellt scharf nach unten aus dem Bild - der Stapel bleibt HINTER
+      // ihm, bis er ganz weg ist, erst dann kommt der Stapel nach vorne
+      pBot.animate([{ transform: `translateY(${packDown}px)` }, { transform: `translateY(${innerHeight}px) rotate(3deg)` }], { duration: 480, easing: 'cubic-bezier(.55,0,.9,.45)', fill: 'forwards' }).onfinish = () => { wrap.remove(); stackEl.style.zIndex = 6; };
       hint(`Click to reveal · ${cards.length} stickers`);
       stackEl.addEventListener('click', next);
       prepareTop();
