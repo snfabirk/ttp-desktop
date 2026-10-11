@@ -1,5 +1,10 @@
 # Internal Changelog
 
+## 5.27.0 — 2026-10-11
+
+- Economy (user: "man soll nicht einen Monat grinden, um sich eine Sache leisten zu koennen"): coinsForTier 80/100/120 -> 240/300/360 (pass 2,400 -> 7,200), FALLBACK_COSMETIC_COINS 900, COINS_PER_OVERFLOW_STEP 100 -> 200, wheel segments x3 (EV 25 -> 75/day), new COINS_PER_GAME 30 + COINS_WIN_BONUS 20 per credited ranked game (halved from game 6 of the day like XP; only games credited from now on). Regular player ~13,700 coins/month (was ~3,450). Boosters (planned) become the coin sink.
+- Pass "Recent games" shows the coins per game; "How to earn XP" lists coins; pass hint 200 coins per 30+ step.
+
 ## 5.26.0 — 2026-10-11
 
 - Backup (user): Settings > Backup "Save backup… / Load backup…". Main process (IPC backup-export / backup-import / reload-main-window, native file dialogs) bundles every file under ttp-data plus the renderer's ttp_* localStorage into one JSON ({kind:'three-trick-pony-backup', version 1}). Riot API key and ttp-cache are NOT included. Loading validates the kind and rejects absolute/'..' paths, first writes a safety copy of the current state to userData/ttp-backups/before-load-*.json, then wipes and restores ttp-data and localStorage and reloads the main window.

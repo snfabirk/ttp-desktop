@@ -34,6 +34,9 @@ const XP_PER_GAME = {
   offRole: 50           // alles andere (Fill)
 };
 const XP_WIN_BONUS = 150;            // zusaetzlich bei Sieg, egal welche Kategorie
+// Coins pro gewertetem Game (v5.27.0), ab dem 6. Spiel des Tages wie XP halbiert
+const COINS_PER_GAME = 30;
+const COINS_WIN_BONUS = 20;
 const XP_PER_KILL = 10;
 const XP_PER_ASSIST = 5;
 const FULL_XP_GAMES_PER_DAY = 5;      // ab dem 6. Spiel des Tages: alle XP halbiert
@@ -57,10 +60,13 @@ const PASS_XP_PER_TIER = 1200;
 // Coins steigen leicht mit der Stufe (Nutzerwunsch: spaeter auch coin-
 // technisch lohnender) - seit v5.13.0 1-10: 80, 11-20: 100, 21-30: 120,
 // in Summe weiterhin 2.400 pro Pass (24 Coin-Stufen).
+// v5.27.0 (Nutzer: "man soll nicht einen Monat grinden, um sich eine Sache
+// leisten zu koennen"): Pass-Coins verdreifacht, 30+ verdoppelt, Coins pro
+// Game, Gluecksrad x3 - die Booster werden der Coin-Abfluss.
 function coinsForTier(tier) {
-  return tier <= 10 ? 80 : tier <= 20 ? 100 : 120;
+  return tier <= 10 ? 240 : tier <= 20 ? 300 : 360;
 }
-const FALLBACK_COSMETIC_COINS = 300; // Monat ohne angelegte Cosmetics
+const FALLBACK_COSMETIC_COINS = 900; // Monat ohne angelegte Cosmetics
 // Pass 30+ (Nutzerentscheidung 2026-10-09, v5.14.0): jede weitere 30+-Stufe
 // kostet 500 XP mehr als die vorige (2.500, 3.000, 3.500 ...), damit
 // Vielspieler den Shop nicht leerkaufen. Bereits abgeholte Stufen bleiben.
@@ -68,7 +74,7 @@ const FALLBACK_COSMETIC_COINS = 300; // Monat ohne angelegte Cosmetics
 // 30+5 kostet 13.000 XP
 const OVERFLOW_XP_FIRST = 2000;
 const OVERFLOW_XP_GROWTH = 300;
-const COINS_PER_OVERFLOW_STEP = 100;
+const COINS_PER_OVERFLOW_STEP = 200;
 // Gutschein (Nutzeridee 2026-10-10, v5.22.0): bei 30+5 gibt es einmal pro
 // Monat einen Gutschein fuer ein Gratis-Refined/Fancy aus dem HEUTIGEN Daily-
 // Shop. Er laeuft mit dem Daily-Wechsel ab (Nutzer: sonst wartet man einfach
@@ -623,6 +629,7 @@ function creditMatches(games) {
       };
       const raw = base.game + base.win + base.kills + base.assists;
       const xp = Math.round(raw * (halved ? 0.5 : 1));
+      const coins = Math.round((COINS_PER_GAME + (g.win ? COINS_WIN_BONUS : 0)) * (halved ? 0.5 : 1));
       // Consumable "Double XP": +100 % NUR aufs Level (der Pass bekommt die
       // normalen XP), fuer die naechsten 3 Spiele nach dem Kauf
       let levelBonus = 0;
@@ -635,12 +642,13 @@ function creditMatches(games) {
       const entry = {
         matchId: g.matchId, gameCreation: g.gameCreation, day, gameOfDay,
         category: g.category, win: !!g.win, kills: g.kills || 0, deaths: g.deaths || 0, assists: g.assists || 0,
-        champId: g.champId || '', champName: g.champName || '', base, halved, xp,
+        champId: g.champId || '', champName: g.champName || '', base, halved, xp, coins,
         levelBonus,
         stats: g.stats || null
       };
       state.ledger.push(entry);
       state.totalXp += xp + levelBonus;
+      state.coins += coins;
       addPassXp(state, monthKey(new Date(g.gameCreation)), xp);
       added.push(entry);
     });
@@ -1101,14 +1109,14 @@ function themeAccess() {
 // Gluecksrad - vom Nutzer so abgenommen (2026-10-09): Schnitt ~25 Coins pro
 // Tag. Die Chancen werden bewusst NICHT angezeigt (Ueberraschungsmoment).
 const WHEEL_SEGMENTS = [
-  { label: '10', coins: 10, weight: 30 },
-  { label: '25', coins: 25, weight: 24 },
-  { label: '15', coins: 15, weight: 26 },
-  { label: '50', coins: 50, weight: 10 },
-  { label: '20', coins: 20, weight: 25 },
-  { label: '100', coins: 100, weight: 4 },
-  { label: '30', coins: 30, weight: 16 },
-  { label: '250', coins: 250, weight: 1 }
+  { label: '30', coins: 30, weight: 30 },
+  { label: '75', coins: 75, weight: 24 },
+  { label: '45', coins: 45, weight: 26 },
+  { label: '150', coins: 150, weight: 10 },
+  { label: '60', coins: 60, weight: 25 },
+  { label: '300', coins: 300, weight: 4 },
+  { label: '90', coins: 90, weight: 16 },
+  { label: '750', coins: 750, weight: 1 }
 ];
 
 function weekKey(now) {

@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.27.0',
+      date: '2026-10-11',
+      notable: [
+        'Lots more coins: pass coin tiers pay 3x as much (240 / 300 / 360), every 30+ step gives 200, and the lucky wheel pays 3x (up to 750).',
+        'Every ranked game now earns coins too: 30, plus 20 more on a win.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.26.0',
       date: '2026-10-11',
       notable: ['Backups: save all your progress (pass, coins, cosmetics, challenges, trophies, settings) into one file in Settings, and load it again on a new PC or after a reinstall.'],
