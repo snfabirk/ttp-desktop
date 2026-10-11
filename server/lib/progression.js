@@ -647,6 +647,16 @@ function readState() {
   }
   const state = { ...emptyState(), ...raw };
   state.boosters = state.boosters || {}; state.stickers = state.stickers || {};
+  // v5.29.2: Base-Set neu nummeriert (seltenste zuerst) - Sammlung und Profil-
+  // Sticker einmalig auf die neuen Nummern umziehen
+  if (!state.stickerNumbering) {
+    const old = state.stickers.base || {};
+    const moved = {};
+    Object.keys(old).forEach(n => { moved[STICKERS.migrateBaseN(Number(n))] = 1; });
+    if (state.stickers.base) state.stickers.base = moved;
+    (state.profileLayout || []).forEach(w => { if (w && w.type === 'sticker' && w.config && Number.isInteger(w.config.n)) w.config.n = STICKERS.migrateBaseN(w.config.n); });
+    state.stickerNumbering = 2;
+  }
   // Cosmetics, die es nicht (mehr) gibt (z.B. die Test-Borders des ersten
   // Oktober-Passes), fallen still aus Inventar und Ausruestung.
   state.inventory = (state.inventory || []).filter(id => getCosmetic(id));

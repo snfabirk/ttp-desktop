@@ -1,7 +1,8 @@
 # Internal Changelog
 
-## 5.29.1 — 2026-10-11
+## 5.29.2 — 2026-10-11 (incl. unreleased 5.29.1)
 
+- Base Set renumbered rarest first (user): #1-3 animated, #4-10 holo, #11-25 uncommon, #26-50 common (server/lib/stickers.js, public/stickers.js, theme-lab/sticker-set.js). Stored collections and profile sticker widgets are migrated once in readState (state.stickerNumbering = 2, migrateBaseN).
 - Big openings: slots never smaller than 78px, as many columns as fit the window, the grid scrolls beyond that (order no longer kept per pack).
 - Duplicates -> coins: dupes grey out, get a "+X 🪙" stamp and coins fly into a "Duplicates: 🪙 N" counter. Server stores each sticker once (dupes don't increase the count); album/profile show no counts.
 - Inspect: no light circle around the cursor; tilt starts only after hovering the sticker, and the card eases back when the cursor leaves the window (also for hover-tilt in the album grid).

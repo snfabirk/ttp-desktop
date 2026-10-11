@@ -254,18 +254,19 @@
 
   // Set-Liste: Nummer, Id, Name, Raritaet
   const LIST = [
+    ['golden-pony', 'Golden Pony'], ['three-trick-legend', 'Three-Trick Legend'], ['secretly-a-unicorn', 'Secretly a Unicorn'], ['pentakill', 'Pentakill'], ['baron-steal', 'Baron Steal'],
+    ['quadra-kill', 'Quadra Kill'], ['ace', 'Ace'], ['comeback', 'Comeback'], ['rank-up', 'Rank Up'], ['flawless', 'Flawless'],
+    ['gank', 'Gank Incoming'], ['tilted', 'Tilted'], ['counter-jungle', 'Counter Jungle'], ['dragon-soul', 'Dragon Soul'], ['herald-charge', 'Herald Charge'],
+    ['double-kill', 'Double Kill'], ['triple-kill', 'Triple Kill'], ['shutdown', 'Shutdown'], ['backdoor', 'Backdoor'], ['elder-dragon', 'Elder Dragon'],
+    ['promo-series', 'Promo Series'], ['smurf-alert', 'Smurf Alert'], ['buff-steal', 'Buff Steal'], ['inhib-down', 'Inhib Down'], ['vision-king', 'Vision King'],
     ['smite', 'Smite!'], ['one-more-game', 'One More Game'], ['ward', 'Ward Placed'], ['first-blood', 'First Blood'], ['blue-buff', 'Blue Buff'],
     ['red-buff', 'Red Buff'], ['river-crab', 'River Crab'], ['full-clear', 'Full Clear'], ['recall', 'Recall'], ['ping', 'Ping!'],
     ['gg', 'GG'], ['afk', 'AFK'], ['minion-wave', 'Minion Wave'], ['tower-dive', 'Tower Dive'], ['gold-fever', 'Gold Fever'],
     ['in-queue', 'In Queue'], ['dodge', 'Dodge'], ['flash', 'Flash'], ['ignite', 'Ignite'], ['health-potion', 'Health Potion'],
-    ['lens-sweep', 'Lens Sweep'], ['wolf-camp', 'Wolf Camp'], ['lag-spike', 'Lag Spike'], ['mute-all', 'Mute All'], ['honor', 'Honor'],
-    ['gank', 'Gank Incoming'], ['tilted', 'Tilted'], ['counter-jungle', 'Counter Jungle'], ['dragon-soul', 'Dragon Soul'], ['herald-charge', 'Herald Charge'],
-    ['double-kill', 'Double Kill'], ['triple-kill', 'Triple Kill'], ['shutdown', 'Shutdown'], ['backdoor', 'Backdoor'], ['elder-dragon', 'Elder Dragon'],
-    ['promo-series', 'Promo Series'], ['smurf-alert', 'Smurf Alert'], ['buff-steal', 'Buff Steal'], ['inhib-down', 'Inhib Down'], ['vision-king', 'Vision King'],
-    ['pentakill', 'Pentakill'], ['baron-steal', 'Baron Steal'], ['quadra-kill', 'Quadra Kill'], ['ace', 'Ace'], ['comeback', 'Comeback'], ['rank-up', 'Rank Up'], ['flawless', 'Flawless'],
-    ['golden-pony', 'Golden Pony'], ['three-trick-legend', 'Three-Trick Legend'], ['secretly-a-unicorn', 'Secretly a Unicorn']
+    ['lens-sweep', 'Lens Sweep'], ['wolf-camp', 'Wolf Camp'], ['lag-spike', 'Lag Spike'], ['mute-all', 'Mute All'], ['honor', 'Honor']
   ];
-  const rarityOf = n => n <= 25 ? 'common' : n <= 40 ? 'uncommon' : n <= 47 ? 'holo' : 'anim';
+  // Nummerierung (v5.29.2): seltenste zuerst - #1-3 animated, #4-10 holo, #11-25 uncommon, #26-50 common
+  const rarityOf = n => n <= 3 ? 'anim' : n <= 10 ? 'holo' : n <= 25 ? 'uncommon' : 'common';
   const SET = LIST.map(([id, name], i) => ({ n: i + 1, id, name, r: rarityOf(i + 1) }));
   const RL = { common: 'Common', uncommon: 'Uncommon', holo: 'Holo Rare', anim: 'Animated Rare' };
   const RC = { common: '#b8c2d2', uncommon: '#5fd08a', holo: '#b98cff', anim: '#ff5ab4' };

@@ -25,9 +25,9 @@
 (function () {
   const CHANGELOG = [
     {
-      version: '5.29.1',
+      version: '5.29.2',
       date: '2026-10-11',
-      notable: ['Duplicates now visibly turn into coins while you open boosters - the card greys out and its coins fly into a counter. You own every sticker once, so the album no longer shows counts.'],
+      notable: ['Duplicates now visibly turn into coins while you open boosters - the card greys out and its coins fly into a counter. You own every sticker once, so the album no longer shows counts.', 'The album now starts with the rarest stickers: #1-3 animated, #4-10 holo, then uncommon and common. Your collection was renumbered automatically.'],
       refinements: 3,
       bugfixes: 1
     },
