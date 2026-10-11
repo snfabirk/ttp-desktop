@@ -551,9 +551,9 @@ document.getElementById('albumGrid').addEventListener('click', e => {
   // 3D-Neigung: Karte folgt dem Cursor, Glanzlicht wandert mit
   ov.addEventListener('mousemove', ev => {
     const r = c.getBoundingClientRect();
-    const px = Math.max(-1, Math.min(1, (ev.clientX - (r.left + r.width / 2)) / (r.width * 1.2)));
-    const py = Math.max(-1, Math.min(1, (ev.clientY - (r.top + r.height / 2)) / (r.height * 1.2)));
-    window.STICKERS.tiltTo(c, px / 2, py / 2, 20);
+    const px = Math.max(-1, Math.min(1, (ev.clientX - (r.left + r.width / 2)) / (r.width / 2)));
+    const py = Math.max(-1, Math.min(1, (ev.clientY - (r.top + r.height / 2)) / (r.height / 2)));
+    window.STICKERS.tiltTo(c, px / 2, py / 2, 18); // relativ zur Karte: am Rand volle Neigung
     glare.style.setProperty('--gx', `${50 + px * 50}%`); glare.style.setProperty('--gy', `${40 + py * 50}%`);
   });
   ov.addEventListener('click', () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); });
