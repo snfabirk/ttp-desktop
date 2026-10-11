@@ -61,16 +61,21 @@
   .pk-wrap .cut { position: absolute; left: 0; height: 2px; width: 0; z-index: 7; pointer-events: none; background: linear-gradient(90deg, rgba(255,255,255,.2), #fff); box-shadow: 0 0 6px 1px rgba(255,255,255,.8); }
   .pk-wrap .cut.rtl { background: linear-gradient(270deg, rgba(255,255,255,.2), #fff); }
   .pk-top.off { transition: transform .7s cubic-bezier(.25,.8,.35,1), opacity .7s; }
-  .pk-bot.drop { transition: transform .75s cubic-bezier(.6,0,.8,.4); transform: translateY(120vh) rotate(4deg); }
+  .pk-bot.drop { transition: transform .5s cubic-bezier(.55,0,.9,.45); transform: translateY(120vh) rotate(3deg); }
 
   .ov-stack { position: absolute; z-index: 6; width: min(250px, 24vw); aspect-ratio: 190 / 266; left: 50%; top: 47%; transform: translate(-50%, -50%); cursor: pointer; font-size: 20px; }
-  .ov-stack .sc { position: absolute; inset: 0; transition: transform .35s; }
+  .ov-stack .sc { position: absolute; inset: 0; }
+  /* Tiefe ueber Schatten statt versetzter Kartenkanten */
+  .ov-stack::before { content: ''; position: absolute; inset: 0; border-radius: 12px; box-shadow: 0 3px 0 -1px #0c1426, 0 6px 0 -2px #0a1120, 0 9px 0 -3px #080e1a, 0 18px 30px rgba(0,0,0,.6); }
+  .ov-stack.empty::before { display: none; }
 
   /* Karte (Traegerkarte mit Sticker) */
   .sc { border-radius: 12px; }
   .face { position: absolute; inset: 0; border-radius: 12px; overflow: hidden; }
   .back { background: radial-gradient(circle at 50% 40%, #24365e, #0c1426 70%); border: 2px solid #3a4a70; display: grid; place-items: center; }
   .back svg { width: 54%; opacity: .55; }
+  .back.shake { animation: suspense .12s linear infinite; }
+  @keyframes suspense { 0% { transform: translate(0, 0); } 25% { transform: translate(-1.5px, .5px); } 50% { transform: translate(1px, -1px); } 75% { transform: translate(1.5px, .5px); } }
   .back.glow-holo { box-shadow: 0 0 26px 6px color-mix(in srgb, var(--c-holo) 75%, transparent), inset 0 0 30px rgba(255,255,255,.25); border-color: #e0d0ff; animation: holoBack 2.2s linear infinite; }
   @keyframes holoBack { to { filter: hue-rotate(360deg); } }
   .back.glow-anim { box-shadow: 0 0 30px 8px color-mix(in srgb, var(--c-anim) 80%, transparent), inset 0 0 34px color-mix(in srgb, var(--c-anim) 60%, transparent); border-color: #ffd0ea; animation: pulseBack .9s ease-in-out infinite alternate; }
@@ -261,13 +266,19 @@ const frontHtml = s => `<div class="face front${s.r === 'holo' ? ' holo' : ''}${
       <div class="name">${s.name}</div>
       <div class="meta"><span class="rar">${RL[s.r]}</span><span>#${String(s.n).padStart(3, '0')}</span></div>
     </div>`;
-const card = s => { const d = document.createElement('div'); d.className = 'sc'; d.innerHTML = backHtml(s); return d; };
-// Umdrehen in 2D: zur Kante zusammenklappen, Seite tauschen, wieder aufklappen
-function flipCard(el, s, scale = 1.06) {
-  const a = el.animate([{ transform: `scale(${scale}) scaleX(1)` }, { transform: `scale(${scale}) scaleX(0)` }], { duration: 150, easing: 'ease-in', fill: 'forwards' });
-  a.onfinish = () => {
-    el.innerHTML = frontHtml(s);
-    el.animate([{ transform: `scale(${scale}) scaleX(0)` }, { transform: `scale(${scale}) scaleX(1)` }], { duration: 190, easing: 'ease-out', fill: 'forwards' });
+const card = s => { const d = document.createElement('div'); d.className = 'sc'; d.innerHTML = `<div class="face back">${BACK_LOGO}</div>`; return d; };
+// Umdrehen in 2D: anheben, zur Kante falten (dunkler werdend), Seite tauschen,
+// aufklappen, absetzen - eine einzige Karte, kein durchscheinender Rest
+function flipCard(el, s, done) {
+  const up = 'translateY(-10px) scale(1.04)';
+  el.animate([{ transform: 'none' }, { transform: up }], { duration: 110, easing: 'ease-out', fill: 'forwards' }).onfinish = () => {
+    el.animate([{ transform: `${up} scaleX(1)`, filter: 'brightness(1)' }, { transform: `${up} scaleX(0)`, filter: 'brightness(.55)' }], { duration: 130, easing: 'ease-in', fill: 'forwards' }).onfinish = () => {
+      el.innerHTML = frontHtml(s);
+      el.animate([{ transform: `${up} scaleX(0)`, filter: 'brightness(1.5)' }, { transform: `${up} scaleX(1)`, filter: 'brightness(1)' }], { duration: 170, easing: 'ease-out', fill: 'forwards' }).onfinish = () => {
+        el.animate([{ transform: up }, { transform: 'none' }], { duration: 140, easing: 'ease-in-out', fill: 'forwards' });
+        if (done) done();
+      };
+    };
   };
 }
 
@@ -332,24 +343,53 @@ function openPacks(n) {
     cutLine.style.width = W + 'px'; cutLine.style.left = '0';
     // sauberer Schnitt: Kopfstreifen hebt in Zugrichtung ab, der Rest faellt nach unten
     pTop.classList.add('off');
-    requestAnimationFrame(() => { pTop.style.transform = `translate(${dir * 220}px, -140px) rotate(${dir * 16}deg)`; pTop.style.opacity = '0'; });
-    setTimeout(() => { cutLine.style.transition = 'opacity .25s'; cutLine.style.opacity = '0'; }, 120);
+    cutLine.remove();
+    requestAnimationFrame(() => { pTop.style.transform = `translate(${dir * innerWidth * .7}px, -${innerHeight * .6}px) rotate(${dir * 40}deg)`; });
     hint('');
-    setTimeout(() => { pBot.classList.add('drop'); buildStack(); }, 420);
-    setTimeout(() => wrap.remove(), 1300);
+    setTimeout(buildStack, 250);
   }
 
   // 3) Stapel: jeder Klick zeigt den naechsten Sticker, der vorige faehrt in
   //    seinen Platz im Hintergrund
   const stackEl = document.createElement('div'); stackEl.className = 'ov-stack';
-  let idx = -1, shown = null, built = false;
+  let idx = -1, shown = null, built = false, skipAll = false;
+  const autoRun = () => { const t = setInterval(() => { if (idx >= cards.length) { clearInterval(t); return; } flipping = false; next(); }, 260); };
   function buildStack() {
     if (built) return; built = true;
-    [...cards].reverse().forEach((s, i) => { const c = card(s); const d = (cards.length - 1 - i) * -1.2; c.style.transform = `translate(${d}px, ${d}px)`; stackEl.appendChild(c); });
-    stackEl.style.opacity = '0'; ov.appendChild(stackEl);
-    requestAnimationFrame(() => { stackEl.style.transition = 'opacity .4s'; stackEl.style.opacity = '1'; });
-    hint(`Click to reveal · ${cards.length} stickers`);
-    stackEl.addEventListener('click', next);
+    [...cards].reverse().forEach(s => stackEl.appendChild(card(s)));
+    // Start: Stapel steckt im Pack (hinter der Vorderseite), schiebt sich nach
+    // oben aus der Oeffnung, dann faehrt der Pack scharf nach unten weg und der
+    // Stapel in die Mitte - nichts wird ausgeblendet
+    ov.insertBefore(stackEl, wrap);                     // im DOM vor dem Pack = dahinter
+    stackEl.style.zIndex = 4;
+    const sr = stackEl.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
+    const cy = sr.top + sr.height / 2;                   // Mitte der Endlage
+    const inside = wr.top + wr.height * .14 + sr.height / 2 - cy;   // Oberkante knapp unter dem Schnitt
+    const out = wr.top - sr.height * .35 + sr.height / 2 - cy;      // zu zwei Dritteln herausgezogen
+    const T = y => `translate(-50%, calc(-50% + ${y}px))`;
+    stackEl.animate([{ transform: T(inside) }, { transform: T(out) }], { duration: 520, easing: 'cubic-bezier(.3,.7,.3,1)', fill: 'forwards' }).onfinish = () => {
+      pBot.classList.add('drop');                        // Pack faellt scharf nach unten aus dem Bild
+      setTimeout(() => {                                  // erst wenn er weg ist, gleitet der Stapel in die Mitte
+      stackEl.style.zIndex = 6;
+      stackEl.animate([{ transform: T(out) }, { transform: T(0) }], { duration: 420, easing: 'cubic-bezier(.3,.7,.3,1)', fill: 'forwards' }).onfinish = () => {
+        stackEl.getAnimations().forEach(a => a.commitStyles && a.commitStyles());
+        stackEl.style.transform = ''; stackEl.getAnimations().forEach(a => a.cancel());
+        setTimeout(() => wrap.remove(), 400);
+        hint(`Click to reveal · ${cards.length} stickers`);
+        stackEl.addEventListener('click', next);
+        prepareTop();
+        if (skipAll) autoRun();
+      };
+      }, 470);
+    };
+  }
+  // Oberste verdeckte Karte: nur SIE darf seltene Ware durchscheinen lassen
+  function prepareTop() {
+    const top = stackEl.lastElementChild, s = cards[idx + 1];
+    if (!top || !s) return;
+    const back = top.querySelector('.back');
+    if (s.r === 'holo') back.classList.add('glow-holo');
+    if (s.r === 'anim') back.classList.add('glow-anim');
   }
   // Abgelegte Karte: verschwindet HINTER den Stapel, gleitet seitlich an ihm
   // vorbei heraus und faehrt dann in ihren Platz - sie liegt nie ueber dem
@@ -377,16 +417,27 @@ function openPacks(n) {
       renderAlbum();
     };
   }
+  let flipping = false;
   function next() {
+    if (flipping) return;
     if (shown) { sendToSlot(shown); shown = null; }
     idx++;
     if (idx >= cards.length) { finish(); return; }
     const el = stackEl.lastElementChild, s = cards[idx];
-    flipCard(el, s);
-    if (s.r === 'holo' || s.r === 'anim') { const b = document.createElement('div'); b.className = 'burst'; b.style.background = `radial-gradient(circle, ${RC[s.r]}, transparent 62%)`; el.appendChild(b); }
-    shown = { el, s, i: idx };
-    const left = cards.length - idx - 1;
-    hint(left ? `Click for the next sticker · ${left} left` : 'Click to put it away');
+    if (stackEl.children.length <= 1) stackEl.classList.add('empty');
+    const rare = s.r === 'holo' || s.r === 'anim';
+    const back = el.querySelector('.back');
+    // jetzt oben und verdeckt: seltene Ware scheint durch und zappelt kurz
+    if (rare) back.classList.add(s.r === 'holo' ? 'glow-holo' : 'glow-anim', 'shake');
+    flipping = true;
+    // gewoehnliche Karten klappen sofort auf, seltene lassen kurz zappeln
+    setTimeout(() => {
+      if (rare) { const b = document.createElement('div'); b.className = 'burst'; b.style.background = `radial-gradient(circle, ${RC[s.r]}, transparent 62%)`; el.appendChild(b); }
+      flipCard(el, s, () => { flipping = false; });
+      shown = { el, s, i: idx };
+      const left = cards.length - idx - 1;
+      hint(left ? `Click for the next sticker · ${left} left` : 'Click to put it away');
+    }, rare ? 650 : 160);
   }
   function finish() {
     stackEl.remove(); grid.classList.add('done'); hint('');
@@ -396,8 +447,8 @@ function openPacks(n) {
   ov.querySelector('#ovDone').addEventListener('click', () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 350); });
   // Ueberspringen: aufreissen und alles zuegig in die Plaetze
   ov.querySelector('#ovSkip').addEventListener('click', () => {
-    if (!torn) { torn = true; band.remove(); wrap.remove(); buildStack(); }
-    const t = setInterval(() => { if (idx >= cards.length) { clearInterval(t); return; } next(); }, 140);
+    skipAll = true;
+    if (!torn) tearOpen(); else if (built && stackEl.isConnected) autoRun();
   });
 }
 document.getElementById('pack').addEventListener('click', () => openPacks(1));
