@@ -43,6 +43,17 @@
   .pack .title b { display: block; font-size: 1em; } .pack .title small { font-size: .55em; opacity: .85; letter-spacing: 2px; }
   .pack .count { position: absolute; bottom: 9%; left: 0; right: 0; text-align: center; font-size: .9em; color: rgba(255,255,255,.85); }
   .pack:not(.big):hover { transform: translateY(-4px) rotate(-1.5deg); transition: transform .25s; }
+  .pack .switch { position: absolute; top: 9%; right: 7%; font-size: .75em; color: rgba(255,255,255,.85); background: rgba(0,0,0,.35); border-radius: 8px; padding: 1px 7px; }
+  /* Set-Auswahl: alle Booster-Sorten, die man besitzt (bzw. die es gibt) */
+  .set-picker { display: none; width: 100%; flex-direction: column; gap: 6px; }
+  .set-picker.on { display: flex; }
+  .set-opt { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 9px; border: 1px solid var(--line); cursor: pointer; background: rgba(255,255,255,.02); }
+  .set-opt:hover { border-color: var(--gold); }
+  .set-opt.sel { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+  .set-opt.none { opacity: .45; cursor: default; }
+  .set-opt .mini { width: 26px; height: 38px; border-radius: 4px; flex-shrink: 0; box-shadow: 0 3px 8px rgba(0,0,0,.5); }
+  .set-opt b { display: block; font-family: 'Cinzel', Georgia, serif; font-size: .8rem; color: var(--text); font-weight: normal; }
+  .set-opt small { color: var(--dim); font-size: .7rem; }
 
   /* ---------- Oeffnen: Vollbild-Overlay ---------- */
   .ov { user-select: none; -webkit-user-select: none; position: fixed; inset: 0; z-index: 100; background: rgba(4, 8, 16, .84); backdrop-filter: blur(6px); opacity: 0; transition: opacity .35s; }
@@ -139,13 +150,14 @@
 <div class="wrap">
   <section class="card-box pack-area">
     <h3>Your Boosters</h3>
-    <div class="pack" id="pack" title="Open a booster">
+    <div class="pack" id="pack" title="Choose which booster to open">
       <div class="crimp top"></div>
       <div class="logo"></div>
-      <div class="title"><b>Three-Trick-Pony</b><small>BASE SET</small></div>
+      <div class="title"><b>Three-Trick-Pony</b><small id="packSetName">BASE SET</small></div>
       <div class="count" id="packCount"></div>
       <div class="crimp bot"></div>
     </div>
+    <div class="set-picker" id="setPicker"></div>
     <div style="display:flex;gap:8px"><button class="btn" id="openBtn">Open 1</button><button class="btn" id="openAllBtn">Open all</button></div>
     <button class="btn" id="refillBtn" style="font-size:.75rem;padding:4px 12px;opacity:.7" title="Draft only - in the app you buy them in the shop">+5 (draft refill)</button>
     <span class="rates-hint" tabindex="0">Pull rates <span class="q">?</span>
@@ -259,6 +271,13 @@ const SET = [
 const TOTAL_IN_SET = 50;
 const DUPE = { common: 3, uncommon: 8, holo: 50, anim: 300 };
 const owned = {};
+// Booster-Sorten (Entwurf: Base Set + ein spaeteres Set als Platzhalter)
+const SETS = [
+  { id: 'base', name: 'BASE SET', label: 'Base Set', count: 5, grad: 'linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%)' },
+  { id: 'set2', name: 'SET 2', label: 'Set 2 · coming later', count: 0, soon: true, grad: 'linear-gradient(135deg, #5a1414 0%, #8a3a0a 50%, #e0a040 100%)' }
+];
+let sel = 0;
+const cur = () => SETS[sel];
 let unopened = 5;
 const pick = l => l[Math.floor(Math.random() * l.length)];
 // Keine steigenden Chancen: jeder Pack ist ein unabhaengiger Wurf (Nutzer)
@@ -290,9 +309,22 @@ function flipCard(el, s, done) {
 
 // ===================== Oeffnen =====================
 const updCount = () => {
+  cur().count = unopened;
+  const pack = document.getElementById('pack');
+  pack.style.background = cur().grad;
+  document.getElementById('packSetName').textContent = cur().name;
   document.getElementById('packCount').textContent = `${unopened} unopened`;
+  if (!pack.querySelector('.switch')) { const sw = document.createElement('span'); sw.className = 'switch'; sw.textContent = '⇄ set'; pack.appendChild(sw); }
   document.getElementById('openBtn').disabled = document.getElementById('openAllBtn').disabled = !unopened;
+  renderPicker();
 };
+function renderPicker() {
+  document.getElementById('setPicker').innerHTML = SETS.map((st, i) =>
+    `<div class="set-opt${i === sel ? ' sel' : ''}${st.count ? '' : ' none'}" data-set="${i}">
+      <span class="mini" style="background:${st.grad}"></span>
+      <span><b>${st.label}</b><small>${st.count ? `${st.count} unopened` : st.soon ? 'not released yet' : 'none - buy some in the shop'}</small></span>
+    </div>`).join('');
+}
 function openPacks(n) {
   if (!unopened) return;
   n = Math.min(n, unopened); unopened -= n; updCount();
@@ -484,7 +516,13 @@ function openPacks(n) {
     if (!torn) tearOpen(); else if (built && stackEl.isConnected) autoRun();
   });
 }
-document.getElementById('pack').addEventListener('click', () => openPacks(1));
+// Klick auf den Pack OEFFNET nicht, sondern zeigt die Set-Auswahl (Nutzer)
+document.getElementById('pack').addEventListener('click', () => document.getElementById('setPicker').classList.toggle('on'));
+document.getElementById('setPicker').addEventListener('click', e => {
+  const o = e.target.closest('.set-opt'); if (!o || o.classList.contains('none')) return;
+  sel = Number(o.dataset.set); unopened = cur().count; updCount();
+  document.getElementById('setPicker').classList.remove('on');
+});
 document.getElementById('openBtn').addEventListener('click', () => openPacks(1));
 document.getElementById('openAllBtn').addEventListener('click', () => openPacks(unopened));
 document.getElementById('refillBtn').addEventListener('click', () => { unopened += 5; updCount(); });
