@@ -271,9 +271,18 @@
 
   // Kartenfront (Traegerkarte) - Rahmen/Effekte je Raritaet per CSS unten
   const art = id => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${ART[id]()}</svg>`;
+  // Figur mit Volumen: Schatten auf der Karte + SLABS duenne, dunkle Schichten
+  // (die Seitenkante, sichtbar beim Neigen) + farbige Vorderseite obenauf
+  const SLABS = 12;
+  const popLayers = id => {
+    const svg = POP[id](), wrap = c => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${c}</svg>`;
+    let out = `<div class="pop-shadow">${wrap(svg)}</div>`;
+    for (let k = 0; k < SLABS; k++) out += `<div class="pop slab" style="--i:${k};--shade:${(.42 + k / SLABS * .36).toFixed(2)}">${wrap(svg)}</div>`;
+    return out + `<div class="pop" style="--i:${SLABS}">${wrap(svg)}</div>`;
+  };
   const frontHtml = s => `<div class="face front r-${s.r}" style="--rc:${RC[s.r]}">
       <div class="art">${art(s.id)}</div>
-      ${POP[s.id] ? `<div class="pop-shadow"><svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${POP[s.id]()}</svg></div><div class="pop"><svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${POP[s.id]()}</svg></div>` : ''}
+      ${POP[s.id] ? popLayers(s.id) : ''}
       <div class="name">${s.name}</div>
       <div class="meta"><span class="rar">${RL[s.r]}</span><span>#${String(s.n).padStart(3, '0')}</span></div>
     </div>`;
@@ -314,7 +323,8 @@
   .sc { transform-style: preserve-3d; }
   .front.r-anim { overflow: visible; transform-style: preserve-3d; }
   .front .pop, .front .pop-shadow { position: absolute; left: 6%; right: 6%; top: 5%; aspect-ratio: 1; pointer-events: none; }
-  .front .pop { z-index: 3; transform: translateZ(var(--lift, 0px)) scale(var(--comp, 1)); transition: transform .3s ease-out; }
+  .front .pop { z-index: 3; transform: translateZ(calc(var(--lift, 0px) + var(--i, 0) * var(--step, 0px))) scale(var(--comp, 1)); transition: transform .3s ease-out; }
+  .front .pop.slab { filter: brightness(var(--shade, .5)) saturate(1.15) contrast(1.1); }
   .front .pop-shadow { z-index: 2; transform: translate(3%, 5%); filter: brightness(0) blur(3px); opacity: .5; transition: filter .3s, opacity .3s; }
   .sc.tilting .front .pop-shadow, .insp .front .pop-shadow { filter: brightness(0) blur(6px); opacity: .42; }
   .front .pop svg, .front .pop-shadow svg { width: 100%; height: 100%; overflow: visible; }
@@ -340,10 +350,11 @@
   function tiltTo(c, px, py, max = 16) {
     const w = c.offsetWidth || 150, P = w * 3, lift = w * .3;
     c.style.setProperty('--lift', `${lift}px`);
+    c.style.setProperty('--step', `${(w * .0095).toFixed(2)}px`);        // Schichtabstand = Dicke der Figur
     c.style.setProperty('--comp', ((P - lift) / P).toFixed(4));
     c.style.transform = `perspective(${P}px) rotateY(${px * max * 2}deg) rotateX(${-py * max * 2}deg)`;
   }
-  function untilt(c) { c.style.removeProperty('--lift'); c.style.removeProperty('--comp'); c.style.transform = ''; }
+  function untilt(c) { c.style.removeProperty('--lift'); c.style.removeProperty('--comp'); c.style.removeProperty('--step'); c.style.transform = ''; }
   // Karte neigt sich zum Cursor, solange man darauf ist (nur Karten in root)
   function enableTilt(root, max = 16) {
     root.addEventListener('mousemove', e => {
