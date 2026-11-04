@@ -873,6 +873,13 @@
       0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 0%, transparent); }
       50% { box-shadow: 0 0 12px 2px color-mix(in srgb, var(--gold) 70%, transparent); }
     }
+    /* Schon besessenes Cosmetic (v5.30.1): nichts abzuholen */
+    .pass-tier.owned-dupe .tier-cos { opacity: 0.35; filter: grayscale(0.6); }
+    .pass-tier.owned-dupe .tier-check { display: none; }
+    .pass-tier.owned-dupe::after {
+      content: 'Owned'; position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%); z-index: 1; font-size: 0.58rem; letter-spacing: .5px;
+      color: var(--text-faint); background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; padding: 0 4px; text-transform: uppercase;
+    }
     html.fx-off .pass-tier.claimable { animation: none; box-shadow: 0 0 8px 1px color-mix(in srgb, var(--gold) 60%, transparent); }
     .claim-all, .of-claim {
       padding: 2px 10px; border-radius: 10px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 16%, transparent);
@@ -1864,7 +1871,7 @@
               ? `<span class="mini-theme mini-theme-${r.themeKey} tier-cos"></span>`
               : `<span class="cos-border cos-${r.id} tier-cos"><span class="cos-fill"></span></span>`;
         const label = r.type === 'booster' ? 'a free booster (opens in your Album)' : r.type === 'cosmetic' ? `${r.name} (${COS_LABEL[r.cosmeticType] || r.cosmeticType}${r.animated ? ', animated' : ''})` : `${r.amount} coins`;
-        html += `<div class="pass-tier${milestone ? ' milestone' : ''}${unlocked ? ' unlocked' : ''}${current ? ' current' : ''}${r.claimable ? ' claimable' : ''}"${r.claimable ? ` data-claim-tier="${t}"` : ''} title="Tier ${t} - ${label}${r.claimable ? ' - click to claim' : unlocked ? ' - unlocked' : ''}${current ? ` (${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP)` : ''}">` +
+        html += `<div class="pass-tier${milestone ? ' milestone' : ''}${unlocked ? ' unlocked' : ''}${current ? ' current' : ''}${r.claimable ? ' claimable' : ''}${r.alreadyOwned ? ' owned-dupe' : ''}"${r.claimable ? ` data-claim-tier="${t}"` : ''} title="Tier ${t} - ${label}${r.alreadyOwned ? ' - already owned, nothing to claim' : r.claimable ? ' - click to claim' : unlocked ? ' - unlocked' : ''}${current ? ` (${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP)` : ''}">` +
           `<span class="tier-num">${t}</span>${reward}${unlocked ? '<span class="tier-check">✓</span>' : ''}${progress}</div>`;
       });
       document.getElementById('passGrid').innerHTML = html;

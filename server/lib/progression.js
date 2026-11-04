@@ -359,7 +359,10 @@ function claimPassRewards(state, month) {
   const prog = passProgress(pass.xp);
   for (let t = pass.claimedTier + 1; t <= prog.tier; t++) {
     const reward = tierReward(month, t);
-    pass.pendingTiers.push(t);
+    // Schon besessenes Cosmetic (z.B. verlaengerter Pass, v5.30.1): nichts
+    // abzuholen, die Stufe zeigt "Already owned" (Nutzerentscheidung: kein Ersatz)
+    if (reward.type === 'cosmetic' && state.inventory.includes(reward.id)) markOwnedTier(pass, t);
+    else pass.pendingTiers.push(t);
   }
   pass.claimedTier = Math.max(pass.claimedTier, prog.tier);
   if (prog.overflowCount > pass.claimedOverflow) {
@@ -371,6 +374,11 @@ function claimPassRewards(state, month) {
     const now = new Date();
     state.voucher = { month, grantedAt: now.toISOString(), expiresAt: nextDailyReset(now).toISOString() };
   }
+}
+
+function markOwnedTier(pass, t) {
+  pass.ownedTiers = pass.ownedTiers || [];
+  if (!pass.ownedTiers.includes(t)) pass.ownedTiers.push(t);
 }
 
 // Nicht abgeholte Coins vergangener Monate automatisch gutschreiben (den alten
@@ -407,7 +415,8 @@ function claimPassCoins({ tier, overflow, all } = {}) {
       state.boosters[r.set] = (state.boosters[r.set] || 0) + 1;
       boosters.push({ tier: t, set: r.set });
     } else if (r.type === 'cosmetic') {
-      if (!state.inventory.includes(r.id)) state.inventory.push(r.id);
+      if (state.inventory.includes(r.id)) { markOwnedTier(pass, t); return true; }
+      state.inventory.push(r.id);
       cosmetics.push({ tier: t, id: r.id, name: r.name, type: r.cosmeticType });
     } else amount += r.amount || 0;
     return true;
@@ -508,7 +517,13 @@ function getPassOverview(state, now) {
   const prog = passProgress(pass.xp);
   const rewards = [];
   const pending = new Set(pass.pendingTiers || []);
-  for (let t = 1; t <= PASS_TIERS; t++) rewards.push({ tier: t, ...tierReward(month, t), claimable: pending.has(t) });
+  const ownedTiers = new Set(pass.ownedTiers || []);
+  for (let t = 1; t <= PASS_TIERS; t++) {
+    const r = tierReward(month, t);
+    // vorher schon besessen: erreicht (ownedTiers) oder noch nicht erreicht
+    const alreadyOwned = r.type === 'cosmetic' && (ownedTiers.has(t) || (t > prog.tier && state.inventory.includes(r.id)));
+    rewards.push({ tier: t, ...r, claimable: pending.has(t) && !alreadyOwned, alreadyOwned });
+  }
   return {
     month,
     label: monthLabel(month),
@@ -664,6 +679,15 @@ function readState() {
   // Zu jeder schon erreichten Cosmetic-Stufe gehoert das AKTUELLE Cosmetic
   // dieses Monats ins Inventar (idempotent) - so bekommt auch, wer die Stufe
   // vor einer Katalog-Aenderung geholt hat, die neue Belohnung.
+  // Abholbereite Cosmetics, die man inzwischen schon besitzt (Pass-
+  // Verlaengerung, v5.30.1): nicht mehr abholbar, Stufe zeigt "Already owned"
+  Object.entries(state.passes || {}).forEach(([month, pass]) => {
+    pass.pendingTiers = (pass.pendingTiers || []).filter(t => {
+      const r = tierReward(month, t);
+      if (r.type === 'cosmetic' && state.inventory.includes(r.id)) { markOwnedTier(pass, t); return false; }
+      return true;
+    });
+  });
   Object.entries(state.passes || {}).forEach(([month, pass]) => {
     for (let t = 5; t <= Math.min(pass.claimedTier || 0, PASS_TIERS); t += 5) {
       if ((pass.pendingTiers || []).includes(t)) continue; // liegt noch zum Abholen bereit

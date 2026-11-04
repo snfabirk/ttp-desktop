@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 5.30.1 — 2026-11-04
+
+- Pass tiers whose cosmetic is already owned (extended October pass): no claim, no replacement (user chose "show honestly, nothing extra"). claimPassRewards puts such tiers into pass.ownedTiers instead of pendingTiers; readState migrates already-pending owned cosmetics the same way; claimPassCoins no longer reports an owned cosmetic as newly claimed (no fly-to-profile animation). getPassOverview sends alreadyOwned (reached + in ownedTiers, or not reached yet + in inventory); challenge.html greys the tier out with an "Owned" badge.
+
 ## 5.30.0 — 2026-11-04
 
 - Pass extension (user couldn't grind in October, no November pass yet): cosmetics get an optional `passUntil` ('YYYY-MM'); the October Halloween cosmetics have passUntil '2026-11', so passCosmetic('2026-11', t) returns them. Helpers inPass/passLastMonth in cosmetics.js. Shop "past pass" pool uses the last pass month, Mystery/Try It On excludes anything in the running pass, profile inventory "Monthly Pass" group respects passUntil, and shop offers that already contain a running-pass item get rerolled.
