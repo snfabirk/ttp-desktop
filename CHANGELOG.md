@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 5.30.0 — 2026-11-04
+
+- Pass extension (user couldn't grind in October, no November pass yet): cosmetics get an optional `passUntil` ('YYYY-MM'); the October Halloween cosmetics have passUntil '2026-11', so passCosmetic('2026-11', t) returns them. Helpers inPass/passLastMonth in cosmetics.js. Shop "past pass" pool uses the last pass month, Mystery/Try It On excludes anything in the running pass, profile inventory "Monthly Pass" group respects passUntil, and shop offers that already contain a running-pass item get rerolled.
+
 ## 5.29.8 — 2026-10-11
 
 Cleanup pass (user: "veraltet oder ueberfluessig"):

@@ -25,6 +25,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.30.0',
+      date: '2026-11-04',
+      notable: ['The Halloween pass rewards are extended: the November pass contains the same 6 cosmetics as October, so you can still earn them this month.'],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '5.29.8',
       date: '2026-10-11',
       notable: [],

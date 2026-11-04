@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { dataSubdir } = require('./dataPaths');
-const { COSMETICS, PRICES, priceOf, getCosmetic, passCosmetic } = require('./cosmetics');
+const { COSMETICS, PRICES, priceOf, getCosmetic, passCosmetic, passLastMonth, inPass } = require('./cosmetics');
 const STICKERS = require('./stickers');
 
 // XP-/Level-System (v5.0.0, PROVISORISCH): Profil-Level (laeuft fuer immer,
@@ -907,7 +907,7 @@ function rollOffers(state, count, weights, kind, exclude = []) {
   const taken = new Set(exclude);
   const current = monthKey(new Date());
   const allowed = new Set(Object.keys(weights));
-  const pastPass = COSMETICS.filter(c => c.passMonth && c.passMonth < current && allowed.has(c.rarity));
+  const pastPass = COSMETICS.filter(c => c.passMonth && passLastMonth(c) < current && allowed.has(c.rarity));
   const out = [];
   for (let i = 0; i < count; i++) {
     const free = list => list.filter(c => !owned.has(c.id) && !taken.has(c.id));
@@ -956,6 +956,12 @@ function refreshShop(state, now) {
   // Angebote, die es nicht (mehr) gibt (Platzhalter vor v5.19.0), neu wuerfeln
   if (shop.weekly.some(id => !getCosmetic(id))) shop.weekKey = null;
   if (shop.daily.some(id => !getCosmetic(id))) shop.dayKey = null;
+  // Items des laufenden Passes gehoeren nicht in den Shop (z.B. nach einer
+  // Pass-Verlaengerung schon als "alter Pass" gewuerfelt)
+  const cur = monthKey(now);
+  const inCurPass = id => { const c = getCosmetic(id); return !!c && inPass(c, cur); };
+  if (shop.weekly.some(inCurPass)) shop.weekKey = null;
+  if (shop.daily.some(inCurPass)) shop.dayKey = null;
   if (shop.weekKey !== week) {
     shop.weekly = rollOffers(state, 2, shopWeights(SHOP_WEEKLY_WEIGHTS, shop.pityWeekly, PITY_WEEKLY_STEP), 'weekly');
     const hit = shop.weekly.some(id => (shopItemById(id) || {}).rarity === 'animated');
@@ -1028,7 +1034,7 @@ function lootableCosmetics(state) {
   const current = monthKey(new Date());
   // App-Icons nicht (v5.28.0): ein geliehenes Icon liesse die Taskleiste nach
   // Ablauf nicht zurueckspringen, und als Mystery-Gewinn waere es enttaeuschend
-  return COSMETICS.filter(c => !c.base && c.type !== 'icon' && c.passMonth !== current && !state.inventory.includes(c.id));
+  return COSMETICS.filter(c => !c.base && c.type !== 'icon' && !inPass(c, current) && !state.inventory.includes(c.id));
 }
 
 function consumableUnavailable(state, id) {

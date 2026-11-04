@@ -140,12 +140,14 @@ const COSMETICS = [
   { id: 'frame-base-ionia', type: 'frame', name: 'Ionia Frame', rarity: 'basic', base: true },
 
   // ----- Oktober 2026: Halloween (schwarz / grau / orange) -----
-  { id: 'border-2026-10-pumpkin', type: 'border', name: 'Pumpkin Ring', rarity: 'refined', passMonth: '2026-10', tier: 5 },
-  { id: 'frame-2026-10-cobweb', type: 'frame', name: 'Cobweb', rarity: 'refined', passMonth: '2026-10', tier: 10 },
-  { id: 'theme-2026-10-hallows', type: 'theme', name: 'All Hallows', rarity: 'refined', passMonth: '2026-10', tier: 15, themeKey: 'hallows' },
-  { id: 'border-2026-10-haunted', type: 'border', name: "Widow's Nest", rarity: 'fancy', passMonth: '2026-10', tier: 20 },
-  { id: 'frame-2026-10-manor', type: 'frame', name: 'Ectoplasm Manor', rarity: 'fancy', passMonth: '2026-10', tier: 25, hasBackground: true },
-  { id: 'theme-2026-10-haunted', type: 'theme', name: 'Haunted Night', rarity: 'animated', passMonth: '2026-10', tier: 30, themeKey: 'haunted', animated: true }
+  // passUntil (Nutzerwunsch 2026-11-04): fuer November gab es keinen neuen
+  // Pass, die Oktober-Belohnungen laufen im November-Pass weiter
+  { id: 'border-2026-10-pumpkin', type: 'border', name: 'Pumpkin Ring', rarity: 'refined', passMonth: '2026-10', passUntil: '2026-11', tier: 5 },
+  { id: 'frame-2026-10-cobweb', type: 'frame', name: 'Cobweb', rarity: 'refined', passMonth: '2026-10', passUntil: '2026-11', tier: 10 },
+  { id: 'theme-2026-10-hallows', type: 'theme', name: 'All Hallows', rarity: 'refined', passMonth: '2026-10', passUntil: '2026-11', tier: 15, themeKey: 'hallows' },
+  { id: 'border-2026-10-haunted', type: 'border', name: "Widow's Nest", rarity: 'fancy', passMonth: '2026-10', passUntil: '2026-11', tier: 20 },
+  { id: 'frame-2026-10-manor', type: 'frame', name: 'Ectoplasm Manor', rarity: 'fancy', passMonth: '2026-10', passUntil: '2026-11', tier: 25, hasBackground: true },
+  { id: 'theme-2026-10-haunted', type: 'theme', name: 'Haunted Night', rarity: 'animated', passMonth: '2026-10', passUntil: '2026-11', tier: 30, themeKey: 'haunted', animated: true }
 ];
 
 const byId = new Map(COSMETICS.map(c => [c.id, c]));
@@ -154,8 +156,13 @@ function getCosmetic(id) {
   return byId.get(id) || null;
 }
 
+// Liegt c im Pass dieses Monats? passUntil = letzter Monat, falls ein Pass
+// verlaengert wurde
+const passLastMonth = c => c.passUntil || c.passMonth;
+const inPass = (c, month) => !!c.passMonth && month >= c.passMonth && month <= passLastMonth(c);
+
 function passCosmetic(month, tier) {
-  return COSMETICS.find(c => c.passMonth === month && c.tier === tier) || null;
+  return COSMETICS.find(c => inPass(c, month) && c.tier === tier) || null;
 }
 
-module.exports = { COSMETICS, RARITIES, PRICES, priceOf, getCosmetic, passCosmetic };
+module.exports = { COSMETICS, RARITIES, PRICES, priceOf, getCosmetic, passCosmetic, passLastMonth, inPass };

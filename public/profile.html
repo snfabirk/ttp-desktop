@@ -1253,8 +1253,9 @@
         const vis = c => showLocked || isOwned(c);
         const byOwn = list => [...list.filter(isOwned), ...list.filter(c => !isOwned(c))].filter(vis);
         const block = (title, list) => list.length ? `<div class="inv-sub">${title}</div><div class="inv-grid">${list.map(cell).join('')}</div>` : '';
-        const cur = items.filter(c => c.passMonth === curMonth);
-        const rest = items.filter(c => c.passMonth !== curMonth);
+        const inCurPass = c => !!c.passMonth && curMonth >= c.passMonth && curMonth <= (c.passUntil || c.passMonth);
+        const cur = items.filter(inCurPass);
+        const rest = items.filter(c => !inCurPass(c));
         return block('Monthly Pass', byOwn(cur)) + RANK_ORDER.map(r => block(RAR[r],
           r === 'basic' ? [...basicExtras, ...byOwn(rest.filter(c => (c.rarity || 'basic') === 'basic'))] : byOwn(rest.filter(c => c.rarity === r))
         )).join('');
