@@ -12,6 +12,7 @@
   <script src="nav.js"></script>
   <script src="update-indicator.js"></script>
   <script src="changelog.js"></script>
+  <script src="cos-preview.js"></script>
   <style>
     body {
       display: flex;
@@ -1834,7 +1835,9 @@
 
     // Monats-Pass (server/lib/progression.js): Stufen 5/10/../30 = Cosmetics
     // dieses Monats, sonst Coins; darunter die endlose 30+-Leiste.
+    let passRewards = [];
     function renderPass(pass, coins) {
+      passRewards = pass.rewards;
       document.getElementById('passTitle').textContent = `${pass.label.split(' ')[0]} Pass`;
       document.getElementById('passEndsIn').textContent = `ends in ${timeUntil(pass.endsAt)}`;
       document.getElementById('passTierText').textContent = `Tier ${pass.tier} / ${pass.tiers}`;
@@ -1871,7 +1874,7 @@
               ? `<span class="mini-theme mini-theme-${r.themeKey} tier-cos"></span>`
               : `<span class="cos-border cos-${r.id} tier-cos"><span class="cos-fill"></span></span>`;
         const label = r.type === 'booster' ? 'a free booster (opens in your Album)' : r.type === 'cosmetic' ? `${r.name} (${COS_LABEL[r.cosmeticType] || r.cosmeticType}${r.animated ? ', animated' : ''})` : `${r.amount} coins`;
-        html += `<div class="pass-tier${milestone ? ' milestone' : ''}${unlocked ? ' unlocked' : ''}${current ? ' current' : ''}${r.claimable ? ' claimable' : ''}${r.alreadyOwned ? ' owned-dupe' : ''}"${r.claimable ? ` data-claim-tier="${t}"` : ''} title="Tier ${t} - ${label}${r.alreadyOwned ? ' - already owned, nothing to claim' : r.claimable ? ' - click to claim' : unlocked ? ' - unlocked' : ''}${current ? ` (${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP)` : ''}">` +
+        html += `<div data-tier="${t}" class="pass-tier${milestone ? ' milestone' : ''}${unlocked ? ' unlocked' : ''}${current ? ' current' : ''}${r.claimable ? ' claimable' : ''}${r.alreadyOwned ? ' owned-dupe' : ''}"${r.claimable ? ` data-claim-tier="${t}"` : ''} title="Tier ${t} - ${label}${r.alreadyOwned ? ' - already owned, nothing to claim' : r.claimable ? ' - click to claim' : unlocked ? ' - unlocked' : ''}${current ? ` (${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP)` : ''}">` +
           `<span class="tier-num">${t}</span>${reward}${unlocked ? '<span class="tier-check">✓</span>' : ''}${progress}</div>`;
       });
       document.getElementById('passGrid').innerHTML = html;
@@ -2086,6 +2089,11 @@
       if (r.amount) flyCoins(fromEl, r.amount, () => { countTo(before, r.coins); shownCoins = r.coins; loadProgression(); });
       else setTimeout(loadProgression, 1100);
     }
+    // Hover-Vorschau der Cosmetic-Stufen wie im Shop (cos-preview.js)
+    window.TTPCosPreview.bind(document.getElementById('passGrid'), '.pass-tier', el => {
+      const r = passRewards.find(x => x.tier === Number(el.dataset.tier));
+      return r && r.type === 'cosmetic' ? { id: r.id, type: r.cosmeticType, name: r.name, themeKey: r.themeKey } : null;
+    });
     document.getElementById('passGrid').closest('.prog-card').addEventListener('click', e => {
       const tile = e.target.closest('[data-claim-tier]');
       if (tile) { claim({ tier: Number(tile.dataset.claimTier) }, tile); return; }

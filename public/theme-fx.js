@@ -20,6 +20,35 @@
 //   'always' - immer (solange das Fenster sichtbar ist)
 // Ein- und Ausblenden passiert immer weich. Im Tray/minimiert laeuft nichts.
 (function () {
+  // Szenen-Daten vorne, weil syncTheme() schon beim Laden laeuft
+  // Markup auch fuer die Mini-Vorschau (Shop/Pass) genutzt
+  const HALLOWS_BG = `<div class="stars"></div><div class="moon"></div><svg class="bats" viewBox="0 0 140 70" fill="#3a3140"><defs><g id="hx-bat"><path d="M0 -2 Q7 -11 24 -9 Q19 -5 20 0 Q16 -2 13 2 Q10 -1 7 3 Q4 1 0 4 Q-4 1 -7 3 Q-10 -1 -13 2 Q-16 -2 -20 0 Q-19 -5 -24 -9 Q-7 -11 0 -2 Z"/><ellipse cx="0" cy="0" rx="2.8" ry="4.5"/><path d="M-2.2 -3.5 L-2.8 -7.5 L-0.8 -4.5 Z M2.2 -3.5 L2.8 -7.5 L0.8 -4.5 Z"/></g></defs><use href="#hx-bat" transform="translate(34 32) rotate(-8) scale(1.15)"/><use href="#hx-bat" transform="translate(88 16) rotate(10) scale(.85)"/><use href="#hx-bat" transform="translate(114 44) rotate(-14) scale(.7)"/></svg><svg class="web tl" viewBox="0 0 60 60" fill="none" stroke="#9a9aa3" stroke-width=".8" stroke-linecap="round"><path d="M0 0 L60 0 M0 0 L0 60 M0 0 L52 22 M0 0 L38 38 M0 0 L22 52"/><path d="M14 0 Q12 6 13 5.5 Q8 9 5.5 13 Q6 12 0 14"/><path d="M28 0 Q24 10 25.5 11 Q17 17 11 25.5 Q10 24 0 28"/><path d="M42 0 Q37 14 38.5 17 Q27 27 17 38.5 Q14 37 0 42"/></svg><svg class="web br" viewBox="0 0 60 60" fill="none" stroke="#9a9aa3" stroke-width=".8" stroke-linecap="round"><path d="M0 0 L60 0 M0 0 L0 60 M0 0 L52 22 M0 0 L38 38 M0 0 L22 52"/><path d="M14 0 Q12 6 13 5.5 Q8 9 5.5 13 Q6 12 0 14"/><path d="M28 0 Q24 10 25.5 11 Q17 17 11 25.5 Q10 24 0 28"/><path d="M42 0 Q37 14 38.5 17 Q27 27 17 38.5 Q14 37 0 42"/></svg><div class="scene"><svg viewBox="0 0 1600 300" preserveAspectRatio="xMidYMax slice"><defs><radialGradient id="hx-lantG"><stop offset="0" stop-color="#ffb347" stop-opacity=".55"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/></radialGradient><radialGradient id="hx-pg" cx=".5" cy=".55" r=".55"><stop offset="0" stop-color="#f7a04a"/><stop offset=".7" stop-color="#e2721c"/><stop offset="1" stop-color="#a84a0c"/></radialGradient><g id="hx-pk"><path d="M0 -34 q2 -12 12 -14" stroke="#33421f" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="0" cy="0" rx="38" ry="30" fill="url(#hx-pg)"/><ellipse cx="0" cy="0" rx="18" ry="30" fill="none" stroke="#b85a14" stroke-width="2" opacity=".7"/><ellipse cx="-24" cy="0" rx="12" ry="27" fill="none" stroke="#b85a14" stroke-width="1.5" opacity=".5"/><ellipse cx="24" cy="0" rx="12" ry="27" fill="none" stroke="#b85a14" stroke-width="1.5" opacity=".5"/></g><g id="hx-face"><path d="M-18 -6 l7 -10 l7 10 z M4 -6 l7 -10 l7 10 z" /><path d="M-20 6 q20 18 40 0 l-5 2 l-4 -4 l-4 5 l-5 -4 l-5 4 l-4 -5 l-4 4 z"/></g></defs><path d="M0 300 L0 170 Q200 120 420 160 T860 150 Q1100 110 1340 160 T1600 140 L1600 300 Z" fill="#141016"/><path d="M0 300 L0 220 Q260 190 520 215 T1040 205 Q1300 185 1600 215 L1600 300 Z" fill="#0b090c"/><path d="M150 300 L158 150 M156 190 L118 150 M157 172 L196 128 M118 150 L104 136 M196 128 L214 120 M157 210 L188 196" stroke="#0b090c" stroke-width="9" fill="none" stroke-linecap="round"/><g fill="#141016" stroke="#221c24" stroke-width="2"><path d="M640 230 L640 186 Q640 160 664 160 Q688 160 688 186 L688 230 Z" transform="rotate(-6 664 230)"/><path d="M760 232 L760 196 Q760 178 778 178 Q796 178 796 196 L796 232 Z" transform="rotate(5 778 232)"/></g><text x="652" y="200" font-family="Cinzel, serif" font-size="13" fill="#3a3038" transform="rotate(-6 664 230)">RIP</text><path d="M196 128 L196 150" stroke="#0b090c" stroke-width="2"/><g class="fire" style="--d:.5s"><circle class="lantern-glow" cx="196" cy="164" r="26" fill="url(#hx-lantG)"/></g><rect x="188" y="150" width="16" height="22" rx="3" fill="#1a1410" stroke="#0b090c" stroke-width="2"/><g class="fire" style="--d:.5s"><rect x="191" y="154" width="10" height="14" rx="2" fill="#ffb347" class="lantern-glow"/></g><g fill="#0b090c"><rect x="1180" y="168" width="9" height="60" transform="rotate(-6 1184 228)"/><rect x="1215" y="172" width="9" height="56" transform="rotate(4 1219 228)"/><rect x="1250" y="166" width="9" height="62" transform="rotate(-3 1254 228)"/><rect x="1285" y="174" width="9" height="54" transform="rotate(7 1289 228)"/><rect x="1320" y="170" width="9" height="58" transform="rotate(-5 1324 228)"/><rect x="1170" y="186" width="166" height="6" transform="rotate(-2 1250 189)"/><rect x="1170" y="206" width="166" height="6" transform="rotate(1.5 1250 209)"/></g><g fill="#070609" transform="translate(1262 150)" class="cat" id="hx-cat"><rect x="-10" y="-14" width="62" height="56" fill="transparent"/><path d="M0 36 Q-4 14 6 6 L4 -6 L11 2 Q15 0 19 2 L26 -6 L24 6 Q34 14 30 36 Z"/><path class="tail" d="M28 32 Q46 30 44 10 Q43 4 40 6 Q42 26 26 28 Z"/><g class="cat-look"><g class="cat-eyes"><ellipse class="cat-eye" cx="10" cy="12" rx="2.4" ry="2" fill="#f5d041"/><ellipse class="cat-eye" cx="20" cy="12" rx="2.4" ry="2" fill="#f5d041"/><ellipse class="cat-slit" cx="10" cy="12" rx=".45" ry="1.7" fill="#120303"/><ellipse class="cat-slit" cx="20" cy="12" rx=".45" ry="1.7" fill="#120303"/></g></g></g><g transform="translate(470 238)"><rect x="-5" y="-22" width="10" height="24" rx="2" fill="#e8dcc6"/><g class="fire" style="--d:.1s"><path class="flame" d="M0 -36 Q6 -28 0 -22 Q-6 -28 0 -36 Z" fill="#ffb347"/><circle cx="0" cy="-28" r="12" fill="#ffb347" opacity=".18"/></g></g><g transform="translate(1030 242)"><rect x="-4" y="-18" width="8" height="20" rx="2" fill="#e8dcc6"/><g class="fire" style="--d:0s"><path class="flame b" d="M0 -31 Q5 -24 0 -18 Q-5 -24 0 -31 Z" fill="#ffb347"/><circle cx="0" cy="-24" r="10" fill="#ffb347" opacity=".18"/></g></g><g opacity=".85"><path d="M560 262 q6 -8 12 0 q-6 6 -12 0 z" fill="#8a3b12"/><path d="M600 270 q5 -7 10 0 q-5 5 -10 0 z" fill="#a8551a" transform="rotate(30 605 270)"/><path d="M870 266 q6 -8 12 0 q-6 6 -12 0 z" fill="#6e2f10" transform="rotate(-20 876 266)"/><path d="M1110 268 q5 -7 10 0 q-5 5 -10 0 z" fill="#a8551a"/><path d="M1380 270 q6 -8 12 0 q-6 6 -12 0 z" fill="#8a3b12" transform="rotate(15 1386 270)"/><path d="M330 268 q5 -7 10 0 q-5 5 -10 0 z" fill="#6e2f10"/></g><g transform="translate(420 232) scale(.9)"><use href="#hx-pk"/><g class="pumpkin-face" fill="#2a1408"><use href="#hx-face"/></g></g><g transform="translate(520 240) scale(.7)"><use href="#hx-pk"/><g class="pumpkin-face b" fill="#2a1408"><use href="#hx-face"/></g></g><g transform="translate(980 236) scale(1.05)"><use href="#hx-pk"/><g class="pumpkin-face c" fill="#2a1408"><use href="#hx-face"/></g></g><g transform="translate(1440 238) scale(.8)"><use href="#hx-pk"/><g class="pumpkin-face" fill="#2a1408"><use href="#hx-face"/></g></g><g fill="#ffb347" opacity=".9"><g class="fire pk" style="--d:.35s"><g class="pumpkin-face" transform="translate(420 232) scale(.9)"><g transform="scale(.82)"><use href="#hx-face"/></g></g></g><g class="fire pk" style="--d:.2s"><g class="pumpkin-face b" transform="translate(520 240) scale(.7)"><g transform="scale(.82)"><use href="#hx-face"/></g></g></g><g class="fire pk" style="--d:.05s"><g class="pumpkin-face c" transform="translate(980 236) scale(1.05)"><g transform="scale(.82)"><use href="#hx-face"/></g></g></g><g class="fire pk" style="--d:0s"><g class="pumpkin-face" transform="translate(1440 238) scale(.8)"><g transform="scale(.82)"><use href="#hx-face"/></g></g></g></g></svg></div>`;
+  // Nebel/Mond/Sterne von Haunted Night (auch Mini-Vorschau)
+  const HAUNTED_FS = `precision mediump float;
+uniform vec2 r; uniform float t; uniform float flash;
+float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<6;i++){v+=a*n(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return v;}
+void main(){
+  vec2 uv=gl_FragCoord.xy/r; float asp=r.x/r.y; vec2 p=uv*vec2(asp,1.)*2.6;
+  float q=fbm(p+vec2(t*.04,t*.015));
+  float f=fbm(p+q*2.2+vec2(-t*.07,t*.025));
+  vec3 col=mix(vec3(.012,.01,.022),vec3(.05,.025,.09),uv.y);
+  vec3 fogC=mix(vec3(.26,.14,.42),vec3(.78,.34,.10),smoothstep(.58,.95,f)*(1.-uv.y*.8));
+  col+=fogC*f*f*.6*(1.22-uv.y);
+  vec2 sp=uv*vec2(asp,1.)*90.; vec2 sg=floor(sp); vec2 sf=fract(sp)-.5; float s=h(sg);
+  vec2 off=vec2(h(sg+3.1),h(sg+7.7))-.5; float sd=length(sf-off*.6);
+  float star=step(.985,s)*smoothstep(.09,.0,sd)*(.55+.45*sin(t*(1.5+s*3.)+s*90.));
+  col+=vec3(.95,.92,1.)*star*smoothstep(.3,.85,uv.y);
+  float d=length((uv-vec2(.83,.78))*vec2(asp,1.));
+  float disc=smoothstep(.066,.061,d);
+  float crater=fbm((uv-vec2(.83,.78))*vec2(asp,1.)*38.);
+  col=mix(col,vec3(1.,.96,.86)*(.78+.3*crater),disc);
+  col+=vec3(1.,.8,.55)*(.35*exp(-d*7.)+.12*exp(-d*2.2))*(1.-disc);
+  col+=vec3(.35,.35,.55)*flash*(.15+f*.5);
+  gl_FragColor=vec4(col,1.);
+}`;
+
   const ANIM_KEY = 'ttp_theme_anim';
   const IDLE_MS = 5000;
   const FADE_PER_SEC = 1.1;
@@ -196,7 +225,7 @@
         bg = document.createElement('div');
         bg.className = 'hallows-fx';
         bg.setAttribute('aria-hidden', 'true');
-        bg.innerHTML = `<div class="stars"></div><div class="moon"></div><svg class="bats" viewBox="0 0 140 70" fill="#3a3140"><defs><g id="hx-bat"><path d="M0 -2 Q7 -11 24 -9 Q19 -5 20 0 Q16 -2 13 2 Q10 -1 7 3 Q4 1 0 4 Q-4 1 -7 3 Q-10 -1 -13 2 Q-16 -2 -20 0 Q-19 -5 -24 -9 Q-7 -11 0 -2 Z"/><ellipse cx="0" cy="0" rx="2.8" ry="4.5"/><path d="M-2.2 -3.5 L-2.8 -7.5 L-0.8 -4.5 Z M2.2 -3.5 L2.8 -7.5 L0.8 -4.5 Z"/></g></defs><use href="#hx-bat" transform="translate(34 32) rotate(-8) scale(1.15)"/><use href="#hx-bat" transform="translate(88 16) rotate(10) scale(.85)"/><use href="#hx-bat" transform="translate(114 44) rotate(-14) scale(.7)"/></svg><svg class="web tl" viewBox="0 0 60 60" fill="none" stroke="#9a9aa3" stroke-width=".8" stroke-linecap="round"><path d="M0 0 L60 0 M0 0 L0 60 M0 0 L52 22 M0 0 L38 38 M0 0 L22 52"/><path d="M14 0 Q12 6 13 5.5 Q8 9 5.5 13 Q6 12 0 14"/><path d="M28 0 Q24 10 25.5 11 Q17 17 11 25.5 Q10 24 0 28"/><path d="M42 0 Q37 14 38.5 17 Q27 27 17 38.5 Q14 37 0 42"/></svg><svg class="web br" viewBox="0 0 60 60" fill="none" stroke="#9a9aa3" stroke-width=".8" stroke-linecap="round"><path d="M0 0 L60 0 M0 0 L0 60 M0 0 L52 22 M0 0 L38 38 M0 0 L22 52"/><path d="M14 0 Q12 6 13 5.5 Q8 9 5.5 13 Q6 12 0 14"/><path d="M28 0 Q24 10 25.5 11 Q17 17 11 25.5 Q10 24 0 28"/><path d="M42 0 Q37 14 38.5 17 Q27 27 17 38.5 Q14 37 0 42"/></svg><div class="scene"><svg viewBox="0 0 1600 300" preserveAspectRatio="xMidYMax slice"><defs><radialGradient id="hx-lantG"><stop offset="0" stop-color="#ffb347" stop-opacity=".55"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/></radialGradient><radialGradient id="hx-pg" cx=".5" cy=".55" r=".55"><stop offset="0" stop-color="#f7a04a"/><stop offset=".7" stop-color="#e2721c"/><stop offset="1" stop-color="#a84a0c"/></radialGradient><g id="hx-pk"><path d="M0 -34 q2 -12 12 -14" stroke="#33421f" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="0" cy="0" rx="38" ry="30" fill="url(#hx-pg)"/><ellipse cx="0" cy="0" rx="18" ry="30" fill="none" stroke="#b85a14" stroke-width="2" opacity=".7"/><ellipse cx="-24" cy="0" rx="12" ry="27" fill="none" stroke="#b85a14" stroke-width="1.5" opacity=".5"/><ellipse cx="24" cy="0" rx="12" ry="27" fill="none" stroke="#b85a14" stroke-width="1.5" opacity=".5"/></g><g id="hx-face"><path d="M-18 -6 l7 -10 l7 10 z M4 -6 l7 -10 l7 10 z" /><path d="M-20 6 q20 18 40 0 l-5 2 l-4 -4 l-4 5 l-5 -4 l-5 4 l-4 -5 l-4 4 z"/></g></defs><path d="M0 300 L0 170 Q200 120 420 160 T860 150 Q1100 110 1340 160 T1600 140 L1600 300 Z" fill="#141016"/><path d="M0 300 L0 220 Q260 190 520 215 T1040 205 Q1300 185 1600 215 L1600 300 Z" fill="#0b090c"/><path d="M150 300 L158 150 M156 190 L118 150 M157 172 L196 128 M118 150 L104 136 M196 128 L214 120 M157 210 L188 196" stroke="#0b090c" stroke-width="9" fill="none" stroke-linecap="round"/><g fill="#141016" stroke="#221c24" stroke-width="2"><path d="M640 230 L640 186 Q640 160 664 160 Q688 160 688 186 L688 230 Z" transform="rotate(-6 664 230)"/><path d="M760 232 L760 196 Q760 178 778 178 Q796 178 796 196 L796 232 Z" transform="rotate(5 778 232)"/></g><text x="652" y="200" font-family="Cinzel, serif" font-size="13" fill="#3a3038" transform="rotate(-6 664 230)">RIP</text><path d="M196 128 L196 150" stroke="#0b090c" stroke-width="2"/><g class="fire" style="--d:.5s"><circle class="lantern-glow" cx="196" cy="164" r="26" fill="url(#hx-lantG)"/></g><rect x="188" y="150" width="16" height="22" rx="3" fill="#1a1410" stroke="#0b090c" stroke-width="2"/><g class="fire" style="--d:.5s"><rect x="191" y="154" width="10" height="14" rx="2" fill="#ffb347" class="lantern-glow"/></g><g fill="#0b090c"><rect x="1180" y="168" width="9" height="60" transform="rotate(-6 1184 228)"/><rect x="1215" y="172" width="9" height="56" transform="rotate(4 1219 228)"/><rect x="1250" y="166" width="9" height="62" transform="rotate(-3 1254 228)"/><rect x="1285" y="174" width="9" height="54" transform="rotate(7 1289 228)"/><rect x="1320" y="170" width="9" height="58" transform="rotate(-5 1324 228)"/><rect x="1170" y="186" width="166" height="6" transform="rotate(-2 1250 189)"/><rect x="1170" y="206" width="166" height="6" transform="rotate(1.5 1250 209)"/></g><g fill="#070609" transform="translate(1262 150)" class="cat" id="hx-cat"><rect x="-10" y="-14" width="62" height="56" fill="transparent"/><path d="M0 36 Q-4 14 6 6 L4 -6 L11 2 Q15 0 19 2 L26 -6 L24 6 Q34 14 30 36 Z"/><path class="tail" d="M28 32 Q46 30 44 10 Q43 4 40 6 Q42 26 26 28 Z"/><g class="cat-look"><g class="cat-eyes"><ellipse class="cat-eye" cx="10" cy="12" rx="2.4" ry="2" fill="#f5d041"/><ellipse class="cat-eye" cx="20" cy="12" rx="2.4" ry="2" fill="#f5d041"/><ellipse class="cat-slit" cx="10" cy="12" rx=".45" ry="1.7" fill="#120303"/><ellipse class="cat-slit" cx="20" cy="12" rx=".45" ry="1.7" fill="#120303"/></g></g></g><g transform="translate(470 238)"><rect x="-5" y="-22" width="10" height="24" rx="2" fill="#e8dcc6"/><g class="fire" style="--d:.1s"><path class="flame" d="M0 -36 Q6 -28 0 -22 Q-6 -28 0 -36 Z" fill="#ffb347"/><circle cx="0" cy="-28" r="12" fill="#ffb347" opacity=".18"/></g></g><g transform="translate(1030 242)"><rect x="-4" y="-18" width="8" height="20" rx="2" fill="#e8dcc6"/><g class="fire" style="--d:0s"><path class="flame b" d="M0 -31 Q5 -24 0 -18 Q-5 -24 0 -31 Z" fill="#ffb347"/><circle cx="0" cy="-24" r="10" fill="#ffb347" opacity=".18"/></g></g><g opacity=".85"><path d="M560 262 q6 -8 12 0 q-6 6 -12 0 z" fill="#8a3b12"/><path d="M600 270 q5 -7 10 0 q-5 5 -10 0 z" fill="#a8551a" transform="rotate(30 605 270)"/><path d="M870 266 q6 -8 12 0 q-6 6 -12 0 z" fill="#6e2f10" transform="rotate(-20 876 266)"/><path d="M1110 268 q5 -7 10 0 q-5 5 -10 0 z" fill="#a8551a"/><path d="M1380 270 q6 -8 12 0 q-6 6 -12 0 z" fill="#8a3b12" transform="rotate(15 1386 270)"/><path d="M330 268 q5 -7 10 0 q-5 5 -10 0 z" fill="#6e2f10"/></g><g transform="translate(420 232) scale(.9)"><use href="#hx-pk"/><g class="pumpkin-face" fill="#2a1408"><use href="#hx-face"/></g></g><g transform="translate(520 240) scale(.7)"><use href="#hx-pk"/><g class="pumpkin-face b" fill="#2a1408"><use href="#hx-face"/></g></g><g transform="translate(980 236) scale(1.05)"><use href="#hx-pk"/><g class="pumpkin-face c" fill="#2a1408"><use href="#hx-face"/></g></g><g transform="translate(1440 238) scale(.8)"><use href="#hx-pk"/><g class="pumpkin-face" fill="#2a1408"><use href="#hx-face"/></g></g><g fill="#ffb347" opacity=".9"><g class="fire pk" style="--d:.35s"><g class="pumpkin-face" transform="translate(420 232) scale(.9)"><g transform="scale(.82)"><use href="#hx-face"/></g></g></g><g class="fire pk" style="--d:.2s"><g class="pumpkin-face b" transform="translate(520 240) scale(.7)"><g transform="scale(.82)"><use href="#hx-face"/></g></g></g><g class="fire pk" style="--d:.05s"><g class="pumpkin-face c" transform="translate(980 236) scale(1.05)"><g transform="scale(.82)"><use href="#hx-face"/></g></g></g><g class="fire pk" style="--d:0s"><g class="pumpkin-face" transform="translate(1440 238) scale(.8)"><g transform="scale(.82)"><use href="#hx-face"/></g></g></g></g></svg></div>`;
+        bg.innerHTML = HALLOWS_BG;
         top = document.createElement('div');
         top.className = 'hallows-fx-top';
         top.setAttribute('aria-hidden', 'true');
@@ -214,6 +243,31 @@
   }
 
   // ===================== Szene: Haunted Night (Stufe 30) =====================
+
+  // Geist (auch in der Mini-Vorschau)
+  function drawGhostOn(fx, g, t) {
+    const s = g.s, x = g.x + Math.sin(t * 0.7 + g.ph) * 10, y = g.y + Math.sin(t * 1.4 + g.ph) * 5;
+    fx.save(); fx.translate(x, y); fx.rotate(g.vx * 0.004);
+    const grad = fx.createLinearGradient(0, -s * 0.5, 0, s * 0.8);
+    grad.addColorStop(0, `rgba(240,236,255,${g.a})`); grad.addColorStop(1, 'rgba(200,190,255,0)');
+    fx.fillStyle = grad; fx.shadowColor = 'rgba(190,170,255,.6)'; fx.shadowBlur = s * 0.6;
+    fx.beginPath(); fx.arc(0, 0, s * 0.5, Math.PI, 0);
+    const b = s * 0.85;
+    fx.lineTo(s * 0.5, b);
+    for (let i = 0; i < 5; i++) {
+      const x1 = s * 0.5 - (i + 0.5) * (s / 5), x2 = s * 0.5 - (i + 1) * (s / 5);
+      fx.quadraticCurveTo(x1, b - s * 0.22 + Math.sin(t * 5 + g.ph + i) * s * 0.08, x2, b);
+    }
+    fx.closePath(); fx.fill(); fx.shadowBlur = 0;
+    const eye = ex => {
+      const eg = fx.createRadialGradient(ex, -s * 0.06, 0, ex, -s * 0.06, s * 0.14);
+      eg.addColorStop(0, `rgba(255,170,80,${g.a * 2})`); eg.addColorStop(1, 'rgba(255,120,40,0)');
+      fx.fillStyle = eg; fx.beginPath(); fx.arc(ex, -s * 0.06, s * 0.14, 0, 7); fx.fill();
+    };
+    eye(-s * 0.17); eye(s * 0.17);
+    fx.restore();
+  }
+
   function hauntedScene() {
     let root = null, glCanvas = null, fxCanvas = null, gl = null, fx = null, U = null, counter = null;
     let W = 0, H = 0;
@@ -223,30 +277,6 @@
     let flash = 0, nextBolt = 3, bolt = null, boss = null;
     let caught = 0, caughtReset = null;
 
-    const FS = `precision mediump float;
-uniform vec2 r; uniform float t; uniform float flash;
-float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
-float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<6;i++){v+=a*n(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return v;}
-void main(){
-  vec2 uv=gl_FragCoord.xy/r; float asp=r.x/r.y; vec2 p=uv*vec2(asp,1.)*2.6;
-  float q=fbm(p+vec2(t*.04,t*.015));
-  float f=fbm(p+q*2.2+vec2(-t*.07,t*.025));
-  vec3 col=mix(vec3(.012,.01,.022),vec3(.05,.025,.09),uv.y);
-  vec3 fogC=mix(vec3(.26,.14,.42),vec3(.78,.34,.10),smoothstep(.58,.95,f)*(1.-uv.y*.8));
-  col+=fogC*f*f*.6*(1.22-uv.y);
-  vec2 sp=uv*vec2(asp,1.)*90.; vec2 sg=floor(sp); vec2 sf=fract(sp)-.5; float s=h(sg);
-  vec2 off=vec2(h(sg+3.1),h(sg+7.7))-.5; float sd=length(sf-off*.6);
-  float star=step(.985,s)*smoothstep(.09,.0,sd)*(.55+.45*sin(t*(1.5+s*3.)+s*90.));
-  col+=vec3(.95,.92,1.)*star*smoothstep(.3,.85,uv.y);
-  float d=length((uv-vec2(.83,.78))*vec2(asp,1.));
-  float disc=smoothstep(.066,.061,d);
-  float crater=fbm((uv-vec2(.83,.78))*vec2(asp,1.)*38.);
-  col=mix(col,vec3(1.,.96,.86)*(.78+.3*crater),disc);
-  col+=vec3(1.,.8,.55)*(.35*exp(-d*7.)+.12*exp(-d*2.2))*(1.-disc);
-  col+=vec3(.35,.35,.55)*flash*(.15+f*.5);
-  gl_FragColor=vec4(col,1.);
-}`;
 
     function initGl() {
       gl = glCanvas.getContext('webgl');
@@ -254,7 +284,7 @@ void main(){
       const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
       const prog = gl.createProgram();
       gl.attachShader(prog, sh(gl.VERTEX_SHADER, 'attribute vec2 a;void main(){gl_Position=vec4(a,0,1);}'));
-      gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
+      gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, HAUNTED_FS));
       gl.linkProgram(prog);
       if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { gl = null; return; }
       gl.useProgram(prog);
@@ -277,28 +307,7 @@ void main(){
 
     const newHome = g => { const a = rand(0, Math.PI * 2), v = rand(8, 18); g.wx = Math.cos(a) * v; g.wy = Math.sin(a) * v; g.homeT = rand(4, 9); };
 
-    function drawGhost(g, t) {
-      const s = g.s, x = g.x + Math.sin(t * 0.7 + g.ph) * 10, y = g.y + Math.sin(t * 1.4 + g.ph) * 5;
-      fx.save(); fx.translate(x, y); fx.rotate(g.vx * 0.004);
-      const grad = fx.createLinearGradient(0, -s * 0.5, 0, s * 0.8);
-      grad.addColorStop(0, `rgba(240,236,255,${g.a})`); grad.addColorStop(1, 'rgba(200,190,255,0)');
-      fx.fillStyle = grad; fx.shadowColor = 'rgba(190,170,255,.6)'; fx.shadowBlur = s * 0.6;
-      fx.beginPath(); fx.arc(0, 0, s * 0.5, Math.PI, 0);
-      const b = s * 0.85;
-      fx.lineTo(s * 0.5, b);
-      for (let i = 0; i < 5; i++) {
-        const x1 = s * 0.5 - (i + 0.5) * (s / 5), x2 = s * 0.5 - (i + 1) * (s / 5);
-        fx.quadraticCurveTo(x1, b - s * 0.22 + Math.sin(t * 5 + g.ph + i) * s * 0.08, x2, b);
-      }
-      fx.closePath(); fx.fill(); fx.shadowBlur = 0;
-      const eye = ex => {
-        const eg = fx.createRadialGradient(ex, -s * 0.06, 0, ex, -s * 0.06, s * 0.14);
-        eg.addColorStop(0, `rgba(255,170,80,${g.a * 2})`); eg.addColorStop(1, 'rgba(255,120,40,0)');
-        fx.fillStyle = eg; fx.beginPath(); fx.arc(ex, -s * 0.06, s * 0.14, 0, 7); fx.fill();
-      };
-      eye(-s * 0.17); eye(s * 0.17);
-      fx.restore();
-    }
+    const drawGhost = (g, t) => drawGhostOn(fx, g, t);
 
     function makeBolt() {
       const pts = []; let x = rand(W * 0.15, W * 0.85), y = 0;
@@ -511,4 +520,114 @@ void main(){
       }
     };
   }
+
+  // ===================== Mini-Vorschau (Shop/Pass-Hover, v5.31.0) =====================
+  // TTPThemePreviewLive (shop-scenes.js) nimmt diese zuerst. Gibt Stopp-Funktion zurueck.
+  window.TTPThemeLiveExtra = window.TTPThemeLiveExtra || {};
+  // All Hallows: dieselbe Szene (inkl. CSS-Flammen) klein ueber der Canvas
+  window.TTPThemeLiveExtra.hallows = (cv, W, H) => {
+    const d = Math.min(2, devicePixelRatio || 1); cv.width = W * d; cv.height = H * d;
+    const c = cv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0);
+    const g = c.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#0b0a0d'); g.addColorStop(0.45, '#100e11'); g.addColorStop(0.8, '#1a120d'); g.addColorStop(1, '#26150a');
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    const glow = c.createRadialGradient(W / 2, H, 0, W / 2, H, W * 0.6);
+    glow.addColorStop(0, 'rgba(255,110,30,.22)'); glow.addColorStop(1, 'rgba(255,110,30,0)');
+    c.fillStyle = glow; c.fillRect(0, 0, W, H);
+    const el = document.createElement('div');
+    el.className = 'hallows-fx pv-mini';
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = HALLOWS_BG;
+    cv.after(el);
+    return () => el.remove();
+  };
+  // Haunted Night: Nebel-Shader + Geister, die vor einer wandernden Laterne
+  // fliehen, ab und zu ein Blitz mit Spukhaus. EIN WebGL-Kontext fuer alle Hovers.
+  let hauntedGL;
+  function hauntedRenderer() {
+    if (hauntedGL !== undefined) return hauntedGL;
+    hauntedGL = null;
+    const off = document.createElement('canvas');
+    const gl = off.getContext('webgl');
+    if (!gl) return null;
+    const sh = (type, src) => { const x = gl.createShader(type); gl.shaderSource(x, src); gl.compileShader(x); return x; };
+    const prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, 'attribute vec2 a;void main(){gl_Position=vec4(a,0,1);}'));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, HAUNTED_FS));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return null;
+    gl.useProgram(prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const aLoc = gl.getAttribLocation(prog, 'a');
+    gl.enableVertexAttribArray(aLoc);
+    gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
+    const U = { r: gl.getUniformLocation(prog, 'r'), t: gl.getUniformLocation(prog, 't'), flash: gl.getUniformLocation(prog, 'flash') };
+    hauntedGL = { off, gl, U };
+    return hauntedGL;
+  }
+  window.TTPThemeLiveExtra.haunted = (cv, W, H) => {
+    const d = Math.min(2, devicePixelRatio || 1); cv.width = W * d; cv.height = H * d;
+    const c = cv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0);
+    const R = hauntedRenderer();
+    if (R) { R.off.width = Math.round(W * 0.75); R.off.height = Math.round(H * 0.75); R.gl.viewport(0, 0, R.off.width, R.off.height); }
+    const ghosts = Array.from({ length: 5 }, () => ({ x: rand(0, W), y: rand(H * 0.15, H * 0.85), vx: rand(-10, 10), vy: rand(-6, 6), s: rand(16, 28), ph: rand(0, 6.28), a: rand(0.28, 0.45) }));
+    const lamp = { x: W * 0.3, y: H * 0.6 };
+    let flash = 0, nextBolt = 1.2, bolt = null, last = performance.now(), raf = 0;
+    const step = now => {
+      const dt = Math.min(0.05, (now - last) / 1000), t = now / 1000; last = now;
+      nextBolt -= dt;
+      if (nextBolt <= 0) {
+        flash = 1; nextBolt = rand(4, 7);
+        bolt = []; let x = rand(W * 0.15, W * 0.85), y = 0;
+        while (y < H * 0.6) { bolt.push([x, y]); x += rand(-20, 20); y += rand(10, 24); }
+      }
+      flash = Math.max(0, flash - dt * 1.6);
+      if (flash < 0.2) bolt = null;
+      if (R) {
+        R.gl.uniform2f(R.U.r, R.off.width, R.off.height); R.gl.uniform1f(R.U.t, t); R.gl.uniform1f(R.U.flash, flash);
+        R.gl.drawArrays(R.gl.TRIANGLE_STRIP, 0, 4);
+        c.drawImage(R.off, 0, 0, W, H);
+      } else { c.fillStyle = '#0b0a10'; c.fillRect(0, 0, W, H); }
+      // Laterne wandert langsam durchs Bild
+      lamp.x = W * (0.5 + Math.sin(t * 0.45) * 0.32); lamp.y = H * (0.55 + Math.sin(t * 0.7) * 0.22);
+      const dark = c.createRadialGradient(lamp.x, lamp.y, 12, lamp.x, lamp.y, W * 0.45);
+      dark.addColorStop(0, 'rgba(2,1,6,0)'); dark.addColorStop(0.35, 'rgba(2,1,6,.34)'); dark.addColorStop(1, `rgba(2,1,6,${0.62 - flash * 0.12})`);
+      c.fillStyle = dark; c.fillRect(0, 0, W, H);
+      c.save(); c.globalCompositeOperation = 'lighter';
+      const lg = c.createRadialGradient(lamp.x, lamp.y, 0, lamp.x, lamp.y, 70);
+      const flick = 0.92 + Math.sin(t * 11) * 0.03 + Math.sin(t * 23) * 0.02;
+      lg.addColorStop(0, `rgba(255,238,195,${0.38 * flick})`); lg.addColorStop(0.2, `rgba(255,208,145,${0.2 * flick})`); lg.addColorStop(1, 'rgba(255,140,60,0)');
+      c.fillStyle = lg; c.beginPath(); c.arc(lamp.x, lamp.y, 70, 0, 7); c.fill(); c.restore();
+      if (flash > 0) {
+        const k = H / 900 * 1.3;
+        c.save(); c.translate(W * 0.62, H); c.scale(k, k);
+        c.fillStyle = `rgba(4,3,8,${Math.min(1, flash * 1.6)})`;
+        c.beginPath();
+        c.moveTo(-420, 0); c.lineTo(-420, -180); c.lineTo(-340, -260); c.lineTo(-260, -180); c.lineTo(-260, -230); c.lineTo(-180, -330);
+        c.lineTo(-170, -420); c.lineTo(-150, -330); c.lineTo(-60, -250); c.lineTo(-60, -300); c.lineTo(40, -390); c.lineTo(140, -300);
+        c.lineTo(140, -220); c.lineTo(260, -300); c.lineTo(380, -200); c.lineTo(380, 0); c.closePath(); c.fill();
+        c.fillStyle = `rgba(255,170,60,${flash * 0.9})`;
+        [[-330, -150], [-200, -200], [20, -240], [60, -240], [250, -170], [300, -170]].forEach(([wx, wy]) => c.fillRect(wx, wy, 18, 26));
+        c.restore();
+      }
+      if (bolt) {
+        c.save(); c.strokeStyle = `rgba(230,225,255,${flash})`; c.lineWidth = 1.6; c.shadowColor = '#b9a8ff'; c.shadowBlur = 14;
+        c.beginPath(); bolt.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke(); c.restore();
+      }
+      ghosts.forEach(g => {
+        const dx = g.x - lamp.x, dy = g.y - lamp.y, dist = Math.hypot(dx, dy) || 1;
+        if (dist < 110) { const f = (110 - dist) / 110 * 220; g.vx += dx / dist * f * dt; g.vy += dy / dist * f * dt; }
+        if (g.x < W * 0.08) g.vx += 40 * dt;
+        if (g.x > W * 0.92) g.vx -= 40 * dt;
+        if (g.y < H * 0.1) g.vy += 40 * dt;
+        if (g.y > H * 0.9) g.vy -= 40 * dt;
+        g.vx *= 0.98; g.vy *= 0.98; g.x += g.vx * dt; g.y += g.vy * dt;
+        drawGhostOn(c, g, t);
+      });
+      raf = requestAnimationFrame(step);
+    };
+    step(performance.now());
+    return () => cancelAnimationFrame(raf);
+  };
 })();

@@ -922,6 +922,12 @@ html[data-theme="haunted"] .site-header h1 { text-shadow: 0 0 22px rgba(255, 138
 .hallows-fx .web { position: absolute; width: 150px; height: 150px; opacity: 0.35; }
 .hallows-fx .web.tl { top: 0; left: 0; }
 .hallows-fx .web.br { bottom: 0; right: 0; transform: rotate(180deg); }
+/* Mini-Vorschau im Shop/Pass (theme-fx.js, TTPThemeLiveExtra.hallows) */
+.pv-pop .hallows-fx.pv-mini { position: absolute; z-index: 0; border-radius: 14px; overflow: hidden; }
+.pv-pop .hallows-fx.pv-mini .scene { height: 34%; }
+.pv-pop .hallows-fx.pv-mini .moon { width: 28px; height: 28px; box-shadow: inset 6px 2px 0 0 #e9dcc0; top: 30%; left: 4%; }
+.pv-pop .hallows-fx.pv-mini .bats { width: 90px; height: 45px; top: 26%; left: 7%; }
+.pv-pop .hallows-fx.pv-mini .web { width: 60px; height: 60px; }
 .hallows-fx .scene, .hallows-fx-top .scene { position: absolute; left: 0; right: 0; bottom: 0; height: 30vh; }
 .hallows-fx .scene svg, .hallows-fx-top .scene svg { width: 100%; height: 100%; }
 .hallows-fx .pumpkin-face { animation: hx-glow 4.5s ease-in-out infinite; }

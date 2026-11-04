@@ -1,5 +1,10 @@
 # Internal Changelog
 
+## 5.31.0 — 2026-11-04
+
+- Pass hover previews: the shop's hover preview moved into public/cos-preview.js (CSS injected, PALETTE, own-profile loading, show/hide, bind(container, selector, getItem)); shop.html and challenge.html (pass grid, tiers get data-tier) both use it.
+- All Hallows + Haunted Night got live mini previews (window.TTPThemeLiveExtra in theme-fx.js): Hallows mounts the real scene markup (HALLOWS_BG, incl. CSS flames) scaled into the popup; Haunted runs the fog shader (one cached WebGL context) with ghosts fleeing a wandering lantern and the odd lightning + manor. HALLOWS_BG/HAUNTED_FS moved to the top of theme-fx.js (syncTheme runs at load), ghost drawing shared via drawGhostOn. Also fixes these two themes showing a flat colour when they appear in the shop as past-pass items.
+
 ## 5.30.1 — 2026-11-04
 
 - Pass tiers whose cosmetic is already owned (extended October pass): no claim, no replacement (user chose "show honestly, nothing extra"). claimPassRewards puts such tiers into pass.ownedTiers instead of pendingTiers; readState migrates already-pending owned cosmetics the same way; claimPassCoins no longer reports an owned cosmetic as newly claimed (no fly-to-profile animation). getPassOverview sends alreadyOwned (reached + in ownedTiers, or not reached yet + in inventory); challenge.html greys the tier out with an "Owned" badge.

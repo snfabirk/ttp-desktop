@@ -25,6 +25,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '5.31.0',
+      date: '2026-11-04',
+      notable: ['Hover a cosmetic in the monthly pass to preview it, just like in the shop - borders and frames on your own profile, themes as a mini version of the whole app.'],
+      refinements: 1,
+      bugfixes: 0
+    },
+    {
       version: '5.30.1',
       date: '2026-11-04',
       notable: ['Pass tiers with a cosmetic you already own now show "Owned" - there is nothing to claim there.'],
