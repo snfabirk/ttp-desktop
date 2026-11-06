@@ -1160,3 +1160,145 @@ html[data-theme="arctic"] body { background: transparent; }
   .summoner-switch .sw-btn { right: auto; left: 24px; max-width: 220px; }
   .sw-menu { right: auto; left: 24px; }
 }
+
+/* ===== Freundesliste am rechten Rand (v6.1.0, nav.js) ===== */
+.friends-dock {
+  --fp-w: 250px;
+  position: fixed;
+  top: 50%;
+  right: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  height: 60vh;
+  transform: translate(var(--fp-w), -50%);
+  transition: transform 0.32s cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+.friends-dock.open { transform: translate(0, -50%); }
+.friends-tab {
+  flex-shrink: 0;
+  width: 30px;
+  height: 118px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(10px) saturate(1.15);
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
+  color: var(--text-dim);
+  cursor: pointer;
+  box-shadow: -2px 2px 10px rgba(0, 0, 0, 0.3);
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+.friends-tab span {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+}
+.friends-tab:hover, .friends-dock.open .friends-tab {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--bg);
+}
+.friends-panel {
+  width: var(--fp-w);
+  height: 100%;
+  box-sizing: border-box;
+  padding: 16px 18px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(14px) saturate(1.15);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  border: 1px solid var(--border);
+  border-right: none;
+  border-radius: 12px 0 0 12px;
+  box-shadow: -6px 0 24px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+}
+.friends-panel h3 {
+  margin: 0 0 12px;
+  color: var(--gold);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 1rem;
+  letter-spacing: 1px;
+}
+.friends-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text-faint);
+  font-family: Georgia, serif;
+  font-size: 0.85rem;
+  font-style: italic;
+  text-align: center;
+}
+.friends-empty small { font-size: 0.72rem; }
+.friends-empty-ic { font-size: 1.6rem; font-style: normal; opacity: 0.6; margin-bottom: 4px; }
+/* Im Profil-Editor liegt rechts das Cosmetics-Panel - Freunde-Reiter dann ausblenden */
+body.editing .friends-dock { display: none; }
+/* v6.1.0 Nutzerwunsch: Reiter groesser + Abstand zum Seiteninhalt */
+body.has-friends-dock { padding-right: 52px; box-sizing: border-box; }
+.friends-dock { --fp-w: 270px; }
+.friends-tab { width: 40px; height: 156px; position: relative; }
+.friends-tab span { font-size: 0.95rem; letter-spacing: 2.5px; }
+.fr-badge {
+  position: absolute; top: -8px; left: -8px;
+  min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box;
+  border-radius: 9px; background: var(--red); color: #fff;
+  font: bold 0.7rem/18px Georgia, serif; text-align: center;
+}
+.fr-badge[hidden] { display: none; }
+.fp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.fp-head h3 { margin: 0; }
+.fp-add {
+  width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--gold);
+  background: transparent; color: var(--gold); font-size: 1.1rem; line-height: 1; cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.fp-add:hover { background: var(--gold); color: var(--bg); }
+.fp-search { margin-bottom: 10px; }
+.fp-search[hidden] { display: none; }
+.fp-search input {
+  width: 100%; box-sizing: border-box; padding: 7px 10px; border-radius: 7px;
+  border: 1px solid var(--border); background: var(--input-bg); color: var(--text);
+  font-family: Georgia, serif; font-size: 0.85rem;
+}
+.fp-search input:focus { outline: none; border-color: var(--gold); }
+.fp-results { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+.fp-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.fp-sub { margin: 8px 0 2px; color: var(--text-faint); font-family: 'Cinzel', Georgia, serif; font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase; }
+.fp-row { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 8px; border: 1px solid transparent; }
+.fp-row.link { cursor: pointer; }
+.fp-row.link:hover { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 10%, transparent); }
+.fp-row img { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; border: 1px solid var(--border); }
+.fp-name { flex: 1; min-width: 0; color: var(--text); font-family: Georgia, serif; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-name small { margin-left: 6px; color: var(--gold); font-size: 0.7rem; }
+.fp-btn {
+  flex-shrink: 0; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 13px;
+  border: 1px solid var(--border); background: transparent; color: var(--text-dim);
+  font-size: 0.8rem; cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease;
+}
+.fp-btn.ok:hover { border-color: var(--green); color: var(--green); }
+.fp-btn:hover, .fp-btn.armed { border-color: var(--red); color: var(--red); }
+.fp-row.link .fp-btn.rm { opacity: 0; }
+.fp-row.link:hover .fp-btn.rm, .fp-btn.rm.armed { opacity: 1; }
+.fp-known { color: var(--text-faint); font-family: Georgia, serif; font-size: 0.72rem; font-style: italic; }
+.fp-hint { color: var(--text-faint); font-family: Georgia, serif; font-size: 0.75rem; font-style: italic; padding: 2px 4px; }
+.fp-hint.err { color: var(--red); }
+/* Suchleiste mit x zum Leeren (v6.1.0) */
+.fp-input { position: relative; }
+.fp-input input { padding-right: 30px; }
+.fp-clear {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+  width: 20px; height: 20px; padding: 0; border: none; border-radius: 50%;
+  background: transparent; color: var(--text-faint); font-size: 0.75rem; line-height: 1; cursor: pointer;
+}
+.fp-clear:hover { color: var(--gold); background: color-mix(in srgb, var(--gold) 14%, transparent); }
+.fp-clear[hidden] { display: none; }

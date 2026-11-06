@@ -693,7 +693,7 @@ function emptyState() {
   return {
     version: 2, totalXp: 0, ledger: [], rerolls: {},
     // passes['YYYY-MM'] = { xp, claimedTier, claimedOverflow }
-    passes: {}, coins: 0, inventory: [], equipped: { border: null, frame: null, frameBg: true, icon: null },
+    passes: {}, coins: 0, inventory: [], equipped: { border: null, frame: null, frameBg: true, icon: null, avatar: null },
     // Sticker (v5.29.0): ungeoeffnete Booster je Set + gesammelte Sticker je Set ({ n: Anzahl })
     boosters: {}, stickers: {},
     // Profil-Layout (Widget-Raster auf profile.html), null = Standard-Layout

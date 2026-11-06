@@ -25,6 +25,17 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.1.0',
+      date: '2026-11-06',
+      notable: [
+        'Friends: the "Friends" tab on the right edge slides out your friend list. Find friends by their TTP username with +, accept requests there, and click a friend to see their whole profile in their own theme.',
+        'Profile pictures are a new cosmetic category (Profile -> Edit profile -> Pictures). The first ones arrive in the shop soon.',
+        'Changing your password now asks for it twice.'
+      ],
+      refinements: 1,
+      bugfixes: 0
+    },
+    {
       version: '6.0.0',
       date: '2026-11-06',
       notable: [

@@ -463,6 +463,15 @@ async function removeRiotAccount(id) {
 }
 
 function getCurrent() { return current; }
+async function setAvatar(id) {
+  if (!current) return;
+  try {
+    const { error } = await supabase.from('profiles').update({ avatar: id }).eq('id', current.id);
+    if (error) throw error;
+    current.avatar = id;
+    fileStorage.setItem('ttpProfile', current);
+  } catch (e) { noteNetworkError(e); }
+}
 // Aktiver Riot-Account aus der zuletzt geladenen Liste (auch offline)
 function activeRiotAccount() {
   if (!current) return null;
@@ -470,8 +479,129 @@ function activeRiotAccount() {
 }
 function getConnection() { return { status: connection, checkedAt: lastCheck }; }
 
+// ----- Freunde (v6.1.0, supabase/005-friends.sql) -----
+// Gefunden wird nur ueber den TTP-Benutzernamen (Riot-Namen lassen sich
+// aendern). Eine Freundschaft: requester -> addressee, pending/accepted.
+function needUser() {
+  if (!current) { const err = new Error('Not signed in.'); err.status = 401; throw err; }
+}
+
+async function searchUsers(q) {
+  needUser();
+  const term = String(q || '').trim();
+  if (term.length < 2 || !/^[A-Za-z0-9_]+$/.test(term)) return [];
+  try {
+    const { data, error } = await supabase.from('profiles').select('id, username, avatar')
+      .ilike('username', `${term.replace(/_/g, '\\_')}%`).neq('id', current.id).order('username').limit(8);
+    if (error) throw error;
+    return data || [];
+  } catch (e) { throw friendly(e); }
+}
+
+async function listFriends() {
+  needUser();
+  try {
+    const { data: rows, error } = await supabase.from('friendships').select('*')
+      .or(`requester.eq.${current.id},addressee.eq.${current.id}`).order('created_at');
+    if (error) throw error;
+    const otherIds = [...new Set((rows || []).map(r => (r.requester === current.id ? r.addressee : r.requester)))];
+    let profiles = [], snaps = [];
+    if (otherIds.length) {
+      const p = await supabase.from('profiles').select('id, username, avatar').in('id', otherIds);
+      if (p.error) throw p.error;
+      profiles = p.data || [];
+      // Level o.ae. nur von Freunden lesbar (RLS) - bei offenen Anfragen leer
+      const s = await supabase.from('public_profiles').select('user_id, data, updated_at').in('user_id', otherIds);
+      snaps = s.error ? [] : (s.data || []);
+    }
+    const byId = new Map(profiles.map(p => [p.id, p]));
+    const snapBy = new Map(snaps.map(s => [s.user_id, s]));
+    const view = r => {
+      const otherId = r.requester === current.id ? r.addressee : r.requester;
+      const p = byId.get(otherId) || {};
+      const snap = snapBy.get(otherId);
+      const st = snap && snap.data && snap.data.stats;
+      return {
+        id: r.id, userId: otherId, username: p.username || '?', avatar: p.avatar || null,
+        level: st && st.level ? st.level.level : null,
+        lastSeen: snap ? snap.updated_at : null
+      };
+    };
+    const out = { friends: [], incoming: [], outgoing: [] };
+    (rows || []).forEach(r => {
+      if (r.status === 'accepted') out.friends.push(view(r));
+      else if (r.addressee === current.id) out.incoming.push(view(r));
+      else out.outgoing.push(view(r));
+    });
+    out.friends.sort((a, b) => a.username.localeCompare(b.username));
+    return out;
+  } catch (e) { throw friendly(e); }
+}
+
+async function sendFriendRequest(userId) {
+  needUser();
+  if (!userId || userId === current.id) { const err = new Error('You cannot add yourself.'); err.status = 400; throw err; }
+  try {
+    // Hat der andere schon angefragt? Dann einfach annehmen.
+    const { data: existing, error: e1 } = await supabase.from('friendships').select('*')
+      .or(`and(requester.eq.${userId},addressee.eq.${current.id}),and(requester.eq.${current.id},addressee.eq.${userId})`);
+    if (e1) throw e1;
+    const ex = (existing || [])[0];
+    if (ex) {
+      if (ex.status === 'accepted') { const err = new Error('You are already friends.'); err.status = 400; throw err; }
+      if (ex.requester === userId) return acceptFriendRequest(ex.id);
+      const err = new Error('Request already sent.'); err.status = 400; throw err;
+    }
+    const { error } = await supabase.from('friendships').insert({ requester: current.id, addressee: userId });
+    if (error) throw error;
+    return listFriends();
+  } catch (e) { throw friendly(e); }
+}
+
+async function acceptFriendRequest(id) {
+  needUser();
+  try {
+    const { error } = await supabase.from('friendships').update({ status: 'accepted' }).eq('id', id).eq('addressee', current.id);
+    if (error) throw error;
+    return listFriends();
+  } catch (e) { throw friendly(e); }
+}
+
+// Ablehnen, zurueckziehen oder Freundschaft beenden
+async function removeFriendship(id) {
+  needUser();
+  try {
+    const { error } = await supabase.from('friendships').delete().eq('id', id);
+    if (error) throw error;
+    return listFriends();
+  } catch (e) { throw friendly(e); }
+}
+
+// Momentaufnahme des eigenen Profils, die Freunde sehen (Widgets, Level,
+// Cosmetics, Theme, Rang, Pool) - der Server baut sie, cloud.js laedt hoch.
+async function publishProfile(snapshot) {
+  if (!current) return { ok: false };
+  try {
+    const { error } = await supabase.from('public_profiles')
+      .upsert({ user_id: current.id, data: { ...snapshot, username: current.username, avatar: current.avatar || null }, updated_at: new Date().toISOString() });
+    if (error) throw error;
+    return { ok: true };
+  } catch (e) { noteNetworkError(e); return { ok: false }; }
+}
+
+async function getFriendProfile(userId) {
+  needUser();
+  try {
+    const { data, error } = await supabase.from('public_profiles').select('data, updated_at').eq('user_id', userId).maybeSingle();
+    if (error) throw error;
+    if (!data) { const err = new Error("This profile isn't available - you may not be friends (yet), or they haven't opened the app since."); err.status = 404; throw err; }
+    return { ...data.data, updatedAt: data.updated_at };
+  } catch (e) { throw e.status === 404 ? e : friendly(e); }
+}
+
 module.exports = {
   restoreSession, signUp, signIn, signOut, requestPasswordReset, completePasswordReset, updateAccount,
   listRiotAccounts, startVerification, checkVerification, setActiveRiotAccount, removeRiotAccount,
-  getCurrent, getConnection, checkConnection, usernameAvailable, MAX_RIOT_ACCOUNTS, getChallengeRun, activeRiotAccount
+  getCurrent, getConnection, checkConnection, usernameAvailable, MAX_RIOT_ACCOUNTS, getChallengeRun, activeRiotAccount, setAvatar,
+  searchUsers, listFriends, sendFriendRequest, acceptFriendRequest, removeFriendship, publishProfile, getFriendProfile
 };

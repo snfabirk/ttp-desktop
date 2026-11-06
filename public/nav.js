@@ -11,7 +11,11 @@
   // Eigenes Profil (v5.33.0): Benutzername statt Summoner-Name, Profilbild
   // vorerst ein Platzhalter (spaeter Shop-Cosmetic).
   window.ttpUsername = () => { try { return localStorage.getItem('ttp_username') || ''; } catch (e) { return ''; } };
-  window.ttpAvatar = () => 'avatar-placeholder.svg';
+  window.ttpAvatar = () => {
+    let id = '';
+    try { id = localStorage.getItem('ttp_avatar') || ''; } catch (e) {}
+    return id ? `avatars/${id}.png` : 'avatar-placeholder.svg';
+  };
   window.ttpProfileIcon = id => `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${id}.jpg`;
   let last = 0;
   try { last = Number(localStorage.getItem('ttp_dd_version_at')) || 0; } catch (e) {}
@@ -141,6 +145,21 @@
     try { cachedName = localStorage.getItem('ttp_summoner_name') || ''; } catch (e) {}
     sw.innerHTML = `<button type="button" class="setup-btn sw-btn" aria-haspopup="true">${cachedName ? esc(cachedName) : 'Account'} <span class="sw-caret">▾</span></button><div class="sw-menu" hidden></div>`;
     document.body.appendChild(sw);
+
+    // Freundesliste (v6.1.0, Nutzerdesign): "Friends" hochkant am rechten
+    // Rand; Klick faehrt eine schmale Liste (60 % Fensterhoehe, mittig) aus,
+    // erneuter Klick auf denselben Reiter faehrt sie wieder ein. "+" oeffnet
+    // die Suche (nur TTP-Benutzername - Riot-Namen lassen sich aendern).
+    const dock = document.createElement('div');
+    dock.className = 'friends-dock';
+    dock.innerHTML = '<button type="button" class="friends-tab" aria-expanded="false" title="Friends"><span>Friends</span><b class="fr-badge" hidden></b></button>' +
+      '<aside class="friends-panel" aria-label="Friends">' +
+      '<div class="fp-head"><h3>Friends</h3><button type="button" class="fp-add" title="Add a friend" aria-label="Add a friend">+</button></div>' +
+      '<div class="fp-search" hidden><div class="fp-input"><input type="text" maxlength="20" placeholder="TTP username" autocomplete="off"><button type="button" class="fp-clear" title="Clear" aria-label="Clear" hidden>✕</button></div><div class="fp-results"></div></div>' +
+      '<div class="fp-body"><div class="friends-empty">Loading …</div></div></aside>';
+    document.body.appendChild(dock);
+    document.body.classList.add('has-friends-dock');
+    initFriends(dock);
     const parent = PARENTS[file];
     if (parent) {
       const back = document.createElement('a');
@@ -313,7 +332,10 @@
         return;
       }
       window.ttpAccount = me;
-      try { localStorage.setItem('ttp_username', me.user.username); } catch (e) {}
+      try {
+        localStorage.setItem('ttp_username', me.user.username);
+        if (me.user.avatar) localStorage.setItem('ttp_avatar', me.user.avatar); else localStorage.removeItem('ttp_avatar');
+      } catch (e) {}
       // Aktiven Summoner mit dem lokalen Stand abgleichen (anderer PC,
       // anderes Profil oder erster Start nach dem Update).
       const active = (me.riotAccounts || []).find(a => a.is_active);
@@ -337,11 +359,114 @@
       renderSwitcher(me);
       showConnBanner(me.connection && me.connection.status);
       document.dispatchEvent(new CustomEvent('ttp-account', { detail: me }));
+      window.ttpPublishProfile(false);
     } catch (e) {}
     setInterval(async () => {
       try { showConnBanner((await (await fetch('/api/cloud/status')).json()).status); } catch (e) {}
     }, 60000);
   }
+
+  // ===== Freunde (v6.1.0) =====
+  const avatarSrc = id => (id ? `avatars/${id}.png` : 'avatar-placeholder.svg');
+  async function friendsApi(url, body) {
+    const res = await fetch(url, body === undefined ? undefined : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    return data;
+  }
+  function initFriends(dock) {
+    const tab = dock.querySelector('.friends-tab'), badge = dock.querySelector('.fr-badge');
+    const body = dock.querySelector('.fp-body'), search = dock.querySelector('.fp-search');
+    const input = search.querySelector('input'), results = search.querySelector('.fp-results');
+    const clearBtn = search.querySelector('.fp-clear');
+    // Suche leeren (x in der Leiste, und jedes Mal beim Ein-/Ausfahren)
+    const clearSearch = () => { clearTimeout(timer); seq++; input.value = ''; results.innerHTML = ''; clearBtn.hidden = true; };
+    clearBtn.addEventListener('click', () => { clearSearch(); input.focus(); });
+    let state = null, pollTimer = null;
+
+    const row = (f, actions, clickable) => `<div class="fp-row${clickable ? ' link' : ''}"${clickable ? ` data-open="${f.userId}" title="Open ${esc(f.username)}'s profile"` : ''}>
+        <img src="${avatarSrc(f.avatar)}" alt="" onerror="this.src='avatar-placeholder.svg'">
+        <span class="fp-name">${esc(f.username)}${f.level ? `<small>Lv ${f.level}</small>` : ''}</span>${actions}</div>`;
+    function render() {
+      if (!state) return;
+      const n = state.incoming.length;
+      badge.hidden = !n;
+      badge.textContent = n;
+      let html = '';
+      if (n) html += '<div class="fp-sub">Requests</div>' + state.incoming.map(f => row(f,
+        `<button type="button" class="fp-btn ok" data-accept="${f.id}" title="Accept">✓</button><button type="button" class="fp-btn" data-remove="${f.id}" title="Decline">✕</button>`)).join('');
+      if (state.friends.length) html += `<div class="fp-sub">Friends · ${state.friends.length}</div>` + state.friends.map(f => row(f,
+        `<button type="button" class="fp-btn rm" data-remove="${f.id}" data-confirm="1" title="Remove friend">✕</button>`, true)).join('');
+      if (state.outgoing.length) html += '<div class="fp-sub">Sent</div>' + state.outgoing.map(f => row(f,
+        `<button type="button" class="fp-btn" data-remove="${f.id}" title="Withdraw request">✕</button>`)).join('');
+      body.innerHTML = html || '<div class="friends-empty"><span class="friends-empty-ic" aria-hidden="true">👥</span>No friends yet.<small>Add one with the + above.</small></div>';
+    }
+    async function load() {
+      try { state = await friendsApi('/api/friends'); render(); }
+      catch (e) { if (!state) body.innerHTML = `<div class="friends-empty">${esc(e.message)}</div>`; }
+    }
+    tab.addEventListener('click', () => {
+      const open = dock.classList.toggle('open');
+      tab.setAttribute('aria-expanded', open ? 'true' : 'false');
+      clearSearch();
+      clearInterval(pollTimer);
+      if (open) { load(); pollTimer = setInterval(load, 30000); }
+    });
+    dock.querySelector('.fp-add').addEventListener('click', () => {
+      search.hidden = !search.hidden;
+      if (!search.hidden) { clearSearch(); input.focus(); }
+    });
+    let seq = 0, timer = null;
+    input.addEventListener('input', () => {
+      clearTimeout(timer);
+      clearBtn.hidden = !input.value;
+      const q = input.value.trim();
+      if (q.length < 2) { results.innerHTML = q ? '<div class="fp-hint">Type at least 2 letters</div>' : ''; return; }
+      const my = ++seq;
+      timer = setTimeout(async () => {
+        try {
+          const r = await friendsApi(`/api/friends/search?${new URLSearchParams({ q })}`);
+          if (my !== seq) return;
+          const known = new Set(state ? [...state.friends, ...state.incoming, ...state.outgoing].map(f => f.userId) : []);
+          results.innerHTML = r.users.length
+            ? r.users.map(u => `<div class="fp-row"><img src="${avatarSrc(u.avatar)}" alt="" onerror="this.src='avatar-placeholder.svg'"><span class="fp-name">${esc(u.username)}</span>${known.has(u.id)
+              ? '<small class="fp-known">added</small>'
+              : `<button type="button" class="fp-btn ok" data-add="${u.id}" title="Send friend request">＋</button>`}</div>`).join('')
+            : '<div class="fp-hint">No player with that name</div>';
+        } catch (e) { if (my === seq) results.innerHTML = `<div class="fp-hint">${esc(e.message)}</div>`; }
+      }, 300);
+    });
+    dock.addEventListener('click', async e => {
+      const add = e.target.closest('[data-add]'), acc = e.target.closest('[data-accept]'), rm = e.target.closest('[data-remove]');
+      const open = !add && !acc && !rm && e.target.closest('[data-open]');
+      try {
+        if (add) { add.disabled = true; state = await friendsApi('/api/friends/request', { userId: add.dataset.add }); add.outerHTML = '<small class="fp-known">sent</small>'; render(); }
+        else if (acc) { acc.disabled = true; state = await friendsApi('/api/friends/accept', { id: acc.dataset.accept }); render(); }
+        else if (rm) {
+          if (rm.dataset.confirm && !rm.classList.contains('armed')) {
+            rm.classList.add('armed'); rm.textContent = 'Remove?';
+            setTimeout(() => { rm.classList.remove('armed'); rm.textContent = '✕'; }, 3500);
+            return;
+          }
+          rm.disabled = true; state = await friendsApi('/api/friends/remove', { id: rm.dataset.remove }); render();
+        } else if (open) location.href = `profile.html?u=${encodeURIComponent(open.dataset.open)}`;
+      } catch (err) { body.insertAdjacentHTML('afterbegin', `<div class="fp-hint err">${esc(err.message)}</div>`); }
+    });
+    // Offene Anfragen als Zahl am Reiter, auch wenn die Liste zu ist
+    setTimeout(load, 1500);
+  }
+
+  // Eigene Profil-Momentaufnahme fuer Freunde hochladen (hoechstens alle
+  // 10 min, nach Profil-Aenderungen sofort: window.ttpPublishProfile(true)).
+  window.ttpPublishProfile = force => {
+    let last = 0;
+    try { last = Number(localStorage.getItem('ttp_pub_at')) || 0; } catch (e) {}
+    if (!force && Date.now() - last < 10 * 60 * 1000) return;
+    try { localStorage.setItem('ttp_pub_at', String(Date.now())); } catch (e) {}
+    let theme = 'classic';
+    try { theme = localStorage.getItem('ttp_theme') || 'classic'; } catch (e) {}
+    fetch('/api/public-profile/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ theme }) }).catch(() => {});
+  };
 
   function init() {
     build();

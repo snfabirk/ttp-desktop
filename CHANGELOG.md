@@ -1,5 +1,17 @@
 # Internal Changelog
 
+## 6.1.0 — 2026-11-06
+
+- Friends dock (nav.js + style.css .friends-dock): vertical 'Friends' tab fixed at the right edge, hover/open = gold; click slides a 250px panel (60vh, vertically centred) in/out; empty placeholder for now.
+- Friends (supabase/005-friends.sql: friendships pending/accepted with one row per pair, is_friend(), public_profiles readable by self + friends): cloud.js searchUsers (TTP username prefix, not Riot names), listFriends (friends/incoming/outgoing + level from snapshot), send (auto-accepts a reverse request), accept, remove; routes /api/friends*, /api/public-profile/publish. Dock panel: + toggles search, requests with accept/decline, red badge with incoming count on the tab, friends clickable, remove needs a second click; polls every 30s while open.
+- Friend search: small x inside the field clears it (shown only while there is text); closing/opening the dock and toggling + also clear the search (pending debounced searches are cancelled).
+- Public profile snapshot = buildProfileStats (same as /api/profile-stats, incl. layout + equipped) + last rank-history point + current challenge pool + theme; published from nav.js at most every 10 min and immediately after profile save / avatar / theme change.
+- profile.html?u=<userId>: visit mode - read-only (no edit button), banner with back link + last update, whole page in the owner's theme (data-visiting stops theme-fx from resetting it as 'not owned'), identity/pool widgets use the friend's data.
+- Dock: tab 40x156, bigger text, body padding-right 52px so page content never touches it; hidden in the profile editor.
+- New cosmetic type avatar (profile picture): prices in cosmetics.js, equipped.avatar, profile inventory tab 'Pictures' (Default = avatar-placeholder.svg, immediate equip like app icons), shop label/preview, equip also writes profiles.avatar online (cloud.setAvatar); window.ttpAvatar() uses ttp_avatar (from /api/auth/me). Images go to public/avatars/<id>.png. No items yet. App-icon note updated (shortcuts change too since 6.0).
+- Password reset by e-mail hidden for now (user wants to set up SMTP + the {{ .Token }} template calmly later): 'Forgot password?' link hidden on login.html, account page e-mail is read-only (changing it would trigger a confirmation mail). Signup still stores an optional e-mail; the reset-by-code flow stays in the code.
+- Password twice: account page (repeat field, live match, Change disabled until valid) and reset-by-code form on login.html.
+
 ## 6.0.0 — 2026-11-06 (bundles the never-released 5.32.0 + 5.33.0 below)
 
 Regression pass before release (all pages in: logged out / no summoner + no challenge / active challenge / min window 1106x664 / packaged build):

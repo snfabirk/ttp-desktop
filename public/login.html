@@ -51,6 +51,7 @@
     .auth-note { margin: 0; color: var(--text-faint); font-family: Georgia, serif; font-size: 0.75rem; line-height: 1.5; text-align: center; }
     .auth-link { background: none; border: none; padding: 0; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.78rem; text-decoration: underline; cursor: pointer; align-self: center; }
     .auth-link:hover { color: var(--gold); }
+    .auth-link[hidden] { display: none; }
     .live { min-height: 1em; font-size: 0.72rem; font-style: italic; color: var(--text-faint); }
     .live.ok { color: var(--green); } .live.bad { color: var(--red); }
     .conn-note { margin: -24px 0 0; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.8rem; text-align: center; min-height: 1.2em; }
@@ -73,14 +74,15 @@
       <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
       <p class="auth-error" id="signinError"></p>
       <button class="auth-submit" type="submit">Sign in</button>
-      <button class="auth-link" type="button" id="forgotLink">Forgot password?</button>
+      <!-- Passwort-Reset per Mail vorerst ausgeblendet, bis der Mail-Versand (SMTP) in Supabase eingerichtet ist -->
+      <button class="auth-link" type="button" id="forgotLink" hidden>Forgot password?</button>
     </form>
 
     <form class="auth-form" id="signupForm" hidden autocomplete="off">
       <label>Username <small>8-20 characters: letters, numbers, _</small><input name="username" maxlength="20" autocomplete="username" required><span class="live" id="nameLive"></span></label>
       <label>Password <small>at least 8 characters</small><input name="password" type="password" autocomplete="new-password" required><span class="live" id="pwLive"></span></label>
       <label>Repeat password<input name="password2" type="password" autocomplete="new-password" required><span class="live" id="pw2Live"></span></label>
-      <label>E-mail <small>optional - only to reset a forgotten password, never shown to anyone</small><input name="email" type="email" autocomplete="email"></label>
+      <label>E-mail <small>optional - for resetting a forgotten password (coming soon), never shown to anyone</small><input name="email" type="email" autocomplete="email"></label>
       <p class="auth-error" id="signupError"></p>
       <button class="auth-submit" type="submit">Create account</button>
       <p class="auth-note">Your level, coins, cosmetics and pass are saved online with this account. Your summoners are linked afterwards.</p>
@@ -91,7 +93,8 @@
       <label>E-mail<input name="email" type="email" required></label>
       <button class="auth-submit" type="button" id="sendCodeBtn">Send code</button>
       <label>Code from the e-mail<input name="code" inputmode="numeric" autocomplete="one-time-code"></label>
-      <label>New password<input name="password" type="password" autocomplete="new-password"></label>
+      <label>New password <small>at least 8 characters</small><input name="password" type="password" autocomplete="new-password"></label>
+      <label>Repeat new password<input name="password2" type="password" autocomplete="new-password"><span class="live" id="resetPwLive"></span></label>
       <p class="auth-error" id="resetError"></p>
       <button class="auth-submit" type="submit">Set new password</button>
       <button class="auth-link" type="button" id="backLink">Back to sign in</button>
@@ -162,6 +165,12 @@
       if (!a) live(pwLive, ''); else if (a.length < 8) live(pwLive, `${8 - a.length} more character${a.length === 7 ? '' : 's'}`, 'bad'); else live(pwLive, '✓ Long enough', 'ok');
       if (!b) live(pw2Live, ''); else live(pw2Live, a === b ? '✓ Matches' : "✗ Doesn't match", a === b ? 'ok' : 'bad');
     }
+    function checkResetPw() {
+      const a = resetForm.password.value, b = resetForm.password2.value;
+      if (!b) live(resetPwLive, ''); else live(resetPwLive, a === b ? '✓ Matches' : "✗ Doesn't match", a === b ? 'ok' : 'bad');
+    }
+    resetForm.password.addEventListener('input', checkResetPw);
+    resetForm.password2.addEventListener('input', checkResetPw);
     signupForm.password.addEventListener('input', checkPw);
     signupForm.password2.addEventListener('input', checkPw);
 
@@ -185,7 +194,13 @@
     });
     resetForm.addEventListener('submit', e => {
       e.preventDefault();
-      submit(resetForm, resetError, async v => { await post('/api/auth/reset-password/complete', v); done(); });
+      submit(resetForm, resetError, async v => {
+        if (!v.code.trim()) throw new Error('Enter the code from the e-mail.');
+        if (v.password.length < 8) throw new Error('Password: at least 8 characters.');
+        if (v.password !== v.password2) throw new Error("The passwords don't match.");
+        await post('/api/auth/reset-password/complete', { email: v.email, code: v.code, password: v.password });
+        done();
+      });
     });
 
     // Schon angemeldet (z.B. Zurueck-Taste)? Dann direkt weiter.

@@ -38,6 +38,7 @@
     .btn { padding: 7px 14px; border-radius: 16px; border: 1px solid var(--gold); background: transparent; color: var(--gold); font-family: Georgia, serif; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
     .btn:hover:not(:disabled) { background: color-mix(in srgb, var(--gold) 16%, transparent); }
     .btn:disabled { opacity: 0.45; cursor: default; }
+    .btn[hidden] { display: none; }
     .btn.solid { background: var(--gold); color: var(--bg); }
     .btn.danger { border-color: var(--border); color: var(--text-dim); }
     .btn.danger:hover:not(:disabled) { border-color: var(--red); color: var(--red); background: none; }
@@ -98,10 +99,15 @@
         <span class="live" id="nameLive"></span>
       </label>
       <label class="field">New password <small>at least 8 characters</small>
-        <div class="row"><input id="pwInput" type="password" autocomplete="new-password"><button class="btn" id="pwBtn">Change</button></div>
+        <input id="pwInput" type="password" autocomplete="new-password">
       </label>
-      <label class="field">E-mail <small>optional - only for resetting a forgotten password</small>
-        <div class="row"><input id="mailInput" type="email" placeholder="not set"><button class="btn" id="mailBtn">Save</button></div>
+      <label class="field">Repeat new password
+        <div class="row"><input id="pw2Input" type="password" autocomplete="new-password"><button class="btn" id="pwBtn" disabled>Change</button></div>
+        <span class="live" id="pwLive"></span>
+      </label>
+      <label class="field">E-mail <small>for resetting a forgotten password - coming soon</small>
+        <!-- Aendern vorerst aus: loest eine Bestaetigungs-Mail aus, Mail-Versand (SMTP) ist noch nicht eingerichtet -->
+        <div class="row"><input id="mailInput" type="email" placeholder="not set" readonly><button class="btn" id="mailBtn" hidden>Save</button></div>
       </label>
       <p class="msg" id="profileMsg"></p>
       <div class="divider"></div>
@@ -296,7 +302,25 @@
       }, 350);
     });
 
-    $('pwBtn').addEventListener('click', async () => { await update({ password: $('pwInput').value }, 'Password changed.'); $('pwInput').value = ''; });
+    // Passwort zweimal gleich eingeben (Nutzerwunsch)
+    function checkPw() {
+      const a = $('pwInput').value, b = $('pw2Input').value, el = $('pwLive');
+      const live = (t, c) => { el.textContent = t; el.className = `live ${c || ''}`; };
+      let ok = false;
+      if (!a && !b) live('');
+      else if (a.length < 8) live(`${8 - a.length} more character${a.length === 7 ? '' : 's'}`, 'bad');
+      else if (!b) live('Repeat the password');
+      else if (a !== b) live("✗ Doesn't match", 'bad');
+      else { live('✓ Matches', 'ok'); ok = true; }
+      $('pwBtn').disabled = !ok;
+    }
+    $('pwInput').addEventListener('input', checkPw);
+    $('pw2Input').addEventListener('input', checkPw);
+    $('pwBtn').addEventListener('click', async () => {
+      if ($('pwInput').value !== $('pw2Input').value) return;
+      await update({ password: $('pwInput').value }, 'Password changed.');
+      $('pwInput').value = ''; $('pw2Input').value = ''; checkPw();
+    });
     $('mailBtn').addEventListener('click', () => update({ email: $('mailInput').value.trim() }, $('mailInput').value.trim() ? 'E-mail saved.' : 'E-mail removed.'));
     $('signOutBtn').addEventListener('click', async () => {
       $('signOutBtn').disabled = true;

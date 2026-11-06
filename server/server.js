@@ -739,12 +739,11 @@ app.post('/api/progression/reroll', (req, res) => {
 // Spielerprofil (profile.html): Lebenszeit-Stats ueber alle Challenges -
 // Challenges/Trophies aus der Challenge History, Spiele/XP aus dem
 // Progression-Ledger. Rein lokal.
-app.get('/api/profile-stats', (req, res) => {
-  const { puuid } = req.query;
+function buildProfileStats(puuid) {
   const entries = puuid ? listHistoryEntries(puuid) : [];
   const goalReached = e => Array.isArray(e.trophies) && e.trophies.some(t => t.id === 'goal-reached' && t.unlocked);
   const best = entries.reduce((b, e) => (!b || (e.unlockedCount || 0) > (b.unlockedCount || 0) ? e : b), null);
-  res.json({
+  return {
     ...progression.getLifetimeStats(),
     challenges: {
       started: entries.length,
@@ -755,8 +754,34 @@ app.get('/api/profile-stats', (req, res) => {
       bestTrophies: best ? best.unlockedCount || 0 : 0,
       firstStarted: entries.length ? entries[entries.length - 1].since : null // listEntries: neueste zuerst
     }
-  });
+  };
+}
+app.get('/api/profile-stats', (req, res) => {
+  res.json(buildProfileStats(req.query.puuid));
 });
+
+// ===== Freunde (v6.1.0, lib/cloud.js + supabase/005-friends.sql) =====
+// Momentaufnahme fuers Freundesprofil: dieselben Daten wie die eigene
+// Profilseite + Theme, Rang (letzter LP-Verlauf-Punkt) und Champion-Pool.
+app.post('/api/public-profile/publish', cloudRoute(async req => {
+  const acc = cloud.activeRiotAccount();
+  const puuid = acc ? acc.puuid : '';
+  const last = puuid ? readHistory(puuid).slice(-1)[0] : null;
+  const run = puuid ? challengeRuns.getRun(puuid) : null;
+  const body = req.body || {};
+  return cloud.publishProfile({
+    stats: buildProfileStats(puuid),
+    rank: last ? { tier: last.tier, rank: last.rank, leaguePoints: last.leaguePoints } : null,
+    pool: run ? { champions: run.champions.map(c => ({ id: c.id, name: c.name })), mainRole: run.mainRole } : null,
+    theme: typeof body.theme === 'string' ? body.theme.slice(0, 40) : 'classic'
+  });
+}));
+app.get('/api/friends', cloudRoute(async () => cloud.listFriends()));
+app.get('/api/friends/search', cloudRoute(async req => ({ users: await cloud.searchUsers(req.query.q) })));
+app.post('/api/friends/request', cloudRoute(async req => cloud.sendFriendRequest((req.body || {}).userId)));
+app.post('/api/friends/accept', cloudRoute(async req => cloud.acceptFriendRequest((req.body || {}).id)));
+app.post('/api/friends/remove', cloudRoute(async req => cloud.removeFriendship((req.body || {}).id)));
+app.get('/api/friends/profile', cloudRoute(async req => cloud.getFriendProfile(String(req.query.id || ''))));
 
 // Cosmetics ausruesten (nur eigene) - id null = ablegen.
 // Shop (v5.13.0, provisorisch): rotierende Angebote + taegliches Gluecksrad
@@ -809,6 +834,8 @@ app.post('/api/cosmetics/equip', (req, res) => {
   const { type, id } = req.body || {};
   if (!type) return res.status(400).json({ error: 'type is required.' });
   const result = progression.equipCosmetic(type, id || null);
+  // Profilbild (v6.1.0) gehoert zum oeffentlichen Profil -> auch online
+  if (result.ok && type === 'avatar') cloud.setAvatar(id || null).catch(() => {});
   res.status(result.ok ? 200 : 400).json(result);
 });
 

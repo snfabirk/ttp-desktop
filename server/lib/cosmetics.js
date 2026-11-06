@@ -24,13 +24,17 @@
 // 20/25 Fancy, 30 Animated. Shop-Preise nach Seltenheit x Typ.
 const RARITIES = ['basic', 'refined', 'fancy', 'animated', 'animatedplus'];
 // icon (v5.28.0, App-Icon-Skins): bewusst guenstig - Spass-Kauf (Nutzeridee)
+// avatar (v6.1.0): eigenes Profilbild statt Riot-Icon. Kategorie steht, die
+// Bilder entwirft der Nutzer spaeter. Eintrag: { id: 'avatar-...', type:
+// 'avatar', name, rarity, source: 'shop' } + Bild public/avatars/<id>.png
+// (quadratisch, 256x256). Preise vorlaeufig.
 const PRICES = {
-  basic: { border: 0, frame: 0, theme: 0, icon: 0 },
-  refined: { border: 500, frame: 650, theme: 900, icon: 250 },
-  fancy: { border: 1000, frame: 1300, theme: 1600, icon: 500 },
-  animated: { border: 1600, frame: 1900, theme: 2400 },
+  basic: { border: 0, frame: 0, theme: 0, icon: 0, avatar: 0 },
+  refined: { border: 500, frame: 650, theme: 900, icon: 250, avatar: 400 },
+  fancy: { border: 1000, frame: 1300, theme: 1600, icon: 500, avatar: 800 },
+  animated: { border: 1600, frame: 1900, theme: 2400, avatar: 1300 },
   // Animated+ (v5.20.0): bisher nur Themes; Border/Rahmen-Preise fuer spaeter
-  animatedplus: { border: 2600, frame: 3000, theme: 4000 }
+  animatedplus: { border: 2600, frame: 3000, theme: 4000, avatar: 2000 }
 };
 const priceOf = c => (PRICES[c.rarity] || PRICES.refined)[c.type] || 0;
 

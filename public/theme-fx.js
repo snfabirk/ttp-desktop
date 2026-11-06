@@ -148,6 +148,8 @@ void main(){
   // geliehen hat - nach Ablauf zurueck auf Classic (v5.18.0).
   const BASE_THEME_KEYS = ['', 'classic', 'graphite', 'light', 'hextech', 'arcane', 'noxus', 'freljord', 'ionia'];
   async function checkThemeAccess() {
+    // Auf einem Freundesprofil gilt SEIN Theme - nicht als eigenes pruefen
+    if (document.documentElement.hasAttribute('data-visiting')) return;
     const key = currentTheme();
     if (BASE_THEME_KEYS.includes(key)) return;
     try {
