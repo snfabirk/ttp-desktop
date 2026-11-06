@@ -345,6 +345,13 @@ async function updateAccount({ username, password, email }) {
       const { error } = await supabase.from('profiles').update({ username }).eq('id', current.id);
       if (error) throw error;
       current.username = username;
+      // Ohne echte E-Mail haengt die versteckte Platzhalter-Adresse am Namen -
+      // mitziehen, sonst koennte sich niemand mehr mit dem alten Namen
+      // registrieren (Adresse waere noch belegt).
+      if (!current.email) {
+        const { error: e2 } = await supabase.rpc('set_my_email', { new_email: '' });
+        if (e2) noteNetworkError(e2);
+      }
     }
     if (password) {
       validPassword(password);
@@ -352,11 +359,12 @@ async function updateAccount({ username, password, email }) {
       if (error) throw error;
     }
     if (email !== undefined) {
+      // v6.2.0: ueber die DB-Funktion set_my_email (supabase/006) statt
+      // auth.updateUser - das verlangt immer eine Bestaetigungs-Mail.
       const real = (email || '').trim();
-      const target = real || `${current.username.toLowerCase()}@${PLACEHOLDER_DOMAIN}`;
-      const { error } = await supabase.auth.updateUser({ email: target });
-      if (error) throw error;
-      current.email = real || null;
+      const { data: saved, error } = await supabase.rpc('set_my_email', { new_email: real });
+      if (error) { const err = new Error(error.message || 'Could not save the e-mail.'); err.status = 400; throw err; }
+      current.email = isPlaceholderEmail(saved) ? null : saved;
     }
     fileStorage.setItem('ttpProfile', current);
     return current;
@@ -589,6 +597,24 @@ async function publishProfile(snapshot) {
   } catch (e) { noteNetworkError(e); return { ok: false }; }
 }
 
+// Activity der Freunde (v6.2.0) aus ihren Profil-Momentaufnahmen
+async function friendsActivity() {
+  needUser();
+  try {
+    const { friends } = await listFriends();
+    if (!friends.length) return [];
+    const { data, error } = await supabase.from('public_profiles').select('user_id, data').in('user_id', friends.map(f => f.userId));
+    if (error) throw error;
+    const byId = new Map(friends.map(f => [f.userId, f]));
+    const out = [];
+    (data || []).forEach(row => {
+      const f = byId.get(row.user_id);
+      ((row.data && row.data.activity) || []).forEach(ev => out.push({ ...ev, userId: row.user_id, username: f.username, avatar: f.avatar }));
+    });
+    return out.sort((a, b) => b.at - a.at).slice(0, 30);
+  } catch (e) { throw friendly(e); }
+}
+
 async function getFriendProfile(userId) {
   needUser();
   try {
@@ -603,5 +629,5 @@ module.exports = {
   restoreSession, signUp, signIn, signOut, requestPasswordReset, completePasswordReset, updateAccount,
   listRiotAccounts, startVerification, checkVerification, setActiveRiotAccount, removeRiotAccount,
   getCurrent, getConnection, checkConnection, usernameAvailable, MAX_RIOT_ACCOUNTS, getChallengeRun, activeRiotAccount, setAvatar,
-  searchUsers, listFriends, sendFriendRequest, acceptFriendRequest, removeFriendship, publishProfile, getFriendProfile
+  searchUsers, listFriends, sendFriendRequest, acceptFriendRequest, removeFriendship, publishProfile, getFriendProfile, friendsActivity
 };

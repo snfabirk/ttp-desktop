@@ -773,10 +773,12 @@ app.post('/api/public-profile/publish', cloudRoute(async req => {
     stats: buildProfileStats(puuid),
     rank: last ? { tier: last.tier, rank: last.rank, leaguePoints: last.leaguePoints } : null,
     pool: run ? { champions: run.champions.map(c => ({ id: c.id, name: c.name })), mainRole: run.mainRole } : null,
+    activity: progression.getRecentActivity(10),
     theme: typeof body.theme === 'string' ? body.theme.slice(0, 40) : 'classic'
   });
 }));
 app.get('/api/friends', cloudRoute(async () => cloud.listFriends()));
+app.get('/api/friends/activity', cloudRoute(async () => ({ events: await cloud.friendsActivity() })));
 app.get('/api/friends/search', cloudRoute(async req => ({ users: await cloud.searchUsers(req.query.q) })));
 app.post('/api/friends/request', cloudRoute(async req => cloud.sendFriendRequest((req.body || {}).userId)));
 app.post('/api/friends/accept', cloudRoute(async req => cloud.acceptFriendRequest((req.body || {}).id)));

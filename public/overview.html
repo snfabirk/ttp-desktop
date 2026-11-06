@@ -461,6 +461,10 @@
     .feed-row .ic { width: 22px; text-align: center; flex-shrink: 0; }
     .feed-row .t { flex: 1; min-width: 0; }
     .feed-who { color: var(--gold); font-weight: normal; }
+    .feed-friend { display: inline-flex; align-items: center; gap: 5px; color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text-faint); }
+    .feed-friend:hover { color: var(--gold); border-color: var(--gold); }
+    .feed-friend img { width: 16px; height: 16px; border-radius: 50%; }
+    .friends-soon[hidden] { display: none; }
     .feed-row .when { color: var(--text-faint); font-size: 0.72rem; white-space: nowrap; }
     .friends-soon {
       margin-top: 10px;
@@ -544,7 +548,7 @@
     <div class="dash-card">
       <div class="dash-head"><h3>Activity</h3></div>
       <div id="feed"><p class="muted">Nothing yet.</p></div>
-      <div class="friends-soon">👥 Friends' activity shows up here once online profiles are live.</div>
+      <div class="friends-soon" id="friendsHint">👥 Add friends with the <b>Friends</b> tab on the right to see their games here too.</div>
     </div>
   </div>
   </div>
@@ -701,6 +705,20 @@
     // Eigene Aktivitaet aus lokalen Daten (Spiele + LP-Bank); Freunde folgen mit
     // Supabase - deshalb steht der Spielername immer mit dabei (ohne #Tag).
     let lastProgression = null;
+    let friendEvents = [];
+    async function loadFriendActivity() {
+      try {
+        const res = await fetch('/api/friends/activity');
+        if (!res.ok) return;
+        friendEvents = (await res.json()).events || [];
+        const fr = await (await fetch('/api/friends')).json();
+        document.getElementById('friendsHint').hidden = !!(fr.friends && fr.friends.length);
+        if (lastProgression) renderFeed(lastProgression);
+      } catch (e) {}
+    }
+    loadFriendActivity();
+    setInterval(loadFriendActivity, 5 * 60 * 1000);
+
     function renderFeed(d) {
       lastProgression = d;
       const who = `<strong class="feed-who">${esc(playerName || 'You')}</strong>`;
@@ -714,8 +732,15 @@
           at: e.at,
           ic: '📈',
           t: e.filled ? `${who} filled the LP Bank · <span style="color:var(--gold)">+${fmtNum(e.xp)} XP</span>` : `${who} gained <span class="pos">+${e.gained} LP</span>`
-        }))
-      ].sort((a, b) => b.at - a.at).slice(0, 6);
+        })),
+        // Freunde (v6.2.0): ihre Spiele / vollen LP-Banks, Name fuehrt zum Profil
+        ...friendEvents.map(e => {
+          const fw = `<a class="feed-who feed-friend" href="profile.html?u=${encodeURIComponent(e.userId)}" title="Open ${esc(e.username)}'s profile"><img src="${e.avatar ? `avatars/${e.avatar}.png` : 'avatar-placeholder.svg'}" alt="">${esc(e.username)}</a>`;
+          return e.kind === 'lpbank'
+            ? { at: e.at, ic: '📈', t: `${fw} filled the LP Bank · <span style="color:var(--gold)">+${fmtNum(e.xp)} XP</span>` }
+            : { at: e.at, ic: e.win ? '🏅' : '⚔️', t: `${fw} <span class="${e.win ? 'pos' : 'neg'}">${e.win ? 'won' : 'lost'}</span> with ${esc(e.champName || e.champId)} · <span style="color:var(--gold)">+${fmtNum(e.xp)} XP</span>` };
+        })
+      ].sort((a, b) => b.at - a.at).slice(0, friendEvents.length ? 8 : 6);
       document.getElementById('feed').innerHTML = items.length
         ? items.map(i => `<div class="feed-row"><span class="ic">${i.ic}</span><span class="t">${i.t}</span><span class="when">${timeAgo(i.at)}</span></div>`).join('')
         : '<p class="muted">Nothing yet.</p>';
@@ -758,6 +783,8 @@
           ? `<span class="w">${o.wins}W</span> / <span class="l">${o.losses}L</span>` : '–';
         statusEl.textContent = '';
         loadProgression(); // der Scan hat evtl. neue XP gutgeschrieben
+        // neue Spiele gleich fuer die Freunde sichtbar machen (hoechstens alle 10 min)
+        if (window.ttpPublishProfile) window.ttpPublishProfile(false);
       } catch (e) {
         statusEl.textContent = `Could not update stats: ${e.message}`;
       }

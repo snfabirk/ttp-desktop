@@ -890,6 +890,17 @@ function creditLp({ puuid, currentLP, baselineLP }) {
 
 // Lebenszeit-Zahlen fuer die Spielerprofil-Seite (profile.html) - alles,
 // was das Ledger seit v5.1.0 mitgeschrieben hat.
+// Letzte Ereignisse fuer die Activity der Freunde (v6.2.0): Spiele und
+// volle LP-Banks, neueste zuerst.
+function getRecentActivity(limit = 10) {
+  const state = readState();
+  const games = [...state.ledger].sort((a, b) => b.gameCreation - a.gameCreation).slice(0, limit)
+    .map(g => ({ kind: 'game', at: g.gameCreation, win: !!g.win, champId: g.champId || '', champName: g.champName || '', xp: g.xp || 0 }));
+  const bank = [...((state.lpBank && state.lpBank.events) || [])].filter(e => e.filled).slice(-5)
+    .map(e => ({ kind: 'lpbank', at: new Date(e.at).getTime(), xp: e.xp || 0 }));
+  return [...games, ...bank].sort((a, b) => b.at - a.at).slice(0, limit);
+}
+
 function getLifetimeStats() {
   const state = readState();
   const games = state.ledger;
@@ -1424,6 +1435,7 @@ module.exports = {
   getOverview,
   creditMatches,
   creditedMatchIds,
+  getRecentActivity,
   creditLp,
   getLifetimeStats,
   getCosmeticsState,

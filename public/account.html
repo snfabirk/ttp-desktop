@@ -105,9 +105,9 @@
         <div class="row"><input id="pw2Input" type="password" autocomplete="new-password"><button class="btn" id="pwBtn" disabled>Change</button></div>
         <span class="live" id="pwLive"></span>
       </label>
-      <label class="field">E-mail <small>for resetting a forgotten password - coming soon</small>
-        <!-- Aendern vorerst aus: loest eine Bestaetigungs-Mail aus, Mail-Versand (SMTP) ist noch nicht eingerichtet -->
-        <div class="row"><input id="mailInput" type="email" placeholder="not set" readonly><button class="btn" id="mailBtn" hidden>Save</button></div>
+      <label class="field">E-mail <small>optional - for resetting a forgotten password (coming soon), never shown to anyone</small>
+        <!-- v6.2.0: wieder aenderbar, ueber supabase/006-set-my-email.sql (keine Bestaetigungs-Mail noetig) -->
+        <div class="row"><input id="mailInput" type="email" placeholder="not set"><button class="btn" id="mailBtn">Save</button></div>
       </label>
       <p class="msg" id="profileMsg"></p>
       <div class="divider"></div>
@@ -280,7 +280,13 @@
       try { me = (await api('/api/auth/update', body)).user; renderMe(); say($('profileMsg'), okText, true); }
       catch (e) { say($('profileMsg'), e.message); }
     }
-    $('nameBtn').addEventListener('click', () => update({ username: $('nameInput').value.trim() }, 'Username changed.'));
+    $('nameBtn').addEventListener('click', async () => {
+      await update({ username: $('nameInput').value.trim() }, 'Username changed.');
+      // neuen Namen sofort ueberall zeigen + fuer Freunde veroeffentlichen
+      try { localStorage.setItem('ttp_username', me.username); } catch (e) {}
+      if (window.ttpPublishProfile) window.ttpPublishProfile(true);
+      $('nameLive').textContent = '';
+    });
     // Live-Pruefung beim Umbenennen (frei? 8-20 Zeichen?)
     let nameSeq = 0, nameTimer = null;
     $('nameInput').addEventListener('input', () => {

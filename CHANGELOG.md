@@ -1,5 +1,11 @@
 # Internal Changelog
 
+## 6.2.0 — 2026-11-06
+
+- Friends' activity: the public snapshot carries activity (progression.getRecentActivity: last 10 games + LP Bank fills); GET /api/friends/activity (cloud.friendsActivity) merges all friends' events; overview feed mixes own + friends (friend name with avatar links to profile.html?u=), 8 rows when friends exist, refresh every 5 min; hint 'Add friends with the Friends tab' only without friends. Overview publishes the snapshot after each scan (10-min throttle).
+- Rename: without a real e-mail the hidden placeholder address now follows the new username (set_my_email('')), otherwise the old name could not be registered again (address still taken). Account page stores the new name locally and republishes the friend snapshot right away. Tested: rename, old name free + no longer logs in, new name logs in, placeholder updated.
+- E-mail add/change/remove later: auth.updateUser always wants a confirmation mail (fails for the placeholder address even with 'Secure email change' off), so cloud.updateAccount calls the DB function set_my_email (supabase/006-set-my-email.sql, security definer, only the caller's row; format + duplicate checks; empty = back to placeholder). Account page e-mail field + Save re-enabled. Tested: bad format rejected, add, re-login, duplicate rejected, remove.
+
 ## 6.1.0 — 2026-11-06
 
 - Friends dock (nav.js + style.css .friends-dock): vertical 'Friends' tab fixed at the right edge, hover/open = gold; click slides a 250px panel (60vh, vertically centred) in/out; empty placeholder for now.

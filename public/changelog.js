@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.2.0',
+      date: '2026-11-06',
+      notable: [
+        "Friends' activity: the Activity box on the home screen now also shows your friends' games and LP Bank fills - click a name to open their profile.",
+        'You can add, change or remove your e-mail later on the Account page.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '6.1.0',
       date: '2026-11-06',
       notable: [
