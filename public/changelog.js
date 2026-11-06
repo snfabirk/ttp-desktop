@@ -25,6 +25,18 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.5.0',
+      date: '2026-11-06',
+      notable: [
+        'New: the first Special Set "Neon District" - 25 cyberpunk stickers, Special Booster 300 coins.',
+        'The shop now has Regular and Special Boosters. Special Boosters can only be bought on Saturdays and Sundays - a countdown shows when they are back. You can open them any time.',
+        'The album has a tab for every set, and you can put stickers from every set on your profile - pick the set with the new set switcher.',
+        "Stickers on profiles (yours and your friends') zoom in when you hover them and tilt with your mouse."
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '6.4.0',
       date: '2026-11-06',
       notable: [

@@ -13,6 +13,7 @@
 <script src="update-indicator.js"></script>
 <script src="changelog.js"></script>
 <script src="stickers.js"></script>
+<script src="stickers-neon.js"></script>
 <script src="cos-preview.js"></script>
 <style>
   /* Shop (v5.13.0, provisorisch): rotierende Angebote (taeglich 3, woechentlich
@@ -318,6 +319,19 @@
   .booster .rates:hover .rates-pop, .booster .rates:focus .rates-pop { opacity: 1; visibility: visible; }
   .booster .rates-pop { position: absolute; left: 0; bottom: calc(100% + 6px); width: 250px; z-index: 30; background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: .74rem; line-height: 1.6; color: var(--text-dim); box-shadow: 0 10px 24px rgba(0,0,0,.5); opacity: 0; visibility: hidden; transition: opacity .15s; }
   .booster-msg { grid-column: 1 / -1; color: var(--gold); font-size: .78rem; min-height: 1em; }
+  /* Special Boosters (v6.5.0): nur am Wochenende - Status mit Live-Countdown */
+  .special-boosters .weekend-tag { color: #e8d43a; font-size: .74rem; letter-spacing: 1px; text-transform: uppercase; }
+  .booster.special { border-color: color-mix(in srgb, #e8d43a 45%, var(--border)); background: linear-gradient(135deg, color-mix(in srgb, #e8d43a 6%, transparent), color-mix(in srgb, var(--input-bg) 55%, transparent)); }
+  .booster .bwhen { font-size: .74rem; color: var(--text-dim); line-height: 1.45; }
+  .booster .bwhen .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); margin-right: 5px; vertical-align: 1px; }
+  .booster .bwhen.open { color: #7fe08a; } .booster .bwhen.open .dot { background: #7fe08a; box-shadow: 0 0 6px #7fe08a; }
+  .booster .bwhen b { font-variant-numeric: tabular-nums; color: var(--text); font-weight: normal; }
+  .booster.closed .bpack { filter: grayscale(.55) brightness(.75); }
+  .booster .bbuy em { color: var(--text-faint); font-size: .76rem; }
+  .booster .bpack.set-neon .bt, .booster .bpack.set-neon .bb { font-family: Bahnschrift, 'Arial Narrow', sans-serif; font-weight: 700; text-transform: uppercase; }
+  .booster .bpack.set-neon .bt { color: #e8d43a; text-shadow: -1px 0 #5ef0f0, 1px 0 #ff2a4a, 0 1px 3px rgba(0,0,0,.7); }
+  .booster .bpack.set-neon .bt small { color: #fff; }
+  .booster .bpack.set-neon .bb { background: #e8d43a; color: #06070b; }
   .album-link { color: var(--text-faint); text-decoration: none; } .album-link:hover { color: var(--gold); }
   .shop-note { color: var(--text-faint); font-size: 0.78rem; text-align: center; margin-top: 12px; font-style: italic; }
   /* (privat) - unsichtbar, Mauszeiger bleibt normal */
@@ -348,10 +362,14 @@
         <div class="sc-head"><h3>Daily Offers</h3><span class="sc-reset" id="dailyReset"></span></div>
         <div class="offers daily" id="dailyOffers"></div>
       </section>
-      <!-- Booster (v5.29.0): alle Booster-Sorten an einem Ort, immer kaufbar -->
+      <!-- Booster (v5.29.0): Regular = immer kaufbar; Special (v6.5.0) = nur Samstag + Sonntag -->
       <section class="shop-card">
-        <div class="sc-head"><h3>Boosters</h3><span class="sc-reset"><a href="album.html" class="album-link">open them in your Album →</a></span></div>
+        <div class="sc-head"><h3>Regular Boosters</h3><span class="sc-reset"><a href="album.html" class="album-link">open them in your Album →</a></span></div>
         <div class="boosters" id="boosterOffers"></div>
+      </section>
+      <section class="shop-card special-boosters">
+        <div class="sc-head"><h3>Special Boosters</h3><span class="sc-reset weekend-tag">Weekends only · Sat &amp; Sun</span></div>
+        <div class="boosters" id="specialOffers"></div>
       </section>
     </div>
     <aside class="col">
@@ -671,28 +689,47 @@
     }
 
     // ----- Booster: Kauf mit Zwei-Klick-Bestaetigung; Pull Rates nur hinter "?" -----
-    const BOOSTER_GRAD = { base: 'linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%)' };
-    let boosterConfirm = null, boosterMsg = '';
+    const BOOSTER_GRAD = { base: 'linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%)', neon: 'linear-gradient(160deg, #07080c 0%, #14161e 38%, #2a0a14 72%, #5a0a1e 100%)' };
+    const STK = id => (window.STICKER_SETS && window.STICKER_SETS[id]) || window.STICKERS;
+    const bfan = id => { const L = STK(id); if (!L) return ''; const an = L.SET.filter(x => x.r === 'anim'), cls = an.length === 2 ? ['f0', 'f2'] : ['f0', 'f1', 'f2']; return an.map((x, i) => `<div class="${cls[i] || ''}">${L.square(x)}</div>`).join(''); };
+    // "2d 14h 32m 10s" bis zum Zeitpunkt
+    const countdown = at => { let t = Math.max(0, Math.floor((at - Date.now()) / 1000)); const d = Math.floor(t / 86400); t %= 86400; const h = Math.floor(t / 3600); t %= 3600; const m = Math.floor(t / 60), sec = t % 60; return `${d ? `${d}d ` : ''}${d || h ? `${h}h ` : ''}${m}m ${String(sec).padStart(2, '0')}s`; };
+    const whenHtml = b => b.available
+      ? `<span class="dot"></span>On sale this weekend<br>ends in <b data-cd="${b.closesAt}">${countdown(b.closesAt)}</b>`
+      : `<span class="dot"></span>Only on weekends<br>available in <b data-cd="${b.opensAt}">${countdown(b.opensAt)}</b>`;
+    let boosterConfirm = null, boosterMsg = '', boosterMsgSpecial = false;
     function renderBoosters() {
       const list = shop.boosters || [];
       const rt = shop.boosterRates || { animChance: .1, dupeRefund: { common: 3, uncommon: 8, holo: 50, anim: 300 } };
-      document.getElementById('boosterOffers').innerHTML = list.map(b => {
+      const one = b => {
         const btn = (q) => {
           const cost = b.price * q, key = `${b.id}:${q}`, conf = boosterConfirm === key, short = shop.coins < cost;
           return `<button type="button" class="offer-buy${conf ? ' confirm' : ''}${short ? ' short' : ''}" data-booster="${b.id}" data-qty="${q}"${short ? ' disabled title="Not enough coins"' : ''}>${conf ? `Buy ${q} for 🪙 <b>${fmtNum(cost)}</b>?` : `${q > 1 ? `${q}× · ` : ''}🪙 <b>${fmtNum(cost)}</b>`}</button>`;
         };
-        return `<div class="booster${b.released ? '' : ' soon'}">
-          <span class="bwrap"><span class="bpack" style="background:${BOOSTER_GRAD[b.id] || '#333'}"><span class="bc t"></span><span class="bfan">${window.STICKERS ? window.STICKERS.SET.filter(x => x.r === 'anim').map((x, i) => `<div class="f${i}">${window.STICKERS.square(x)}</div>`).join('') : ''}</span><span class="bt">Three-Trick-Pony<br><small>${esc(b.name)}</small></span><span class="bb">BOOSTER PACK</span><i></i><span class="bc b"></span></span></span>
+        const canBuy = b.released && b.available !== false;
+        return `<div class="booster${b.released ? '' : ' soon'}${b.special ? ' special' : ''}${b.special && !b.available ? ' closed' : ''}">
+          <span class="bwrap"><span class="bpack set-${b.id}" style="background:${BOOSTER_GRAD[b.id] || '#333'}"><span class="bc t"></span><span class="bfan">${bfan(b.id)}</span><span class="bt">Three-Trick-Pony<br><small>${esc(b.name)}</small></span><span class="bb">${b.special ? 'SPECIAL BOOSTER' : 'BOOSTER PACK'}</span><i></i><span class="bc b"></span></span></span>
           <span class="binfo">
             <span class="bname">${esc(b.name)}</span>
             <span class="bown">You own <b>${b.owned}</b> unopened · album ${b.collected} / ${b.total}</span>
-            <span class="bbuy">${b.released ? btn(1) + btn(5) : '<em>coming later</em>'}</span>
-            <span class="rates" tabindex="0">Pull rates ?<span class="rates-pop">7 stickers per booster: 4 common, 2 uncommon and 1 rare slot (Holo Rare ${Math.round((1 - rt.animChance) * 100)}% · Animated Rare ${Math.round(rt.animChance * 100)}%).<br>Duplicates give coins back: ${rt.dupeRefund.common} / ${rt.dupeRefund.uncommon} / ${rt.dupeRefund.holo} / ${rt.dupeRefund.anim}.</span></span>
+            ${b.special ? `<span class="bwhen${b.available ? ' open' : ''}">${whenHtml(b)}</span>` : ''}
+            <span class="bbuy">${canBuy ? btn(1) + btn(5) : b.released ? '<em>Sat &amp; Sun only</em>' : '<em>coming later</em>'}</span>
+            <span class="rates" tabindex="0">Pull rates ?<span class="rates-pop">${b.total} stickers in this set. 7 stickers per booster: 4 common, 2 uncommon and 1 rare slot (Holo Rare ${Math.round((1 - rt.animChance) * 100)}% · Animated Rare ${Math.round(rt.animChance * 100)}%).<br>Duplicates give coins back: ${rt.dupeRefund.common} / ${rt.dupeRefund.uncommon} / ${rt.dupeRefund.holo} / ${rt.dupeRefund.anim}.${b.special ? '<br>Special boosters can only be bought on Saturdays and Sundays - you can open them any time.' : ''}</span></span>
           </span>
         </div>`;
-      }).join('') + `<div class="booster-msg">${esc(boosterMsg)}</div>`;
+      };
+      const msg = sp => `<div class="booster-msg">${sp === boosterMsgSpecial ? esc(boosterMsg) : ''}</div>`;
+      document.getElementById('boosterOffers').innerHTML = list.filter(b => !b.special).map(one).join('') + msg(false);
+      const sp = list.filter(b => b.special);
+      document.getElementById('specialOffers').innerHTML = (sp.length ? sp.map(one).join('') : '<p class="muted">No special sets yet.</p>') + msg(true);
     }
-    document.getElementById('boosterOffers').addEventListener('click', async e => {
+    // Countdown jede Sekunde; beim Wechsel (Wochenende beginnt/endet) Shop neu laden
+    setInterval(() => {
+      let flip = false;
+      document.querySelectorAll('[data-cd]').forEach(el => { const at = Number(el.dataset.cd); el.textContent = countdown(at); if (at <= Date.now()) flip = true; });
+      if (flip) load();
+    }, 1000);
+    const onBoosterClick = async e => {
       const b = e.target.closest('[data-booster]');
       if (!b || b.disabled) return;
       const key = `${b.dataset.booster}:${b.dataset.qty}`;
@@ -704,9 +741,12 @@
       boosterConfirm = null;
       let r;
       try { r = await (await fetch('/api/boosters/buy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ set: b.dataset.booster, qty: Number(b.dataset.qty) }) })).json(); } catch (err) { r = { ok: false, error: 'Could not reach the app server.' }; }
+      boosterMsgSpecial = !!b.closest('#specialOffers');
       boosterMsg = r.ok ? `Got ${b.dataset.qty > 1 ? `${b.dataset.qty} boosters` : 'a booster'}! Open them in your Album.` : (r.error || 'Something went wrong.');
       await load();
-    });
+    };
+    document.getElementById('boosterOffers').addEventListener('click', onBoosterClick);
+    document.getElementById('specialOffers').addEventListener('click', onBoosterClick);
 
     // shop-scenes-2.js laedt evtl. erst nach dem Shop - kurz nachfassen
     function warmThemes(keys, tries = 0) {

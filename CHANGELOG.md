@@ -1,5 +1,13 @@
 # Internal Changelog
 
+## 6.5.0 — 2026-11-06
+
+- Special Set #1 "Neon District" (user: cyberpunk, half the size, double the price): 25 stickers (2 animated, 4 holo, 7 uncommon, 12 common, rarest first), booster 300. Art source theme-lab/sticker-set-cyber.js (gallery: theme-lab/sticker-cyber.html), app copy public/stickers-neon.js generated from it (.front.cy -> .stk-front.cy, 'face front cy' -> 'stk-face stk-front cy').
+- Special boosters only buyable Saturday + Sunday (local time): server/lib/stickers.js weekendWindow()/availableNow(), buyBooster refuses otherwise; /api/shop boosters carry special/available/opensAt/closesAt. Opening is always allowed. Pass booster vouchers stay Base Set.
+- Shop: booster area split into 'Regular Boosters' and 'Special Boosters' (Weekends only tag, status line 'Only on weekends - available in Xd Xh Xm Xs' / 'On sale this weekend - ends in ...', ticking every second, reloads when the window flips; buy buttons replaced by 'Sat & Sun only' outside the weekend).
+- Sticker sets registry window.STICKER_SETS (base from stickers.js, neon from stickers-neon.js). Album: per-set pack look (neon: yellow band, glitch title), fan of the set's animated rares, clickable set tabs, pull-rate counts and number ranges per set, special-set hint when empty. Profile: sticker inventory shows ONE set at a time via a set switcher (‹ name ▾ ›, menu lists all sets with progress, choice remembered in localStorage ttp_inv_sticker_set - scales to many sets), sticker widget renders config.set.
+- Profile stickers (own + friends' profiles, same page): hover zooms in (1.6x small / 1.3x big), tilts toward the cursor (STICKERS.tiltTo, same depth as the album) with a glare spot; animated rares use square3d() = the album's hologram layers (shadow + 12 slabs + figure) so the figure lifts off the sticker; no filter on .sticker-w (would flatten the 3D chain); eases back on leave; off while editing or with Animations: Off.
+
 ## 6.4.0 — 2026-11-06
 
 - December 2026 pass (designs approved in theme-lab/2026-12-winter.html + 2026-12-christmas-3d.html): tiers 5 border Frost Ring, 10 frame Snowdrift, 13 avatar Snow Pony, 15 theme Winter Village (refined) - 20 border Garland Ring, 22 avatar Yule Steed (animated), 25 frame Fireside (+ optional fireplace background), 30 theme Christmas Eve (animated).

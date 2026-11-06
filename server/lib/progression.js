@@ -477,8 +477,11 @@ function claimPassCoins({ tier, overflow, all } = {}) {
 
 // ----- Booster & Sticker (v5.29.0) -----
 function boosterSetsView(state) {
+  const win = STICKERS.weekendWindow();
   return STICKERS.SETS.map(st => ({
     id: st.id, name: st.name, price: st.price, released: st.released,
+    special: !!st.special, available: STICKERS.availableNow(st),
+    ...(st.special ? { opensAt: win.opensAt, closesAt: win.closesAt } : {}),
     owned: state.boosters[st.id] || 0,
     total: st.stickers.length,
     collected: Object.keys(state.stickers[st.id] || {}).length
@@ -487,6 +490,7 @@ function boosterSetsView(state) {
 function buyBooster(setId, qty = 1) {
   const st = STICKERS.getSet(setId);
   if (!st || !st.released) return { ok: false, error: 'This booster is not available.' };
+  if (!STICKERS.availableNow(st)) return { ok: false, error: 'Special boosters can only be bought on Saturdays and Sundays.' };
   qty = Math.max(1, Math.min(10, Math.floor(Number(qty) || 1)));
   const state = readState();
   const cost = st.price * qty;

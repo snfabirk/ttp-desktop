@@ -381,6 +381,10 @@
   // Nur das Sticker-Quadrat (ohne Traegerkarte) - fuers Profil (v5.29.0).
   // Animated Rares bekommen ihre Figur als eigene Ebene mit Hoehen-Schatten.
   const square = s => `<div class="stk-square r-${s.r}">${art(s.id)}${POP[s.id] ? `<div class="stk-sq-pop"><svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${POP[s.id]()}</svg></div>` : ''}</div>`;
+
+  // Sticker-Quadrat mit echter Hologramm-Figur wie im Album (v6.5.0): Animated
+  // Rares bekommen Schatten + Schichten (popLayers), tiltTo hebt sie an.
+  const square3d = s => POP[s.id] ? `<div class="stk-sq3d r-${s.r}"><div class="stk-square r-${s.r}">${art(s.id)}</div>${popLayers(s.id)}</div>` : square(s);
   const sq = document.createElement('style');
   sq.textContent = `.stk-square { position: relative; width: 100%; height: 100%; border-radius: 12px; overflow: hidden; clip-path: inset(0 round 12px); }
   .stk-square > svg { width: 100%; height: 100%; display: block; }
@@ -388,8 +392,21 @@
   .stk-square.r-anim { box-shadow: 0 0 14px rgba(255,90,180,.55), 0 4px 12px rgba(0,0,0,.4); }
   .stk-sq-pop { position: absolute; inset: 0; pointer-events: none; filter: drop-shadow(4px 7px 4px rgba(0,0,0,.5)); }
   .stk-sq-pop svg { width: 100%; height: 100%; overflow: visible; }
-  html.fx-off .stk-square *, html.fx-paused .stk-square * { animation-play-state: paused !important; }`;
+  html.fx-off .stk-square *, html.fx-paused .stk-square * { animation-play-state: paused !important; }
+  /* 3D-Variante (Profil): gleiche Hologramm-Ebenen wie die Album-Karte. Keine filter/opacity
+     auf Elementen in der 3D-Kette - sonst flacht Chrome alles ab (nur auf den Blaettern). */
+  .stk-sq3d { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
+  .stk-sq3d > .stk-square { box-shadow: 0 6px 14px rgba(0,0,0,.45); }
+  .stk-sq3d > .pop, .stk-sq3d > .pop-shadow { position: absolute; inset: 0; pointer-events: none; }
+  .stk-sq3d > .pop { transform: translateZ(calc(var(--lift, 0px) + var(--i, 0) * var(--step, 0px))) scale(var(--comp, 1)); transition: transform .3s ease-out; }
+  .stk-sq3d > .pop.slab { filter: brightness(var(--shade, .5)) saturate(1.15) contrast(1.1); }
+  .stk-sq3d > .pop-shadow { transform: translate(3%, 5%); filter: brightness(0) blur(4px); opacity: .45; }
+  .stk-sq3d svg { width: 100%; height: 100%; overflow: visible; }
+  html.fx-off .stk-sq3d *, html.fx-paused .stk-sq3d * { animation-play-state: paused !important; }`;
   document.head.appendChild(sq);
 
-  window.STICKERS = { SET, RL, RC, art, frontHtml, square, enableTilt, tiltTo, untilt, TOTAL: SET.length, HEAD };
+  window.STICKERS = { SET, RL, RC, art, frontHtml, square, square3d, enableTilt, tiltTo, untilt, TOTAL: SET.length, HEAD };
+  // Alle Sticker-Sets nach id (v6.5.0) - weitere Sets melden sich hier an (stickers-neon.js)
+  window.STICKER_SETS = window.STICKER_SETS || {};
+  window.STICKER_SETS.base = window.STICKERS;
 })();
