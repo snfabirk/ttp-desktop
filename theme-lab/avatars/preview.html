@@ -1,0 +1,6 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Avatar preview</title>
+<style>body{background:#0b1020;color:#c8aa6e;font-family:Georgia,serif;margin:20px}h2{font-family:Cinzel,Georgia;margin:16px 0 8px}
+.grid{display:flex;flex-wrap:wrap;gap:22px}.it{text-align:center;width:150px;font-size:13px;color:#ccc}.it img{width:132px;height:132px;border-radius:50%;border:3px solid #c8aa6e;display:block;margin:0 auto 6px;background:#000}.it small{display:block;color:#888}</style></head><body>
+<h2>Shop · Refined</h2><div class="grid" id="r"></div><h2>Shop · Fancy</h2><div class="grid" id="f"></div><h2>Shop · Animated</h2><div class="grid" id="a"></div><h2>November-Pass (Halloween) · Stufe 13 / 22</h2><div class="grid" id="p"></div>
+<script>const L={r:[['golden','Golden Mane'],['crimson','Crimson Charger'],['meadow','Meadow Pony'],['tide','Tidecaller'],['dusk','Lavender Dusk']],f:[['hextech','Hextech Steed'],['ember','Ember Mare'],['galaxy','Starborn Unicorn'],['crowned','Royal Pony']],a:[['prism','Prism Pony'],['cyber','Neon Runner']],p:[['pass-2026-11-pumpkin','Pumpkin Pony · 13'],['pass-2026-11-haunted','Phantom Steed · 22']]};
+for(const k in L)document.getElementById(k).innerHTML=L[k].map(([id,n])=>`<div class="it"><img src="../../public/avatars/${id.startsWith('pass')?'avatar-'+id:'avatar-shop-'+id}.svg">${n}</div>`).join('');</script></body></html>

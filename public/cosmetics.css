@@ -367,3 +367,82 @@ html.fx-paused .pframe *,
 html.fx-paused .pframe-bg::after {
   animation-play-state: paused !important;
 }
+
+/* ----- Dezember-Pass 2026: Winter (5/10/13/15) + Weihnachten (20/22/25/30) -----
+   Deko haengt cosmetics-2026-12.js an. */
+.cos-border-2026-12-frost,
+.cos-border-2026-12-garland { padding: 0; overflow: visible; }
+.cos-border-2026-12-frost::before,
+.cos-border-2026-12-garland::before { display: none; }
+/* Stufe 5: Frost Ring */
+.cos-border-2026-12-frost .fr-ring { position: absolute; left: -22%; top: -22%; width: 144%; height: 144%; z-index: 2; overflow: visible; pointer-events: none; filter: drop-shadow(0 0 3px rgba(160, 215, 255, .45)); }
+.cos-border-2026-12-frost .fr-glint { opacity: 0; animation: cos-fr-glint 5.5s ease-in-out infinite; }
+@keyframes cos-fr-glint { 0%, 70%, 100% { opacity: 0; } 80% { opacity: 1; } 90% { opacity: 0; } }
+/* Stufe 20: Garland Ring */
+.cos-border-2026-12-garland .gr-ring { position: absolute; left: -32%; top: -32%; width: 164%; height: 164%; z-index: 2; overflow: visible; pointer-events: none; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .5)); }
+.cos-border-2026-12-garland .gr-bulb { animation: cos-gr-bulb 2.4s ease-in-out infinite; }
+.cos-border-2026-12-garland .gr-halo { transform-box: fill-box; transform-origin: center; animation: cos-gr-halo 2.4s ease-in-out infinite; }
+@keyframes cos-gr-bulb { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+@keyframes cos-gr-halo { 0%, 100% { opacity: .08; transform: scale(.7); } 50% { opacity: .45; transform: scale(1.2); } }
+
+/* Stufe 10: Snowdrift - Schnee liegt auf der Oberkante, Eiszapfen, bereifte Ecken */
+.pframe-frame-2026-12-snowdrift {
+  border: 1px solid #5d84ad;
+  background: linear-gradient(180deg, rgba(220, 238, 255, .06), rgba(0, 0, 0, .12));
+  box-shadow: inset 0 0 0 1px rgba(200, 230, 255, .12), inset 0 0 30px rgba(140, 190, 240, .12), 0 8px 26px rgba(0, 0, 0, .35);
+}
+.pframe .sd-pile { position: absolute; left: -8px; right: -8px; top: -20px; height: 48px; z-index: 5; pointer-events: none; }
+.pframe .sd-pile svg { display: block; overflow: visible; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .25)); }
+.pframe .sd-sparkle { animation: cos-sd-sparkle 6s ease-in-out infinite; }
+@keyframes cos-sd-sparkle { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+.pframe .sd-frost { position: absolute; bottom: 0; width: 110px; height: 110px; z-index: 0; pointer-events: none; border-radius: inherit; background: radial-gradient(circle at 0 100%, rgba(235, 246, 255, .3), transparent 70%); }
+.pframe .sd-frost.l { left: 0; }
+.pframe .sd-frost.r { right: 0; transform: scaleX(-1); }
+
+/* Stufe 25: Fireside - Kaminschein, Girlande (Lichter + Kugeln bei Hover), 3D-Neigung */
+.pframe-frame-2026-12-fireside {
+  border: 2px solid #6b3a22;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 110%, rgba(255, 130, 40, .26), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 20% 100%, rgba(255, 90, 30, .14), transparent 70%),
+    linear-gradient(180deg, rgba(60, 24, 14, .45), rgba(30, 10, 8, .6));
+  box-shadow: inset 0 0 0 1px rgba(255, 210, 150, .15), inset 0 -30px 60px rgba(255, 120, 40, .16), 0 10px 30px rgba(0, 0, 0, .45);
+  transition: transform .25s ease-out;
+}
+.pframe .fs-hearth { position: absolute; inset: 0; z-index: 0; border-radius: inherit; pointer-events: none; overflow: hidden; }
+.pframe .fs-hearth::after { content: ''; position: absolute; left: 10%; right: 10%; bottom: -20px; height: 70px; background: radial-gradient(ellipse at 50% 100%, rgba(255, 160, 60, .42), transparent 70%); animation: cos-fs-hearth 2.8s ease-in-out infinite alternate; }
+@keyframes cos-fs-hearth { 0% { opacity: .55; transform: scaleY(.9); } 40% { opacity: .9; } 100% { opacity: .65; transform: scaleY(1.1); } }
+html.fx-off .pframe .fs-hearth::after { animation: none; }
+html.fx-paused .pframe .fs-hearth::after { animation-play-state: paused; }
+.pframe .fs-garland { position: absolute; left: -10px; right: -10px; top: -16px; height: 56px; z-index: 5; pointer-events: none; }
+.pframe .fs-garland svg { display: block; overflow: visible; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .4)); }
+.pframe .fs-light { opacity: .15; transition: opacity .35s ease; }
+.pframe .fs-orn { transform-box: fill-box; transform-origin: 50% 0; transform: scale(0); transition: transform .45s cubic-bezier(.3, 1.6, .5, 1); }
+.pframe-frame-2026-12-fireside:hover .fs-light,
+.pframe-frame-2026-12-fireside.intro .fs-light,
+.pv-board.pframe-frame-2026-12-fireside .fs-light { opacity: 1; transition-delay: calc(var(--i) * 45ms); }
+.pframe-frame-2026-12-fireside:hover .fs-orn,
+.pframe-frame-2026-12-fireside.intro .fs-orn,
+.pv-board.pframe-frame-2026-12-fireside .fs-orn { transform: scale(1); transition-delay: calc(.35s + var(--i) * 70ms); }
+body.editing .pframe-frame-2026-12-fireside .fs-orn { transform: scale(0); }
+/* Optionaler Profil-Hintergrund: Kaminzimmer - Holzvertaefelung, Feuerschein, Funken */
+.pframe-bg.bg-frame-2026-12-fireside {
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 108%, rgba(255, 140, 50, .45), transparent 70%),
+    radial-gradient(ellipse 30% 20% at 50% 100%, rgba(255, 210, 120, .35), transparent 70%),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, .22) 0 2px, transparent 2px 120px),
+    linear-gradient(180deg, #1a0c08 0%, #2a130c 55%, #3a1a0e 100%);
+}
+.pframe-bg.bg-frame-2026-12-fireside::after {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(1.6px 1.6px at 20% 80%, #ffcf7a 50%, transparent), radial-gradient(1.2px 1.2px at 46% 90%, #ffb347 50%, transparent),
+    radial-gradient(1.4px 1.4px at 62% 76%, #ffd27a 50%, transparent), radial-gradient(1px 1px at 80% 88%, #ff8a4a 50%, transparent);
+  background-size: 100% 100%; animation: pf-embers 7s linear infinite; opacity: .8;
+}
+@keyframes pf-embers { from { transform: translateY(0); opacity: .9; } to { transform: translateY(-40%); opacity: 0; } }
+
+/* Mini-Vorschauen im Pass */
+.mini-frame-frame-2026-12-snowdrift { border: 1px solid #5d84ad; background: linear-gradient(180deg, #f4f9ff 0 22%, #b9cfe6 22% 28%, #13223a 28%); }
+.mini-frame-frame-2026-12-fireside { border: 2px solid #6b3a22; background: radial-gradient(ellipse 80% 60% at 50% 110%, rgba(255, 140, 50, .7), transparent 70%), linear-gradient(180deg, #2f6a3a 0 20%, #2a130c 20%); box-shadow: 0 0 6px rgba(255, 140, 50, .5); }
+.mini-theme-village { background: radial-gradient(circle at 74% 26%, #f2f8ff 0 7%, transparent 8%), linear-gradient(180deg, #050b18, #16304f 55%, #d9e8f7 57%, #8fb0d2); border: 1px solid rgba(255, 255, 255, .25); }
+.mini-theme-christmas { background: radial-gradient(circle at 50% 30%, #ffd86a 0 5%, transparent 6%), conic-gradient(from 160deg at 50% 32%, transparent 0 20deg, #1c4a2a 20deg 40deg, transparent 40deg), linear-gradient(180deg, #05040c, #0f0a1e 50%, #e8eef8 72%, #b9c4d6); border: 1px solid #f2c25a; box-shadow: 0 0 8px rgba(242, 194, 90, .6); }

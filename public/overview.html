@@ -705,8 +705,12 @@
     // Eigene Aktivitaet aus lokalen Daten (Spiele + LP-Bank); Freunde folgen mit
     // Supabase - deshalb steht der Spielername immer mit dabei (ohne #Tag).
     let lastProgression = null;
-    let friendEvents = [];
+    let friendEvents = [], myExtraEvents = [];
+    const extraItem = (e, w) => e.kind === 'levelup'
+      ? { at: e.at, ic: '⭐', t: `${w} reached <span style="color:var(--gold)">Level ${e.level}</span>` }
+      : { at: e.at, ic: '🏆', t: `${w} unlocked the trophy <span style="color:var(--gold)">${esc(e.name)}</span>` };
     async function loadFriendActivity() {
+      try { myExtraEvents = ((await (await fetch('/api/activity/mine')).json()).events) || []; if (lastProgression) renderFeed(lastProgression); } catch (e) {}
       try {
         const res = await fetch('/api/friends/activity');
         if (!res.ok) return;
@@ -734,8 +738,11 @@
           t: e.filled ? `${who} filled the LP Bank · <span style="color:var(--gold)">+${fmtNum(e.xp)} XP</span>` : `${who} gained <span class="pos">+${e.gained} LP</span>`
         })),
         // Freunde (v6.2.0): ihre Spiele / vollen LP-Banks, Name fuehrt zum Profil
+        // eigene Level-Ups + Trophies (v6.3.0)
+        ...myExtraEvents.map(e => extraItem(e, who)),
         ...friendEvents.map(e => {
-          const fw = `<a class="feed-who feed-friend" href="profile.html?u=${encodeURIComponent(e.userId)}" title="Open ${esc(e.username)}'s profile"><img src="${e.avatar ? `avatars/${e.avatar}.png` : 'avatar-placeholder.svg'}" alt="">${esc(e.username)}</a>`;
+          const fw = `<a class="feed-who feed-friend" href="profile.html?u=${encodeURIComponent(e.userId)}" title="Open ${esc(e.username)}'s profile"><img src="${e.avatar ? `avatars/${e.avatar}.svg` : 'avatar-placeholder.svg'}" alt="">${esc(e.username)}</a>`;
+          if (e.kind === 'levelup' || e.kind === 'trophy') return extraItem(e, fw);
           return e.kind === 'lpbank'
             ? { at: e.at, ic: '📈', t: `${fw} filled the LP Bank · <span style="color:var(--gold)">+${fmtNum(e.xp)} XP</span>` }
             : { at: e.at, ic: e.win ? '🏅' : '⚔️', t: `${fw} <span class="${e.win ? 'pos' : 'neg'}">${e.win ? 'won' : 'lost'}</span> with ${esc(e.champName || e.champId)} · <span style="color:var(--gold)">+${fmtNum(e.xp)} XP</span>` };

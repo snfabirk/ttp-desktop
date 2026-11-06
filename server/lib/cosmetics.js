@@ -11,6 +11,9 @@
 // public/theme-fx.js). Hat ein Monat (noch) keine Cosmetics, gibt es auf
 // diesen Stufen stattdessen Coins (FALLBACK_COSMETIC_COINS in progression.js).
 
+// Seit v6.3.0 (Nutzerdesign 2026-11-06) zusaetzlich 2 Profilbilder pro
+// Monat: Stufe 13 = simpel (refined), Stufe 22 = besser (fancy) - type
+// 'avatar', Bild public/avatars/<id>.svg. Ein Monat hat damit 8 Cosmetics.
 // Aufbau pro Monat (Nutzerdesign 2026-10-09):
 //   Stufe  5 / 20 = Profilbild-Rahmen (border)  - simpel / fancy
 //   Stufe 10 / 25 = Profil-Rahmen um alle Widgets (frame) - simpel / fancy
@@ -26,7 +29,7 @@ const RARITIES = ['basic', 'refined', 'fancy', 'animated', 'animatedplus'];
 // icon (v5.28.0, App-Icon-Skins): bewusst guenstig - Spass-Kauf (Nutzeridee)
 // avatar (v6.1.0): eigenes Profilbild statt Riot-Icon. Kategorie steht, die
 // Bilder entwirft der Nutzer spaeter. Eintrag: { id: 'avatar-...', type:
-// 'avatar', name, rarity, source: 'shop' } + Bild public/avatars/<id>.png
+// 'avatar', name, rarity, source: 'shop' } + Bild public/avatars/<id>.svg
 // (quadratisch, 256x256). Preise vorlaeufig.
 const PRICES = {
   basic: { border: 0, frame: 0, theme: 0, icon: 0, avatar: 0 },
@@ -151,7 +154,33 @@ const COSMETICS = [
   { id: 'theme-2026-10-hallows', type: 'theme', name: 'All Hallows', rarity: 'refined', passMonth: '2026-10', passUntil: '2026-11', tier: 15, themeKey: 'hallows' },
   { id: 'border-2026-10-haunted', type: 'border', name: "Widow's Nest", rarity: 'fancy', passMonth: '2026-10', passUntil: '2026-11', tier: 20 },
   { id: 'frame-2026-10-manor', type: 'frame', name: 'Ectoplasm Manor', rarity: 'fancy', passMonth: '2026-10', passUntil: '2026-11', tier: 25, hasBackground: true },
-  { id: 'theme-2026-10-haunted', type: 'theme', name: 'Haunted Night', rarity: 'animated', passMonth: '2026-10', passUntil: '2026-11', tier: 30, themeKey: 'haunted', animated: true }
+  { id: 'theme-2026-10-haunted', type: 'theme', name: 'Haunted Night', rarity: 'animated', passMonth: '2026-10', passUntil: '2026-11', tier: 30, themeKey: 'haunted', animated: true },
+
+  // ----- Dezember 2026 (v6.4.0): Stufen 5-15 Winter, 20-30 Weihnachten -----
+  { id: 'border-2026-12-frost', type: 'border', name: 'Frost Ring', rarity: 'refined', passMonth: '2026-12', tier: 5 },
+  { id: 'frame-2026-12-snowdrift', type: 'frame', name: 'Snowdrift', rarity: 'refined', passMonth: '2026-12', tier: 10 },
+  { id: 'avatar-pass-2026-12-snow', type: 'avatar', name: 'Snow Pony', rarity: 'refined', passMonth: '2026-12', tier: 13 },
+  { id: 'theme-2026-12-village', type: 'theme', name: 'Winter Village', rarity: 'refined', passMonth: '2026-12', tier: 15, themeKey: 'village' },
+  { id: 'border-2026-12-garland', type: 'border', name: 'Garland Ring', rarity: 'fancy', passMonth: '2026-12', tier: 20 },
+  { id: 'avatar-pass-2026-12-yule', type: 'avatar', name: 'Yule Steed', rarity: 'fancy', passMonth: '2026-12', tier: 22, animated: true },
+  { id: 'frame-2026-12-fireside', type: 'frame', name: 'Fireside', rarity: 'fancy', passMonth: '2026-12', tier: 25, hasBackground: true },
+  { id: 'theme-2026-12-christmas', type: 'theme', name: 'Christmas Eve', rarity: 'animated', passMonth: '2026-12', tier: 30, themeKey: 'christmas', animated: true },
+
+  // ----- Profilbilder (v6.3.0) - Bilder: public/avatars/<id>.svg, erzeugt
+  // von theme-lab/avatars/build-avatars.js. Pass: Stufe 13 simpel, 22 besser.
+  { id: 'avatar-pass-2026-11-pumpkin', type: 'avatar', name: 'Pumpkin Pony', rarity: 'refined', passMonth: '2026-11', tier: 13 },
+  { id: 'avatar-pass-2026-11-haunted', type: 'avatar', name: 'Phantom Steed', rarity: 'fancy', passMonth: '2026-11', tier: 22, animated: true },
+  { id: 'avatar-shop-golden', type: 'avatar', name: 'Golden Mane', rarity: 'refined', source: 'shop' },
+  { id: 'avatar-shop-crimson', type: 'avatar', name: 'Crimson Charger', rarity: 'refined', source: 'shop' },
+  { id: 'avatar-shop-meadow', type: 'avatar', name: 'Meadow Pony', rarity: 'refined', source: 'shop' },
+  { id: 'avatar-shop-tide', type: 'avatar', name: 'Tidecaller', rarity: 'refined', source: 'shop' },
+  { id: 'avatar-shop-dusk', type: 'avatar', name: 'Lavender Dusk', rarity: 'refined', source: 'shop' },
+  { id: 'avatar-shop-hextech', type: 'avatar', name: 'Hextech Steed', rarity: 'fancy', source: 'shop' },
+  { id: 'avatar-shop-ember', type: 'avatar', name: 'Ember Mare', rarity: 'fancy', source: 'shop' },
+  { id: 'avatar-shop-galaxy', type: 'avatar', name: 'Starborn Unicorn', rarity: 'fancy', source: 'shop' },
+  { id: 'avatar-shop-crowned', type: 'avatar', name: 'Royal Pony', rarity: 'fancy', source: 'shop' },
+  { id: 'avatar-shop-prism', type: 'avatar', name: 'Prism Pony', rarity: 'animated', source: 'shop', animated: true },
+  { id: 'avatar-shop-cyber', type: 'avatar', name: 'Neon Runner', rarity: 'animated', source: 'shop', animated: true }
 ];
 
 const byId = new Map(COSMETICS.map(c => [c.id, c]));

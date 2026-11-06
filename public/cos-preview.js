@@ -46,6 +46,7 @@
     starfall: ['#0a0f2a', '#ffd86b', '#e8ecff', '#2c3a6e'], koi: ['#1b1c1f', '#e0303a', '#f2f2f2', '#5a5d63'],
     desert: ['#2a1424', '#ffb35c', '#f6ece4', '#7a4a2a'], forest: ['#0a1a12', '#7ee08a', '#eaf6ec', '#2c5a38'],
     hallows: ['#0f0e10', '#ff7a18', '#ece6e0', '#3d3530'], haunted: ['#0b0a10', '#ff8a2a', '#efe9f5', '#3a2d45'],
+    village: ['#0a1424', '#9fd4ff', '#eaf3ff', '#2c4566'], christmas: ['#12070a', '#f2c25a', '#fbefe2', '#5a2a26'],
     magmaplus: ['#0d0604', '#ff8a3a', '#f6e8dc', '#5a2a14'], magma: ['#0d0604', '#ff8a3a', '#f6e8dc', '#5a2a14'], cyberpunk: ['#07080c', '#e8d43a', '#e8ecf2', '#3a3a22'], aurora: ['#050a12', '#6ef0b4', '#e8f4f8', '#23485a'], lanterns: ['#120c1e', '#ffb560', '#fbefe4', '#6a3a3a'], skyisles: ['#1a2448', '#ffd27a', '#fdf6ea', '#5a6aa0'], cherry: ['#120c2a', '#ffb0cc', '#f6eef6', '#5a3a6a'], arctic: ['#16213a', '#9ad8ff', '#f2f8fc', '#3a6a8a']
   };
   const me = { icon: 'avatar-placeholder.svg', name: 'You', level: 1, border: 'none', frame: null };
@@ -79,6 +80,8 @@
     const theme = o.type === 'theme' ? o.themeKey : null;
     const border = o.type === 'border' ? o.id : me.border;
     const frame = o.type === 'frame' ? o.id : me.frame;
+    // Profilbild (v6.3.0): Vorschau mit dem neuen Bild statt des eigenen
+    const icon = o.type === 'avatar' ? `avatars/${o.id}.svg` : me.icon;
     const cs = getComputedStyle(document.documentElement);
     const [bg, accent, text, line] = theme && PALETTE[theme] ? PALETTE[theme] : ['--bg', '--gold', '--text', '--border'].map(v => cs.getPropertyValue(v).trim());
     const tile = `background:color-mix(in srgb, ${bg} 70%, transparent);border-color:${line}`;
@@ -90,7 +93,7 @@
     else el.innerHTML = `
       <div class="pv-board${frame ? ` pframe pframe-${frame}` : ''}">
         <div class="pv-card" style="${tile};color:${text}">
-          <span class="cos-border cos-${border}"><img src="${me.icon}" alt=""></span>
+          <span class="cos-border cos-${border}"><img src="${icon}" alt=""></span>
           <span><b style="color:${accent}">${esc(me.name)}</b><small style="color:${text};opacity:.75">Level ${me.level}</small></span>
         </div>
         <div class="pv-row"><span style="${tile}"></span><span style="${tile}"></span></div>

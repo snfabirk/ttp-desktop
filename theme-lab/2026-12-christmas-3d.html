@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Christmas Eve (Three.js) - December tiers 20/22/25/30 (Theme Lab)</title>
+<!-- Theme Lab (nicht im Installationspaket): Dezember, zweite 4 Stufen =
+     WEIHNACHTEN. Stufe 30 Theme "Christmas Eve" (animiert): Marktplatz mit
+     grossem Baum, Lichterketten laufen in Wellen, Schnee in 3 Tiefen + Bokeh,
+     warmes Licht an der Maus (geht aus, wenn die Maus das Fenster verlaesst).
+     Easter Egg: 5x auf den Stern -> Rentierschlitten mit Goldstaub vor dem
+     Mond, Baum leuchtet auf. Stufe 20 Border "Garland Ring", Stufe 25 Rahmen
+     "Fireside" (Lichter + Kugeln nur bei Hover, drehen mitten in der Bewegung
+     um, 3D-Neigung), Stufe 22 Profilbild "Yule Steed". -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12070a; --panel-bg: rgba(22, 9, 12, .62); --border: #5a2a26; --gold: #f2c25a; --text: #fbefe2; --text-dim: #d1b8a6; --text-faint: #8a6e60;
+  }
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: Georgia, serif; color: var(--text); }
+  body { background: linear-gradient(180deg, #05040c 0%, #0f0a1e 45%, #2a1220 80%, #3a1a14 100%); }
+  #scene, #fx { position: fixed; inset: 0; width: 100%; height: 100%; }
+  #scene { pointer-events: none; }
+  #scene .star-hit { pointer-events: auto; cursor: pointer; }
+  #fx { pointer-events: none; z-index: 3; }
+  .warm { position: fixed; inset: 0; pointer-events: none; z-index: 4; opacity: 0; transition: opacity .8s ease;
+    background: radial-gradient(circle 360px at var(--mx, 50%) var(--my, 50%), rgba(255, 190, 110, .16), transparent 70%); mix-blend-mode: screen; }
+  .warm.on { opacity: 1; }
+  .tree-glow { transition: opacity 1s ease; }
+  .sleigh { opacity: 0; }
+
+  /* ----- Beispiel-App ----- */
+  .nav { position: fixed; top: 18px; left: 24px; display: flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel-bg); backdrop-filter: blur(10px); z-index: 6; }
+  .nav span { padding: 5px 11px; border-radius: 14px; font-family: 'Cinzel', serif; font-size: .78rem; letter-spacing: .5px; color: var(--text-dim); }
+  .nav span.on { background: var(--gold); color: var(--bg); }
+  header { position: relative; text-align: center; padding-top: 34px; z-index: 5; }
+  h1 { margin: 0; font-family: 'Cinzel', serif; font-weight: 900; font-size: 3rem; letter-spacing: 3px; color: var(--gold); text-shadow: 0 0 24px rgba(242, 194, 90, .45), 0 0 50px rgba(200, 40, 30, .25); }
+  .subtitle { margin: 6px 0 0; color: var(--text-dim); font-style: italic; letter-spacing: 6px; text-transform: uppercase; }
+  .wrap { position: relative; z-index: 5; max-width: 1080px; margin: 30px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 26px; padding: 0 30px; }
+  .card { background: var(--panel-bg); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; box-shadow: 0 4px 16px rgba(0,0,0,.3); }
+  .card h3 { margin: 0 0 8px; color: var(--gold); font-family: 'Cinzel', serif; font-size: 1rem; letter-spacing: 1px; }
+  .muted { color: var(--text-dim); font-size: .9rem; }
+  .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(90, 42, 38, .5); font-size: .9rem; }
+  .row:last-child { border-bottom: none; } .xp { color: var(--gold); }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+  .tile { display: flex; flex-direction: column; gap: 6px; } .tile b { font-family: 'Cinzel', serif; color: var(--gold); letter-spacing: 1px; }
+  .tag { display: inline-block; margin-bottom: 8px; padding: 1px 8px; border: 1px dashed var(--text-faint); border-radius: 9px; color: var(--text-faint); font-size: .7rem; letter-spacing: 1px; text-transform: uppercase; }
+  .name { font-family: 'Cinzel', serif; font-size: 1.4rem; color: var(--gold); letter-spacing: 1px; }
+
+  /* ----- Stufe 20: Garland Ring ----- */
+  .avatar { display: flex; align-items: center; gap: 26px; }
+  .gring { --s: 88px; position: relative; width: var(--s); height: var(--s); flex-shrink: 0; margin: 14px 18px; }
+  .gring img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; display: block; z-index: 1; }
+  .gring svg { position: absolute; left: -32%; top: -32%; width: 164%; height: 164%; overflow: visible; z-index: 2; pointer-events: none; }
+  .gring .bulb { transition: opacity .25s ease; }
+
+  /* ----- Stufe 25: Fireside ----- */
+  .fireside { position: relative; padding: 26px 22px 22px; border-radius: 16px; transform-style: preserve-3d; transition: transform .25s ease-out;
+    border: 2px solid #6b3a22;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 110%, rgba(255, 130, 40, .32), transparent 70%),
+      radial-gradient(ellipse 60% 40% at 20% 100%, rgba(255, 90, 30, .18), transparent 70%),
+      linear-gradient(180deg, rgba(60, 24, 14, .55), rgba(30, 10, 8, .7));
+    box-shadow: inset 0 0 0 1px rgba(255, 210, 150, .15), inset 0 -30px 60px rgba(255, 120, 40, .18), 0 10px 30px rgba(0,0,0,.45); }
+  .fireside .hearth { position: absolute; inset: 0; border-radius: 16px; pointer-events: none; overflow: hidden; }
+  .fireside .hearth::after { content: ''; position: absolute; left: 10%; right: 10%; bottom: -20px; height: 60px;
+    background: radial-gradient(ellipse at 50% 100%, rgba(255, 160, 60, .45), transparent 70%); animation: hearth 2.8s ease-in-out infinite alternate; }
+  @keyframes hearth { 0% { opacity: .55; transform: scaleY(.9); } 40% { opacity: .9; } 100% { opacity: .65; transform: scaleY(1.1); } }
+  .fireside .garland { position: absolute; left: -10px; right: -10px; top: -16px; height: 44px; pointer-events: none; z-index: 3; }
+  .fireside .garland svg { width: 100%; height: 100%; overflow: visible; display: block; }
+  .fireside .light { opacity: .15; transition: opacity .35s ease; }
+  .fireside .orn { transform-box: fill-box; transform-origin: 50% 0; transform: scale(0); transition: transform .45s cubic-bezier(.3, 1.6, .5, 1); }
+  .fireside:hover .light { opacity: 1; transition-delay: calc(var(--i) * 45ms); }
+  .fireside:hover .orn { transform: scale(1); transition-delay: calc(.35s + var(--i) * 70ms); }
+  .fireside .side { position: absolute; top: 18px; bottom: 10px; width: 16px; pointer-events: none; z-index: 2; }
+  .fireside .side.l { left: -8px; } .fireside .side.r { right: -8px; }
+  #xmas3d { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  .card { background: rgba(18, 8, 12, .55); }
+</style>
+<script type="importmap">{"imports":{"three":"../public/vendor/three/three.module.min.js","three/addons/":"../public/vendor/three/jsm/"}}</script>
+</head>
+<body>
+<canvas id="xmas3d"></canvas>
+<div class="warm" id="warm"></div>
+<div class="nav"><span class="on">⌂ Overview</span><span>Profile</span><span>Album</span><span>Challenge</span><span>Pass</span><span>Shop</span></div>
+<header><h1>League of Legends</h1><p class="subtitle">Three-Trick-Pony</p></header>
+
+<div class="wrap">
+  <div>
+    <span class="tag">Stufe 30 · Theme „Christmas Eve“ (animiert)</span>
+    <div class="card">
+      <h3>Today</h3>
+      <div class="row"><span>First Win of the Day</span><span class="xp">+400 XP</span></div>
+      <div class="row"><span>Champion of the Day</span><span class="xp">+500 XP</span></div>
+      <div class="row"><span>Grinder</span><span class="xp">+250 XP</span></div>
+    </div>
+    <div class="tiles">
+      <div class="card tile"><b>⚔️ Challenge</b><span class="muted">Day 24 · Mid</span></div>
+      <div class="card tile"><b>🎖️ Pass</b><span class="muted">Tier 30 / 30</span></div>
+    </div>
+    <p class="muted" style="margin-top:14px;font-size:.8rem">Easter Egg: 5× auf den Stern auf der Baumspitze. Maus bewegen = Kamera + Laterne. Fahr über den Profil-Rahmen rechts.</p>
+  </div>
+  <div>
+    <span class="tag">Stufe 25 · Rahmen „Fireside“ · Stufe 20 · Border „Garland Ring“ · Stufe 22 · Bild „Yule Steed“</span>
+    <div class="fireside" id="fireside">
+      <div class="hearth"></div>
+      <div class="garland"><svg viewBox="0 0 500 44" preserveAspectRatio="none" id="fsGarland"></svg></div>
+      <div class="card avatar" style="position:relative;z-index:1">
+        <div class="gring">
+          <img src="../public/avatars/avatar-pass-2026-12-yule.svg" alt="">
+          <svg viewBox="-80 -80 160 160" id="gringSvg"></svg>
+        </div>
+        <div><div class="name">LUCKSHOT</div><div class="muted">Level 24 · 🪙 3,100</div></div>
+      </div>
+      <div class="card" style="margin-top:12px;position:relative;z-index:1"><h3>About me</h3><span class="muted">One more game, then presents.</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const WARM = ['#ffd27a', '#ffb347', '#ff6a4a', '#fff2c4', '#7ad2ff'];
+// ----- Stufe 20: Garland Ring - Tannenzweige, Kugeln, Lauflicht, Samtschleife -----
+(function () {
+  const g = document.getElementById('gringSvg');
+  g.innerHTML = `<defs>
+    <linearGradient id="needle" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3f8f4c"/><stop offset="1" stop-color="#14451f"/></linearGradient>
+    <radialGradient id="velvet" cx=".4" cy=".35"><stop offset="0" stop-color="#ff4a3e"/><stop offset=".6" stop-color="#b8231f"/><stop offset="1" stop-color="#5e0d0b"/></radialGradient></defs>`;
+  const ring = el('g', {}, g);
+  for (let i = 0; i < 46; i++) { const a = i / 46 * 6.283, r = 50 + (i % 3) * 2;
+    const x = Math.cos(a) * r, y = Math.sin(a) * r, rot = a * 57.3 + 90 + (i % 2 ? 25 : -25);
+    el('path', { d: 'M0 -11 C3 -6 3 2 0 11 C-3 2 -3 -6 0 -11 Z', fill: 'url(#needle)', transform: `translate(${x} ${y}) rotate(${rot})`, opacity: .95 }, ring); }
+  for (let i = 0; i < 30; i++) { const a = i / 30 * 6.283 + .1, r = 57;
+    el('path', { d: 'M0 -7 L0 7 M-3 -4 L0 0 L3 -4 M-3 2 L0 6 L3 2', stroke: '#2a6e36', 'stroke-width': 1, fill: 'none', transform: `translate(${Math.cos(a) * r} ${Math.sin(a) * r}) rotate(${a * 57.3})` }, ring); }
+  const bulbs = [];
+  for (let i = 0; i < 16; i++) { const a = i / 16 * 6.283, r = 54, c = WARM[i % 4];
+    const h = el('circle', { cx: Math.cos(a) * r, cy: Math.sin(a) * r, r: 5.5, fill: c, opacity: .3 }, g);
+    const d = el('circle', { cx: Math.cos(a) * r, cy: Math.sin(a) * r, r: 2.2, fill: c, class: 'bulb' }, g); bulbs.push({ h, d, a }); }
+  [[150, '#f2c25a'], [215, '#1f5a8a'], [-30, '#b8231f'], [30, '#f2c25a'], [100, '#b8231f']].forEach(([deg, c]) => { const a = deg / 57.3, x = Math.cos(a) * 58, y = Math.sin(a) * 58;
+    el('circle', { cx: x, cy: y, r: 7, fill: c, stroke: '#2a1208', 'stroke-width': 1 }, g); el('circle', { cx: x - 2.4, cy: y - 2.4, r: 2, fill: '#fff', opacity: .75 }, g); });
+  const bow = el('g', { transform: 'translate(0 -58)' }, g);
+  bow.innerHTML = `<path d="M0 0 C-10 -14 -26 -10 -22 2 C-18 12 -6 8 0 0 C6 8 18 12 22 2 C26 -10 10 -14 0 0 Z" fill="url(#velvet)" stroke="#3a0806" stroke-width="1.2"/>
+    <path d="M0 0 L-8 20 L-3 18 L-2 24 Z M0 0 L8 20 L3 18 L2 24 Z" fill="#b8231f" stroke="#3a0806" stroke-width="1"/>
+    <circle r="4" fill="#d82a24" stroke="#3a0806" stroke-width="1"/><path d="M-16 -2 C-12 -6 -8 -6 -5 -3" stroke="#ff8a7a" stroke-width="1.2" fill="none" opacity=".7"/>`;
+  (function run(t) { bulbs.forEach((b, i) => { const v = .5 + .5 * Math.sin(t / 380 - i * 0.8); b.d.setAttribute('opacity', .35 + .65 * v); b.h.setAttribute('opacity', .08 + .35 * v); b.h.setAttribute('r', 4 + 3 * v); }); requestAnimationFrame(run); })(0);
+})();
+
+// ----- Stufe 25: Fireside - Girlande, Lichter + Kugeln bei Hover, 3D-Neigung -----
+(function () {
+  const g = document.getElementById('fsGarland');
+  let html = `<defs><linearGradient id="fsN" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a8a48"/><stop offset="1" stop-color="#123d1c"/></linearGradient></defs>
+    <path d="M0 14 Q62 36 125 14 Q187 36 250 14 Q312 36 375 14 Q437 36 500 14" fill="none" stroke="url(#fsN)" stroke-width="14" stroke-linecap="round"/>
+    <path d="M0 14 Q62 36 125 14 Q187 36 250 14 Q312 36 375 14 Q437 36 500 14" fill="none" stroke="#5aa864" stroke-width="2" stroke-dasharray="2 5" opacity=".7"/>`;
+  let i = 0;
+  for (let x = 12; x < 500; x += 24) { const y = 14 + Math.abs(Math.sin((x / 125) * Math.PI)) * 18; const c = WARM[i % 4];
+    html += `<g class="light" style="--i:${i}"><circle cx="${x}" cy="${y + 4}" r="7" fill="${c}" opacity=".35"/><circle cx="${x}" cy="${y + 4}" r="2.8" fill="${c}"/></g>`; i++; }
+  [[62, '#b8231f'], [187, '#f2c25a'], [312, '#1f5a8a'], [437, '#b8231f'], [125, '#f2c25a'], [375, '#b8231f']].forEach(([x, c], k) => { const y = 14 + Math.abs(Math.sin((x / 125) * Math.PI)) * 18;
+    html += `<g class="orn" style="--i:${k}"><line x1="${x}" y1="${y}" x2="${x}" y2="${y + 10}" stroke="#c9a24a" stroke-width="1.2"/><circle cx="${x}" cy="${y + 17}" r="7" fill="${c}" stroke="#2a1208" stroke-width="1"/><circle cx="${x - 2.4}" cy="${y + 14.6}" r="2" fill="#fff" opacity=".75"/></g>`; });
+  [[0, '#b8231f'], [500, '#b8231f']].forEach(([x]) => { html += `<g transform="translate(${x} 12)"><path d="M0 0 C-8 -10 -20 -7 -17 2 C-14 9 -5 6 0 0 C5 6 14 9 17 2 C20 -7 8 -10 0 0 Z" fill="#c8261f" stroke="#3a0806"/><circle r="3" fill="#e63a2e"/></g>`; });
+  g.innerHTML = html;
+  const fs = document.getElementById('fireside');
+  fs.addEventListener('mousemove', e => { const r = fs.getBoundingClientRect(); const dx = (e.clientX - r.left) / r.width - .5, dy = (e.clientY - r.top) / r.height - .5;
+    fs.style.transform = `perspective(900px) rotateY(${dx * 6}deg) rotateX(${-dy * 6}deg)`; });
+  fs.addEventListener('mouseleave', () => { fs.style.transform = ''; });
+})();
+</script>
+<script type="module" src="xmas3d-scene.js"></script>
+</body>
+</html>

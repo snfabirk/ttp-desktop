@@ -636,7 +636,7 @@
       try {
         const d = await (await fetch('/api/profile-stats')).json();
         const owned = new Set((d.owned || []).filter(c => c.type === 'theme').map(c => c.themeKey));
-        const passKeys = new Set(['hallows', 'haunted']);
+        const passKeys = new Set(['hallows', 'haunted', 'village', 'christmas']);
         if (passKeys.has(stored) && !owned.has(stored)) {
           localStorage.setItem(THEME_KEY, 'classic');
           document.documentElement.removeAttribute('data-theme');

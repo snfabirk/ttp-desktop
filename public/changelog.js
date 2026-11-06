@@ -25,6 +25,36 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.4.0',
+      date: '2026-11-06',
+      notable: [
+        "December pass is ready: winter on tiers 5-15 (Frost Ring, Snowdrift, Snow Pony, the Winter Village theme) and Christmas on tiers 20-30 (Garland Ring, Yule Steed, Fireside, and Christmas Eve - a real 3D theme).",
+        'Both December themes hide an easter egg.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
+      version: '6.3.0',
+      date: '2026-11-06',
+      notable: [
+        'Challenge page: your quests on the left, and right next to them Trophies, Pass, Roles & Picks and your 3 champions.',
+        "Friends' profiles now show their current challenge - champions, roles, start rank, current rank, goal and trophies.",
+        "The Activity box also shows level-ups and newly unlocked trophies - yours and your friends'.",
+        'The monthly pass now also has profile pictures on tiers 13 and 22 - and its coin tiers give more coins (280 / 340 / 400).',
+        'Trophies no longer give XP - they are for bragging rights.'
+      ],
+      refinements: 2,
+      bugfixes: 0
+    },
+    {
+      version: '6.2.1',
+      date: '2026-11-06',
+      notable: [],
+      refinements: 1,
+      bugfixes: 0
+    },
+    {
       version: '6.2.0',
       date: '2026-11-06',
       notable: [

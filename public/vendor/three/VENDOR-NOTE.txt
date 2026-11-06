@@ -1,0 +1,1 @@
+These addon files are from three.js r169 (examples/jsm). Only change: the bare 'three' import specifier was rewritten to '../../three.module.min.js' so they load without an import map.

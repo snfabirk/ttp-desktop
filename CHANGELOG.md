@@ -1,5 +1,27 @@
 # Internal Changelog
 
+## 6.4.0 — 2026-11-06
+
+- December 2026 pass (designs approved in theme-lab/2026-12-winter.html + 2026-12-christmas-3d.html): tiers 5 border Frost Ring, 10 frame Snowdrift, 13 avatar Snow Pony, 15 theme Winter Village (refined) - 20 border Garland Ring, 22 avatar Yule Steed (animated), 25 frame Fireside (+ optional fireplace background), 30 theme Christmas Eve (animated).
+- New files: public/cosmetics-2026-12.js (borders/frames via TTPCos.register, CSS in cosmetics.css; garland lights are CSS animations so 'Animations: Off' stops them; snowdrift/fireside garland are laid out in pixels via ResizeObserver so they don't stretch on wide profiles), public/theme-2026-12.js (village SVG scene + christmas wrapper, both registered with TTPThemeFx; mini previews for the pass hover), public/xmas-scene.js (Three.js scene as ES module: create(canvas) -> render/resize/click/dispose; frame-rate independent; one still frame when animations are off/idle; disposed on theme switch).
+- Three.js r169 vendored in public/vendor/three (MIT); the addon files' bare 'three' import was rewritten to a relative path so no import map is needed (see VENDOR-NOTE.txt).
+- Easter eggs: Winter Village - 5x on the church bell (windows go dark, relight one by one, snow thickens); Christmas Eve - 5x on the tree star (light cascade, golden spin, firework, reindeer sleigh). Clicks on boxes/controls never count.
+- settings.html ensureOwnedTheme knows the two new pass themes.
+
+## 6.3.0 — 2026-11-06
+
+- Challenge page: .ch-main grid - quests left, right column (290px) of compact rows in the order Trophies, Pass, Roles & Picks (small donut), champ 1-3 (user).
+- Trophies give no XP (user: 'flex reicht'): XP_PER_TROPHY and its XP-help row removed (it was never credited).
+- Friends extended: trophyEvents.js records newly unlocked trophies per summoner (silent seed on first run / new challenge) from each achievements batch; progression keeps levelEvents on level-up (writeState). Snapshot activity = games + LP bank + level-ups + trophies; snapshot.challenge = run (pool, roles, level, goal) + start rank from history + trophy counts. Visit mode shows a 'Current challenge' card. Overview feed shows own + friends' level-ups/trophies (GET /api/activity/mine).
+- Pass: AVATAR_TIERS 13 (simple/refined) + 22 (better/fancy) give the month's profile pictures (type avatar, passMonth + tier); months without them keep their normal coins. Pass tile shows the round picture, hover preview shows your profile with it.
+- Pass coin tiers raised 240/300/360 -> 280/340/400 (user: tiers 13/22 are no longer coins). Pass page XP card lists 7 recent games (fills the taller pass card). Challenge pass tile bar fixed (inline spans had no height).
+- Profile pictures are SVG now (avatars/<id>.svg, animated ones via SMIL); generator theme-lab/avatars/build-avatars.js (draft: 10 shop + 2 November pass).
+- Cleanup: main-process background refresh reads the running challenge from the server (GET /api/challenge/active) instead of the window's localStorage (fallback kept for unlinked setups); removed the dead welcome-popup/setup-glow CSS and the dev-only bundles cleanup line.
+
+## 6.2.1 — 2026-11-06
+
+- Friends dock: the search bar opened with + now also closes when the list is folded in or out (user).
+
 ## 6.2.0 — 2026-11-06
 
 - Friends' activity: the public snapshot carries activity (progression.getRecentActivity: last 10 games + LP Bank fills); GET /api/friends/activity (cloud.friendsActivity) merges all friends' events; overview feed mixes own + friends (friend name with avatar links to profile.html?u=), 8 rows when friends exist, refresh every 5 min; hint 'Add friends with the Friends tab' only without friends. Overview publishes the snapshot after each scan (10-min throttle).

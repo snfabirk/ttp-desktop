@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Christmas Eve 3D - December tiers 20/22/25/30 (Theme Lab)</title>
+<!-- Theme Lab (nicht im Installationspaket): Dezember, zweite 4 Stufen =
+     WEIHNACHTEN. Stufe 30 Theme "Christmas Eve" (animiert): Marktplatz mit
+     grossem Baum, Lichterketten laufen in Wellen, Schnee in 3 Tiefen + Bokeh,
+     warmes Licht an der Maus (geht aus, wenn die Maus das Fenster verlaesst).
+     Easter Egg: 5x auf den Stern -> Rentierschlitten mit Goldstaub vor dem
+     Mond, Baum leuchtet auf. Stufe 20 Border "Garland Ring", Stufe 25 Rahmen
+     "Fireside" (Lichter + Kugeln nur bei Hover, drehen mitten in der Bewegung
+     um, 3D-Neigung), Stufe 22 Profilbild "Yule Steed". -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12070a; --panel-bg: rgba(22, 9, 12, .62); --border: #5a2a26; --gold: #f2c25a; --text: #fbefe2; --text-dim: #d1b8a6; --text-faint: #8a6e60;
+  }
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: Georgia, serif; color: var(--text); }
+  body { background: linear-gradient(180deg, #05040c 0%, #0f0a1e 45%, #2a1220 80%, #3a1a14 100%); }
+  #scene, #fx { position: fixed; inset: 0; width: 100%; height: 100%; }
+  #scene { pointer-events: none; }
+  #scene .star-hit { pointer-events: auto; cursor: pointer; }
+  #fx { pointer-events: none; z-index: 3; }
+  .warm { position: fixed; inset: 0; pointer-events: none; z-index: 4; opacity: 0; transition: opacity .8s ease;
+    background: radial-gradient(circle 360px at var(--mx, 50%) var(--my, 50%), rgba(255, 190, 110, .16), transparent 70%); mix-blend-mode: screen; }
+  .warm.on { opacity: 1; }
+  .tree-glow { transition: opacity 1s ease; }
+  .sleigh { opacity: 0; }
+
+  /* ----- Beispiel-App ----- */
+  .nav { position: fixed; top: 18px; left: 24px; display: flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 18px; background: var(--panel-bg); backdrop-filter: blur(10px); z-index: 6; }
+  .nav span { padding: 5px 11px; border-radius: 14px; font-family: 'Cinzel', serif; font-size: .78rem; letter-spacing: .5px; color: var(--text-dim); }
+  .nav span.on { background: var(--gold); color: var(--bg); }
+  header { position: relative; text-align: center; padding-top: 34px; z-index: 5; }
+  h1 { margin: 0; font-family: 'Cinzel', serif; font-weight: 900; font-size: 3rem; letter-spacing: 3px; color: var(--gold); text-shadow: 0 0 24px rgba(242, 194, 90, .45), 0 0 50px rgba(200, 40, 30, .25); }
+  .subtitle { margin: 6px 0 0; color: var(--text-dim); font-style: italic; letter-spacing: 6px; text-transform: uppercase; }
+  .wrap { position: relative; z-index: 5; max-width: 1080px; margin: 30px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 26px; padding: 0 30px; }
+  .card { background: var(--panel-bg); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; box-shadow: 0 4px 16px rgba(0,0,0,.3); }
+  .card h3 { margin: 0 0 8px; color: var(--gold); font-family: 'Cinzel', serif; font-size: 1rem; letter-spacing: 1px; }
+  .muted { color: var(--text-dim); font-size: .9rem; }
+  .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(90, 42, 38, .5); font-size: .9rem; }
+  .row:last-child { border-bottom: none; } .xp { color: var(--gold); }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+  .tile { display: flex; flex-direction: column; gap: 6px; } .tile b { font-family: 'Cinzel', serif; color: var(--gold); letter-spacing: 1px; }
+  .tag { display: inline-block; margin-bottom: 8px; padding: 1px 8px; border: 1px dashed var(--text-faint); border-radius: 9px; color: var(--text-faint); font-size: .7rem; letter-spacing: 1px; text-transform: uppercase; }
+  .name { font-family: 'Cinzel', serif; font-size: 1.4rem; color: var(--gold); letter-spacing: 1px; }
+
+  /* ----- Stufe 20: Garland Ring ----- */
+  .avatar { display: flex; align-items: center; gap: 26px; }
+  .gring { --s: 88px; position: relative; width: var(--s); height: var(--s); flex-shrink: 0; margin: 14px 18px; }
+  .gring img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; display: block; z-index: 1; }
+  .gring svg { position: absolute; left: -32%; top: -32%; width: 164%; height: 164%; overflow: visible; z-index: 2; pointer-events: none; }
+  .gring .bulb { transition: opacity .25s ease; }
+
+  /* ----- Stufe 25: Fireside ----- */
+  .fireside { position: relative; padding: 26px 22px 22px; border-radius: 16px; transform-style: preserve-3d; transition: transform .25s ease-out;
+    border: 2px solid #6b3a22;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 110%, rgba(255, 130, 40, .32), transparent 70%),
+      radial-gradient(ellipse 60% 40% at 20% 100%, rgba(255, 90, 30, .18), transparent 70%),
+      linear-gradient(180deg, rgba(60, 24, 14, .55), rgba(30, 10, 8, .7));
+    box-shadow: inset 0 0 0 1px rgba(255, 210, 150, .15), inset 0 -30px 60px rgba(255, 120, 40, .18), 0 10px 30px rgba(0,0,0,.45); }
+  .fireside .hearth { position: absolute; inset: 0; border-radius: 16px; pointer-events: none; overflow: hidden; }
+  .fireside .hearth::after { content: ''; position: absolute; left: 10%; right: 10%; bottom: -20px; height: 60px;
+    background: radial-gradient(ellipse at 50% 100%, rgba(255, 160, 60, .45), transparent 70%); animation: hearth 2.8s ease-in-out infinite alternate; }
+  @keyframes hearth { 0% { opacity: .55; transform: scaleY(.9); } 40% { opacity: .9; } 100% { opacity: .65; transform: scaleY(1.1); } }
+  .fireside .garland { position: absolute; left: -10px; right: -10px; top: -16px; height: 44px; pointer-events: none; z-index: 3; }
+  .fireside .garland svg { width: 100%; height: 100%; overflow: visible; display: block; }
+  .fireside .light { opacity: .15; transition: opacity .35s ease; }
+  .fireside .orn { transform-box: fill-box; transform-origin: 50% 0; transform: scale(0); transition: transform .45s cubic-bezier(.3, 1.6, .5, 1); }
+  .fireside:hover .light { opacity: 1; transition-delay: calc(var(--i) * 45ms); }
+  .fireside:hover .orn { transform: scale(1); transition-delay: calc(.35s + var(--i) * 70ms); }
+  .fireside .side { position: absolute; top: 18px; bottom: 10px; width: 16px; pointer-events: none; z-index: 2; }
+  .fireside .side.l { left: -8px; } .fireside .side.r { right: -8px; }
+</style>
+</head>
+<body>
+<svg id="scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice">
+  <defs>
+    <radialGradient id="moonG"><stop offset="0" stop-color="#fff6e0" stop-opacity=".95"/><stop offset=".22" stop-color="#ffe6b0" stop-opacity=".35"/><stop offset="1" stop-color="#ffe6b0" stop-opacity="0"/></radialGradient>
+    <linearGradient id="roofs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b1022"/><stop offset="1" stop-color="#0d0812"/></linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3ece6"/><stop offset="1" stop-color="#c9b9b4"/></linearGradient>
+    <linearGradient id="treeG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0d3a1e"/><stop offset=".5" stop-color="#1c5a30"/><stop offset="1" stop-color="#0a2c16"/></linearGradient>
+    <radialGradient id="treeHalo"><stop offset="0" stop-color="#ffcf7a" stop-opacity=".35"/><stop offset="1" stop-color="#ffcf7a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="starG"><stop offset="0" stop-color="#fffbe6"/><stop offset=".5" stop-color="#ffd85a"/><stop offset="1" stop-color="#e09a1a"/></radialGradient>
+    <radialGradient id="winGlow"><stop offset="0" stop-color="#ffc870" stop-opacity=".6"/><stop offset="1" stop-color="#ffc870" stop-opacity="0"/></radialGradient>
+  </defs>
+  <g id="pxFar">
+  <circle cx="150" cy="200" r="170" fill="url(#moonG)"/>
+  <circle cx="150" cy="200" r="54" fill="#fff4dc"/>
+  <g fill="#e8d6b8" opacity=".35"><circle cx="134" cy="188" r="10"/><circle cx="168" cy="212" r="6"/><circle cx="160" cy="180" r="4"/></g>
+  </g>
+  <g id="pxMid">
+  <!-- Daecher des Marktplatzes -->
+  <path d="M0 600 V470 L40 440 L80 470 V430 L130 390 L180 430 V480 H230 V410 L270 380 L310 410 V500 H340 V450 L380 420 L420 450 V520 H1160 V450 L1200 410 L1240 450 V490 H1280 V400 L1320 360 L1360 400 V470 H1400 V430 L1450 390 L1500 430 V460 L1540 430 L1600 470 V600 Z" fill="url(#roofs)"/>
+  <g fill="#ffc870" id="winds">
+    <rect x="96" y="452" width="14" height="18"/><rect x="146" y="440" width="14" height="18"/><rect x="250" y="430" width="14" height="18"/><rect x="290" y="462" width="12" height="16"/>
+    <rect x="360" y="470" width="14" height="18"/><rect x="1180" y="470" width="14" height="18"/><rect x="1300" y="420" width="14" height="18"/><rect x="1336" y="450" width="12" height="16"/>
+    <rect x="1420" y="440" width="14" height="18"/><rect x="1470" y="410" width="14" height="18"/><rect x="1560" y="490" width="12" height="16"/></g>
+  </g>
+  <!-- Boden -->
+  <path d="M0 600 C300 580 600 596 800 590 C1000 584 1300 600 1600 590 V900 H0 Z" fill="url(#ground)"/>
+  <g id="pxNear">
+  <!-- Marktstaende mit Lichterketten -->
+  <g transform="translate(260 640)"><path d="M-90 -70 L0 -110 L90 -70 Z" fill="#7a1a16"/><path d="M-90 -70 L0 -110 L90 -70 L82 -66 L0 -100 L-82 -66 Z" fill="#f3ece6"/><rect x="-80" y="-70" width="160" height="80" fill="#2a1712"/>
+    <rect x="-70" y="-60" width="140" height="40" fill="#ffc870" opacity=".85"/><ellipse cx="0" cy="18" rx="120" ry="18" fill="url(#winGlow)"/></g>
+  <g transform="translate(620 650) scale(.85)"><path d="M-90 -70 L0 -110 L90 -70 Z" fill="#1d4a2a"/><path d="M-90 -70 L0 -110 L90 -70 L82 -66 L0 -100 L-82 -66 Z" fill="#f3ece6"/><rect x="-80" y="-70" width="160" height="80" fill="#2a1712"/>
+    <rect x="-70" y="-60" width="140" height="40" fill="#ffc870" opacity=".85"/><ellipse cx="0" cy="18" rx="120" ry="18" fill="url(#winGlow)"/></g>
+  <g id="stringLights"></g>
+  </g>
+  <!-- Schlitten (Easter Egg) -->
+  <g class="sleigh" id="sleigh">
+    <g fill="#0b0712">
+      <path d="M0 0 C10 -6 22 -6 30 0 L28 4 L4 4 Z"/><path d="M-6 6 C4 12 30 12 40 6" stroke="#0b0712" stroke-width="2" fill="none"/>
+      <g id="deer"><path d="M-40 -2 C-36 -8 -26 -8 -22 -4 L-18 -10 L-16 -4 L-20 0 L-22 6 L-24 0 L-34 0 L-36 6 L-38 0 Z"/>
+        <path d="M-19 -10 L-17 -16 M-17 -12 L-13 -15 M-20 -11 L-23 -16" stroke="#0b0712" stroke-width="1.5"/></g>
+      <use href="#deer" transform="translate(-26 -3)"/><use href="#deer" transform="translate(-52 -6)"/>
+      <path d="M-22 -2 L0 1" stroke="#0b0712" stroke-width="1"/></g>
+  </g>
+</svg>
+<canvas id="fx"></canvas>
+<div class="warm" id="warm"></div>
+
+<div class="nav"><span class="on">⌂ Overview</span><span>Profile</span><span>Album</span><span>Challenge</span><span>Pass</span><span>Shop</span></div>
+<header><h1>League of Legends</h1><p class="subtitle">Three-Trick-Pony</p></header>
+
+<div class="wrap">
+  <div>
+    <span class="tag">Stufe 30 · Theme „Christmas Eve“ (animiert)</span>
+    <div class="card">
+      <h3>Today</h3>
+      <div class="row"><span>First Win of the Day</span><span class="xp">+400 XP</span></div>
+      <div class="row"><span>Champion of the Day</span><span class="xp">+500 XP</span></div>
+      <div class="row"><span>Grinder</span><span class="xp">+250 XP</span></div>
+    </div>
+    <div class="tiles">
+      <div class="card tile"><b>⚔️ Challenge</b><span class="muted">Day 24 · Mid</span></div>
+      <div class="card tile"><b>🎖️ Pass</b><span class="muted">Tier 30 / 30</span></div>
+    </div>
+    <p class="muted" style="margin-top:14px;font-size:.8rem">Easter Egg: 5× auf den Stern auf der Baumspitze. Fahr über den Profil-Rahmen rechts.</p>
+  </div>
+  <div>
+    <span class="tag">Stufe 25 · Rahmen „Fireside“ · Stufe 20 · Border „Garland Ring“ · Stufe 22 · Bild „Yule Steed“</span>
+    <div class="fireside" id="fireside">
+      <div class="hearth"></div>
+      <div class="garland"><svg viewBox="0 0 500 44" preserveAspectRatio="none" id="fsGarland"></svg></div>
+      <div class="card avatar" style="position:relative;z-index:1">
+        <div class="gring">
+          <img src="../public/avatars/avatar-pass-2026-12-yule.svg" alt="">
+          <svg viewBox="-80 -80 160 160" id="gringSvg"></svg>
+        </div>
+        <div><div class="name">LUCKSHOT</div><div class="muted">Level 24 · 🪙 3,100</div></div>
+      </div>
+      <div class="card" style="margin-top:12px;position:relative;z-index:1"><h3>About me</h3><span class="muted">One more game, then presents.</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const WARM = ['#ffd27a', '#ffb347', '#ff6a4a', '#fff2c4', '#7ad2ff'];
+
+// ===== Stufe 30 "Christmas Eve" - echtes 3D (eigene Perspektiv-Projektion) =====
+// Rotierender Lichterbaum aus ~1400 Punkten (Nadeln + Spiral-Lichterketten +
+// Kugeln), 3D-Schnee, Bokeh, Kamera schwenkt mit der Maus, Stadt-Ebenen mit
+// Parallaxe. Easter Egg (5x Stern): Lichter-Kaskade -> Baum dreht sich in Gold
+// immer schneller -> Stern explodiert in ein 3D-Goldfeuerwerk -> Schlitten vor
+// dem Mond -> der Baum baut sich von oben wieder auf.
+
+// ----- Lichterkette zwischen den Staenden (2D-Ebene, Lauflicht-Welle) -----
+const sl = document.getElementById('stringLights'), strLights = [];
+[[170, 560, 700, 548, 60], [900, 520, 1240, 470, 40]].forEach(([x1, y1, x2, y2, sag]) => {
+  const path = el('path', { d: `M${x1} ${y1} Q${(x1 + x2) / 2} ${Math.max(y1, y2) + sag} ${x2} ${y2}`, fill: 'none', stroke: '#2a1a14', 'stroke-width': 2 }, sl);
+  const len = path.getTotalLength(), n = Math.round(len / 34);
+  for (let i = 1; i < n; i++) { const pt = path.getPointAtLength(len * i / n); const c = WARM[i % 4];
+    strLights.push({ halo: el('circle', { cx: pt.x, cy: pt.y + 4, r: 8, fill: c, opacity: .25 }, sl), dot: el('circle', { cx: pt.x, cy: pt.y + 4, r: 3.2, fill: c }, sl), x: pt.x }); }
+});
+
+// ----- Canvas + Glow-Sprites (vorgerendert, damit 1400 Punkte fluessig laufen) -----
+const cv = document.getElementById('fx'), cx = cv.getContext('2d');
+let W, H, DPR = devicePixelRatio || 1;
+function resize() { W = cv.width = innerWidth * DPR; H = cv.height = innerHeight * DPR; }
+resize(); addEventListener('resize', resize);
+const sprites = {};
+function sprite(color, size = 64) {
+  const k = color + size; if (sprites[k]) return sprites[k];
+  const c = document.createElement('canvas'); c.width = c.height = size; const g = c.getContext('2d');
+  const r = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  r.addColorStop(0, '#ffffff'); r.addColorStop(0.08, color); r.addColorStop(0.25, color + '77'); r.addColorStop(1, color + '00');
+  g.fillStyle = r; g.fillRect(0, 0, size, size); return (sprites[k] = c);
+}
+const LIGHT_COLS = ['#ffd27a', '#ff7a5a', '#fff3c8', '#7ad2ff', '#ffb347', '#ff5a8a'];
+
+// ----- Baum-Geometrie (Weltkoordinaten: y nach oben, Baum steht bei 0,0,0) -----
+const HT = 300, R0 = 118, tree = [];
+const coneR = y => R0 * (1 - y / HT);
+const rnd = (() => { let s = 7; return () => (s = (s * 9301 + 49297) % 233280) / 233280; })();
+// Nadeln: viele dunkle Punkte AUF und IN der Kegelhuelle -> Volumen
+for (let i = 0; i < 1700; i++) {
+  const y = Math.pow(rnd(), 0.8) * HT * 0.97, a = rnd() * 6.283, rr = coneR(y) * (0.55 + rnd() * 0.48);
+  const tier = (y % 60) / 60; // leichte Stufen wie Aeste
+  tree.push({ k: 'n', x: Math.cos(a) * rr * (1 + tier * 0.08), y, z: Math.sin(a) * rr * (1 + tier * 0.08), shade: 0.35 + rnd() * 0.65 });
+}
+// Spiral-Lichterketten
+const STRANDS = 3, PER = 120;
+for (let s = 0; s < STRANDS; s++) for (let i = 0; i < PER; i++) {
+  const t = i / PER, y = t * HT * 0.95, a = t * 6.283 * 5.5 + s * 2.094, rr = coneR(y) * 1.04;
+  tree.push({ k: 'l', x: Math.cos(a) * rr, y, z: Math.sin(a) * rr, t, c: LIGHT_COLS[(i + s * 2) % LIGHT_COLS.length] });
+}
+// Kugeln
+const ORN = ['#c8261f', '#e8b64a', '#2a6fb0', '#d84a8a', '#e9e2d0'];
+for (let i = 0; i < 46; i++) {
+  const y = 20 + rnd() * HT * 0.82, a = rnd() * 6.283, rr = coneR(y) * 1.02;
+  tree.push({ k: 'o', x: Math.cos(a) * rr, y, z: Math.sin(a) * rr, c: ORN[i % ORN.length], s: 5 + rnd() * 4 });
+}
+
+// ----- 3D-Schnee in einem Volumen um die Szene -----
+const snow = [];
+for (let i = 0; i < 420; i++) snow.push({ x: (rnd() - 0.5) * 1800, y: rnd() * 900, z: -500 + rnd() * 1400, s: 0.6 + rnd() * 1.6, ph: rnd() * 6.28 });
+const bokeh = [];
+for (let i = 0; i < 12; i++) bokeh.push({ x: rnd(), y: 0.3 + rnd() * 0.65, r: 22 + rnd() * 46, c: WARM[i % 4], ph: rnd() * 6.28 });
+
+// ----- Kamera -----
+let camYaw = 0, camPitch = 0, tgtYaw = 0, tgtPitch = 0, spin = 0, spinSpeed = 0.00018;
+const FOV = 900, SC = 1.55;
+let TX, TY, TS; // Bildschirm-Anker des Baums
+function anchor() { TX = W * 0.85; TY = H * 0.83; TS = H / 900; }
+function proj(x, y, z, rotY) {
+  // Baum-Drehung um die eigene Achse
+  const cr = Math.cos(rotY), sr = Math.sin(rotY);
+  let X = x * cr - z * sr, Z = x * sr + z * cr, Y = y;
+  // Kamera-Schwenk (leicht) um den Baum
+  const cy = Math.cos(camYaw), sy = Math.sin(camYaw);
+  const X2 = X * cy - Z * sy, Z2 = X * sy + Z * cy;
+  const cp = Math.cos(camPitch), sp = Math.sin(camPitch);
+  const Y2 = Y * cp - Z2 * sp, Z3 = Y * sp + Z2 * cp;
+  const d = FOV / (FOV + Z3 + 420);
+  return { sx: TX + X2 * d * TS * SC, sy: TY - Y2 * d * TS * SC, d, z: Z3 };
+}
+
+// ----- Easter-Egg-Zustand -----
+let egg = null; // { t0 }
+const fireworks = [];
+let gold = 0, cascade = -1, rebuild = 2; // rebuild > 1 = alles da
+
+function drawTree(t) {
+  const rot = spin;
+  const pts = tree.map(p => ({ p, q: proj(p.x, p.y, p.z, rot) })).sort((a, b) => b.q.z - a.q.z);
+  pts.forEach(({ p, q }) => {
+    const depthFade = 0.55 + 0.45 * Math.min(1, Math.max(0, 1 - (q.z + 120) / 300));
+    const visible = p.k === 'n' || rebuild > 1 || p.y > (1 - rebuild) * HT; // Lichter/Kugeln bauen sich von oben neu auf
+    if (!visible) return;
+    if (p.k === 'n') {
+      const g = Math.round(38 + 80 * p.shade * depthFade);
+      cx.strokeStyle = `rgb(${Math.round(g * 0.22)},${g},${Math.round(g * 0.42)})`;
+      const r = (3 + p.shade * 3) * q.d * TS * DPR;
+      cx.lineWidth = Math.max(1, 1.6 * q.d * TS * DPR); cx.lineCap = 'round';
+      const ang = (p.x * 0.07 + p.z * 0.05);
+      cx.beginPath(); cx.moveTo(q.sx - Math.cos(ang) * r, q.sy - r * 0.4); cx.lineTo(q.sx + Math.cos(ang) * r, q.sy + r * 0.5); cx.stroke();
+    } else if (p.k === 'o') {
+      const r = p.s * q.d * TS * SC * DPR;
+      const g = cx.createRadialGradient(q.sx - r * 0.35, q.sy - r * 0.35, r * 0.1, q.sx, q.sy, r);
+      g.addColorStop(0, '#ffffff'); g.addColorStop(0.25, p.c); g.addColorStop(1, '#0a0503');
+      cx.globalAlpha = depthFade; cx.fillStyle = g; cx.beginPath(); cx.arc(q.sx, q.sy, r, 0, 6.283); cx.fill(); cx.globalAlpha = 1;
+    }
+  });
+  // Lichter additiv obendrauf (Glow)
+  cx.globalCompositeOperation = 'lighter';
+  pts.forEach(({ p, q }) => {
+    if (p.k !== 'l') return;
+    if (!(rebuild > 1 || p.y > (1 - rebuild) * HT)) return;
+    let b = 0.45 + 0.55 * Math.sin(t / 520 - p.t * 26 + (p.x > 0 ? 0.6 : 0)); // Welle laeuft die Spirale hoch
+    if (cascade >= 0) b = Math.max(b, Math.max(0, 1 - Math.abs(p.t - cascade) * 8));
+    const col = gold > 0 ? '#ffd86a' : p.c;
+    const front = q.z < 0 ? 1 : 0.55;
+    const size = (6 + 9 * b) * q.d * TS * SC * DPR * (1 + gold * 0.35);
+    cx.globalAlpha = Math.min(0.9, (0.3 + 0.55 * b) * front + gold * 0.25);
+    cx.drawImage(sprite(col), q.sx - size / 2, q.sy - size / 2, size, size);
+  });
+  cx.globalAlpha = 1; cx.globalCompositeOperation = 'source-over';
+  // Stern auf der Spitze
+  const top = proj(0, HT + 14, 0, rot);
+  starPos = top;
+  const sr = 20 * top.d * TS * SC * DPR * (1 + 0.08 * Math.sin(t / 300) + gold * 0.3);
+  cx.globalCompositeOperation = 'lighter';
+  for (let k = 0; k < 8; k++) { // Strahlen
+    const a = t / 2600 + k * 0.785; const len = sr * (3.2 + Math.sin(t / 400 + k) * 0.6);
+    const g = cx.createLinearGradient(top.sx, top.sy, top.sx + Math.cos(a) * len, top.sy + Math.sin(a) * len);
+    g.addColorStop(0, 'rgba(255,220,130,.55)'); g.addColorStop(1, 'rgba(255,220,130,0)');
+    cx.strokeStyle = g; cx.lineWidth = 2 * DPR; cx.beginPath(); cx.moveTo(top.sx, top.sy); cx.lineTo(top.sx + Math.cos(a) * len, top.sy + Math.sin(a) * len); cx.stroke();
+  }
+  cx.drawImage(sprite('#ffd86a', 128), top.sx - sr * 2.6, top.sy - sr * 2.6, sr * 5.2, sr * 5.2);
+  cx.globalCompositeOperation = 'source-over';
+  cx.fillStyle = '#ffe9a8'; cx.strokeStyle = '#b8862c'; cx.lineWidth = 1.5 * DPR; cx.beginPath();
+  for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5 + Math.sin(rot) * 0.15; const r = k % 2 ? sr * 0.42 : sr; cx[k ? 'lineTo' : 'moveTo'](top.sx + Math.cos(a) * r, top.sy + Math.sin(a) * r); }
+  cx.closePath(); cx.fill(); cx.stroke();
+  // Stamm-Schatten + Geschenke (stehen fest, drehen nicht mit)
+  const base = proj(0, 0, 0, 0);
+  const bs = base.d * TS * SC * DPR;
+  const sh = cx.createRadialGradient(base.sx, base.sy + 6 * bs, 0, base.sx, base.sy + 6 * bs, 150 * bs); sh.addColorStop(0, 'rgba(40,10,10,.35)'); sh.addColorStop(1, 'rgba(40,10,10,0)'); cx.fillStyle = sh; cx.beginPath(); cx.ellipse(base.sx, base.sy + 6 * bs, 150 * bs, 24 * bs, 0, 0, 6.283); cx.fill();
+  cx.fillStyle = '#3a2414'; cx.fillRect(base.sx - 12 * bs, base.sy - 4 * bs, 24 * bs, 26 * bs);
+  [[-90, '#b8231f', '#f2c25a', 46, 36], [70, '#1f5a8a', '#e8e0d0', 40, 30], [-40, '#2f7a3c', '#d2231f', 30, 24], [120, '#e8b64a', '#b8231f', 28, 22]].forEach(([dx, c1, c2, w, h]) => {
+    const x = base.sx + dx * bs, y = base.sy + 22 * bs;
+    cx.fillStyle = c1; cx.fillRect(x - w / 2 * bs, y - h * bs, w * bs, h * bs);
+    cx.fillStyle = c2; cx.fillRect(x - 3 * bs, y - h * bs, 6 * bs, h * bs); cx.fillRect(x - w / 2 * bs, y - h * 0.6 * bs, w * bs, 5 * bs);
+    cx.fillStyle = 'rgba(255,255,255,.18)'; cx.fillRect(x - w / 2 * bs, y - h * bs, w * bs, 3 * bs);
+  });
+}
+let starPos = null;
+
+function drawSnowAndBokeh(t) {
+  // Bokeh hinten
+  bokeh.forEach(b => { const x = (b.x + Math.sin(t / 5000 + b.ph) * 0.01 - camYaw * 0.15) * W, y = (b.y + Math.sin(t / 3500 + b.ph) * 0.01) * H, r = b.r * DPR;
+    cx.globalAlpha = 0.18 + 0.08 * Math.sin(t / 2000 + b.ph); cx.drawImage(sprite(b.c, 128), x - r, y - r, r * 2, r * 2); });
+  cx.globalAlpha = 1;
+  // 3D-Schnee
+  const wind = Math.sin(t / 5200) * 0.5 + Math.sin(t / 1700) * 0.2;
+  cx.fillStyle = '#fff';
+  snow.forEach(f => {
+    f.y -= 0.35 + f.s * 0.25; f.x += wind * f.s * 0.6 + Math.sin(t / 1300 + f.ph) * 0.2;
+    if (f.y < -40) { f.y = 900 + rnd() * 60; f.x = (rnd() - 0.5) * 1800; }
+    if (f.x > 900) f.x = -900; if (f.x < -900) f.x = 900;
+    const cyw = Math.cos(camYaw), syw = Math.sin(camYaw);
+    const X = f.x * cyw - f.z * syw, Z = f.x * syw + f.z * cyw;
+    const d = FOV / (FOV + Z + 300); if (d <= 0) return;
+    const sx = W / 2 + X * d * DPR, sy = H * 0.45 - (f.y - 450 + camPitch * 400) * d * DPR;
+    const r = f.s * d * 1.6 * DPR;
+    cx.globalAlpha = Math.min(0.95, 0.25 + d * 0.6);
+    cx.beginPath(); cx.arc(sx, sy, r, 0, 6.283); cx.fill();
+  });
+  cx.globalAlpha = 1;
+}
+
+function drawFireworks() {
+  cx.globalCompositeOperation = 'lighter';
+  for (let i = fireworks.length - 1; i >= 0; i--) {
+    const f = fireworks[i];
+    f.vx *= 0.975; f.vy = f.vy * 0.975 - 0.035; f.vz *= 0.985; f.x += f.vx; f.y += f.vy; f.z += f.vz; f.life -= f.decay;
+    if (f.life <= 0) { fireworks.splice(i, 1); continue; }
+    const q = proj(f.x, f.y, f.z, 0);
+    const s = (7 + 13 * f.life) * q.d * TS * SC * DPR;
+    cx.globalAlpha = Math.min(0.75, f.life) * (0.55 + 0.45 * Math.sin(f.life * 40 + f.vx));
+    cx.drawImage(sprite(f.c), q.sx - s / 2, q.sy - s / 2, s, s);
+  }
+  cx.globalAlpha = 1; cx.globalCompositeOperation = 'source-over';
+}
+
+// ----- Parallaxe der Stadt-Ebenen (SVG) -----
+const layers = [['pxFar', 6], ['pxMid', 14], ['pxNear', 26]].map(([id, k]) => [document.getElementById(id), k]);
+function parallax() { layers.forEach(([g, k]) => g && g.setAttribute('transform', `translate(${-camYaw * k * 40} ${camPitch * k * 20})`)); }
+
+function loop(t) {
+  if (!W) return requestAnimationFrame(loop);
+  anchor();
+  camYaw += (tgtYaw - camYaw) * 0.04; camPitch += (tgtPitch - camPitch) * 0.04;
+  spin += spinSpeed * 16;
+  parallax();
+  strLights.forEach(l => { const v = .5 + .5 * Math.sin(t / 500 - l.x / 70); l.dot.setAttribute('opacity', .4 + .6 * v); l.halo.setAttribute('opacity', .08 + .3 * v); });
+  cx.clearRect(0, 0, W, H);
+  drawSnowAndBokeh(t);
+  drawTree(t);
+  drawFireworks();
+  drawDust();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// ----- Maus: Kamera schwenkt, warmes Licht folgt (nur Licht folgt der Maus) -----
+const warm = document.getElementById('warm');
+addEventListener('mousemove', e => {
+  tgtYaw = (e.clientX / innerWidth - 0.5) * 0.35; tgtPitch = (e.clientY / innerHeight - 0.5) * 0.12;
+  warm.style.setProperty('--mx', e.clientX + 'px'); warm.style.setProperty('--my', e.clientY + 'px'); warm.classList.add('on');
+});
+document.addEventListener('mouseleave', () => { warm.classList.remove('on'); tgtYaw = 0; tgtPitch = 0; });
+
+// Goldstaub des Schlittens
+const dust = [];
+function drawDust() {
+  for (let i = dust.length - 1; i >= 0; i--) { const d = dust[i]; d.life -= 0.012; d.y += d.vy; d.x += d.vx; d.vy += 0.03;
+    if (d.life <= 0) { dust.splice(i, 1); continue; }
+    cx.globalAlpha = d.life; cx.fillStyle = d.c; cx.beginPath(); cx.arc(d.x, d.y, d.r, 0, 6.283); cx.fill(); }
+  cx.globalAlpha = 1;
+}
+
+// ----- Easter Egg: 5x auf den Stern -----
+let hits = 0, running = false;
+const sleigh = document.getElementById('sleigh'), scene = document.getElementById('scene');
+cv.style.pointerEvents = 'auto';
+cv.addEventListener('click', e => {
+  if (!starPos) return;
+  const x = e.clientX * DPR, y = e.clientY * DPR;
+  if (Math.hypot(x - starPos.sx, y - starPos.sy) > 40 * DPR) return;
+  if (running || ++hits < 5) return;
+  hits = 0; running = true;
+  const t0 = performance.now();
+  // 1) Lichter-Kaskade von unten nach oben (1.4 s)
+  (function step(now) {
+    const e2 = now - t0;
+    if (e2 < 1400) cascade = e2 / 1400;
+    else if (e2 < 3600) { cascade = -1; gold = Math.min(1, (e2 - 1400) / 600); spinSpeed = 0.00018 + Math.pow((e2 - 1400) / 2200, 2) * 0.004; }
+    else if (!step.burst) {
+      // 2) Stern explodiert in ein 3D-Goldfeuerwerk
+      step.burst = true; spinSpeed = 0.00018;
+      for (let k = 0; k < 380; k++) { const a = Math.random() * 6.283, b = Math.acos(2 * Math.random() - 1), v = 4 + Math.random() * 6;
+        fireworks.push({ x: 0, y: HT + 14, z: 0, vx: Math.sin(b) * Math.cos(a) * v * 0.7, vy: Math.cos(b) * v * 0.7 + 2, vz: Math.sin(b) * Math.sin(a) * v * 0.7, life: 1, decay: 0.003 + Math.random() * 0.004, c: ['#ffd86a', '#fff3c8', '#ffb347', '#ff7a5a'][k % 4] }); }
+      rebuild = 0; flySleigh();
+    } else if (e2 < 9000) { gold = Math.max(0, 1 - (e2 - 3600) / 1200); rebuild = Math.min(1, Math.max(0, (e2 - 5200) / 3000)); }
+    else { rebuild = 2; gold = 0; running = false; return; }
+    requestAnimationFrame(step);
+  })(t0);
+});
+function flySleigh() {
+  const t0 = performance.now(), dur = 6500;
+  sleigh.style.opacity = 1;
+  (function fly(now) {
+    const p = Math.min(1, (now - t0) / dur);
+    const x = 1700 - p * 1950, y = 300 - Math.sin(p * Math.PI) * 150 + p * 60;
+    sleigh.setAttribute('transform', `translate(${x} ${y}) scale(${1.6 + Math.sin(p * Math.PI) * 0.4})`);
+    const m = scene.getScreenCTM(); const pt = scene.createSVGPoint(); pt.x = x + 40; pt.y = y + 6; const sp = pt.matrixTransform(m);
+    for (let k = 0; k < 3; k++) dust.push({ x: sp.x * DPR, y: sp.y * DPR, vx: (Math.random() - 0.3) * 1.2, vy: Math.random() * 0.6 - 0.4, r: (0.8 + Math.random() * 1.8) * DPR, life: 1, c: Math.random() < .7 ? '#ffd86a' : '#fff4c8' });
+    if (p < 1) requestAnimationFrame(fly); else sleigh.style.opacity = 0;
+  })(t0);
+}
+
+// ----- Stufe 20: Garland Ring - Tannenzweige, Kugeln, Lauflicht, Samtschleife -----
+(function () {
+  const g = document.getElementById('gringSvg');
+  g.innerHTML = `<defs>
+    <linearGradient id="needle" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3f8f4c"/><stop offset="1" stop-color="#14451f"/></linearGradient>
+    <radialGradient id="velvet" cx=".4" cy=".35"><stop offset="0" stop-color="#ff4a3e"/><stop offset=".6" stop-color="#b8231f"/><stop offset="1" stop-color="#5e0d0b"/></radialGradient></defs>`;
+  const ring = el('g', {}, g);
+  for (let i = 0; i < 46; i++) { const a = i / 46 * 6.283, r = 50 + (i % 3) * 2;
+    const x = Math.cos(a) * r, y = Math.sin(a) * r, rot = a * 57.3 + 90 + (i % 2 ? 25 : -25);
+    el('path', { d: 'M0 -11 C3 -6 3 2 0 11 C-3 2 -3 -6 0 -11 Z', fill: 'url(#needle)', transform: `translate(${x} ${y}) rotate(${rot})`, opacity: .95 }, ring); }
+  for (let i = 0; i < 30; i++) { const a = i / 30 * 6.283 + .1, r = 57;
+    el('path', { d: 'M0 -7 L0 7 M-3 -4 L0 0 L3 -4 M-3 2 L0 6 L3 2', stroke: '#2a6e36', 'stroke-width': 1, fill: 'none', transform: `translate(${Math.cos(a) * r} ${Math.sin(a) * r}) rotate(${a * 57.3})` }, ring); }
+  const bulbs = [];
+  for (let i = 0; i < 16; i++) { const a = i / 16 * 6.283, r = 54, c = WARM[i % 4];
+    const h = el('circle', { cx: Math.cos(a) * r, cy: Math.sin(a) * r, r: 5.5, fill: c, opacity: .3 }, g);
+    const d = el('circle', { cx: Math.cos(a) * r, cy: Math.sin(a) * r, r: 2.2, fill: c, class: 'bulb' }, g); bulbs.push({ h, d, a }); }
+  [[150, '#f2c25a'], [215, '#1f5a8a'], [-30, '#b8231f'], [30, '#f2c25a'], [100, '#b8231f']].forEach(([deg, c]) => { const a = deg / 57.3, x = Math.cos(a) * 58, y = Math.sin(a) * 58;
+    el('circle', { cx: x, cy: y, r: 7, fill: c, stroke: '#2a1208', 'stroke-width': 1 }, g); el('circle', { cx: x - 2.4, cy: y - 2.4, r: 2, fill: '#fff', opacity: .75 }, g); });
+  const bow = el('g', { transform: 'translate(0 -58)' }, g);
+  bow.innerHTML = `<path d="M0 0 C-10 -14 -26 -10 -22 2 C-18 12 -6 8 0 0 C6 8 18 12 22 2 C26 -10 10 -14 0 0 Z" fill="url(#velvet)" stroke="#3a0806" stroke-width="1.2"/>
+    <path d="M0 0 L-8 20 L-3 18 L-2 24 Z M0 0 L8 20 L3 18 L2 24 Z" fill="#b8231f" stroke="#3a0806" stroke-width="1"/>
+    <circle r="4" fill="#d82a24" stroke="#3a0806" stroke-width="1"/><path d="M-16 -2 C-12 -6 -8 -6 -5 -3" stroke="#ff8a7a" stroke-width="1.2" fill="none" opacity=".7"/>`;
+  (function run(t) { bulbs.forEach((b, i) => { const v = .5 + .5 * Math.sin(t / 380 - i * 0.8); b.d.setAttribute('opacity', .35 + .65 * v); b.h.setAttribute('opacity', .08 + .35 * v); b.h.setAttribute('r', 4 + 3 * v); }); requestAnimationFrame(run); })(0);
+})();
+
+// ----- Stufe 25: Fireside - Girlande, Lichter + Kugeln bei Hover, 3D-Neigung -----
+(function () {
+  const g = document.getElementById('fsGarland');
+  let html = `<defs><linearGradient id="fsN" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a8a48"/><stop offset="1" stop-color="#123d1c"/></linearGradient></defs>
+    <path d="M0 14 Q62 36 125 14 Q187 36 250 14 Q312 36 375 14 Q437 36 500 14" fill="none" stroke="url(#fsN)" stroke-width="14" stroke-linecap="round"/>
+    <path d="M0 14 Q62 36 125 14 Q187 36 250 14 Q312 36 375 14 Q437 36 500 14" fill="none" stroke="#5aa864" stroke-width="2" stroke-dasharray="2 5" opacity=".7"/>`;
+  let i = 0;
+  for (let x = 12; x < 500; x += 24) { const y = 14 + Math.abs(Math.sin((x / 125) * Math.PI)) * 18; const c = WARM[i % 4];
+    html += `<g class="light" style="--i:${i}"><circle cx="${x}" cy="${y + 4}" r="7" fill="${c}" opacity=".35"/><circle cx="${x}" cy="${y + 4}" r="2.8" fill="${c}"/></g>`; i++; }
+  [[62, '#b8231f'], [187, '#f2c25a'], [312, '#1f5a8a'], [437, '#b8231f'], [125, '#f2c25a'], [375, '#b8231f']].forEach(([x, c], k) => { const y = 14 + Math.abs(Math.sin((x / 125) * Math.PI)) * 18;
+    html += `<g class="orn" style="--i:${k}"><line x1="${x}" y1="${y}" x2="${x}" y2="${y + 10}" stroke="#c9a24a" stroke-width="1.2"/><circle cx="${x}" cy="${y + 17}" r="7" fill="${c}" stroke="#2a1208" stroke-width="1"/><circle cx="${x - 2.4}" cy="${y + 14.6}" r="2" fill="#fff" opacity=".75"/></g>`; });
+  [[0, '#b8231f'], [500, '#b8231f']].forEach(([x]) => { html += `<g transform="translate(${x} 12)"><path d="M0 0 C-8 -10 -20 -7 -17 2 C-14 9 -5 6 0 0 C5 6 14 9 17 2 C20 -7 8 -10 0 0 Z" fill="#c8261f" stroke="#3a0806"/><circle r="3" fill="#e63a2e"/></g>`; });
+  g.innerHTML = html;
+  const fs = document.getElementById('fireside');
+  fs.addEventListener('mousemove', e => { const r = fs.getBoundingClientRect(); const dx = (e.clientX - r.left) / r.width - .5, dy = (e.clientY - r.top) / r.height - .5;
+    fs.style.transform = `perspective(900px) rotateY(${dx * 6}deg) rotateX(${-dy * 6}deg)`; });
+  fs.addEventListener('mouseleave', () => { fs.style.transform = ''; });
+})();
+</script>
+</body>
+</html>

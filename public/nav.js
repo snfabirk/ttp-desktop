@@ -14,7 +14,7 @@
   window.ttpAvatar = () => {
     let id = '';
     try { id = localStorage.getItem('ttp_avatar') || ''; } catch (e) {}
-    return id ? `avatars/${id}.png` : 'avatar-placeholder.svg';
+    return id ? `avatars/${id}.svg` : 'avatar-placeholder.svg';
   };
   window.ttpProfileIcon = id => `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${id}.jpg`;
   let last = 0;
@@ -352,7 +352,6 @@
         location.reload();
         return;
       }
-      store.del('ttp_challenge_bundles'); // Zwischenstand aus der Entwicklung von v5.33
       if (active) {
         try { if (await syncRun(active.puuid)) { location.reload(); return; } } catch (e) {}
       }
@@ -367,7 +366,7 @@
   }
 
   // ===== Freunde (v6.1.0) =====
-  const avatarSrc = id => (id ? `avatars/${id}.png` : 'avatar-placeholder.svg');
+  const avatarSrc = id => (id ? `avatars/${id}.svg` : 'avatar-placeholder.svg');
   async function friendsApi(url, body) {
     const res = await fetch(url, body === undefined ? undefined : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));
@@ -409,6 +408,7 @@
       const open = dock.classList.toggle('open');
       tab.setAttribute('aria-expanded', open ? 'true' : 'false');
       clearSearch();
+      search.hidden = true; // Suchleiste beim Ein-/Ausfahren wieder zuklappen (Nutzerwunsch)
       clearInterval(pollTimer);
       if (open) { load(); pollTimer = setInterval(load, 30000); }
     });
@@ -481,6 +481,7 @@
     cos.src = 'cosmetics-fx.js';
     // Shop-Cosmetics melden sich bei cosmetics-fx.js bzw. theme-fx.js an
     cos.onload = () => {
+      const c12 = document.createElement('script'); c12.src = 'cosmetics-2026-12.js'; document.head.appendChild(c12);
       const sc = document.createElement('script'); sc.src = 'shop-cosmetics.js';
       sc.onload = () => { const s2 = document.createElement('script'); s2.src = 'shop-cosmetics-2.js'; document.head.appendChild(s2); };
       document.head.appendChild(sc);
@@ -488,6 +489,8 @@
     fx.onload = () => {
       const ss = document.createElement('script'); ss.src = 'shop-scenes.js';
       ss.onload = () => { const s2 = document.createElement('script'); s2.src = 'shop-scenes-2.js'; document.head.appendChild(s2); };
+      // Dezember-Pass 2026: Winter Village + Christmas Eve (3D)
+      const d12 = document.createElement('script'); d12.src = 'theme-2026-12.js'; document.head.appendChild(d12);
       document.head.appendChild(ss);
     };
     document.head.appendChild(cos);

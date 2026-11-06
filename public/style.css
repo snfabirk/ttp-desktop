@@ -755,92 +755,6 @@ html, body {
 }
 .setup-btn:hover { color: var(--gold); border-color: var(--gold); transform: translateY(-1px); }
 .setup-btn[hidden] { display: none; }
-.setup-btn.active { color: var(--bg); background: var(--gold); border-color: var(--gold); cursor: default; transform: none; }
-
-/* Willkommens-Popup (nav.js, nur beim ersten Start / nach Werksreset) */
-.welcome-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.55);
-  animation: welcome-fade 0.2s ease;
-}
-@keyframes welcome-fade { from { opacity: 0; } }
-.welcome-card {
-  width: min(440px, calc(100vw - 40px));
-  box-sizing: border-box;
-  padding: 24px 28px 22px;
-  background: var(--input-bg);
-  border: 1px solid var(--gold);
-  border-radius: 12px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
-  font-family: Georgia, serif;
-  color: var(--text);
-}
-.welcome-card h2 {
-  margin: 0 0 10px;
-  color: var(--gold);
-  font-family: 'Cinzel', Georgia, serif;
-  font-size: 1.25rem;
-  letter-spacing: 1px;
-}
-.welcome-card p { margin: 0 0 10px; color: var(--text-dim); line-height: 1.45; }
-.welcome-card ol { margin: 0 0 18px; padding-left: 20px; color: var(--text); line-height: 1.7; }
-.welcome-card strong { color: var(--gold); font-weight: normal; }
-.welcome-go {
-  display: block;
-  width: 100%;
-  padding: 10px 0;
-  border: 1px solid var(--gold);
-  border-radius: 8px;
-  background: var(--gold);
-  color: var(--bg);
-  font-family: 'Cinzel', Georgia, serif;
-  font-size: 0.95rem;
-  letter-spacing: 1px;
-  cursor: pointer;
-}
-.welcome-go:hover { filter: brightness(1.08); }
-.welcome-hint {
-  position: fixed;
-  padding: 7px 12px;
-  border: 1px solid var(--gold);
-  border-radius: 10px;
-  background: var(--input-bg);
-  color: var(--gold);
-  font-family: Georgia, serif;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
-}
-.welcome-hint::before {
-  content: '';
-  position: absolute;
-  top: -7px;
-  right: 22px;
-  width: 12px;
-  height: 12px;
-  background: var(--input-bg);
-  border-left: 1px solid var(--gold);
-  border-top: 1px solid var(--gold);
-  transform: rotate(45deg);
-}
-/* Setup-Knopf leuchtet ueber dem abgedunkelten Hintergrund */
-.setup-btn.glow {
-  z-index: 201;
-  color: var(--bg);
-  background: var(--gold);
-  border-color: var(--gold);
-  animation: setup-glow 1.4s ease-in-out infinite;
-}
-@keyframes setup-glow {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 60%, transparent); }
-  50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--gold) 0%, transparent); }
-}
-
 
 /* ===== Pass-Themes (nur wer sie im Monats-Pass freigeschaltet hat) ===== */
 
@@ -1302,3 +1216,63 @@ body.has-friends-dock { padding-right: 52px; box-sizing: border-box; }
 }
 .fp-clear:hover { color: var(--gold); background: color-mix(in srgb, var(--gold) 14%, transparent); }
 .fp-clear[hidden] { display: none; }
+
+/* ===== Dezember 2026, Stufe 15: Winter Village - Eisblau auf Nachtblau,
+   stehende Szene hinter dem Inhalt (theme-2026-12.js) ===== */
+html[data-theme="village"] {
+  --bg: #0a1424; --bg-rgb: 10, 20, 36; --input-bg: #13223a; --border: #2c4566; --border-hover: #9fd4ff; --gold: #9fd4ff;
+  --text: #eaf3ff; --text-dim: #a3b6cf; --text-faint: #6a7f9b; --red: #ff6b7a; --green: #7fd6a4; --live-accent: #7fd6a4;
+  --history-view-accent: #ffcf7a; --scrollbar: #2c4566; --scrollbar-hover: #9fd4ff;
+  background: linear-gradient(180deg, #050b18 0%, #0b1a33 40%, #16304f 70%, #2a4a6c 100%); background-attachment: fixed;
+}
+html[data-theme="village"] body { background: transparent; }
+html[data-theme="village"] .site-header h1 { text-shadow: 0 0 24px rgba(160, 215, 255, 0.4); }
+.village-fx { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.village-fx > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.village-fx .vl-smoke { animation: vl-smoke 9s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; opacity: 0; }
+.village-fx .vl-smoke.b { animation-delay: -3s; }
+.village-fx .vl-smoke.c { animation-delay: -6s; }
+@keyframes vl-smoke { 0% { opacity: 0; transform: translateY(8px) scaleX(.9); } 30% { opacity: .5; } 100% { opacity: 0; transform: translateY(-28px) scaleX(1.25) skewX(-8deg); } }
+.village-fx .vl-win { transition: opacity 1.2s ease; }
+.village-fx .vl-win.off { opacity: .12; }
+.village-fx .vl-win.flick { animation: vl-flick 5s ease-in-out infinite; }
+@keyframes vl-flick { 0%, 47%, 53%, 100% { opacity: 1; } 50% { opacity: .72; } }
+.village-fx .vl-win.flick.off { animation: none; opacity: .12; }
+.village-fx .vl-bell { transform-box: fill-box; transform-origin: 50% 0; }
+.village-fx .vl-bell.ring { animation: vl-ring 2.4s ease-in-out; }
+@keyframes vl-ring { 10% { transform: rotate(18deg); } 25% { transform: rotate(-15deg); } 40% { transform: rotate(11deg); } 55% { transform: rotate(-7deg); } 70% { transform: rotate(4deg); } 85% { transform: rotate(-2deg); } }
+.village-fx .vl-ripple { opacity: 0; transform-box: fill-box; transform-origin: center; }
+.village-fx .vl-ripple.go { animation: vl-ripple 2.2s ease-out; }
+@keyframes vl-ripple { 0% { opacity: .7; transform: scale(.4); } 100% { opacity: 0; transform: scale(2.6); } }
+.village-fx .vl-snow { position: absolute; inset: -10% 0 0 0; pointer-events: none; background-image:
+    radial-gradient(1.6px 1.6px at 10% 20%, #fff 50%, transparent), radial-gradient(1.2px 1.2px at 30% 60%, #fff 50%, transparent),
+    radial-gradient(2px 2px at 55% 30%, #fff 50%, transparent), radial-gradient(1.2px 1.2px at 70% 80%, #fff 50%, transparent),
+    radial-gradient(1.6px 1.6px at 85% 15%, #fff 50%, transparent), radial-gradient(1px 1px at 45% 90%, #fff 50%, transparent),
+    radial-gradient(1.4px 1.4px at 92% 55%, #fff 50%, transparent), radial-gradient(1px 1px at 20% 45%, #fff 50%, transparent);
+  background-size: 340px 340px; opacity: .55; animation: vl-snow 26s linear infinite; transition: opacity 1s; }
+.village-fx .vl-snow.b { background-size: 520px 520px; opacity: .35; animation: vl-snowb 40s linear infinite; filter: blur(.6px); }
+.village-fx .vl-snow.burst { opacity: .9; }
+@keyframes vl-snow { from { background-position: 0 0; } to { background-position: 60px 340px; } }
+@keyframes vl-snowb { from { background-position: 0 0; } to { background-position: -40px 520px; } }
+html.fx-off .village-fx *, html.fx-off .village-fx { animation: none !important; }
+html.fx-paused .village-fx * { animation-play-state: paused !important; }
+/* Mini-Vorschau im Pass */
+.pv-pop .village-fx.pv-mini { position: absolute; z-index: 0; border-radius: 14px; }
+.pv-pop .village-fx.pv-mini .vl-snow { background-size: 170px 170px; }
+
+/* ===== Dezember 2026, Stufe 30: Christmas Eve - Gold/Rot auf Nacht,
+   3D-Szene (xmas-scene.js, Three.js) hinter dem Inhalt ===== */
+html[data-theme="christmas"] {
+  --bg: #12070a; --bg-rgb: 18, 7, 10; --input-bg: #22100f; --border: #5a2a26; --border-hover: #f2c25a; --gold: #f2c25a;
+  --text: #fbefe2; --text-dim: #d1b8a6; --text-faint: #8a6e60; --red: #ff5a4e; --green: #6fd08a; --live-accent: #6fd08a;
+  --history-view-accent: #f2c25a; --scrollbar: #5a2a26; --scrollbar-hover: #f2c25a;
+  background: linear-gradient(180deg, #05040c 0%, #0f0a1e 45%, #2a1220 80%, #3a1a14 100%); background-attachment: fixed;
+}
+html[data-theme="christmas"] body { background: transparent; }
+html[data-theme="christmas"] .site-header h1 { text-shadow: 0 0 24px rgba(242, 194, 90, 0.45), 0 0 50px rgba(200, 40, 30, 0.25); }
+.xmas-fx { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.xmas-fx canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 1.2s ease; }
+.xmas-fx.ready canvas { opacity: 1; }
+.xmas-fx .xmas-warm { position: absolute; inset: 0; opacity: 0; mix-blend-mode: screen;
+  background: radial-gradient(circle 360px at var(--mx, 50%) var(--my, 50%), rgba(255, 190, 110, .16), transparent 70%); }
+.pv-pop canvas.xmas-pv { position: absolute; inset: 0; z-index: 0; border-radius: 14px; }

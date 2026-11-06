@@ -19,6 +19,7 @@ const { loadFinalizedState, saveFinalizedState, clearFinalizedState } = require(
 const progression = require('./lib/progression');
 const cloud = require('./lib/cloud');
 const challengeRuns = require('./lib/challengeRuns');
+const trophyEvents = require('./lib/trophyEvents');
 const { startEntry: startHistoryEntry, updateEntry: updateHistoryEntry, listEntries: listHistoryEntries, deleteEntry: deleteHistoryEntry } = require('./lib/challengeHistory');
 
 const app = express();
@@ -685,6 +686,9 @@ async function runAchievementsBatch(jobId, { puuid, since, startTime, role, chal
     // Match-Scan (genutzt beim "Reset Challenge"-Warnhinweis).
     const rulesUpToDate = Object.values(finalizedState).every(v => v === RULES_VERSION);
 
+    // Neu freigeschaltete Trophies als Activity-Ereignis merken (v6.3.0)
+    try { trophyEvents.record(puuid, since, progress); } catch (e) {}
+
     completeJob(jobId, {
       erwarteteSpiele,
       tier,
@@ -760,6 +764,38 @@ app.get('/api/profile-stats', (req, res) => {
   res.json(buildProfileStats(req.query.puuid));
 });
 
+// Eigene Ereignisse: Spiele, LP-Bank, Level-Ups + Trophies der laufenden Challenge
+function myActivity(puuid, run) {
+  const base = progression.getRecentActivity(12);
+  const tr = puuid ? trophyEvents.summary(puuid, run ? run.since : null) : null;
+  const trophies = tr ? tr.events.map(e => ({ kind: 'trophy', at: e.at, name: e.name })) : [];
+  return [...base, ...trophies].sort((a, b) => b.at - a.at).slice(0, 12);
+}
+// Laufende Challenge fuers Freundesprofil (v6.3.0)
+function challengeSummary(puuid, run) {
+  const entry = listHistoryEntries(puuid).find(e => e.since === run.since) || null;
+  const tr = trophyEvents.summary(puuid, run.since);
+  return {
+    since: run.since, level: run.level, mainRole: run.mainRole, secondRole: run.secondRole,
+    champions: run.champions.map(c => ({ id: c.id, name: c.name })),
+    lpGoal: run.lpGoalTier ? { tier: run.lpGoalTier, division: run.lpGoalDivision, lp: run.lpGoalLp } : null,
+    startRank: entry && entry.startRankTier ? { tier: entry.startRankTier, rank: entry.startRankDivision, leaguePoints: entry.startRankLp } : null,
+    trophies: tr && tr.unlockedCount !== null ? { unlocked: tr.unlockedCount, total: tr.totalCount } : (entry ? { unlocked: entry.unlockedCount || 0, total: entry.totalCount || 21 } : null)
+  };
+}
+// Aktiver Summoner + laufende Challenge (v6.3.0) - fuer den Hintergrund-
+// Refresh im Hauptprozess, der vorher den localStorage des Fensters las.
+app.get('/api/challenge/active', (req, res) => {
+  const acc = cloud.activeRiotAccount();
+  const run = acc ? challengeRuns.getRun(acc.puuid) : null;
+  res.json({ puuid: acc ? acc.puuid : null, run });
+});
+app.get('/api/activity/mine', (req, res) => {
+  const acc = cloud.activeRiotAccount();
+  const puuid = acc ? acc.puuid : '';
+  res.json({ events: myActivity(puuid, puuid ? challengeRuns.getRun(puuid) : null).filter(e => e.kind === 'levelup' || e.kind === 'trophy') });
+});
+
 // ===== Freunde (v6.1.0, lib/cloud.js + supabase/005-friends.sql) =====
 // Momentaufnahme fuers Freundesprofil: dieselben Daten wie die eigene
 // Profilseite + Theme, Rang (letzter LP-Verlauf-Punkt) und Champion-Pool.
@@ -773,7 +809,8 @@ app.post('/api/public-profile/publish', cloudRoute(async req => {
     stats: buildProfileStats(puuid),
     rank: last ? { tier: last.tier, rank: last.rank, leaguePoints: last.leaguePoints } : null,
     pool: run ? { champions: run.champions.map(c => ({ id: c.id, name: c.name })), mainRole: run.mainRole } : null,
-    activity: progression.getRecentActivity(10),
+    activity: myActivity(puuid, run),
+    challenge: run ? challengeSummary(puuid, run) : null,
     theme: typeof body.theme === 'string' ? body.theme.slice(0, 40) : 'classic'
   });
 }));

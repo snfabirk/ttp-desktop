@@ -528,6 +528,31 @@ function periodicCheckForUpdates() {
 // den die UI beim naechsten Anzeigen dann vorfindet.
 let backgroundRefreshInProgress = false;
 
+// v6.3.0: Quelle ist der Server (Challenge pro Summoner, challengeRuns.js);
+// der localStorage des Fensters nur noch als Rueckfall ohne verknuepften Summoner.
+async function readChallengeState() {
+  try {
+    const r = await fetch(`http://localhost:${serverPort}/api/challenge/active`);
+    const d = await r.json();
+    if (d.puuid) {
+      if (!d.run) return { since: '' };
+      return {
+        puuid: d.puuid,
+        since: d.run.since,
+        summoner: '',
+        champsRaw: JSON.stringify(d.run.champions || []),
+        role: d.run.mainRole || '',
+        secondRole: d.run.secondRole || '',
+        challengeLevel: d.run.level || '',
+        lpGoalTier: d.run.lpGoalTier || '',
+        lpGoalDivision: d.run.lpGoalDivision || '',
+        lpGoalLp: String(d.run.lpGoalLp || 0)
+      };
+    }
+  } catch (e) {}
+  return readChallengeStateFromRenderer();
+}
+
 async function readChallengeStateFromRenderer() {
   if (!mainWin || mainWin.isDestroyed()) return null;
   try {
@@ -556,11 +581,11 @@ async function backgroundStatsRefresh() {
   // v6.0: Account-XP gibt es auch ohne Challenge (Server kennt den aktiven Summoner)
   try { await fetch(`http://localhost:${serverPort}/api/account-xp/scan`, { method: 'POST' }); } catch (e) {}
 
-  const state = await readChallengeStateFromRenderer();
+  const state = await readChallengeState();
   if (!state || !state.since) return; // keine laufende Challenge - nichts weiter zu tun
 
-  const summonerParts = state.summoner.trim().split('#');
-  if (summonerParts.length !== 2 || !summonerParts[0] || !summonerParts[1]) return;
+  const summonerParts = (state.summoner || '').trim().split('#');
+  if (!state.puuid && (summonerParts.length !== 2 || !summonerParts[0] || !summonerParts[1])) return;
 
   let champs;
   try { champs = JSON.parse(state.champsRaw); } catch (e) { champs = []; }
@@ -572,10 +597,13 @@ async function backgroundStatsRefresh() {
   backgroundRefreshInProgress = true;
   try {
     const base = `http://localhost:${serverPort}`;
-    const accountParams = new URLSearchParams({ gameName: summonerParts[0], tagLine: summonerParts[1] });
-    const accountRes = await fetch(`${base}/api/account?${accountParams}`);
-    const accountData = await accountRes.json();
-    if (!accountRes.ok) return;
+    let accountData = { puuid: state.puuid };
+    if (!state.puuid) {
+      const accountParams = new URLSearchParams({ gameName: summonerParts[0], tagLine: summonerParts[1] });
+      const accountRes = await fetch(`${base}/api/account?${accountParams}`);
+      accountData = await accountRes.json();
+      if (!accountRes.ok) return;
+    }
 
     const startRes = await fetch(`${base}/api/summary-batch/start`, {
       method: 'POST',

@@ -656,6 +656,19 @@
     .visit-banner a { color: var(--gold); text-decoration: none; }
     .visit-banner a:hover { text-decoration: underline; }
     .edit-toggle[hidden] { display: none; }
+    .visit-challenge { width: 100%; max-width: 980px; margin: 0 auto 14px; box-sizing: border-box; padding: 10px 16px; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 12px; font-family: Georgia, serif; color: var(--text-dim); font-size: 0.82rem; }
+    .visit-challenge[hidden] { display: none; }
+    .vc-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .vc-head b { color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-weight: normal; letter-spacing: 1px; }
+    .vc-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+    .vc-champs { display: flex; gap: 10px; }
+    .vc-champ { display: inline-flex; align-items: center; gap: 6px; color: var(--text); }
+    .vc-champ img { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); }
+    .vc-rank { flex: 1; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; color: var(--text); }
+    .vc-rank small { color: var(--text-faint); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+    .vc-rank i { color: var(--gold); font-style: normal; margin: 0 4px; }
+    .vc-trophies { color: var(--gold); font-family: 'Cinzel', Georgia, serif; }
+    .vc-none { font-style: italic; color: var(--text-faint); }
   </style>
 </head>
 <body>
@@ -668,6 +681,7 @@
 
   <div class="content">
     <div class="visit-banner" id="visitBanner" hidden></div>
+    <div class="visit-challenge" id="visitChallenge" hidden></div>
     <div class="canvas-wrap"><div class="canvas" id="canvas"></div></div>
     <button type="button" class="edit-toggle" id="editToggle">✎ Edit profile</button>
     <p class="status" id="status"></p>
@@ -704,7 +718,7 @@
     const VISIT = new URLSearchParams(location.search).get('u');
     let visit = null;
     const viewName = () => (VISIT ? (visit ? visit.username : '…') : (window.ttpUsername() || '…'));
-    const viewAvatar = () => (VISIT ? (visit && visit.avatar ? `avatars/${visit.avatar}.png` : 'avatar-placeholder.svg') : window.ttpAvatar());
+    const viewAvatar = () => (VISIT ? (visit && visit.avatar ? `avatars/${visit.avatar}.svg` : 'avatar-placeholder.svg') : window.ttpAvatar());
 
     async function parseApiResponse(res) {
       const text = await res.text();
@@ -1308,7 +1322,7 @@
         const cell = c => {
           const has = !c.id || usableIds.has(c.id);
           return `<div ${has ? `class="inv-item${(c.id || null) === active ? ' equipped' : ''}" data-avatar="${c.id || 'none'}"` : lockAttr(c)}>
-            <img class="mini-app-icon mini-avatar" src="${c.id ? `avatars/${c.id}.png` : 'avatar-placeholder.svg'}" alt="">${esc(c.name)}${rarTag(c)}
+            <img class="mini-app-icon mini-avatar" src="${c.id ? `avatars/${c.id}.svg` : 'avatar-placeholder.svg'}" alt="">${esc(c.name)}${rarTag(c)}
           </div>`;
         };
         list.innerHTML = countLine(counts.avatar) + sections(ofType('avatar'), cell, [{ id: null, name: 'Default' }]) +
@@ -1539,6 +1553,24 @@
     });
 
     // ===== Laden =====
+    // Laufende Challenge des Freundes (v6.3.0): Pool, Rollen, Rang-Weg, Trophies
+    function renderVisitChallenge(snap) {
+      const el = document.getElementById('visitChallenge');
+      const c = snap.challenge;
+      const RN = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'Bot', UTILITY: 'Support' };
+      const LV = { easy: 'Easy', normal: 'Normal', hard: 'Hard', very_hard: 'Very Hard', majestic: 'Majestic' };
+      const rk = r => (r && r.tier ? `${r.tier.charAt(0) + r.tier.slice(1).toLowerCase()}${['MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(r.tier) ? '' : ` ${r.rank || r.division || ''}`}${r.leaguePoints !== undefined || r.lp !== undefined ? ` · ${r.leaguePoints !== undefined ? r.leaguePoints : r.lp} LP` : ''}` : '–');
+      el.hidden = false;
+      if (!c) { el.innerHTML = '<span class="vc-none">No challenge running right now.</span>'; return; }
+      const days = Math.max(1, Math.ceil((Date.now() - new Date(c.since).getTime()) / 86400000));
+      el.innerHTML = `<div class="vc-head"><b>Current challenge</b><span>${RN[c.mainRole] || '–'} / ${RN[c.secondRole] || '–'} · ${LV[c.level] || '–'} · day ${days}</span></div>
+        <div class="vc-row">
+          <div class="vc-champs">${c.champions.map(ch => `<span class="vc-champ" title="${esc(ch.name)}"><img src="${champIcon(ch.id)}" alt="">${esc(ch.name)}</span>`).join('')}</div>
+          <div class="vc-rank"><small>Start</small>${rk(c.startRank)}<i>→</i><small>Now</small>${rk(snap.rank)}<i>→</i><small>Goal</small>${rk(c.lpGoal)}</div>
+          <div class="vc-trophies">🏆 ${c.trophies ? `${c.trophies.unlocked} / ${c.trophies.total}` : '–'}</div>
+        </div>`;
+    }
+
     async function loadVisit() {
       document.getElementById('editToggle').hidden = true;
       document.documentElement.setAttribute('data-visiting', '1');
@@ -1563,6 +1595,7 @@
         const when = snap.updatedAt ? new Date(snap.updatedAt).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
         banner.innerHTML = `<a href="profile.html">← My profile</a><span>Visiting <b>${esc(snap.username || '')}</b>${when ? ` · updated ${when}` : ''}</span>`;
         document.title = `${snap.username || 'Profile'} – Three-Trick-Pony`;
+        renderVisitChallenge(snap);
         if (layout.some(w => w.type === 'favChamp')) await loadChampionList();
       } catch (e) {
         banner.innerHTML = `<a href="profile.html">← My profile</a><span>${esc(e.message)}</span>`;

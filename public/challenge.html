@@ -384,27 +384,27 @@
     .ch-reset:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
     .ch-reset:disabled { opacity: 0.5; cursor: default; }
 
-    /* Untere Reihe (v5.32.0): Champ 1-3 quadratisch + Roles & Picks +
-       Trophies + Pass, alles nebeneinander. */
-    .ch-tiles {
+    /* v6.3.0: Quests links, rechts daneben untereinander Trophies, Pass,
+       Roles & Picks und die 3 Champs (kompakte Zeilen statt Quadrate). */
+    .ch-main {
       display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: 10px;
+      grid-template-columns: minmax(0, 1fr) 290px;
+      gap: 12px;
+      align-items: stretch;
     }
+    .ch-main .ch-quests { margin-bottom: 0; }
+    .ch-tiles { display: flex; flex-direction: column; gap: 8px; }
     .pony-row { display: contents; }
     .pony-card,
     .ch-tile {
+      flex: 1;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 6px;
-      aspect-ratio: 1 / 1;
-      min-height: 0;
+      gap: 10px;
+      min-height: 52px;
       margin-bottom: 0;
-      padding: 10px 8px;
+      padding: 7px 12px;
       box-sizing: border-box;
-      text-align: center;
       text-decoration: none;
       background: var(--panel-bg);
       backdrop-filter: blur(12px) saturate(1.1);
@@ -415,53 +415,57 @@
       transition: border-color 0.15s ease, transform 0.15s ease;
     }
     .pony-card:hover,
-    .ch-tile:hover { border-color: var(--gold); transform: translateY(-2px); }
-    .pony-card img {
-      width: 54px;
-      height: 54px;
-      border-radius: 9px;
-      border: 1px solid var(--border);
-    }
-    .pony-name,
-    .ch-tile h3 {
-      max-width: 100%;
-      margin: 0;
+    .ch-tile:hover { border-color: var(--gold); transform: translateX(-2px); }
+    .ct-ic { width: 34px; text-align: center; font-size: 1.2rem; flex-shrink: 0; }
+    .ct-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .ct-main b {
       color: var(--gold);
       font-family: 'Cinzel', Georgia, serif;
-      font-size: 0.88rem;
+      font-size: 0.85rem;
+      font-weight: normal;
       letter-spacing: 0.5px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .ct-main small { color: var(--text-faint); font-family: Georgia, serif; font-size: 0.7rem; font-style: italic; }
+    /* spans sind inline - als Block, sonst hat der Balken keine Hoehe */
+    .ct-main .xp-bar { display: block; width: 100%; height: 6px; }
+    .ct-main .xp-bar-fill { display: block; height: 100%; }
+    .ct-val { flex-shrink: 0; color: var(--text); font-family: 'Cinzel', Georgia, serif; font-size: 1.05rem; }
+    .pony-card img {
+      width: 34px;
+      height: 34px;
+      flex-shrink: 0;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+    }
+    .pony-name {
+      flex: 1;
+      min-width: 0;
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .pony-wl {
+      flex-shrink: 0;
       color: var(--text-dim);
       font-family: Georgia, serif;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-variant-numeric: tabular-nums;
     }
     .pony-wl .w { color: var(--green); }
     .pony-wl .l { color: var(--red); }
-    .ch-big {
-      color: var(--text);
-      font-family: 'Cinzel', Georgia, serif;
-      font-size: 1.45rem;
-      line-height: 1.1;
-    }
-    .ch-sub {
-      color: var(--text-faint);
-      font-family: Georgia, serif;
-      font-size: 0.72rem;
-      font-style: italic;
-    }
-    .ch-tile .xp-bar { width: 85%; }
-    .ch-donut { width: 54px; height: 54px; flex-shrink: 0; }
+    .ch-donut { width: 34px; height: 34px; flex-shrink: 0; }
     .ch-donut svg { display: block; width: 100%; height: 100%; }
-    .ch-donut text { fill: var(--text); font-family: 'Cinzel', Georgia, serif; font-size: 13px; }
+    .ch-donut text { fill: var(--text); font-family: 'Cinzel', Georgia, serif; font-size: 15px; }
     .ch-role-legend {
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
       gap: 0 8px;
       color: var(--text-dim);
       font-family: Georgia, serif;
@@ -474,6 +478,9 @@
       height: 7px;
       border-radius: 50%;
       margin-right: 3px;
+    }
+    @media (max-width: 1000px) {
+      .ch-main { grid-template-columns: minmax(0, 1fr); }
     }
 
     /* Quests: 2 Spalten x 4 Zeilen in EINEM Raster -> beide Seiten gleich hoch */
@@ -507,9 +514,6 @@
     }
     .quest-slot:hover { border-color: var(--gold) !important; color: var(--gold); }
 
-    @media (max-width: 900px) {
-      .ch-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    }
 
     .ch-none { text-align: center; padding: 26px 18px; }
     .ch-none h3 { margin: 0 0 8px; color: var(--gold); font-family: 'Cinzel', Georgia, serif; letter-spacing: 1px; }
@@ -848,6 +852,7 @@
       opacity: 0.75;
     }
     .pass-tier .mini-frame.tier-cos { width: 26px; height: 20px; }
+    .pass-tier .tier-avatar { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
     .pass-tier.unlocked .tier-cos { opacity: 1; }
     .pass-tier .tier-check {
       position: absolute;
@@ -1113,6 +1118,7 @@
     <div id="chActive">
       <div class="ch-details" id="chDetails"></div>
 
+      <div class="ch-main">
       <div class="prog-card ch-quests">
         <div class="prog-card-head">
           <h3>Quests <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Quests only run while a challenge is active. Their XP goes into your level and the monthly pass.</span></span></h3>
@@ -1129,24 +1135,22 @@
       </div>
 
       <div class="ch-tiles">
-        <div class="pony-row" id="ponyRow"></div>
-        <a class="prog-card ch-tile" href="role.html" title="Open Roles &amp; Picks">
-          <h3>Roles &amp; Picks</h3>
-          <div class="ch-donut" id="roleDonut"></div>
-          <div class="ch-role-legend" id="roleSplitLegend"></div>
-        </a>
         <a class="prog-card ch-tile" href="trophies.html" title="Open Trophies">
-          <h3>Trophies</h3>
-          <div class="ch-big"><span id="trophyCount">–</span></div>
-          <div class="ch-sub" id="trophySub">open to load your progress</div>
+          <span class="ct-ic" aria-hidden="true">🏆</span>
+          <span class="ct-main"><b>Trophies</b><small id="trophySub">open to load your progress</small></span>
+          <span class="ct-val" id="trophyCount">–</span>
         </a>
         <a class="prog-card ch-tile" href="challenge.html?view=pass" title="Open the monthly pass">
-          <h3 id="passTileTitle">Pass</h3>
-          <div class="ch-big"><span id="passTileTier">–</span></div>
-          <div class="ch-sub">tier</div>
-          <div class="xp-bar small"><div class="xp-bar-fill" id="passTileFill"></div></div>
-          <div class="ch-sub" id="passTileXp">&nbsp;</div>
+          <span class="ct-ic" aria-hidden="true">🎖️</span>
+          <span class="ct-main"><b id="passTileTitle">Pass</b><span class="xp-bar small"><span class="xp-bar-fill" id="passTileFill"></span></span><small id="passTileXp">&nbsp;</small></span>
+          <span class="ct-val" id="passTileTier">–</span>
         </a>
+        <a class="prog-card ch-tile" href="role.html" title="Open Roles &amp; Picks">
+          <span class="ch-donut" id="roleDonut"></span>
+          <span class="ct-main"><b>Roles &amp; Picks</b><span class="ch-role-legend" id="roleSplitLegend"></span></span>
+        </a>
+        <div class="pony-row" id="ponyRow"></div>
+      </div>
       </div>
     </div>
 
@@ -1162,7 +1166,7 @@
       <div>
         <div class="prog-card pass-card">
           <div class="prog-card-head">
-            <h3><span id="passTitle">Monthly Pass</span> <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">A new pass starts every month. Tiers 5, 10, 15, 20, 25 and 30 unlock this month's exclusive cosmetics (yours forever), 8 tiers give a free sticker booster, all other tiers give coins for the shop. After tier 30 you keep earning 200 coins per step - the first step takes 2,000 XP, every further one 300 XP more. Step 30+5 also gives a free voucher for 1 Refined or Fancy item in that day's daily shop - it expires when the daily shop changes. Every reward is given once per tier - resetting a challenge doesn't reset the pass.</span></span></h3>
+            <h3><span id="passTitle">Monthly Pass</span> <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">A new pass starts every month. Tiers 5, 10, 15, 20, 25 and 30 unlock this month's exclusive cosmetics (yours forever), tiers 13 and 22 its profile pictures, 8 tiers give a free sticker booster, all other tiers give coins for the shop. After tier 30 you keep earning 200 coins per step - the first step takes 2,000 XP, every further one 300 XP more. Step 30+5 also gives a free voucher for 1 Refined or Fancy item in that day's daily shop - it expires when the daily shop changes. Every reward is given once per tier - resetting a challenge doesn't reset the pass.</span></span></h3>
             <span class="reset-in" id="passEndsIn"></span>
           </div>
           <p class="pass-locked" id="passLocked" hidden>Your pass only levels during a challenge - <a href="challenge.html">start one</a>. Games outside a challenge still give account XP.</p>
@@ -1940,7 +1944,7 @@
       document.getElementById('passTierText').textContent = `Tier ${pass.tier} / ${pass.tiers}`;
       // Pass-Kachel auf der Challenge-Uebersicht
       document.getElementById('passTileTitle').textContent = `${pass.label.split(' ')[0]} Pass`;
-      document.getElementById('passTileTier').textContent = `${pass.tier} / ${pass.tiers}`;
+      document.getElementById('passTileTier').textContent = `${pass.tier}/${pass.tiers}`;
       document.getElementById('passTileFill').style.width = pass.tier >= pass.tiers ? '100%' : `${(pass.xpIntoTier / pass.xpPerTier) * 100}%`;
       document.getElementById('passTileXp').textContent = pass.tier >= pass.tiers ? 'Pass complete' : `${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP`;
       if (!coinsFlying) document.getElementById('coinBalance').textContent = `🪙 ${fmtNum(coins)}`;
@@ -1965,7 +1969,7 @@
         const unlocked = t <= pass.tier;
         const current = t === pass.tier + 1;
         const progress = current ? `<span class="tier-progress" style="width:${(pass.xpIntoTier / pass.xpPerTier) * 100}%"></span>` : '';
-        const COS_LABEL = { border: 'profile picture border', frame: 'profile frame', theme: 'app theme' };
+        const COS_LABEL = { border: 'profile picture border', frame: 'profile frame', theme: 'app theme', avatar: 'profile picture' };
         const reward = r.type === 'booster'
           ? '<span class="mini-pack tier-cos" title="Free booster"></span>'
           : r.type !== 'cosmetic'
@@ -1974,6 +1978,8 @@
             ? `<span class="mini-frame mini-frame-${r.id} tier-cos"></span>`
             : r.cosmeticType === 'theme'
               ? `<span class="mini-theme mini-theme-${r.themeKey} tier-cos"></span>`
+              : r.cosmeticType === 'avatar'
+                ? `<img class="tier-cos tier-avatar" src="avatars/${r.id}.svg" alt="">`
               : `<span class="cos-border cos-${r.id} tier-cos"><span class="cos-fill"></span></span>`;
         const label = r.type === 'booster' ? 'a free booster (opens in your Album)' : r.type === 'cosmetic' ? `${r.name} (${COS_LABEL[r.cosmeticType] || r.cosmeticType}${r.animated ? ', animated' : ''})` : `${r.amount} coins`;
         html += `<div data-tier="${t}" class="pass-tier${milestone ? ' milestone' : ''}${unlocked ? ' unlocked' : ''}${current ? ' current' : ''}${r.claimable ? ' claimable' : ''}${r.alreadyOwned ? ' owned-dupe' : ''}"${r.claimable ? ` data-claim-tier="${t}"` : ''} title="Tier ${t} - ${label}${r.alreadyOwned ? ' - already owned, nothing to claim' : r.claimable ? ' - click to claim' : unlocked ? ' - unlocked' : ''}${current ? ` (${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP)` : ''}">` +
@@ -2071,7 +2077,6 @@
         ['Per kill', src.perKill],
         ['Per assist', src.perAssist],
         [`Every ${src.lpBankSize} LP gained (LP Bank)`, src.perLpBank],
-        ['Trophy unlocked (temporary ones excluded)', src.perTrophy],
         ['Coins for every ranked game (+20 on a win)', '+30 🪙'],
         [`After ${fullXpGames} games a day`, '½ XP and ½ coins']
       ];

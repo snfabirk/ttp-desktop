@@ -44,7 +44,6 @@ const COINS_WIN_BONUS = 20;
 const XP_PER_KILL = 10;
 const XP_PER_ASSIST = 5;
 const FULL_XP_GAMES_PER_DAY = 5;      // ab dem 6. Spiel des Tages: alle XP halbiert
-const XP_PER_TROPHY = 750;            // temporaere Trophaeen zaehlen nicht
 
 // LP-Konto (Nutzeridee 2026-10-09): jeder LP-GEWINN wandert auf ein Konto
 // 0-100, LP-Verluste werden ignoriert. Ist es voll, gibt es XP (Level + Pass)
@@ -68,7 +67,8 @@ const PASS_XP_PER_TIER = 1200;
 // leisten zu koennen"): Pass-Coins verdreifacht, 30+ verdoppelt, Coins pro
 // Game, Gluecksrad x3 - die Booster werden der Coin-Abfluss.
 function coinsForTier(tier) {
-  return tier <= 10 ? 240 : tier <= 20 ? 300 : 360;
+  // v6.3.0 (Nutzer): +40 je Stufe, weil Stufe 13/22 jetzt Profilbilder sind
+  return tier <= 10 ? 280 : tier <= 20 ? 340 : 400;
 }
 const FALLBACK_COSMETIC_COINS = 900; // Monat ohne angelegte Cosmetics
 // Pass 30+ (Nutzerentscheidung 2026-10-09, v5.14.0): jede weitere 30+-Stufe
@@ -368,8 +368,15 @@ function passProgress(xp) {
 // Gratis-Booster im Pass (v5.29.0, Nutzer: unregelmaessig verteilt, 8 Stueck,
 // gelten fuer jedes Set - aktuell gibt es nur das Base Set)
 const BOOSTER_TIERS = [3, 7, 12, 16, 19, 23, 27, 29];
+// Profilbilder im Pass (v6.3.0, Nutzerdesign): Stufe 13 simpel, 22 besser.
+// Monate ohne angelegte Profilbilder geben dort ganz normal Coins.
+const AVATAR_TIERS = [13, 22];
 function tierReward(month, tier) {
   if (BOOSTER_TIERS.includes(tier)) return { type: 'booster', set: 'base', amount: 1 };
+  if (AVATAR_TIERS.includes(tier)) {
+    const av = passCosmetic(month, tier);
+    if (av) return { type: 'cosmetic', id: av.id, name: av.name, cosmeticType: av.type, animated: !!av.animated };
+  }
   if (tier % 5 === 0) {
     const cosmetic = passCosmetic(month, tier);
     if (cosmetic) return { type: 'cosmetic', id: cosmetic.id, name: cosmetic.name, cosmeticType: cosmetic.type, themeKey: cosmetic.themeKey, animated: !!cosmetic.animated };
@@ -773,6 +780,13 @@ function readState() {
 }
 
 function writeState(state) {
+  // Level-Up-Ereignisse fuer die Activity (v6.3.0). Erstes Mal nur merken.
+  const lvl = levelFromXp(state.totalXp || 0).level;
+  if (typeof state.lastLevel !== 'number') state.lastLevel = lvl;
+  else if (lvl > state.lastLevel) {
+    state.levelEvents = [...(state.levelEvents || []), { at: Date.now(), level: lvl }].slice(-10);
+    state.lastLevel = lvl;
+  } else if (lvl < state.lastLevel) state.lastLevel = lvl; // Reset
   fs.writeFileSync(filePath(), JSON.stringify(state, null, 2));
   if (onWrite) onWrite();
 }
@@ -898,7 +912,8 @@ function getRecentActivity(limit = 10) {
     .map(g => ({ kind: 'game', at: g.gameCreation, win: !!g.win, champId: g.champId || '', champName: g.champName || '', xp: g.xp || 0 }));
   const bank = [...((state.lpBank && state.lpBank.events) || [])].filter(e => e.filled).slice(-5)
     .map(e => ({ kind: 'lpbank', at: new Date(e.at).getTime(), xp: e.xp || 0 }));
-  return [...games, ...bank].sort((a, b) => b.at - a.at).slice(0, limit);
+  const levels = (state.levelEvents || []).map(e => ({ kind: 'levelup', at: e.at, level: e.level }));
+  return [...games, ...bank, ...levels].sort((a, b) => b.at - a.at).slice(0, limit);
 }
 
 function getLifetimeStats() {
@@ -1402,7 +1417,7 @@ function getOverview(context) {
     totalXp: state.totalXp,
     gamesToday: state.ledger.filter(e => e.day === dayKey(now)).length,
     challengeActive,
-    recentGames: [...state.ledger].sort((a, b) => b.gameCreation - a.gameCreation).slice(0, 5),
+    recentGames: [...state.ledger].sort((a, b) => b.gameCreation - a.gameCreation).slice(0, 7),
     fullXpGamesPerDay: FULL_XP_GAMES_PER_DAY,
     dailies: quests.dailies,
     weeklies: quests.weeklies,
@@ -1424,8 +1439,7 @@ function getOverview(context) {
       perKill: XP_PER_KILL,
       perAssist: XP_PER_ASSIST,
       perLpBank: XP_PER_LP_BANK,
-      lpBankSize: LP_BANK_SIZE,
-      perTrophy: XP_PER_TROPHY
+      lpBankSize: LP_BANK_SIZE
     }
   };
 }
