@@ -28,6 +28,10 @@
           location.replace('overview.html');
         }
       }
+      // Waehrend einer laufenden Challenge ist das Setup gesperrt (v5.32.0):
+      // alles ist ab dem Start fest, die Details stehen auf der
+      // Challenge-Seite - dorthin statt auf die Setup-Seite.
+      if (localStorage.getItem('ttp_challenge_start')) location.replace('challenge.html');
     } catch (e) {}
   </script>
   <style>
@@ -175,6 +179,8 @@
       flex-shrink: 0;
       padding: 0 18px;
     }
+    .summoner-input-row button[hidden] { display: none; }
+    .summoner-input-row input[readonly] { cursor: default; color: var(--gold); }
     .lp-goal-hint {
       margin: 8px 0 0;
       font-size: 0.75rem;
@@ -639,8 +645,10 @@
   <div class="setup-box" id="summonerDateBox">
     <label>Summoner &amp; Challenge</label>
     <div class="summoner-input-row">
-      <input type="text" id="summonerInput" placeholder="ShacoHater#EUW">
-      <button type="button" id="summonerSaveBtn" title="Resolve summoner now">Save</button>
+      <!-- Seit v5.33.0 kommt der Summoner aus dem Account (Umschalter oben
+           rechts) - hier nur noch Anzeige. -->
+      <input type="text" id="summonerInput" placeholder="Link a summoner first (top right)" readonly title="Your active summoner - switch or link one via the menu top right">
+      <button type="button" id="summonerSaveBtn" title="Resolve summoner now" hidden>Save</button>
     </div>
 
     <div class="challenge-rank-row" id="challengeRankRow">Loading current rank…</div>
@@ -689,7 +697,7 @@
   <div class="setup-box" id="checklistBox">
     <label>Challenge Checklist</label>
     <ul class="checklist" id="checklistList">
-      <li class="checklist-item" id="checklistSummoner"><span class="checklist-mark">○</span> Summoner name set</li>
+      <li class="checklist-item" id="checklistSummoner"><span class="checklist-mark">○</span> Summoner linked</li>
       <li class="checklist-item" id="checklistChamps"><span class="checklist-mark">○</span> 1-3 champions selected</li>
       <li class="checklist-item" id="checklistRoles"><span class="checklist-mark">○</span> Main role assigned</li>
       <li class="checklist-item" id="checklistSecondRole"><span class="checklist-mark">○</span> Second role assigned</li>
@@ -786,7 +794,7 @@
   </div>
 
   <script>
-    const DDRAGON_VERSION = '16.17.1';
+    const DDRAGON_VERSION = window.TTP_DDRAGON_VERSION || '16.22.1';
     const MAX_CHAMPS = 3;
     const STORAGE_KEY = 'ttp_selected_champs';
     const STORAGE_KEY_SUMMONER = 'ttp_summoner_name';
@@ -1186,7 +1194,7 @@
       const raw = summonerInput.value.trim();
       const parts = raw.split('#');
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
-        throw new Error('Please enter your summoner name as Name#Tag first (e.g. ShacoHater#EUW).');
+        throw new Error('Link a summoner first - menu top right.');
       }
       const [gameName, tagLine] = parts;
       const res = await fetch(`/api/account?${new URLSearchParams({ gameName, tagLine })}`);
@@ -1298,6 +1306,13 @@
         const startIso = new Date(data.timestamp).toISOString();
         saveChallengeStart(startIso);
         renderChallengeState();
+        // v6.0: die Challenge gehoert jetzt dem Summoner und liegt auf dem
+        // Server (ab hier fest, siehe server/lib/challengeRuns.js)
+        await fetch('/api/challenge/run/set', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ puuid: localStorage.getItem('ttp_active_puuid') || puuid, run: window.ttpRunFromStorage() })
+        }).catch(() => {});
 
         // Legt den History-Eintrag fuer diese Challenge an (siehe
         // server/lib/challengeHistory.js) - rein informativ fuer die
@@ -1324,7 +1339,10 @@
             startRankDivision: data.current ? data.current.rank : '',
             startRankLp: data.current ? data.current.leaguePoints : 0
           })
-        }).catch(() => {});
+        }).catch(() => {}).finally(() => {
+          // Ab jetzt ist das Setup gesperrt - weiter zur Challenge-Seite.
+          location.replace('challenge.html');
+        });
       } catch (e) {
         challengeStartError.textContent = e.message;
         challengeStartError.classList.add('visible');
@@ -1644,6 +1662,7 @@
     });
 
     summonerInput.value = loadSummonerName();
+    summonerInput.readOnly = true;
     // sicherstellen, dass der aktuell angezeigte Wert auch wirklich gespeichert
     // ist - sonst bleibt ein unveraenderter Platzhalter-Wert (z.B. der
     // vorausgefuellte Default) nie im localStorage und Seite 2 sieht "leer".

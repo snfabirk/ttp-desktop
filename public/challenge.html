@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Challenge &amp; Pass – Three-Trick-Pony</title>
+  <title>Challenge – Three-Trick-Pony</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
@@ -349,176 +349,183 @@
       padding-top: 10px;
       border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
     }
-    /* ----- Challenge-Tab: Ziel, Ponys, Rollen, Trophaeen ----- */
-    .goal-track {
+    /* ----- Challenge = Uebersicht (v5.32.0): Details, kleine Champs, Quests, Kacheln ----- */
+    .ch-details {
       display: flex;
       align-items: center;
-      gap: 14px;
-    }
-    .goal-end {
-      flex-shrink: 0;
-      min-width: 130px;
-      color: var(--text);
-      font-family: 'Cinzel', Georgia, serif;
-      font-size: 0.95rem;
-      white-space: nowrap;
-    }
-    .goal-end-right { text-align: right; }
-    .goal-bar {
-      position: relative;
-      flex: 1;
-      height: 12px;
-      border-radius: 6px;
-      background: color-mix(in srgb, var(--text-faint) 18%, transparent);
+      flex-wrap: wrap;
+      gap: 6px 18px;
+      margin-bottom: 12px;
+      padding: 8px 16px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px) saturate(1.1);
+      -webkit-backdrop-filter: blur(12px) saturate(1.1);
       border: 1px solid var(--border);
-    }
-    .goal-bar-fill {
-      height: 100%;
-      width: 0;
-      border-radius: 6px;
-      background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, transparent), var(--gold));
-      transition: width 0.4s ease;
-    }
-    .goal-marker {
-      position: absolute;
-      top: 50%;
-      left: 0;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      border: 2px solid var(--gold);
-      background: var(--bg);
-      transform: translate(-50%, -50%);
-      box-shadow: 0 0 8px color-mix(in srgb, var(--gold) 50%, transparent);
-    }
-    .goal-sub {
-      margin-top: 8px;
-      text-align: center;
+      border-radius: 10px;
       color: var(--text-dim);
       font-family: Georgia, serif;
       font-size: 0.8rem;
-      min-height: 1.2em;
+      min-height: 22px;
     }
-    .goal-sub .pos { color: var(--green); }
-    .goal-sub .neg { color: var(--red); }
+    .ch-details strong { color: var(--text); font-weight: normal; font-family: 'Cinzel', Georgia, serif; font-size: 0.82rem; }
+    .ch-details .ch-lock { color: var(--text-faint); font-style: italic; }
+    .ch-reset {
+      margin-left: auto;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 10px;
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+    .ch-reset:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
+    .ch-reset:disabled { opacity: 0.5; cursor: default; }
 
-    .pony-row {
+    /* Untere Reihe (v5.32.0): Champ 1-3 quadratisch + Roles & Picks +
+       Trophies + Pass, alles nebeneinander. */
+    .ch-tiles {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      margin-bottom: 14px;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
     }
-    .pony-card {
-      display: block;
+    .pony-row { display: contents; }
+    .pony-card,
+    .ch-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      aspect-ratio: 1 / 1;
+      min-height: 0;
+      margin-bottom: 0;
+      padding: 10px 8px;
+      box-sizing: border-box;
+      text-align: center;
       text-decoration: none;
-      transition: border-color 0.15s ease, transform 0.15s ease;
-      position: relative;
-      min-height: 118px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px) saturate(1.1);
+      -webkit-backdrop-filter: blur(12px) saturate(1.1);
       border: 1px solid var(--border);
       border-radius: 10px;
-      overflow: hidden;
-      background-size: cover;
-      background-position: center 20%;
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+      transition: border-color 0.15s ease, transform 0.15s ease;
     }
-    .pony-card:hover { border-color: var(--gold); transform: translateY(-2px); }
-    .pony-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, rgba(var(--bg-rgb), 0.95) 0%, rgba(var(--bg-rgb), 0.75) 55%, rgba(var(--bg-rgb), 0.35) 100%);
+    .pony-card:hover,
+    .ch-tile:hover { border-color: var(--gold); transform: translateY(-2px); }
+    .pony-card img {
+      width: 54px;
+      height: 54px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
     }
-    .pony-body {
-      position: relative;
-      padding: 12px 16px;
-      font-family: Georgia, serif;
-    }
-    .pony-name {
+    .pony-name,
+    .ch-tile h3 {
+      max-width: 100%;
+      margin: 0;
       color: var(--gold);
       font-family: 'Cinzel', Georgia, serif;
-      font-size: 1.05rem;
+      font-size: 0.88rem;
       letter-spacing: 0.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .pony-wl {
-      margin: 2px 0 8px;
-      color: var(--text);
+      color: var(--text-dim);
+      font-family: Georgia, serif;
       font-size: 0.9rem;
+      font-variant-numeric: tabular-nums;
     }
     .pony-wl .w { color: var(--green); }
     .pony-wl .l { color: var(--red); }
-    .pony-wl .wr { color: var(--text-dim); margin-left: 6px; }
-    .pony-stats {
-      display: flex;
-      gap: 14px;
-      color: var(--text-dim);
-      font-size: 0.75rem;
-    }
-    .pony-stats strong {
-      display: block;
+    .ch-big {
       color: var(--text);
       font-family: 'Cinzel', Georgia, serif;
-      font-size: 0.9rem;
+      font-size: 1.45rem;
+      line-height: 1.1;
     }
-
-    .ch-split {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 14px;
-    }
-    .ch-split .prog-card { margin-bottom: 0; }
-    .role-split-bar {
-      display: flex;
-      height: 12px;
-      border-radius: 6px;
-      overflow: hidden;
-      background: color-mix(in srgb, var(--text-faint) 18%, transparent);
-      border: 1px solid var(--border);
-    }
-    .role-split-bar span { height: 100%; }
-    .role-split-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px 16px;
-      margin-top: 8px;
-      color: var(--text-dim);
-      font-family: Georgia, serif;
-      font-size: 0.8rem;
-    }
-    .role-split-legend i {
-      display: inline-block;
-      width: 9px;
-      height: 9px;
-      border-radius: 2px;
-      margin-right: 5px;
-    }
-    .trophy-mini {
-      display: block;
-      text-decoration: none;
-      transition: border-color 0.15s ease;
-    }
-    .trophy-mini:hover { border-color: var(--gold); }
-    .trophy-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 6px;
-      color: var(--text-dim);
-      font-family: Georgia, serif;
-      font-size: 0.8rem;
-    }
-    .trophy-row .t-name { width: 38%; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .trophy-row .xp-bar { flex: 1; height: 7px; }
-    .trophy-row .t-num { width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
-    .ch-empty {
-      margin: 0;
+    .ch-sub {
       color: var(--text-faint);
       font-family: Georgia, serif;
-      font-size: 0.8rem;
+      font-size: 0.72rem;
       font-style: italic;
     }
-    @media (max-width: 900px) {
-      .pony-row, .ch-split { grid-template-columns: minmax(0, 1fr); }
+    .ch-tile .xp-bar { width: 85%; }
+    .ch-donut { width: 54px; height: 54px; flex-shrink: 0; }
+    .ch-donut svg { display: block; width: 100%; height: 100%; }
+    .ch-donut text { fill: var(--text); font-family: 'Cinzel', Georgia, serif; font-size: 13px; }
+    .ch-role-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0 8px;
+      color: var(--text-dim);
+      font-family: Georgia, serif;
+      font-size: 0.68rem;
+      white-space: nowrap;
     }
+    .ch-role-legend i {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      margin-right: 3px;
+    }
+
+    /* Quests: 2 Spalten x 4 Zeilen in EINEM Raster -> beide Seiten gleich hoch */
+    .ch-quests { padding-bottom: 14px; }
+    .ch-quest-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-auto-rows: auto;
+      column-gap: 14px;
+      row-gap: 6px;
+    }
+    .ch-quest-grid .sub-head { margin-bottom: 0; }
+    .ch-quest-col { display: contents; }
+    .ch-quest-grid .quest { padding: 6px 10px; }
+    .ch-quest-grid .quest-bottom { margin-top: 4px; }
+    .ch-quest-grid .quest-breakdown { margin-top: 3px; }
+    .quest-slot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 46px;
+      border-style: dashed !important;
+      background: transparent !important;
+      color: var(--text-faint);
+      font-family: Georgia, serif;
+      font-size: 0.78rem;
+      font-style: italic;
+      text-decoration: none;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+    .quest-slot:hover { border-color: var(--gold) !important; color: var(--gold); }
+
+    @media (max-width: 900px) {
+      .ch-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    .ch-none { text-align: center; padding: 26px 18px; }
+    .ch-none h3 { margin: 0 0 8px; color: var(--gold); font-family: 'Cinzel', Georgia, serif; letter-spacing: 1px; }
+    .ch-none p { margin: 0 0 16px; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.85rem; }
+    .ch-start-btn {
+      display: inline-block;
+      padding: 8px 18px;
+      border: 1px solid var(--gold);
+      border-radius: 18px;
+      color: var(--gold);
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 0.85rem;
+      text-decoration: none;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .ch-start-btn:hover { background: var(--gold); color: var(--bg); }
 
     .progression-grid {
       display: grid;
@@ -528,6 +535,15 @@
          die Zeilenhoehe, die jeweils letzte Karte fuellt den Rest. */
       align-items: stretch;
     }
+    /* Pass-Seite (v5.32.0): Pass gross links = Hauptsache, XP schmal rechts */
+    .progression-grid.pass-layout { grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr); }
+    .pass-layout .pass-grid { grid-template-rows: repeat(5, minmax(66px, 1fr)); gap: 8px; }
+    .pass-layout .games-today { flex-wrap: nowrap; gap: 4px; }
+    @media (max-width: 1300px) { .pass-layout .games-today { flex-wrap: wrap; } }
+    .pass-locked { margin: 0 0 10px; padding: 8px 12px; border: 1px dashed var(--gold); border-radius: 8px; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.8rem; }
+    .pass-locked[hidden] { display: none; }
+    .pass-locked a { color: var(--gold); }
+    .pass-layout .games-today .game-pip.reduced { white-space: nowrap; }
     .progression-grid > div {
       display: flex;
       flex-direction: column;
@@ -537,7 +553,7 @@
       margin-bottom: 0;
     }
     @media (max-width: 900px) {
-      .progression-grid { grid-template-columns: minmax(0, 1fr); }
+      .progression-grid, .progression-grid.pass-layout { grid-template-columns: minmax(0, 1fr); }
       .progression-grid > div > .prog-card:last-child { margin-bottom: 14px; }
     }
     .prog-card {
@@ -980,6 +996,8 @@
       transition: opacity 0.12s ease;
     }
     .xp-help-pop { left: auto; right: 0; width: 330px; }
+    /* schmale XP-Spalte rechts (v6.0): LP-Bank-Hinweis darf nicht ueber den Fensterrand ragen */
+    .pass-layout .sub-head .hint-pop { width: 220px; }
     .hint:hover .hint-pop, .hint:focus-within .hint-pop {
       opacity: 1;
       visibility: visible;
@@ -1089,79 +1107,65 @@
       <p class="profile-status" id="profileStatus"></p>
     </div>
 
-    <!-- Challenge-Zusammenfassung (Nutzerwunsch: Tab wirkte zu kahl) -->
-    <div class="prog-card goal-card" id="goalCard">
-      <div class="prog-card-head">
-        <h3>Goal Progress</h3>
-        <span class="reset-in" id="goalPct"></span>
+    <!-- Challenge = reine Uebersicht (v5.32.0, Nutzerwunsch): Details der
+         (ab dem Start festen) Einstellungen, kleine Champs, Quests und drei
+         Kacheln zu Roles & Picks / Trophies / Pass. -->
+    <div id="chActive">
+      <div class="ch-details" id="chDetails"></div>
+
+      <div class="prog-card ch-quests">
+        <div class="prog-card-head">
+          <h3>Quests <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Quests only run while a challenge is active. Their XP goes into your level and the monthly pass.</span></span></h3>
+        </div>
+        <!-- Ein Raster fuer beide Seiten: Daily i und Weekly i teilen sich eine
+             Zeile, dadurch sind links und rechts immer gleich hoch. 4 Slots pro
+             Seite - der 4. ist die Bonus-Quest aus dem Shop (sonst Platzhalter). -->
+        <div class="ch-quest-grid" id="questGrid">
+          <div class="sub-head" style="grid-column:1;grid-row:1"><span>Daily</span><span class="reset-in" id="dailyResetIn"></span></div>
+          <div class="sub-head" style="grid-column:2;grid-row:1"><span>Weekly</span><span class="reset-in" id="weeklyResetIn"></span></div>
+          <div class="ch-quest-col" id="dailyQuests"></div>
+          <div class="ch-quest-col" id="weeklyQuests"></div>
+        </div>
       </div>
-      <div class="goal-track">
-        <span class="goal-end" id="goalStart">–</span>
-        <div class="goal-bar"><div class="goal-bar-fill" id="goalFill"></div><span class="goal-marker" id="goalMarker"></span></div>
-        <span class="goal-end goal-end-right" id="goalEnd">–</span>
+
+      <div class="ch-tiles">
+        <div class="pony-row" id="ponyRow"></div>
+        <a class="prog-card ch-tile" href="role.html" title="Open Roles &amp; Picks">
+          <h3>Roles &amp; Picks</h3>
+          <div class="ch-donut" id="roleDonut"></div>
+          <div class="ch-role-legend" id="roleSplitLegend"></div>
+        </a>
+        <a class="prog-card ch-tile" href="trophies.html" title="Open Trophies">
+          <h3>Trophies</h3>
+          <div class="ch-big"><span id="trophyCount">–</span></div>
+          <div class="ch-sub" id="trophySub">open to load your progress</div>
+        </a>
+        <a class="prog-card ch-tile" href="challenge.html?view=pass" title="Open the monthly pass">
+          <h3 id="passTileTitle">Pass</h3>
+          <div class="ch-big"><span id="passTileTier">–</span></div>
+          <div class="ch-sub">tier</div>
+          <div class="xp-bar small"><div class="xp-bar-fill" id="passTileFill"></div></div>
+          <div class="ch-sub" id="passTileXp">&nbsp;</div>
+        </a>
       </div>
-      <div class="goal-sub" id="goalSub"></div>
     </div>
 
-    <div class="pony-row" id="ponyRow"></div>
-
-    <div class="ch-split">
-      <a class="prog-card trophy-mini" href="role.html" title="Open Roles &amp; Picks">
-        <div class="prog-card-head"><h3>Roles &amp; Picks</h3><span class="reset-in" id="rolesTotal"></span></div>
-        <div class="role-split-bar" id="roleSplitBar"></div>
-        <div class="role-split-legend" id="roleSplitLegend"></div>
-      </a>
-      <a class="prog-card trophy-mini" href="trophies.html" title="Open Trophies">
-        <div class="prog-card-head"><h3>Trophies</h3><span class="reset-in" id="trophyCount"></span></div>
-        <div id="trophyClosest"><p class="ch-empty">Open the Trophies page once to load your progress.</p></div>
-      </a>
+    <div class="prog-card ch-none" id="chNone" hidden>
+      <h3>No active challenge</h3>
+      <p>You still earn account XP for every game. Start a challenge to get quests, trophies and pass progress.</p>
+      <a href="index.html" class="ch-start-btn">Set up a challenge →</a>
     </div>
     </div>
 
     <div class="tab-panel" data-panel="pass">
-    <div class="progression-grid">
+    <div class="progression-grid pass-layout">
       <div>
-        <div class="prog-card">
-          <div class="prog-card-head">
-            <h3>Daily Quests</h3>
-            <span class="reset-in" id="dailyResetIn"></span>
-          </div>
-          <div class="games-today" id="gamesToday"></div>
-          <div class="quest-list" id="dailyQuests" style="margin-top:12px;"></div>
-        </div>
-        <div class="prog-card">
-          <div class="prog-card-head">
-            <h3>Weekly Quests</h3>
-            <span class="reset-in" id="weeklyResetIn"></span>
-          </div>
-          <div class="quest-list" id="weeklyQuests"></div>
-        </div>
-      </div>
-      <div>
-        <div class="prog-card">
-          <div class="prog-card-head">
-            <h3>XP</h3>
-            <span class="hint xp-help" tabindex="0">How to earn XP <span class="info-icon">?</span>
-              <span class="hint-pop xp-help-pop"><table class="xp-sources" id="xpSources"></table></span>
-            </span>
-          </div>
-          <div class="sub-head">
-            <span>LP Bank <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Every LP you gain goes into the bank, LP losses are ignored. When it hits 100 you get XP and it starts over - extra LP carry over.</span></span></span>
-            <span class="reset-in" id="lpBankFills"></span>
-          </div>
-          <div class="xp-bar lp-bank-bar"><div class="xp-bar-fill" id="lpBankFill"></div></div>
-          <div class="pass-summary">
-            <span id="lpBankText">0 / 100 LP</span>
-            <span id="lpBankReward">+1,000 XP when full</span>
-          </div>
-          <div class="sub-head sub-head-gap"><span>Recent games</span></div>
-          <div class="recent-xp" id="recentXp"></div>
-        </div>
         <div class="prog-card pass-card">
           <div class="prog-card-head">
             <h3><span id="passTitle">Monthly Pass</span> <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">A new pass starts every month. Tiers 5, 10, 15, 20, 25 and 30 unlock this month's exclusive cosmetics (yours forever), 8 tiers give a free sticker booster, all other tiers give coins for the shop. After tier 30 you keep earning 200 coins per step - the first step takes 2,000 XP, every further one 300 XP more. Step 30+5 also gives a free voucher for 1 Refined or Fancy item in that day's daily shop - it expires when the daily shop changes. Every reward is given once per tier - resetting a challenge doesn't reset the pass.</span></span></h3>
             <span class="reset-in" id="passEndsIn"></span>
           </div>
+          <p class="pass-locked" id="passLocked" hidden>Your pass only levels during a challenge - <a href="challenge.html">start one</a>. Games outside a challenge still give account XP.</p>
           <div class="xp-bar"><div class="xp-bar-fill" id="passXpFill"></div></div>
           <div class="pass-summary">
             <span id="passTierText">Tier 0 / 30</span>
@@ -1173,12 +1177,34 @@
           <div class="pass-overflow" id="passOverflow"></div>
         </div>
       </div>
+      <div>
+        <div class="prog-card">
+          <div class="prog-card-head">
+            <h3>XP</h3>
+            <span class="hint xp-help" tabindex="0">How to earn XP <span class="info-icon">?</span>
+              <span class="hint-pop xp-help-pop"><table class="xp-sources" id="xpSources"></table></span>
+            </span>
+          </div>
+          <div class="games-today" id="gamesToday"></div>
+          <div class="sub-head sub-head-gap">
+            <span>LP Bank <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Every LP you gain goes into the bank, LP losses are ignored. When it hits 100 you get XP and it starts over - extra LP carry over.</span></span></span>
+            <span class="reset-in" id="lpBankFills"></span>
+          </div>
+          <div class="xp-bar lp-bank-bar"><div class="xp-bar-fill" id="lpBankFill"></div></div>
+          <div class="pass-summary">
+            <span id="lpBankText">0 / 100 LP</span>
+            <span id="lpBankReward">+1,000 XP when full</span>
+          </div>
+          <div class="sub-head sub-head-gap"><span>Recent games</span></div>
+          <div class="recent-xp" id="recentXp"></div>
+        </div>
+      </div>
     </div>
     </div>
   </div>
 
   <script>
-    const DDRAGON_VERSION = '16.17.1';
+    const DDRAGON_VERSION = window.TTP_DDRAGON_VERSION || '16.22.1';
     const statusEl = document.getElementById('profileStatus');
     new MutationObserver(() => { statusEl.title = statusEl.textContent; }).observe(statusEl, { childList: true, characterData: true, subtree: true });
     const accountOverviewIcon = document.getElementById('accountOverviewIcon');
@@ -1201,7 +1227,7 @@
     { const n = ls('ttp_summoner_name').trim(); document.getElementById('accountOverviewName').textContent = /^.+#.+$/.test(n) ? n : 'No summoner set yet'; }
 
     function profileIconUrl(iconId) {
-      return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${iconId}.png`;
+      return window.ttpProfileIcon(iconId);
     }
 
     async function parseApiResponse(res) {
@@ -1591,33 +1617,6 @@
       return rankIconHtml(tier, rest);
     }
 
-    // Start (Snapshot beim Challenge-Start) -> aktueller Rang -> LP-Ziel.
-    function renderGoalProgress(startPoint, current) {
-      const goalTier = ls('ttp_lp_goal_tier');
-      const goalDiv = ls('ttp_lp_goal_division');
-      const goalLp = Number(ls('ttp_lp_goal_lp')) || 0;
-      const startEl = document.getElementById('goalStart');
-      const endEl = document.getElementById('goalEnd');
-      const subEl = document.getElementById('goalSub');
-      startEl.innerHTML = startPoint ? rankLabelHtml(startPoint.tier, startPoint.rank, startPoint.leaguePoints) : '–';
-      endEl.innerHTML = goalTier ? rankLabelHtml(goalTier, goalDiv, goalLp) : 'No goal set';
-      if (!goalTier || !startPoint || !current) {
-        subEl.textContent = goalTier ? '' : 'Set an LP goal on the Setup page.';
-        return;
-      }
-      const start = comparableLP(startPoint.tier, startPoint.rank, startPoint.leaguePoints);
-      const now = comparableLP(current.tier, current.rank, current.leaguePoints);
-      const goal = comparableLP(goalTier, goalDiv, goalLp);
-      const span = Math.max(1, goal - start);
-      const pct = Math.max(0, Math.min(1, (now - start) / span));
-      document.getElementById('goalFill').style.width = `${pct * 100}%`;
-      document.getElementById('goalMarker').style.left = `${pct * 100}%`;
-      document.getElementById('goalPct').textContent = now >= goal ? 'Goal reached ✓' : `${Math.round(pct * 100)}% of the way`;
-      const gained = now - start;
-      subEl.innerHTML = `Now ${formatRank(current)} · <span class="${gained >= 0 ? 'pos' : 'neg'}">${gained >= 0 ? '+' : ''}${gained} LP</span> since start` +
-        (now < goal ? ` · ${goal - now} LP to go` : '');
-    }
-
     function renderPonies(byChampion) {
       let champs = [];
       try { champs = JSON.parse(ls('ttp_selected_champs') || '[]'); } catch (e) {}
@@ -1625,19 +1624,10 @@
       document.getElementById('ponyRow').innerHTML = champs.map(c => {
         const st = (byChampion && byChampion[c.key]) || {};
         const games = (st.wins || 0) + (st.losses || 0);
-        const wr = games ? Math.round((st.wins / games) * 100) : null;
-        return `<a class="pony-card" href="champion.html?champ=${encodeURIComponent(c.id)}" title="Open ${c.name}: record, matchups, last games" style="background-image:url('https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${c.id}_0.jpg')">
-          <div class="pony-body">
-            <div class="pony-name">${c.name}</div>
-            <div class="pony-wl">${games
-              ? `<span class="w">${st.wins}W</span> / <span class="l">${st.losses}L</span><span class="wr">${wr}% WR</span>`
-              : '<span class="wr" style="margin:0">No games yet</span>'}</div>
-            <div class="pony-stats">
-              <span><strong>${games ? st.kda : '–'}</strong>KDA</span>
-              <span><strong>${games ? st.csPerMin : '–'}</strong>CS/min</span>
-              <span><strong>${st.laneWinrate !== null && st.laneWinrate !== undefined ? `${Math.round(st.laneWinrate)}%` : '–'}</strong>Lane WR</span>
-            </div>
-          </div>
+        return `<a class="pony-card" href="champion.html?champ=${encodeURIComponent(c.id)}" title="Open ${c.name}: record, matchups, last games">
+          <img src="https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${c.id}.png" alt="">
+          <span class="pony-name">${c.name}</span>
+          <span class="pony-wl">${games ? `<span class="w">${st.wins}W</span> / <span class="l">${st.losses}L</span>` : 'No games'}</span>
         </a>`;
       }).join('');
     }
@@ -1645,43 +1635,66 @@
     function renderRoleSplit(rb) {
       const total = rb ? rb.main + rb.second + rb.fill : 0;
       const parts = [
-        { label: `${ROLE_NAMES[ls('ttp_pool_role')] || 'Main'} (main)`, n: rb ? rb.main : 0, color: 'var(--gold)' },
-        { label: `${ROLE_NAMES[ls('ttp_pool_second_role')] || 'Second'} (second)`, n: rb ? rb.second : 0, color: 'color-mix(in srgb, var(--gold) 45%, var(--text-faint))' },
-        { label: 'Off role / Fill', n: rb ? rb.fill : 0, color: 'var(--text-faint)' }
+        { label: ROLE_NAMES[ls('ttp_pool_role')] || 'Main', n: rb ? rb.main : 0, color: 'var(--gold)' },
+        { label: ROLE_NAMES[ls('ttp_pool_second_role')] || 'Second', n: rb ? rb.second : 0, color: 'color-mix(in srgb, var(--gold) 45%, var(--text-faint))' },
+        { label: 'Off role', n: rb ? rb.fill : 0, color: 'var(--text-faint)' }
       ];
-      document.getElementById('rolesTotal').textContent = `${total} ${total === 1 ? 'game' : 'games'}`;
-      document.getElementById('roleSplitBar').innerHTML = total
-        ? parts.filter(p => p.n).map(p => `<span style="width:${(p.n / total) * 100}%;background:${p.color}" title="${p.label}: ${p.n}"></span>`).join('')
-        : '';
+      // Kreis statt Balken (v5.32.0): Segmente als stroke-dasharray auf r=15.9 (Umfang ~100)
+      const R = 15.9155, C = 2 * Math.PI * R;
+      let offset = 0;
+      const segs = total ? parts.filter(p => p.n).map(p => {
+        const len = (p.n / total) * C;
+        const seg = `<circle cx="21" cy="21" r="${R}" fill="none" stroke="${p.color}" stroke-width="5" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 21 21)"><title>${p.label}: ${p.n}</title></circle>`;
+        offset += len;
+        return seg;
+      }).join('') : '';
+      document.getElementById('roleDonut').innerHTML = `<svg viewBox="0 0 42 42" aria-hidden="true">
+        <circle cx="21" cy="21" r="${R}" fill="none" stroke="color-mix(in srgb, var(--text-faint) 22%, transparent)" stroke-width="5"></circle>
+        ${segs}
+        <text x="21" y="25.5" text-anchor="middle">${total}</text>
+      </svg>`;
       document.getElementById('roleSplitLegend').innerHTML = parts
         .map(p => `<span><i style="background:${p.color}"></i>${p.label} ${total ? Math.round((p.n / total) * 100) : 0}%</span>`).join('');
     }
 
     // Trophy-Stand aus dem letzten Besuch der Trophies-Seite (gleiche Challenge).
-    const AVG_TROPHY_IDS = new Set(['consistency', 'jungle-boss', 'mid-diff', 'death-dealer', 'marksman', 'all-seeing-eye', 'puppet-master']);
     function renderTrophyMini(since) {
       let snap = null;
       try { snap = JSON.parse(ls('ttp_last_trophy_snapshot') || 'null'); } catch (e) {}
-      if (!snap || snap.since !== since || !Array.isArray(snap.trophies)) return;
-      document.getElementById('trophyCount').textContent = `${snap.unlockedCount} / ${snap.totalCount} unlocked`;
-      const closest = snap.trophies
-        // >= 100% ohne "unlocked" = Ø-Trophy, die aktuell erfuellt ist, aber
-        // erst final wird - gehoert nicht zu "als Naechstes".
-        // Durchschnitts-Trophaeen (Winrate/Ø-Werte ueber die ganze Challenge)
-        // stehen oft schon bei 90%+, werden aber erst am Ende fest - die sind
-        // nicht "als Naechstes" freischaltbar (Nutzer, v5.25.0). Gleiche Liste
-        // wie AVERAGE_TROPHY_IDS in server/lib/achievements.js.
-        .filter(t => !AVG_TROPHY_IDS.has(t.id))
-        .filter(t => !t.unlocked && typeof t.percent === 'number' && t.percent < 100)
-        .sort((a, b) => b.percent - a.percent)
-        .slice(0, 3);
-      document.getElementById('trophyClosest').innerHTML = closest.length
-        ? '<div class="sub-head" style="margin:0">Closest next</div>' + closest.map(t => `<div class="trophy-row">
-            <span class="t-name">${t.name}</span>
-            <div class="xp-bar"><div class="xp-bar-fill" style="width:${Math.min(100, t.percent)}%"></div></div>
-            <span class="t-num">${t.current} / ${t.target}</span>
-          </div>`).join('')
-        : '<p class="ch-empty">All trophies unlocked!</p>';
+      if (!snap || snap.since !== since) return;
+      document.getElementById('trophyCount').textContent = `${snap.unlockedCount} / ${snap.totalCount}`;
+      document.getElementById('trophySub').textContent = 'unlocked';
+    }
+
+    // Live-Stand fuer die Trophies-Kachel (gleiche Berechnung wie die
+    // Trophies-Seite); bis er da ist, steht der letzte Snapshot drin.
+    async function loadTrophyCount(puuid, since, champions) {
+      const role = ls('ttp_pool_role');
+      if (!role) return;
+      try {
+        const startRes = await fetch('/api/achievements/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            puuid, since, role,
+            champions: champions.map(c => ({ key: c.key, role: c.role || '' })),
+            challengeLevel: ls('ttp_challenge_level') || 'normal',
+            lpGoal: { tier: ls('ttp_lp_goal_tier'), division: ls('ttp_lp_goal_division'), lp: ls('ttp_lp_goal_lp') || '0' }
+          })
+        });
+        const startData = await parseApiResponse(startRes);
+        if (!startRes.ok) return;
+        let result = null;
+        while (!result) {
+          const res = await fetch(`/api/achievements/status/${startData.jobId}`);
+          const status = await parseApiResponse(res);
+          if (!res.ok || status.status === 'error') return;
+          if (status.status === 'done') result = status.result;
+          else await new Promise(r => setTimeout(r, 700));
+        }
+        document.getElementById('trophyCount').textContent = `${result.unlockedCount} / ${result.totalCount}`;
+        document.getElementById('trophySub').textContent = 'unlocked';
+      } catch (e) {}
     }
 
     async function loadLpGraph(puuid, since, rank) {
@@ -1695,11 +1708,85 @@
         const data = await parseApiResponse(res);
         if (!res.ok) throw new Error(data.error || 'Unknown error');
         renderLpGraph(data.points, { sinceMs, rankCurrent, deltaLP, deltaLPRange });
-        renderGoalProgress(data.points[0] || null, rankCurrent);
       } catch (e) {
         // Graph ist ein Bonus-Feature - Fehler hier sollen den restlichen Load nicht stoeren.
         accountLpGraphEl.innerHTML = '';
       }
+    }
+
+    // Feste Challenge-Einstellungen (v5.32.0): nach dem Start nicht mehr
+    // aenderbar, die Setup-Seite ist gesperrt - hier sieht man sie.
+    const LEVEL_NAMES = { easy: 'Easy', normal: 'Normal', hard: 'Hard', very_hard: 'Very Hard', majestic: 'Majestic' };
+    let currentPuuid = null;
+    function renderChallengeDetails(since) {
+      const level = LEVEL_NAMES[ls('ttp_challenge_level')] || '–';
+      const main = ROLE_NAMES[ls('ttp_pool_role')] || '–';
+      const second = ROLE_NAMES[ls('ttp_pool_second_role')] || '–';
+      document.getElementById('chDetails').innerHTML =
+        `<span>Level <strong>${level}</strong></span>` +
+        `<span>Main <strong>${main}</strong></span>` +
+        `<span>Second <strong>${second}</strong></span>` +
+        `<span>Started <strong>${formatDateTimeEU(since)}</strong></span>` +
+        `<span class="ch-lock" title="Champions, roles, level and LP goal are fixed once a challenge starts">🔒 locked</span>` +
+        `<button type="button" class="ch-reset" id="resetChallengeBtn" title="End this challenge and start a new one">Reset Challenge</button>`;
+      document.getElementById('resetChallengeBtn').addEventListener('click', resetChallenge);
+    }
+
+    // Reset (vorher auf der Setup-Seite, v5.32.0 hierher umgezogen): schliesst
+    // den History-Eintrag ab (Server rechnet die Trophies frisch nach) und
+    // gibt das Setup fuer eine neue Challenge frei.
+    async function resetChallenge() {
+      const btn = document.getElementById('resetChallengeBtn');
+      const since = ls('ttp_challenge_start');
+      if (!since) return;
+      btn.disabled = true;
+      let rulesOutdated = false;
+      if (currentPuuid) {
+        try {
+          const res = await fetch(`/api/achievements/rules-status?${new URLSearchParams({ puuid: currentPuuid, since })}`);
+          if (res.ok) rulesOutdated = (await res.json()).rulesUpToDate === false;
+        } catch (e) {}
+      }
+      const message = rulesOutdated
+        ? 'The trophy rules were updated while this challenge was running, so some of your confirmed trophies may no longer match the current targets.\n\nReset the challenge? It ends now and goes into your challenge history. Afterwards you can set up a new one.'
+        : 'Reset the challenge? It ends now and goes into your challenge history. Afterwards you can set up a new one.';
+      const ok = confirm(message);
+      if (window.ttpMain) window.ttpMain.restoreFocus();
+      if (!ok) { btn.disabled = false; return; }
+      let champions = [];
+      try { champions = JSON.parse(ls('ttp_selected_champs') || '[]'); } catch (e) {}
+      let snapshot = null;
+      try {
+        const parsed = JSON.parse(ls('ttp_last_trophy_snapshot') || 'null');
+        if (parsed && parsed.since === since) snapshot = parsed;
+      } catch (e) {}
+      try { localStorage.removeItem('ttp_challenge_start'); } catch (e) {}
+      // v6.0: Challenge auf dem Server sofort beenden (die Trophy-Neuberechnung
+      // ueber /close darf danach im Hintergrund laufen)
+      const activePuuid = ls('ttp_active_puuid') || currentPuuid;
+      if (activePuuid) {
+        await fetch('/api/challenge/run/clear', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puuid: activePuuid }) }).catch(() => {});
+      }
+      const done = () => location.replace('index.html');
+      if (!currentPuuid) { done(); return; }
+      // keepalive: der Server rechnet auch fertig, wenn die Seite schon weg ist
+      fetch('/api/challenge-history/close', {
+        method: 'POST',
+        keepalive: true,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          puuid: currentPuuid,
+          since,
+          fallback: snapshot,
+          champions: champions.map(c => ({ key: c.key, name: c.name, role: c.role || '' })),
+          role: ls('ttp_pool_role'),
+          challengeLevel: ls('ttp_challenge_level'),
+          lpGoalTier: ls('ttp_lp_goal_tier'),
+          lpGoalDivision: ls('ttp_lp_goal_division'),
+          lpGoalLp: Number(ls('ttp_lp_goal_lp')) || 0
+        })
+      }).catch(() => {});
+      setTimeout(done, 150);
     }
 
     // Gleicher Match-Scan wie die Overview (/api/summary-batch) - Matches
@@ -1712,9 +1799,13 @@
 
       renderLpGoal();
       if (since) startChallengeTimer(since);
+      // Ohne laufende Challenge: kein Challenge-Inhalt, nur der Start-Hinweis.
+      document.getElementById('chActive').hidden = !since;
+      document.getElementById('chNone').hidden = !!since;
+      if (since) renderChallengeDetails(since);
 
       const parts = summonerName.split('#');
-      if (parts.length !== 2 || !parts[0] || !parts[1]) { statusEl.textContent = 'No valid summoner set - please set one on the Setup page.'; return; }
+      if (parts.length !== 2 || !parts[0] || !parts[1]) { statusEl.textContent = 'No summoner linked yet - link one via the menu top right.'; return; }
 
       try {
         statusEl.textContent = 'Loading …';
@@ -1722,8 +1813,9 @@
         const account = await parseApiResponse(accountRes);
         if (!accountRes.ok) throw new Error(account.error || 'Could not find summoner.');
         renderAccountIdentity(account);
+        currentPuuid = account.puuid;
 
-        if (!since) { statusEl.textContent = 'Start a challenge on the Setup page to see your stats.'; return; }
+        if (!since) { statusEl.textContent = ''; return; }
         const keyed = champions.filter(c => c.key);
         if (!keyed.length) { statusEl.textContent = 'No champion pool set yet.'; return; }
 
@@ -1756,6 +1848,7 @@
         renderPonies(result.byChampion);
         renderRoleSplit(result.roleBreakdown);
         renderTrophyMini(since);
+        loadTrophyCount(account.puuid, since, keyed);
         // Der Scan hat eventuell neue Spiele gutgeschrieben -> XP neu laden.
         loadProgression();
         loadLpGraph(account.puuid, since, result.rank);
@@ -1764,6 +1857,8 @@
       }
     }
     loadProfile();
+    // v6.0: Account-XP fuer Spiele ausserhalb einer Challenge
+    fetch('/api/account-xp/scan', { method: 'POST' }).then(() => { if (!ls('ttp_challenge_start')) loadProgression(); }).catch(() => {});
 
     // Zwei Ansichten derselben Seite (v5.6.0, vorher Tabs): challenge.html =
     // Challenge, challenge.html?view=pass = Pass & Quests - beide eigene
@@ -1771,8 +1866,8 @@
     // Overview. Der Match-Scan laeuft in beiden, damit XP aktuell sind.
     const PAGE_VIEW = new URLSearchParams(location.search).get('view') === 'pass' ? 'pass' : 'challenge';
     document.querySelectorAll('.tab-panel').forEach(p => { p.hidden = p.dataset.panel !== PAGE_VIEW; });
-    document.getElementById('pageHeading').textContent = PAGE_VIEW === 'pass' ? 'Pass & Quests' : 'Challenge';
-    document.title = `${PAGE_VIEW === 'pass' ? 'Pass & Quests' : 'Challenge'} – Three-Trick-Pony`;
+    document.getElementById('pageHeading').textContent = PAGE_VIEW === 'pass' ? 'Pass' : 'Challenge';
+    document.title = `${PAGE_VIEW === 'pass' ? 'Pass' : 'Challenge'} – Three-Trick-Pony`;
 
     // ===== XP / Level / Quests / Challenge Pass (v5.0.0, provisorisch) =====
     const fmtNum = n => Number(n).toLocaleString('en-US');
@@ -1802,7 +1897,7 @@
         html += `<span class="game-pip${played >= i ? ' played' : ''}" title="Game ${i} of the day - full XP">${i}</span>`;
       }
       html += '<span class="game-pip-sep"></span>';
-      html += `<span class="game-pip reduced${played > fullXpGames ? ' active' : ''}" title="From game ${fullXpGames + 1} on, ALL XP (games, kills + assists, quests, trophies) is halved for the rest of the day. Resets at 06:00.">${fullXpGames}+ · ½ XP</span>`;
+      html += `<span class="game-pip reduced${played > fullXpGames ? ' active' : ''}" title="From game ${fullXpGames + 1} on, ALL XP (games, kills + assists, quests, trophies) is halved for the rest of the day. Resets at midnight (German time).">${fullXpGames}+ · ½ XP</span>`;
       document.getElementById('gamesToday').innerHTML = html;
     }
 
@@ -1836,11 +1931,18 @@
     // Monats-Pass (server/lib/progression.js): Stufen 5/10/../30 = Cosmetics
     // dieses Monats, sonst Coins; darunter die endlose 30+-Leiste.
     let passRewards = [];
+    let lastChallengeActive = true;
     function renderPass(pass, coins) {
       passRewards = pass.rewards;
       document.getElementById('passTitle').textContent = `${pass.label.split(' ')[0]} Pass`;
       document.getElementById('passEndsIn').textContent = `ends in ${timeUntil(pass.endsAt)}`;
+      document.getElementById('passLocked').hidden = !!lastChallengeActive;
       document.getElementById('passTierText').textContent = `Tier ${pass.tier} / ${pass.tiers}`;
+      // Pass-Kachel auf der Challenge-Uebersicht
+      document.getElementById('passTileTitle').textContent = `${pass.label.split(' ')[0]} Pass`;
+      document.getElementById('passTileTier').textContent = `${pass.tier} / ${pass.tiers}`;
+      document.getElementById('passTileFill').style.width = pass.tier >= pass.tiers ? '100%' : `${(pass.xpIntoTier / pass.xpPerTier) * 100}%`;
+      document.getElementById('passTileXp').textContent = pass.tier >= pass.tiers ? 'Pass complete' : `${fmtNum(pass.xpIntoTier)} / ${fmtNum(pass.xpPerTier)} XP`;
       if (!coinsFlying) document.getElementById('coinBalance').textContent = `🪙 ${fmtNum(coins)}`;
       shownCoins = coins;
       const claimables = pass.rewards.filter(r => r.claimable);
@@ -1920,7 +2022,8 @@
       poolChamp: 'Pool champion',
       sameRoleOther: 'Main role, other champ',
       secondRole: 'Second role',
-      offRole: 'Off-role'
+      offRole: 'Off-role',
+      noChallenge: 'No challenge (account XP only)'
     };
 
     // Letzte gutgeschriebene Spiele mit Aufschluesselung im Tooltip.
@@ -1963,6 +2066,7 @@
         ['Game in your main role, other champion', src.perGame.sameRoleOther],
         ['Game in your second role', src.perGame.secondRole],
         ['Off-role game', src.perGame.offRole],
+        ['Game without a challenge (level only, no pass)', src.perGame.noChallenge],
         ['Win bonus (any game)', src.winBonus],
         ['Per kill', src.perKill],
         ['Per assist', src.perAssist],
@@ -1976,6 +2080,18 @@
         .join('');
     }
 
+    // Je Seite 4 Slots (3 Quests + Bonus-Quest aus dem Shop); fehlt die
+    // Bonus-Quest, steht dort ein Platzhalter mit Link in den Shop. Feste
+    // Raster-Zeilen, damit Daily i und Weekly i gleich hoch sind.
+    const QUEST_SLOTS = 4;
+    function questColumn(col, htmls, kind) {
+      const cells = htmls.slice();
+      while (cells.length < QUEST_SLOTS) {
+        cells.push(`<a class="quest quest-slot" href="shop.html" title="Buy a bonus ${kind} quest in the shop (Goods)">＋ Bonus ${kind} quest - get one in the shop</a>`);
+      }
+      return cells.map((h, i) => h.replace(/^<(div|a) class="quest/, `<$1 style="grid-column:${col};grid-row:${i + 2}" class="quest`)).join('');
+    }
+
     async function loadProgression() {
       try {
         const res = await fetch(`/api/progression?${new URLSearchParams(progressionContext())}`);
@@ -1986,10 +2102,10 @@
         renderGamesToday(data.gamesToday, data.fullXpGamesPerDay);
         document.getElementById('dailyResetIn').textContent = `resets in ${timeUntil(data.dailyResetAt)}`;
         document.getElementById('weeklyResetIn').textContent = `resets in ${timeUntil(data.weeklyResetAt)}`;
-        document.getElementById('dailyQuests').innerHTML = data.dailies
-          .map(q => questHtml(q, { reroll: q.id !== 'firstwin' && !q.champId && !q.bonus }))
-          .join('');
-        document.getElementById('weeklyQuests').innerHTML = data.weeklies.map(q => questHtml(q)).join('');
+        document.getElementById('dailyQuests').innerHTML = questColumn(1, data.dailies
+          .map(q => questHtml(q, { reroll: q.id !== 'firstwin' && !q.champId && !q.bonus })), 'daily');
+        document.getElementById('weeklyQuests').innerHTML = questColumn(2, data.weeklies.map(q => questHtml(q)), 'weekly');
+        lastChallengeActive = data.challengeActive;
         renderPass(data.pass, data.coins);
         renderRecentXp(data.recentGames || []);
         renderXpSources(data.xpSources, data.fullXpGamesPerDay);

@@ -25,6 +25,28 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.0.0',
+      date: '2026-11-06',
+      notable: [
+        'Online accounts: sign in with your own username and password. Your level, coins, cosmetics and pass are saved online - your current progress moves into the account you create.',
+        'Your profile now shows your username and a profile picture of its own (a placeholder for now - profile pictures are coming to the shop). Your summoner name and icon only appear in the challenge.',
+        'Link up to 5 League accounts and switch between them with the menu top right - every summoner has its own challenge. To link one, just be logged into it in the League client on this PC - or briefly change its profile icon to prove it is yours.',
+        'A banner tells you when the online server cannot be reached; your progress is kept on your PC and syncs later.',
+        'A newly equipped app icon now also shows on your desktop shortcut, in the start menu and in the taskbar.',
+        'Every ranked game now gives account XP and coins, even without a challenge. The monthly pass and quests only progress during a challenge.',
+        'Quests are shared across your summoners: a quest slot you finished on one account counts as done on all of them for that day or week.',
+        'Every League account keeps its own challenge on the server - it is saved online too, so it shows up on another PC.',
+        'The Challenge page is now a compact overview: your fixed challenge settings, your 3 champions with W/L, quests, and tiles for Roles & Picks, Trophies and the Pass.',
+        'Quests moved from the Pass page to the Challenge page.',
+        'Trophies are only reachable through your challenge now - they left the top bar and the home screen.',
+        'Once a challenge is running, its settings are locked and the Setup page is gone - Reset Challenge now lives on the Challenge page.',
+        'Daily and weekly resets (quests, games per day, shop, goods, lucky wheel) now happen at midnight German time instead of 06:00.',
+        'Profile pictures and champion images always load from the newest Riot data - brand-new profile icons show up right away.'
+      ],
+      refinements: 6,
+      bugfixes: 0
+    },
+    {
       version: '5.31.0',
       date: '2026-11-04',
       notable: ['Hover a cosmetic in the monthly pass to preview it, just like in the shop - borders and frames on your own profile, themes as a mini version of the whole app.'],

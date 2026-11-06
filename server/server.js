@@ -17,6 +17,8 @@ const {
 } = require('./lib/achievements');
 const { loadFinalizedState, saveFinalizedState, clearFinalizedState } = require('./lib/achievementState');
 const progression = require('./lib/progression');
+const cloud = require('./lib/cloud');
+const challengeRuns = require('./lib/challengeRuns');
 const { startEntry: startHistoryEntry, updateEntry: updateHistoryEntry, listEntries: listHistoryEntries, deleteEntry: deleteHistoryEntry } = require('./lib/challengeHistory');
 
 const app = express();
@@ -488,6 +490,7 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
       xpCredited = progression.creditMatches(xpGames);
       // Quests (v5.17.0): erledigte Daily/Weekly Quests bringen XP (keine Coins)
       progression.creditQuests({
+        challengeActive: true,
         role: mainRole,
         champions: champions.map(c => {
           const info = championByKey.get(String(c.key));
@@ -717,7 +720,11 @@ app.get('/api/achievements/rules-status', (req, res) => {
 function progressionContext(src) {
   let champions = [];
   try { champions = JSON.parse(src.champions || '[]'); } catch (e) {}
-  return { role: src.role || '', challengeLevel: src.challengeLevel || '', champions: Array.isArray(champions) ? champions : [] };
+  return {
+    role: src.role || '', challengeLevel: src.challengeLevel || '', champions: Array.isArray(champions) ? champions : [],
+    // v6.0: Quests + Pass nur mit laufender Challenge des aktiven Summoners
+    challengeActive: !!activeChallenge().run
+  };
 }
 
 app.get('/api/progression', (req, res) => {
@@ -919,6 +926,9 @@ app.post('/api/challenge-history/close', async (req, res) => {
   if (!puuid || !since) {
     return res.status(400).json({ error: 'puuid and since are required.' });
   }
+  // Challenge ist ab jetzt beendet - sofort, nicht erst nach der Neuberechnung
+  const activeRun = challengeRuns.getRun(puuid);
+  if (activeRun && activeRun.since === new Date(since).toISOString()) challengeRuns.clearRun(puuid);
   const startTime = Math.floor(new Date(since).getTime() / 1000);
   let snapshot = fallback || null;
   let recomputed = false;
@@ -1010,6 +1020,121 @@ app.get('/api/achievements/status/:jobId', (req, res) => {
 // Verhindert, dass ein unerwarteter Fehler waehrend eines langen
 // Match-Scans den ganzen Server stumm abstuerzen laesst - stattdessen
 // wird der Fehler geloggt und der Server laeuft weiter.
+// ===== Account-XP ohne Challenge (v6.0, Schritt 4) =====
+// Jedes Ranked-Spiel des aktiven Summoners bringt Level-XP (+Coins), auch
+// ohne laufende Challenge - aber keinen Pass und keine Quests. Spiele
+// waehrend einer Challenge uebernimmt weiterhin der Challenge-Scan
+// (summary-batch) mit seinen Kategorien und Pass-XP. Gescannt wird ab der
+// Verknuepfung des Summoners, nicht rueckwirkend die ganze Historie.
+function activeChallenge() {
+  const acc = cloud.activeRiotAccount();
+  const run = acc ? challengeRuns.getRun(acc.puuid) : null;
+  return { acc, run };
+}
+let accountScanRunning = null;
+async function runAccountScan() {
+  const { acc, run } = activeChallenge();
+  if (!acc || !config.apiKey) return { credited: 0, skipped: true };
+  const startTime = Math.floor(new Date(acc.verified_at || acc.created_at).getTime() / 1000);
+  if (Number.isNaN(startTime)) return { credited: 0, skipped: true };
+  const matchIds = await getAllMatchIds(acc.puuid, { queueId: RANKED_SOLO_QUEUE_ID, startTime }, config.apiKey, REGION);
+  const known = progression.creditedMatchIds();
+  const runStart = run ? new Date(run.since).getTime() : null;
+  const riotId = await resolveRiotId(acc.puuid, config.apiKey);
+  const xpGames = [];
+  for (const matchId of matchIds) {
+    if (known.has(matchId)) continue;
+    const match = await getMatch(matchId, config.apiKey, REGION);
+    if (runStart !== null && match.info.gameCreation >= runStart) continue; // gehoert dem Challenge-Scan
+    const { me } = findMeAndOpponent(match, acc.puuid, riotId);
+    if (!me || isRemake(me)) continue;
+    const info = championByKey.get(String(me.championId));
+    xpGames.push({
+      matchId,
+      gameCreation: match.info.gameCreation,
+      category: 'noChallenge',
+      pass: false,
+      win: me.win,
+      kills: me.kills,
+      deaths: me.deaths,
+      assists: me.assists,
+      champId: info ? info.id : '',
+      champName: info ? info.name : (me.championName || ''),
+      stats: { role: me.teamPosition || '', duration: match.info.gameDuration || 0 }
+    });
+  }
+  const added = xpGames.length ? progression.creditMatches(xpGames) : [];
+  return { credited: added.length };
+}
+app.post('/api/account-xp/scan', async (req, res) => {
+  try {
+    if (!accountScanRunning) accountScanRunning = runAccountScan().finally(() => { accountScanRunning = null; });
+    res.json(await accountScanRunning);
+  } catch (e) {
+    res.status(e.status || 500).json({ error: e.message });
+  }
+});
+
+// ===== Online-Accounts (v5.33.0, server/lib/cloud.js) =====
+const riotForCloud = {
+  getAccount: (gameName, tagLine) => {
+    if (!config.apiKey) { const e = new Error('No Riot API key set - add one in Settings first.'); e.status = 400; throw e; }
+    return getAccountByRiotId(gameName, tagLine, config.apiKey, REGION);
+  },
+  getSummoner: puuid => getSummonerByPuuid(puuid, config.apiKey, PLATFORM)
+};
+function cloudRoute(fn) {
+  return async (req, res) => {
+    try { res.json(await fn(req)); } catch (e) { res.status(e.status || 500).json({ error: e.message }); }
+  };
+}
+app.get('/api/auth/me', cloudRoute(async () => {
+  await cloud.restoreSession();
+  const user = cloud.getCurrent();
+  return { user, riotAccounts: user ? await cloud.listRiotAccounts() : [], connection: cloud.getConnection() };
+}));
+app.get('/api/cloud/status', cloudRoute(async () => cloud.getConnection()));
+app.post('/api/cloud/recheck', cloudRoute(async () => ({ status: await cloud.checkConnection() })));
+app.get('/api/auth/username-available', cloudRoute(async req => cloud.usernameAvailable(String(req.query.name || ''))));
+app.post('/api/auth/signup', cloudRoute(async req => ({ user: await cloud.signUp(req.body || {}) })));
+app.post('/api/auth/signin', cloudRoute(async req => ({ user: await cloud.signIn(req.body || {}) })));
+app.post('/api/auth/signout', cloudRoute(async () => { await cloud.signOut(); return { ok: true }; }));
+app.post('/api/auth/reset-password', cloudRoute(async req => { await cloud.requestPasswordReset((req.body || {}).email); return { ok: true }; }));
+app.post('/api/auth/reset-password/complete', cloudRoute(async req => ({ user: await cloud.completePasswordReset(req.body || {}) })));
+app.post('/api/auth/update', cloudRoute(async req => ({ user: await cloud.updateAccount(req.body || {}) })));
+// Laufende Challenge pro Summoner (v6.0, lib/challengeRuns.js)
+app.get('/api/challenge/run', cloudRoute(async req => {
+  const puuid = String(req.query.puuid || '');
+  if (!puuid) { const e = new Error('puuid is required.'); e.status = 400; throw e; }
+  return { run: await cloud.getChallengeRun(puuid), known: !!challengeRuns.getRecord(puuid) };
+}));
+app.post('/api/challenge/run/set', cloudRoute(async req => {
+  const { puuid, run } = req.body || {};
+  if (!puuid || !run || !run.since) { const e = new Error('puuid and run.since are required.'); e.status = 400; throw e; }
+  return { run: challengeRuns.setRun(puuid, run).run };
+}));
+app.post('/api/challenge/run/clear', cloudRoute(async req => {
+  const { puuid } = req.body || {};
+  if (!puuid) { const e = new Error('puuid is required.'); e.status = 400; throw e; }
+  challengeRuns.clearRun(puuid);
+  return { ok: true };
+}));
+// Einmalige Uebernahme aus dem localStorage (Stand von vor v6.0) - nur, wenn
+// fuer den Summoner noch gar nichts bekannt ist.
+app.post('/api/challenge/run/import', cloudRoute(async req => {
+  const { puuid, run } = req.body || {};
+  if (!puuid) { const e = new Error('puuid is required.'); e.status = 400; throw e; }
+  const existing = await cloud.getChallengeRun(puuid);
+  if (existing || challengeRuns.getRecord(puuid)) return { run: existing, imported: false };
+  return { run: challengeRuns.setRun(puuid, run).run, imported: true };
+}));
+app.get('/api/riot-accounts', cloudRoute(async () => ({ accounts: await cloud.listRiotAccounts() })));
+app.post('/api/riot-accounts/verify/start', cloudRoute(async req => cloud.startVerification({ ...(req.body || {}), riot: riotForCloud })));
+app.post('/api/riot-accounts/verify/check', cloudRoute(async req => cloud.checkVerification({ ...(req.body || {}), riot: riotForCloud })));
+app.post('/api/riot-accounts/active', cloudRoute(async req => ({ accounts: await cloud.setActiveRiotAccount((req.body || {}).id) })));
+app.post('/api/riot-accounts/remove', cloudRoute(async req => ({ accounts: await cloud.removeRiotAccount((req.body || {}).id) })));
+
+
 process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT EXCEPTION (server keeps running):', err);
 });
@@ -1025,7 +1150,9 @@ const server = app.listen(PORT, () => {
   if (!config.apiKey) {
     console.warn('WARNING: No RIOT_API_KEY set. Enter one in the "Riot API Key" box.');
   }
-  resolveReady();
+  // Gespeicherte Anmeldung wiederherstellen, bevor das Fenster aufgeht
+  // (Fortschritt liegt pro Profil, siehe cloud.js).
+  cloud.restoreSession().finally(resolveReady);
 });
 
 // Keine automatischen Timeouts, damit ein langer Match-Scan (viele Spiele

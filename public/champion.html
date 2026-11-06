@@ -1046,7 +1046,7 @@
   </div>
 
   <script>
-    const DDRAGON_VERSION = '16.17.1';
+    const DDRAGON_VERSION = window.TTP_DDRAGON_VERSION || '16.22.1';
     const MAX_CHAMPS = 3;
     const STORAGE_KEY = 'ttp_selected_champs';
     const STORAGE_KEY_CHALLENGE_START = 'ttp_challenge_start';
@@ -1118,7 +1118,7 @@
     }
 
     function profileIconUrl(iconId) {
-      return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${iconId}.png`;
+      return window.ttpProfileIcon(iconId);
     }
 
     function updateLoadButtonLabel() {
@@ -1205,7 +1205,7 @@
         : 'No challenge started yet';
       currentContext.innerHTML =
         `Summoner: ${summonerText} · ${sinceText} — ` +
-        `<a href="index.html">change on the Setup page</a>`;
+        `<a href="challenge.html">challenge details</a>`;
     }
 
     // Liest eine fetch()-Antwort sicher als JSON. Kommt stattdessen z.B. eine
@@ -1935,7 +1935,7 @@
       const raw = currentSummoner.trim();
       const parts = raw.split('#');
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
-        statusMsg.textContent = 'No valid summoner set. Please enter it in the format Name#Tag on the Setup page (e.g. ShacoHater#EUW).';
+        statusMsg.textContent = 'No summoner linked yet - link one via the menu top right.';
         return;
       }
       const [gameName, tagLine] = parts;

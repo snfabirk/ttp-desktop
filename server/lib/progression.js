@@ -32,7 +32,10 @@ const XP_PER_GAME = {
   poolChamp: 500,       // einer der 1-3 gewaehlten Champions
   sameRoleOther: 300,   // Main-Rolle, anderer Champion
   secondRole: 250,      // Second-Rolle
-  offRole: 50           // alles andere (Fill)
+  offRole: 50,          // alles andere (Fill)
+  // v6.0: Spiel ohne laufende Challenge - nur Account-Level (+Coins), kein
+  // Pass, keine Quests. 300 vom Nutzer bestaetigt (2026-11-06).
+  noChallenge: 300
 };
 const XP_WIN_BONUS = 150;            // zusaetzlich bei Sieg, egal welche Kategorie
 // Coins pro gewertetem Game (v5.27.0), ab dem 6. Spiel des Tages wie XP halbiert
@@ -106,30 +109,50 @@ function levelFromXp(totalXp) {
 }
 
 // ----- Quests -----
-// Tageswechsel 06:00 Ortszeit (ein Spiel um 1 Uhr nachts zaehlt noch zum
-// Vortag), Wochenwechsel Montag 06:00.
-const RESET_HOUR = 6;
-
-function questDay(now = new Date()) {
-  const d = new Date(now);
-  if (d.getHours() < RESET_HOUR) d.setDate(d.getDate() - 1);
-  d.setHours(RESET_HOUR, 0, 0, 0);
-  return d;
+// Tageswechsel 00:00 deutscher Zeit (Europe/Berlin, Sommer- und Winterzeit
+// automatisch), Wochenwechsel Montag 00:00 - Nutzerwunsch 2026-11-06, vorher
+// 06:00 Ortszeit. Gilt fuer Quests, Spiele-pro-Tag, Shop, Goods und Wheel.
+const RESET_TZ = 'Europe/Berlin';
+const berlinFmt = new Intl.DateTimeFormat('en-US', {
+  timeZone: RESET_TZ, hourCycle: 'h23',
+  year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'
+});
+function berlinParts(t) {
+  const p = {};
+  berlinFmt.formatToParts(new Date(t)).forEach(x => { if (x.type !== 'literal') p[x.type] = Number(x.value); });
+  return p;
+}
+// Versatz Berlin - UTC in ms zum Zeitpunkt t
+function berlinOffset(t) {
+  const p = berlinParts(t);
+  return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(t / 1000) * 1000;
+}
+// Kalenderdatum in Berlin: { y, m (1-12), d, wd (0 = Sonntag) }
+function berlinDate(now = new Date()) {
+  const p = berlinParts(now);
+  return { y: p.year, m: p.month, d: p.day, wd: new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay() };
+}
+// 00:00 Berliner Zeit an diesem Kalendertag (Ueberlauf wie bei Date.UTC erlaubt).
+// Die Zeitumstellung passiert erst um 2/3 Uhr, deshalb gilt um Mitternacht
+// noch der Versatz vom Vortag.
+function berlinMidnight(y, m, d) {
+  const utc = Date.UTC(y, m - 1, d);
+  return new Date(utc - berlinOffset(utc - 12 * 3600000));
+}
+function ymdKey({ y, m, d }) {
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 function dayKey(now) {
-  const d = questDay(now);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return ymdKey(berlinDate(now));
 }
 function nextDailyReset(now = new Date()) {
-  const d = questDay(now);
-  d.setDate(d.getDate() + 1);
-  return d;
+  const { y, m, d } = berlinDate(now);
+  return berlinMidnight(y, m, d + 1);
 }
 function nextWeeklyReset(now = new Date()) {
-  const d = questDay(now);
-  const daysUntilMonday = ((8 - d.getDay()) % 7) || 7;
-  d.setDate(d.getDate() + daysUntilMonday);
-  return d;
+  const { y, m, d, wd } = berlinDate(now);
+  const daysUntilMonday = ((8 - wd) % 7) || 7;
+  return berlinMidnight(y, m, d + daysUntilMonday);
 }
 
 // Rollen-Quests: role leer = fuer alle Rollen.
@@ -165,26 +188,26 @@ function seededIndex(seed, length) {
 function buildDailies(state, { role, champions }, now) {
   const day = dayKey(now);
   const quests = [
-    { id: 'firstwin', title: 'First Win of the Day', desc: 'Win any ranked game', target: 1, xp: 400, rerollable: false }
+    { id: 'firstwin', slot: 'firstwin', title: 'First Win of the Day', desc: 'Win any ranked game', target: 1, xp: 400, rerollable: false }
   ];
 
   const champs = (champions || []).filter(c => c && c.name);
   if (champs.length) {
     const champ = champs[seededIndex(`${day}:champ`, champs.length)];
-    quests.push({ id: `champwin_${champ.id}`, title: 'Champion of the Day', desc: `Win a game with ${champ.name}`, champId: champ.id, target: 1, xp: 500, rerollable: false });
+    quests.push({ id: `champwin_${champ.id}`, slot: 'champ', title: 'Champion of the Day', desc: `Win a game with ${champ.name}`, champId: champ.id, target: 1, xp: 500, rerollable: false });
   }
 
   const pool = DAILY_POOL.filter(q => !q.role || q.role === role);
   const rerolled = state.rerolls[day];
   let pick = pool[seededIndex(`${day}:role`, pool.length)];
   if (rerolled) pick = pool.find(q => q.id === rerolled) || pick;
-  quests.push({ ...pick, rerollable: !rerolled });
+  quests.push({ ...pick, slot: 'role', rerollable: !rerolled });
 
   return quests.map(q => ({ ...q, progress: 0, done: false }));
 }
 
 // ----- Quest-Fortschritt (v5.17.0) -----
-// Jede Quest gilt fuer ihren Zeitraum (Tag ab 06:00 / Woche ab Montag 06:00)
+// Jede Quest gilt fuer ihren Zeitraum (Tag ab 00:00 / Woche ab Montag 00:00, Berliner Zeit)
 // und wird pro Zeitraum genau EINMAL gutgeschrieben (state.questLedger).
 const qs = g => g.stats || {};
 const csPerMin = g => qs(g).duration ? qs(g).cs / (qs(g).duration / 60) : 0;
@@ -247,8 +270,10 @@ function evaluateWeekly(q, games, state, since) {
 function questsWithProgress(state, context, now) {
   const today = dayKey(now);
   const weekFrom = weekStartOf(now);
-  const todays = state.ledger.filter(g => g.day === today);
-  const weeks = state.ledger.filter(g => new Date(g.gameCreation) >= weekFrom);
+  // v6.0: nur Spiele aus einer Challenge zaehlen (egal welcher Summoner)
+  const challengeGames = state.ledger.filter(g => g.pass !== false);
+  const todays = challengeGames.filter(g => g.day === today);
+  const weeks = challengeGames.filter(g => new Date(g.gameCreation) >= weekFrom);
   const credited = state.questLedger || {};
   const weekKeyStr = weekKey(now);
   const bq = state.bonusQuests || {};
@@ -256,11 +281,18 @@ function questsWithProgress(state, context, now) {
   if (bq.daily && bq.daily.day === today) dailyList.push({ ...bq.daily.quest, bonus: true, rerollable: false, progress: 0, done: false });
   const weeklyList = buildWeeklies(state, context);
   if (bq.weekly && bq.weekly.week === weekKeyStr) weeklyList.push({ ...bq.weekly.quest, bonus: true, progress: 0, done: false });
-  const qKey = (p, period, q) => `${p}:${period}:${q.bonus ? 'bonus:' : ''}${q.id}`;
+  // Schluessel pro SLOT (v6.0, Nutzerwunsch): wer "Champion of the Day" auf
+  // einem Summoner erledigt hat, bekommt ihn auf einem anderen (mit anderen
+  // Champs) nicht noch einmal. Alte Schluessel (pro Quest-ID) zaehlen mit.
+  const qKey = (p, period, q) => `${p}:${period}:${q.bonus ? 'bonus:' : ''}${q.slot || q.id}`;
+  const oldKey = (p, period, q) => `${p}:${period}:${q.bonus ? 'bonus:' : ''}${q.id}`;
+  const lockDone = q => (q.credited ? { ...q, done: true, progress: q.target } : q);
   const dailies = dailyList.map(q => evaluateDaily(q, todays))
-    .map(q => ({ ...q, key: qKey('d', today, q) })).map(q => ({ ...q, credited: !!credited[q.key] }));
+    .map(q => ({ ...q, key: qKey('d', today, q) }))
+    .map(q => ({ ...q, credited: !!(credited[q.key] || credited[oldKey('d', today, q)]) })).map(lockDone);
   const weeklies = weeklyList.map(q => evaluateWeekly(q, weeks, state, weekFrom))
-    .map(q => ({ ...q, key: qKey('w', weekKeyStr, q) })).map(q => ({ ...q, credited: !!credited[q.key] }));
+    .map(q => ({ ...q, key: qKey('w', weekKeyStr, q) }))
+    .map(q => ({ ...q, credited: !!(credited[q.key] || credited[oldKey('w', weekKeyStr, q)]) })).map(lockDone);
   return { dailies, weeklies, today, weekKeyStr };
 }
 
@@ -270,7 +302,7 @@ function creditQuestsInState(state, context, now) {
   state.questLedger = state.questLedger || {};
   let added = 0;
   const credit = (key, q) => {
-    if (!q.done || state.questLedger[key]) return;
+    if (!q.done || q.credited || state.questLedger[key]) return;
     state.questLedger[key] = { xp: q.xp, at: now.toISOString() };
     state.totalXp += q.xp;
     addPassXp(state, monthKey(now), q.xp);
@@ -282,6 +314,7 @@ function creditQuestsInState(state, context, now) {
 }
 
 function creditQuests(context) {
+  if (!context || !context.challengeActive) return 0; // v6.0: Quests nur mit Challenge
   const state = readState();
   const added = creditQuestsInState(state, context || {}, new Date());
   if (added) writeState(state);
@@ -622,8 +655,38 @@ function saveProfileLayout(layout) {
 }
 
 // ----- Speicherung -----
-function filePath() {
+// Seit v5.33.0 pro Profil-Account eine eigene Datei (cloud.js setzt den
+// Scope beim Anmelden). progression.json = Stand von vor den Accounts, wird
+// beim ersten Login einmalig uebernommen (claimLegacyState).
+let userScope = null;
+let onWrite = null;
+function setUserScope(id) { userScope = id || null; }
+function setOnWrite(fn) { onWrite = fn; }
+function legacyFilePath() {
   return path.join(dataSubdir('progression'), 'progression.json');
+}
+function filePath() {
+  return userScope ? path.join(dataSubdir('progression'), `${userScope}.json`) : legacyFilePath();
+}
+function hasUserFile(id) {
+  return fs.existsSync(path.join(dataSubdir('progression'), `${id}.json`));
+}
+function claimLegacyState(id) {
+  const legacy = legacyFilePath();
+  if (!fs.existsSync(legacy)) return false;
+  fs.copyFileSync(legacy, path.join(dataSubdir('progression'), `${id}.json`));
+  fs.renameSync(legacy, path.join(dataSubdir('progression'), `progression.claimed-by-${id}.json`));
+  return true;
+}
+// Wann der alte Stand von vor den Accounts zuletzt geaendert wurde (null = keiner da)
+function legacyStateTime() {
+  try { return fs.statSync(legacyFilePath()).mtimeMs; } catch (e) { return null; }
+}
+function exportState() {
+  return readState();
+}
+function importState(data) {
+  fs.writeFileSync(filePath(), JSON.stringify(data, null, 2));
 }
 
 function emptyState() {
@@ -711,10 +774,12 @@ function readState() {
 
 function writeState(state) {
   fs.writeFileSync(filePath(), JSON.stringify(state, null, 2));
+  if (onWrite) onWrite();
 }
 
 function resetState() {
   fs.rmSync(filePath(), { force: true });
+  if (onWrite) onWrite();
 }
 
 // Schreibt XP fuer alle noch nicht gutgeschriebenen Spiele gut. games kommt
@@ -761,12 +826,15 @@ function creditMatches(games) {
         category: g.category, win: !!g.win, kills: g.kills || 0, deaths: g.deaths || 0, assists: g.assists || 0,
         champId: g.champId || '', champName: g.champName || '', base, halved, xp, coins,
         levelBonus,
+        // v6.0: false = Spiel ausserhalb einer Challenge (zaehlt nicht fuer
+        // Pass und Quests). Alte Eintraege ohne Feld zaehlen als Challenge-Spiel.
+        pass: g.pass !== false,
         stats: g.stats || null
       };
       state.ledger.push(entry);
       state.totalXp += xp + levelBonus;
       state.coins += coins;
-      addPassXp(state, monthKey(new Date(g.gameCreation)), xp);
+      if (entry.pass) addPassXp(state, monthKey(new Date(g.gameCreation)), xp);
       added.push(entry);
     });
 
@@ -867,6 +935,8 @@ function rerollDaily(context) {
   const state = readState();
   const day = dayKey(new Date());
   if (state.rerolls[day]) return { ok: false, error: 'Reroll already used today.' };
+  if (!context || !context.challengeActive) return { ok: false, error: 'Quests only run during a challenge.' };
+  if ((state.questLedger || {})[`d:${day}:role`]) return { ok: false, error: 'This quest is already done.' };
   const pool = DAILY_POOL.filter(q => !q.role || q.role === context.role);
   const current = pool[seededIndex(`${day}:role`, pool.length)];
   // Schon erledigte Quest kann nicht mehr getauscht werden (sonst XP doppelt)
@@ -879,8 +949,8 @@ function rerollDaily(context) {
 }
 
 // ----- Shop (v5.16.0, persoenlich, noch PROVISORISCH) -----
-// Jeder Spieler hat seinen eigenen Shop: taeglich 3 Angebote (Wechsel 06:00
-// wie die Daily Quests), woechentlich 2 Highlights (Montag 06:00), einmal
+// Jeder Spieler hat seinen eigenen Shop: taeglich 3 Angebote (Wechsel 00:00
+// wie die Daily Quests), woechentlich 2 Highlights (Montag 00:00), einmal
 // ausgewuerfelt und gespeichert. Was man schon besitzt, wird NIE angeboten.
 // Die Shop-Artikel unten sind Platzhalter fuer spaetere Shop-Cosmetics -
 // noch nicht kaufbar (Basic-Artikel waeren gratis).
@@ -1246,8 +1316,7 @@ const WHEEL_SEGMENTS = [
 ];
 
 function weekKey(now) {
-  const d = nextWeeklyReset(now);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return ymdKey(berlinDate(nextWeeklyReset(now)));
 }
 
 function getShopState() {
@@ -1304,18 +1373,24 @@ function spinWheel() {
   return { ok: true, index, coins: seg.coins, totalCoins: state.coins };
 }
 
+function creditedMatchIds() {
+  return new Set(readState().ledger.map(e => e.matchId));
+}
+
 function getOverview(context) {
   const now = new Date();
   const state = readState();
   // Ohne Rolle/Champions (z.B. champion.html) nichts gutschreiben - die
   // Rollen-Quest des Tages haengt von der Rolle ab.
   const hasCtx = context && (context.role || (context.champions || []).length);
-  if (hasCtx && creditQuestsInState(state, context, now)) writeState(state);
-  const quests = questsWithProgress(state, context || {}, now);
+  const challengeActive = !!(context && context.challengeActive);
+  if (challengeActive && hasCtx && creditQuestsInState(state, context, now)) writeState(state);
+  const quests = challengeActive ? questsWithProgress(state, context || {}, now) : { dailies: [], weeklies: [] };
   return {
     level: levelFromXp(state.totalXp),
     totalXp: state.totalXp,
     gamesToday: state.ledger.filter(e => e.day === dayKey(now)).length,
+    challengeActive,
     recentGames: [...state.ledger].sort((a, b) => b.gameCreation - a.gameCreation).slice(0, 5),
     fullXpGamesPerDay: FULL_XP_GAMES_PER_DAY,
     dailies: quests.dailies,
@@ -1345,8 +1420,10 @@ function getOverview(context) {
 }
 
 module.exports = {
+  setUserScope, setOnWrite, hasUserFile, claimLegacyState, legacyStateTime, exportState, importState,
   getOverview,
   creditMatches,
+  creditedMatchIds,
   creditLp,
   getLifetimeStats,
   getCosmeticsState,

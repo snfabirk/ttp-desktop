@@ -48,14 +48,12 @@
     hallows: ['#0f0e10', '#ff7a18', '#ece6e0', '#3d3530'], haunted: ['#0b0a10', '#ff8a2a', '#efe9f5', '#3a2d45'],
     magmaplus: ['#0d0604', '#ff8a3a', '#f6e8dc', '#5a2a14'], magma: ['#0d0604', '#ff8a3a', '#f6e8dc', '#5a2a14'], cyberpunk: ['#07080c', '#e8d43a', '#e8ecf2', '#3a3a22'], aurora: ['#050a12', '#6ef0b4', '#e8f4f8', '#23485a'], lanterns: ['#120c1e', '#ffb560', '#fbefe4', '#6a3a3a'], skyisles: ['#1a2448', '#ffd27a', '#fdf6ea', '#5a6aa0'], cherry: ['#120c2a', '#ffb0cc', '#f6eef6', '#5a3a6a'], arctic: ['#16213a', '#9ad8ff', '#f2f8fc', '#3a6a8a']
   };
-  const me = { icon: 'https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/29.png', name: 'You', level: 1, border: 'none', frame: null };
+  const me = { icon: 'avatar-placeholder.svg', name: 'You', level: 1, border: 'none', frame: null };
   (async () => {
     try { const st = await (await fetch('/api/profile-stats')).json(); me.level = (st.level && st.level.level) || me.level; me.border = (st.equipped && st.equipped.border) || 'none'; me.frame = st.equipped && st.equipped.frame; } catch (e) {}
-    const parts = (ls('ttp_summoner_name') || '').trim().split('#');
-    if (parts.length === 2 && parts[0]) {
-      me.name = parts[0];
-      try { const a = await (await fetch(`/api/account?${new URLSearchParams({ gameName: parts[0], tagLine: parts[1] })}`)).json(); if (a.profileIconId != null) me.icon = `https://ddragon.leagueoflegends.com/cdn/16.17.1/img/profileicon/${a.profileIconId}.png`; } catch (e) {}
-    }
+    // Eigenes Profil (v5.33.0): Benutzername + Profilbild statt Summoner
+    if (window.ttpUsername && window.ttpUsername()) me.name = window.ttpUsername();
+    if (window.ttpAvatar) me.icon = window.ttpAvatar();
   })();
 
   let pop = null, popTimer = null, lastPopHiddenAt = 0;

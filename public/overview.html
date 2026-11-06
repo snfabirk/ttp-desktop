@@ -101,7 +101,8 @@
        klickbar, deshalb kein "More →". */
     .tile-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      /* Trophies sind seit v5.32.0 nur noch ueber die Challenge erreichbar */
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px;
       margin-bottom: 24px;
     }
@@ -315,6 +316,7 @@
     }
     .dash-head a.meta:hover { color: var(--gold); }
     .muted { color: var(--text-faint); font-size: 0.85rem; font-style: italic; margin: 0; }
+    .muted a, .dash-status a { color: var(--gold); }
     .pos { color: var(--green); }
     .neg { color: var(--red); }
 
@@ -508,11 +510,6 @@
         <span class="trophies-label">Pass</span>
         <span class="trophies-progress" id="challengePassSummary">–</span>
       </a>
-      <a href="trophies.html" class="trophies-card" id="trophiesCard">
-        <span class="trophies-icon">🏆</span>
-        <span class="trophies-label">Trophies</span>
-        <span class="trophies-progress" id="trophiesProgress">0%</span>
-      </a>
       <a href="shop.html" class="trophies-card shop-card" id="shopCard" title="Spend your coins on cosmetics">
         <span class="trophies-icon">🛒</span>
         <span class="trophies-label">Shop</span>
@@ -539,7 +536,7 @@
     </div>
 
     <div class="dash-card">
-      <div class="dash-head"><h3>Today</h3><a class="meta" href="challenge.html?view=pass" id="todayMeta">quests →</a></div>
+      <div class="dash-head"><h3>Today</h3><a class="meta" href="challenge.html" id="todayMeta">quests →</a></div>
       <div class="pips" id="todayPips"></div>
       <div id="todayDailies"></div>
     </div>
@@ -586,7 +583,7 @@
     })();
   </script>
   <script>
-    const DDRAGON_VERSION = '16.17.1';
+    const DDRAGON_VERSION = window.TTP_DDRAGON_VERSION || '16.22.1';
     const RANKED_SOLO = 420;
     const ROLE_LABELS = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'Bot', UTILITY: 'Support' };
     const QUEUE_NAMES = { 420: 'Ranked Solo/Duo', 440: 'Ranked Flex', 400: 'Normal Draft', 430: 'Normal Blind', 490: 'Quickplay', 450: 'ARAM' };
@@ -675,6 +672,11 @@
       for (let i = 1; i <= d.fullXpGamesPerDay; i++) pips += `<span class="pip${d.gamesToday >= i ? ' played' : ''}">${i}</span>`;
       pips += `<span class="pip half${d.gamesToday > d.fullXpGamesPerDay ? ' active' : ''}" title="From game ${d.fullXpGamesPerDay + 1} on all XP is halved">½ XP</span>`;
       document.getElementById('todayPips').innerHTML = pips;
+      // v6.0: Quests gibt es nur mit laufender Challenge
+      if (!d.challengeActive) {
+        document.getElementById('todayDailies').innerHTML = '<p class="muted">Quests only run during a challenge - <a href="challenge.html">start one</a>. Your games still earn account XP.</p>';
+        return;
+      }
       document.getElementById('todayDailies').innerHTML = d.dailies.map(q => `
         <div class="daily${q.done ? ' done' : ''}">
           <span class="check">${q.done ? '✓' : ''}</span>
@@ -721,7 +723,11 @@
 
     // ===== Match-Scan (W/L, Matchups, XP-Gutschrift) =====
     async function runScan() {
+      // v6.0: Account-XP fuer Spiele ausserhalb einer Challenge (Server
+      // kennt den aktiven Summoner selbst)
+      try { await fetch('/api/account-xp/scan', { method: 'POST' }); } catch (e) {}
       const since = ls('ttp_challenge_start');
+      if (!since) loadProgression();
       const champs = selectedChamps();
       if (!puuid || !since || !champs.length) return;
       try {
@@ -752,42 +758,9 @@
           ? `<span class="w">${o.wins}W</span> / <span class="l">${o.losses}L</span>` : '–';
         statusEl.textContent = '';
         loadProgression(); // der Scan hat evtl. neue XP gutgeschrieben
-        loadTrophiesProgress(since, champs);
       } catch (e) {
         statusEl.textContent = `Could not update stats: ${e.message}`;
       }
-    }
-
-    async function loadTrophiesProgress(since, champions) {
-      const role = ls('ttp_pool_role');
-      if (!role) return;
-      try {
-        const startRes = await fetch('/api/achievements/start', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            puuid, since, role,
-            champions: champions.map(c => ({ key: c.key, role: c.role || '' })),
-            challengeLevel: ls('ttp_challenge_level') || 'normal',
-            lpGoal: { tier: ls('ttp_lp_goal_tier'), division: ls('ttp_lp_goal_division'), lp: ls('ttp_lp_goal_lp') || '0' }
-          })
-        });
-        const startData = await parseApiResponse(startRes);
-        if (!startRes.ok) return;
-        let result = null;
-        while (!result) {
-          const res = await fetch(`/api/achievements/status/${startData.jobId}`);
-          const status = await parseApiResponse(res);
-          if (!res.ok || status.status === 'error') return;
-          if (status.status === 'done') result = status.result;
-          else await new Promise(r => setTimeout(r, 700));
-        }
-        const card = document.getElementById('trophiesCard');
-        document.getElementById('trophiesProgress').textContent =
-          `${result.totalCount ? Math.round((result.unlockedCount / result.totalCount) * 100) : 0}%`;
-        card.title = `${result.unlockedCount} / ${result.totalCount} trophies unlocked`;
-        card.classList.toggle('platinum', Boolean(result.platinumUnlocked));
-      } catch (e) {}
     }
 
     // ===== Live-Spiel =====
@@ -840,7 +813,7 @@
     async function loadAccount() {
       const parts = ls('ttp_summoner_name').trim().split('#');
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
-        statusEl.innerHTML = 'No summoner set yet - go to <a href="index.html">Setup</a>.';
+        statusEl.innerHTML = 'No summoner linked yet - <a href="account.html#link">link one</a> via the menu top right.';
         return;
       }
       try {
@@ -848,20 +821,26 @@
         const a = await parseApiResponse(res);
         if (!res.ok) throw new Error(a.error || 'Could not find summoner.');
         puuid = a.puuid;
-        playerName = a.gameName;
-        const nameEl = document.getElementById('accountOverviewName');
-        nameEl.textContent = `${a.gameName}#${a.tagLine}`;
-        nameEl.title = nameEl.textContent; // bei Platzmangel abgeschnitten
         if (lastProgression) renderFeed(lastProgression);
-        if (a.profileIconId != null) {
-          const img = document.getElementById('accountOverviewIcon');
-          img.onload = () => img.classList.add('loaded');
-          img.src = `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${a.profileIconId}.png`;
-        }
       } catch (e) {
         statusEl.textContent = `Could not load summoner: ${e.message}`;
       }
     }
+
+    // Profil-Karte zeigt den eigenen Profil-Account (v5.33.0), nicht den
+    // Summoner - der wechselt, das Profil bleibt.
+    function renderIdentity() {
+      playerName = window.ttpUsername() || playerName;
+      const nameEl = document.getElementById('accountOverviewName');
+      nameEl.textContent = playerName || '…';
+      nameEl.title = nameEl.textContent;
+      const img = document.getElementById('accountOverviewIcon');
+      img.onload = () => img.classList.add('loaded');
+      if (!img.getAttribute('src')) img.src = window.ttpAvatar();
+      if (lastProgression) renderFeed(lastProgression);
+    }
+    renderIdentity();
+    document.addEventListener('ttp-account', renderIdentity);
 
     // Wie bisher: Stats zu jeder vollen Viertelstunde (:00/:15/:30/:45).
     function scheduleQuarterRefresh() {

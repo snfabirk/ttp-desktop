@@ -878,7 +878,7 @@
       { id: 'consistency', icon: 'chartUp', name: 'Consistency', desc: 'Keep a {target} winrate across the challenge',
         detail: 'Your overall win/loss ratio across the whole challenge must reach {target} (set by your Challenge Level). Shows as "Provisional" if you\'re already above target - it only becomes permanent once you\'ve reached your LP Goal AND your winrate is still above target at that point. If it isn\'t yet, keep playing - it stays checkable after every game until it is.' },
       { id: 'goal-reached', icon: 'target', name: 'Goal Reached', desc: 'Reach the exact rank/LP you set as your goal',
-        detail: 'Unlocks the moment your current rank + LP matches or passes the LP Goal you set on the Setup page - the whole point of the challenge.' }
+        detail: 'Unlocks the moment your current rank + LP matches or passes the LP Goal you set when starting the challenge - the whole point of the challenge.' }
     ];
 
     // ----- 5 rollenspezifische Trophies je Rolle - immer genau 5 werden
@@ -1016,7 +1016,7 @@
 
     buildTrophyGrid(role);
     if (role && ROLE_TROPHIES[role]) {
-      roleNote.innerHTML = `Showing role trophies for <strong>${ROLE_LABELS[role]}</strong> (dashed border) - pick a different role on the Setup page to see a different set.`;
+      roleNote.innerHTML = `Showing role trophies for <strong>${ROLE_LABELS[role]}</strong> (dashed border) - the main role of this challenge.`;
     } else {
       roleNote.textContent = 'Select a role on the Setup page to unlock your 5 role-specific trophies.';
     }
@@ -1171,7 +1171,7 @@
       if (result.rulesUpToDate === false) {
         rulesStatusEl.classList.remove('current');
         rulesStatusEl.classList.add('outdated');
-        rulesStatusEl.textContent = '⚠ The trophy rules changed since some of these were confirmed - reset your challenge on the Setup page to recalculate them under the current rules.';
+        rulesStatusEl.textContent = '⚠ The trophy rules changed since some of these were confirmed - reset your challenge on the Challenge page to recalculate them under the current rules.';
       } else {
         rulesStatusEl.classList.remove('outdated');
         rulesStatusEl.classList.add('current');
@@ -1204,7 +1204,7 @@
 
         const parts = summonerName.split('#');
         if (parts.length !== 2 || !parts[0] || !parts[1]) {
-          setLiveStatus('No valid summoner set - please set one on the Setup page.');
+          setLiveStatus('No summoner linked yet - link one via the menu top right.');
           return;
         }
 

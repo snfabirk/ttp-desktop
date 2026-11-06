@@ -1,0 +1,477 @@
+// Online-Accounts (v5.33.0, Supabase): Profil-Account mit eigenem
+// Benutzernamen + Passwort, Fortschritts-Sync und verknuepfte Riot-Accounts.
+//
+// - Login nur mit Benutzername: Supabase braucht intern eine E-Mail. Ohne
+//   echte Adresse wird eine unsichtbare Platzhalter-Adresse benutzt; wer
+//   optional eine echte angibt, kann damit sein Passwort zuruecksetzen. Die
+//   DB-Funktion login_email gibt die Adresse nur bei richtigem Passwort raus
+//   (supabase/schema.sql).
+// - Fortschritt (progression.js) liegt lokal pro Profil und wird nach jeder
+//   Aenderung hochgeladen; offline geaenderte Staende gehen beim naechsten
+//   Kontakt hoch ("dirty"-Merker).
+// - Riot-Accounts: Besitz-Nachweis ueber ein vorgegebenes Profil-Icon, das
+//   sich vom aktuellen unterscheidet (kein Riot-Login noetig).
+// Nicht manipulationssicher - fuer privaten Gebrauch so gewollt.
+const fs = require('fs');
+const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
+const { DATA_DIR } = require('./dataPaths');
+const progression = require('./progression');
+const lcu = require('./lcu');
+const challengeRuns = require('./challengeRuns');
+
+const SUPABASE_URL = 'https://qrpfbnnapsvsfxvpwjfu.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_ZiAFBoJeTHZZPQRvg_ylBQ_sSb6VO04';
+const PLACEHOLDER_DOMAIN = 'users.three-trick-pony.app';
+// Nutzerwunsch 2026-11-06: mindestens 8 Zeichen (Name und Passwort)
+const USERNAME_RE = /^[A-Za-z0-9_]{8,20}$/;
+
+// ----- Sitzung update-fest im userData-Ordner -----
+const AUTH_FILE = path.join(DATA_DIR, 'auth-session.json');
+function readAuthFile() {
+  try { return JSON.parse(fs.readFileSync(AUTH_FILE, 'utf-8')); } catch (e) { return {}; }
+}
+const fileStorage = {
+  getItem: key => { const v = readAuthFile()[key]; return v === undefined ? null : v; },
+  setItem: (key, value) => {
+    const all = readAuthFile(); all[key] = value;
+    fs.mkdirSync(path.dirname(AUTH_FILE), { recursive: true });
+    fs.writeFileSync(AUTH_FILE, JSON.stringify(all));
+  },
+  removeItem: key => {
+    const all = readAuthFile(); delete all[key];
+    try { fs.writeFileSync(AUTH_FILE, JSON.stringify(all)); } catch (e) {}
+  }
+};
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { storage: fileStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+  // Realtime wird nicht genutzt; Electrons Node 20 hat keinen eingebauten
+  // WebSocket, ohne Ersatz bricht createClient ab.
+  realtime: { transport: class NoRealtime { constructor() { this.readyState = 3; } close() {} send() {} } }
+});
+
+// ----- Verbindungsstatus fuer das Banner -----
+// ok | offline (kein Internet) | unreachable (Internet da, Server nicht -
+// z.B. pausiertes Projekt) | unknown (noch nicht geprueft)
+let connection = 'unknown';
+let lastCheck = 0;
+
+async function internetReachable() {
+  try {
+    const r = await fetch('https://ddragon.leagueoflegends.com/api/versions.json', { method: 'HEAD', signal: AbortSignal.timeout(5000) });
+    return r.ok;
+  } catch (e) { return false; }
+}
+async function checkConnection() {
+  lastCheck = Date.now();
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/username_available`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'healthcheck' }),
+      signal: AbortSignal.timeout(8000)
+    });
+    connection = r.ok ? 'ok' : (await internetReachable() ? 'unreachable' : 'offline');
+  } catch (e) {
+    connection = (await internetReachable()) ? 'unreachable' : 'offline';
+  }
+  if (connection === 'ok') flushPending();
+  return connection;
+}
+function noteNetworkError(e) {
+  // Netzwerkfehler (kein HTTP-Status) -> Status beim naechsten Mal neu pruefen
+  if (e && !e.status && /fetch|network|ENOTFOUND|ECONN|timeout/i.test(String(e.message || e))) checkConnection();
+}
+setInterval(checkConnection, 5 * 60 * 1000).unref();
+
+// ----- Aktueller Nutzer -----
+let current = null; // { id, username, avatar, email }
+
+function isPlaceholderEmail(email) {
+  return !email || email.toLowerCase().endsWith(`@${PLACEHOLDER_DOMAIN}`);
+}
+async function loadProfile(user) {
+  const { data, error } = await supabase.from('profiles').select('username, avatar').eq('id', user.id).single();
+  if (error) throw error;
+  return { id: user.id, username: data.username, avatar: data.avatar, email: isPlaceholderEmail(user.email) ? null : user.email };
+}
+
+// ----- Fortschritts-Sync -----
+function syncFile(userId) { return path.join(DATA_DIR, 'progression', `${userId}.sync.json`); }
+function readSync(userId) { try { return JSON.parse(fs.readFileSync(syncFile(userId), 'utf-8')); } catch (e) { return { dirty: false, at: null }; } }
+function writeSync(userId, s) { fs.mkdirSync(path.dirname(syncFile(userId)), { recursive: true }); fs.writeFileSync(syncFile(userId), JSON.stringify(s)); }
+
+let pushTimer = null;
+let pushing = false;
+async function pushNow() {
+  if (!current || pushing) return;
+  pushing = true;
+  const userId = current.id;
+  try {
+    const data = progression.exportState();
+    const { data: row, error } = await supabase.from('progression')
+      .upsert({ user_id: userId, data, updated_at: new Date().toISOString() })
+      .select('updated_at').single();
+    if (error) throw error;
+    writeSync(userId, { dirty: false, at: row.updated_at });
+  } catch (e) {
+    noteNetworkError(e);
+  } finally {
+    pushing = false;
+  }
+}
+function schedulePush() {
+  if (!current) return;
+  writeSync(current.id, { ...readSync(current.id), dirty: true });
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(pushNow, 2000);
+}
+function flushPending() {
+  if (current && readSync(current.id).dirty) pushNow();
+  if (typeof flushPendingRuns === 'function') flushPendingRuns();
+}
+progression.setOnWrite(schedulePush);
+
+// ----- Challenge-Laeufe pro Summoner (v6.0, challengeRuns.js) -----
+// Lokal ist die Quelle; jede Aenderung geht nach challenge_runs. Was offline
+// nicht hochging, steht in pendingRuns und wird nachgeholt.
+const pendingRuns = new Set();
+async function pushRun(puuid) {
+  if (!current) { pendingRuns.add(puuid); return; }
+  const rec = challengeRuns.getRecord(puuid);
+  if (!rec) return;
+  try {
+    const { error } = await supabase.from('challenge_runs')
+      .upsert({ puuid, user_id: current.id, data: rec.run, updated_at: rec.updatedAt });
+    if (error) throw error;
+    pendingRuns.delete(puuid);
+  } catch (e) {
+    pendingRuns.add(puuid);
+    noteNetworkError(e);
+  }
+}
+challengeRuns.setOnChange(puuid => { pushRun(puuid); });
+function flushPendingRuns() { [...pendingRuns].forEach(pushRun); }
+
+// Lauf fuer einen Summoner holen: lokal, sonst online (anderer PC).
+async function getChallengeRun(puuid) {
+  const local = challengeRuns.getRecord(puuid);
+  if (local) return local.run;
+  if (!current) return null;
+  try {
+    const { data, error } = await supabase.from('challenge_runs').select('data, updated_at').eq('puuid', puuid).maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    return challengeRuns.importRecord(puuid, { run: data.data, updatedAt: data.updated_at }).run;
+  } catch (e) { noteNetworkError(e); return null; }
+}
+
+// Beim Anmelden: lokale und Online-Laeufe der verknuepften Summoner
+// abgleichen - der juengere Stand gewinnt.
+async function syncRuns() {
+  if (!current) return;
+  try {
+    const accounts = await listRiotAccounts();
+    if (!accounts.length) return;
+    const { data, error } = await supabase.from('challenge_runs').select('puuid, data, updated_at').in('puuid', accounts.map(a => a.puuid));
+    if (error) throw error;
+    const byPuuid = new Map((data || []).map(r => [r.puuid, r]));
+    for (const a of accounts) {
+      const local = challengeRuns.getRecord(a.puuid), remote = byPuuid.get(a.puuid);
+      if (local && (!remote || new Date(local.updatedAt) > new Date(remote.updated_at))) await pushRun(a.puuid);
+      else if (remote && (!local || new Date(remote.updated_at) > new Date(local.updatedAt))) challengeRuns.importRecord(a.puuid, { run: remote.data, updatedAt: remote.updated_at });
+    }
+  } catch (e) { noteNetworkError(e); }
+}
+
+// Beim Anmelden: Cloud-Stand und lokalen Stand zusammenfuehren.
+async function activate(user) {
+  const profile = await loadProfile(user);
+  progression.setUserScope(user.id);
+  current = profile;
+  const sync = readSync(user.id);
+  const { data: row, error } = await supabase.from('progression').select('data, updated_at').eq('user_id', user.id).maybeSingle();
+  if (error) throw error;
+  const cloudEmpty = !row || !row.data || !Object.keys(row.data).length;
+  if (progression.hasUserFile(user.id)) {
+    if (sync.dirty || cloudEmpty) await pushNow();
+    else if (!sync.at || new Date(row.updated_at) > new Date(sync.at)) {
+      progression.importState(row.data);
+      writeSync(user.id, { dirty: false, at: row.updated_at });
+    }
+  } else if (!cloudEmpty) {
+    // Liegt auf diesem PC noch ein unbeanspruchter alter Stand, der NEUER ist
+    // als der Online-Stand (z.B. Konto vorher in einer Test-Instanz mit einer
+    // aelteren Kopie angelegt), gewinnt der Stand dieses PCs.
+    const legacyAt = progression.legacyStateTime();
+    if (legacyAt && legacyAt > new Date(row.updated_at).getTime()) {
+      progression.claimLegacyState(user.id);
+      await pushNow();
+    } else {
+      progression.importState(row.data);
+      writeSync(user.id, { dirty: false, at: row.updated_at });
+    }
+  } else {
+    // Allererste Anmeldung auf diesem PC mit leerem Online-Konto: der alte
+    // Fortschritt von vor den Accounts (progression.json) wird uebernommen -
+    // genau einmal, danach gehoert er diesem Profil.
+    progression.claimLegacyState(user.id);
+    await pushNow();
+  }
+  syncRuns();
+  return current;
+}
+
+let restored = null;
+function restoreSession() {
+  if (!restored) {
+    restored = (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session && data.session.user) await activate(data.session.user);
+      } catch (e) {
+        noteNetworkError(e);
+        // Offline: mit dem lokal gespeicherten Profil weitermachen
+        const cached = readAuthFile().ttpProfile;
+        if (cached) { progression.setUserScope(cached.id); current = cached; }
+      }
+      if (current) fileStorage.setItem('ttpProfile', current);
+      await checkConnection();
+    })();
+  }
+  return restored;
+}
+
+function validUsername(name) {
+  if (!USERNAME_RE.test(name || '')) {
+    const err = new Error('Username: 8-20 characters, only letters, numbers and _'); err.status = 400; throw err;
+  }
+}
+async function usernameAvailable(name) {
+  if (!USERNAME_RE.test(name || '')) return { valid: false, available: false };
+  if (current && current.username.toLowerCase() === String(name).toLowerCase()) return { valid: true, available: true, own: true };
+  try {
+    const { data, error } = await supabase.rpc('username_available', { name });
+    if (error) throw error;
+    return { valid: true, available: !!data };
+  } catch (e) { throw friendly(e); }
+}
+function validPassword(pw) {
+  if (!pw || pw.length < 8) { const err = new Error('Password: at least 8 characters'); err.status = 400; throw err; }
+}
+function friendly(e) {
+  noteNetworkError(e);
+  if (e && e.status === 400 && e.message) return e;
+  const msg = String((e && e.message) || e);
+  if (/fetch|network|ENOTFOUND|ECONN|timeout/i.test(msg)) {
+    const err = new Error(connection === 'offline' ? "You're offline - check your internet connection." : 'The online server is unreachable right now.'); err.status = 503; return err;
+  }
+  const err = new Error(msg); err.status = e && e.status && e.status < 500 ? e.status : 500; return err;
+}
+
+async function signUp({ username, password, email }) {
+  try {
+    validUsername(username); validPassword(password);
+    const { data: free, error: e1 } = await supabase.rpc('username_available', { name: username });
+    if (e1) throw e1;
+    if (!free) { const err = new Error('This username is already taken.'); err.status = 400; throw err; }
+    const realEmail = (email || '').trim();
+    if (realEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(realEmail)) { const err = new Error('That e-mail address does not look right.'); err.status = 400; throw err; }
+    const { data, error } = await supabase.auth.signUp({
+      email: realEmail || `${username.toLowerCase()}@${PLACEHOLDER_DOMAIN}`,
+      password,
+      options: { data: { username } }
+    });
+    if (error) throw error;
+    if (!data.session) { const err = new Error('Account created, but the server wants an e-mail confirmation - "Confirm email" must be off in Supabase.'); err.status = 500; throw err; }
+    await activate(data.user);
+    fileStorage.setItem('ttpProfile', current);
+    return current;
+  } catch (e) { throw friendly(e); }
+}
+
+async function signIn({ username, password }) {
+  try {
+    const { data: email, error: e1 } = await supabase.rpc('login_email', { name: (username || '').trim(), pass: password || '' });
+    if (e1) throw e1;
+    if (!email) { const err = new Error('Wrong username or password.'); err.status = 400; throw err; }
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    await activate(data.user);
+    fileStorage.setItem('ttpProfile', current);
+    return current;
+  } catch (e) { throw friendly(e); }
+}
+
+async function signOut() {
+  if (current) { clearTimeout(pushTimer); await pushNow(); }
+  try { await supabase.auth.signOut(); } catch (e) {}
+  fileStorage.removeItem('ttpProfile');
+  current = null;
+  progression.setUserScope(null);
+}
+
+async function requestPasswordReset(email) {
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail((email || '').trim());
+    if (error) throw error;
+  } catch (e) { throw friendly(e); }
+}
+
+// Code aus der Reset-Mail (Vorlage "Reset Password" muss {{ .Token }}
+// enthalten) + neues Passwort -> angemeldet.
+async function completePasswordReset({ email, code, password }) {
+  try {
+    validPassword(password);
+    const { data, error } = await supabase.auth.verifyOtp({ email: (email || '').trim(), token: (code || '').trim(), type: 'recovery' });
+    if (error) throw error;
+    const { error: e2 } = await supabase.auth.updateUser({ password });
+    if (e2) throw e2;
+    await activate(data.user);
+    fileStorage.setItem('ttpProfile', current);
+    return current;
+  } catch (e) { throw friendly(e); }
+}
+
+async function updateAccount({ username, password, email }) {
+  if (!current) { const err = new Error('Not signed in.'); err.status = 401; throw err; }
+  try {
+    if (username && username !== current.username) {
+      validUsername(username);
+      const { data: free, error: e1 } = await supabase.rpc('username_available', { name: username });
+      if (e1) throw e1;
+      if (!free && username.toLowerCase() !== current.username.toLowerCase()) { const err = new Error('This username is already taken.'); err.status = 400; throw err; }
+      const { error } = await supabase.from('profiles').update({ username }).eq('id', current.id);
+      if (error) throw error;
+      current.username = username;
+    }
+    if (password) {
+      validPassword(password);
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+    }
+    if (email !== undefined) {
+      const real = (email || '').trim();
+      const target = real || `${current.username.toLowerCase()}@${PLACEHOLDER_DOMAIN}`;
+      const { error } = await supabase.auth.updateUser({ email: target });
+      if (error) throw error;
+      current.email = real || null;
+    }
+    fileStorage.setItem('ttpProfile', current);
+    return current;
+  } catch (e) { throw friendly(e); }
+}
+
+// ----- Riot-Accounts -----
+const pendingVerifications = new Map(); // puuid -> { target, gameName, tagLine, expires }
+// Nutzerwunsch: hoechstens 5 Summoner pro Profil (zusaetzlich per DB-Trigger)
+const MAX_RIOT_ACCOUNTS = 5;
+const STARTER_ICONS = Array.from({ length: 29 }, (_, i) => i); // Icons 0-28 hat jeder Account
+
+async function listRiotAccounts() {
+  if (!current) return [];
+  try {
+    const { data, error } = await supabase.from('riot_accounts').select('*').eq('user_id', current.id).order('created_at');
+    if (error) throw error;
+    fileStorage.setItem('ttpRiot', data);
+    return data;
+  } catch (e) {
+    noteNetworkError(e);
+    return readAuthFile().ttpRiot || [];
+  }
+}
+
+function limitError() {
+  const err = new Error(`You can link up to ${MAX_RIOT_ACCOUNTS} summoners - unlink one first.`); err.status = 400; return err;
+}
+async function linkVerified(puuid, gameName, tagLine) {
+  try {
+    const existing = await listRiotAccounts();
+    if (existing.length >= MAX_RIOT_ACCOUNTS) throw limitError();
+    const { error } = await supabase.from('riot_accounts').insert({
+      user_id: current.id, puuid, game_name: gameName, tag_line: tagLine, is_active: existing.length === 0
+    });
+    if (error) {
+      if (/at most 5/i.test(error.message || '')) throw limitError();
+      if (error.code === '23505') { const err = new Error('This summoner is already linked to another profile.'); err.status = 400; throw err; }
+      throw error;
+    }
+    pendingVerifications.delete(puuid);
+    return { verified: true, accounts: await listRiotAccounts() };
+  } catch (e) { throw friendly(e); }
+}
+
+// Besitz-Nachweis (v5.33.0): 1) League-Client auf diesem PC ist mit genau
+// diesem Account eingeloggt -> sofort verknuepft. 2) Sonst Profil-Icon auf ein
+// vorgegebenes aendern; geprueft wird ueber den Client (sofort) und die
+// Riot-Web-API (kann stark verzoegert sein).
+async function startVerification({ gameName, tagLine, riot }) {
+  if (!current) { const err = new Error('Not signed in.'); err.status = 401; throw err; }
+  const account = await riot.getAccount(gameName, tagLine);
+  const existing = await listRiotAccounts();
+  if (existing.some(a => a.puuid === account.puuid)) { const err = new Error('This summoner is already linked to your profile.'); err.status = 400; throw err; }
+  if (existing.length >= MAX_RIOT_ACCOUNTS) throw limitError();
+  const client = await lcu.currentSummoner();
+  if (lcu.sameRiotId(client, account.gameName, account.tagLine)) {
+    return { ...(await linkVerified(account.puuid, account.gameName, account.tagLine)), via: 'client' };
+  }
+  const summoner = await riot.getSummoner(account.puuid);
+  const options = STARTER_ICONS.filter(i => i !== summoner.profileIconId);
+  const target = options[Math.floor(Math.random() * options.length)];
+  pendingVerifications.set(account.puuid, { target, gameName: account.gameName, tagLine: account.tagLine, expires: Date.now() + 30 * 60 * 1000 });
+  return { verified: false, puuid: account.puuid, gameName: account.gameName, tagLine: account.tagLine, currentIcon: summoner.profileIconId, targetIcon: target };
+}
+
+async function checkVerification({ puuid, riot }) {
+  if (!current) { const err = new Error('Not signed in.'); err.status = 401; throw err; }
+  const pending = pendingVerifications.get(puuid);
+  if (!pending || pending.expires < Date.now()) { const err = new Error('This check expired - please start again.'); err.status = 400; throw err; }
+  const client = await lcu.currentSummoner();
+  if (lcu.sameRiotId(client, pending.gameName, pending.tagLine)) {
+    return { ...(await linkVerified(puuid, pending.gameName, pending.tagLine)), via: 'client' };
+  }
+  const summoner = await riot.getSummoner(puuid);
+  if (summoner.profileIconId !== pending.target) {
+    return { verified: false, currentIcon: summoner.profileIconId, targetIcon: pending.target };
+  }
+  return { ...(await linkVerified(puuid, pending.gameName, pending.tagLine)), via: 'icon' };
+}
+
+async function setActiveRiotAccount(id) {
+  if (!current) { const err = new Error('Not signed in.'); err.status = 401; throw err; }
+  try {
+    const { error: e1 } = await supabase.from('riot_accounts').update({ is_active: false }).eq('user_id', current.id).eq('is_active', true);
+    if (e1) throw e1;
+    const { error } = await supabase.from('riot_accounts').update({ is_active: true }).eq('id', id).eq('user_id', current.id);
+    if (error) throw error;
+    return listRiotAccounts();
+  } catch (e) { throw friendly(e); }
+}
+
+async function removeRiotAccount(id) {
+  if (!current) { const err = new Error('Not signed in.'); err.status = 401; throw err; }
+  try {
+    const before = await listRiotAccounts();
+    const removed = before.find(a => a.id === id);
+    const { error } = await supabase.from('riot_accounts').delete().eq('id', id).eq('user_id', current.id);
+    if (error) throw error;
+    let after = await listRiotAccounts();
+    if (removed && removed.is_active && after.length) after = await setActiveRiotAccount(after[0].id);
+    return after;
+  } catch (e) { throw friendly(e); }
+}
+
+function getCurrent() { return current; }
+// Aktiver Riot-Account aus der zuletzt geladenen Liste (auch offline)
+function activeRiotAccount() {
+  if (!current) return null;
+  return (readAuthFile().ttpRiot || []).find(a => a.is_active && a.user_id === current.id) || null;
+}
+function getConnection() { return { status: connection, checkedAt: lastCheck }; }
+
+module.exports = {
+  restoreSession, signUp, signIn, signOut, requestPasswordReset, completePasswordReset, updateAccount,
+  listRiotAccounts, startVerification, checkVerification, setActiveRiotAccount, removeRiotAccount,
+  getCurrent, getConnection, checkConnection, usernameAvailable, MAX_RIOT_ACCOUNTS, getChallengeRun, activeRiotAccount
+};

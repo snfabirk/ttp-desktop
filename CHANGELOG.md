@@ -1,5 +1,45 @@
 # Internal Changelog
 
+## 6.0.0 — 2026-11-06 (bundles the never-released 5.32.0 + 5.33.0 below)
+
+Regression pass before release (all pages in: logged out / no summoner + no challenge / active challenge / min window 1106x664 / packaged build):
+- Stale 'set one on the Setup page' summoner texts (challenge, profile, role, trophies, champion, overview, setup checklist + rank error) now point to the summoner menu; overview links in muted text use the theme colour; champion page 'change on the Setup page' -> 'challenge details'.
+- Narrow window: summoner switcher moves top-left below 1640px (it overlapped the centred nav); pass page games-today pips wrap below 1300px and the LP Bank hint popup is narrower (hidden popup caused 13px horizontal scroll).
+- Packaged-build test found that a built copy (dist/win-unpacked) rewrote the REAL desktop/start-menu shortcuts to its own exe icon: appShortcuts() now only runs from the installed exe in %LOCALAPPDATA%/Programs/three-trick-pony-desktop and only touches Three-Trick-Pony.lnk whose target is that exe (reading our own .lnk is safe). User's shortcuts were restored by hand.
+Step 3 of the restructure - the running challenge belongs to the summoner:
+- server/lib/challengeRuns.js: run per puuid in ttp-data/challenge-runs/<puuid>.json ({ run|null, updatedAt }); routes GET /api/challenge/run, POST /api/challenge/run/set|clear|import. Online copy in table challenge_runs (supabase/004-challenge-runs.sql), pushed on every change (pending set retried when the connection is back), newer side wins in syncRuns() at sign-in, pulled on demand for a summoner unknown on this PC.
+- Pages still read their ttp_* localStorage keys; nav.js mirrors the server run into them on every page load (reload if changed, max 2 mirror reloads/min) and uploads a pre-6.0 localStorage challenge once (import only if the server knows nothing about that summoner). Switching summoner fetches the new run before reloading. The dev-only ttp_challenge_bundles swap is gone.
+Step 4 - XP split:
+- POST /api/account-xp/scan (server.js runAccountScan): ranked games of the active summoner since its link time (verified_at) that are not in the ledger and not inside the running challenge get category noChallenge (XP_PER_GAME.noChallenge = 300, confirmed by the user) with pass:false -> level XP + coins, no pass. Called by overview runScan, challenge.html load and the main-process 15-min refresh (also without a challenge).
+- Ledger entries carry pass (old entries = true); creditMatches adds pass XP only for pass entries. Quests: only with challengeActive (progressionContext asks challengeRuns for the active summoner via cloud.activeRiotAccount), progress only from pass games, keys per slot (firstwin/champ/role/bonus) so a slot done on one summoner is done on all; old per-id keys still count. Reroll also needs an active challenge.
+- UI: overview Today card and pass page explain that quests/pass need a challenge; XP help lists the no-challenge value.
+- index.html Start Challenge saves the run via /run/set; challenge.html Reset awaits /run/clear before the slow /challenge-history/close (which also clears it).
+
+## 5.33.0 — 2026-11-06
+
+Online profile accounts (Supabase, project in [[supabase-project]] memory; schema in supabase/schema.sql, run by the user in the dashboard):
+- server/lib/cloud.js: supabase-js client in the local server (session in ttp-data/auth-session.json, realtime transport stubbed because Electron's Node 20 has no WebSocket). Username login via RPC login_email (returns the auth e-mail only with the right password); hidden placeholder e-mail <name>@users.three-trick-pony.app unless a real one is given (password reset by code via verifyOtp type recovery - needs {{ .Token }} in the reset e-mail template and custom SMTP for non-team addresses). Routes /api/auth/*, /api/cloud/*, /api/riot-accounts/*.
+- progression.js: one file per profile (progression/<userId>.json), setUserScope/setOnWrite/export/importState; every write pushes the whole state to table progression (debounced 2s, dirty flag in <id>.sync.json, flushed when the connection is back). First login with an empty online account claims the old progression.json once (renamed to progression.claimed-by-<id>.json).
+- Usernames 8-20 chars, passwords min 8 (user), live availability check (GET /api/auth/username-available) on sign-up and rename; DB constraint changed via supabase/002-username-length.sql. Riot summoner-v4 showed a changed icon only after >5 min, so ownership is now proven instantly via the local League client (server/lib/lcu.js: port + token from LeagueClientUx.exe command line, /lol-summoner/v1/current-summoner, compared by Riot ID because LCU puuids differ from API puuids); icon proof stays as fallback with auto-check every 15s + 10s cooldown on 'Check now'. First login: an unclaimed progression.json on this PC that is newer than the online copy wins.
+- Riot accounts: ownership proof = change the profile icon to a random starter icon (0-28) different from the current one; puuid is unique across profiles; one active per profile; max 5 per profile (app check + DB trigger supabase/003-riot-account-limit.sql).
+- nav.js: sync login gate (ttp_signed_in) + /api/auth/me check, summoner switcher pill replaces the Setup pill (challenge localStorage keys are swapped per puuid in ttp_challenge_bundles; first link adopts the existing challenge if the Riot ID matches), connection banner (offline / unreachable), welcome popup removed (login + account page onboard instead). window.ttpUsername/ttpAvatar; overview card, profile identity widget, cos-preview and shop previews use username + avatar-placeholder.svg.
+- New pages login.html (sign in / create account / reset by code) and account.html (username, password, optional e-mail, sign out, link/switch/unlink summoners with icon check). Setup page summoner field is read-only (comes from the active summoner). Factory reset signs out first.
+- App icon shortcuts: only Three-Trick-Pony.lnk is touched and only in the packaged app - shell.readShortcutLink crashes Electron (FATAL check.cc) on some foreign .lnk files, found in testing before release. Last applied icon/mtime per shortcut in userData/shortcut-icons.json.
+- .github/workflows/keep-alive.yml pings Supabase every 3 days so the free project never pauses.
+
+## 5.32.0 — 2026-11-06
+
+Phase 1 of the hub/challenge restructure (user 2026-11-06: app = permanent hub, challenges = a mode inside it):
+- challenge.html challenge view is an overview only: goal-progress card removed; settings strip (level, main/second role, start, locked, Reset Challenge); champs as small icon + W/L chips (still link to champion.html); quests (daily + weekly, moved from the pass view) in two columns; 3 tiles: Roles & Picks as SVG donut (role.html), Trophies x/y unlocked (live via /api/achievements/start, snapshot as placeholder), Pass tier + bar (pass view). No active challenge: only a 'Set up a challenge' card.
+- Pass view: XP card (games-today pips moved there, LP bank, recent games) left, pass right; heading 'Pass'.
+- Reset Challenge moved from index.html to challenge.html (same /api/challenge-history/close call, keepalive, then to index.html).
+- index.html redirects to challenge.html while a challenge runs; after Start Challenge it goes to challenge.html. nav.js hides the Setup pill during a challenge.
+- Bottom strip on the challenge view: champ 1-3 as square tiles + Roles & Picks (donut) + Trophies + Pass in one 6-column row (ponyRow is display:contents inside .ch-tiles). Quests: one 2x4 grid (Daily i / Weekly i share a row, so both sides are equally high); slot 4 = bonus quest from the shop goods or a dashed placeholder linking to shop.html.
+- Pass view: pass big on the left (2.1fr, taller tiers), XP narrow on the right.
+- Resets at 00:00 Europe/Berlin incl. DST (user): progression.js berlinDate/berlinMidnight via Intl replace questDay/RESET_HOUR=6; dayKey/weekKey formats unchanged (weekKey = Monday date as before). Covers quests, games-per-day, shop daily/weekly, goods, wheel. Side effect at switch time: between 00:00 and 06:00 the day key jumps to the new day once.
+- Riot images: nav.js sets window.TTP_DDRAGON_VERSION from ddragon versions.json (cached in localStorage, refreshed every 12h; was hardcoded 16.17.1 -> new profile icon blank) and window.ttpProfileIcon(id) = CommunityDragon latest profile-icons/{id}.jpg; global img error handler falls back to Data Dragon / newest version.
+- Trophies removed from the top nav (Challenge stays highlighted on trophies.html, back button to Challenge) and from the overview tile grid (now 3 tiles: Challenge, Pass, Shop; overview 'quests →' links to challenge.html).
+
 ## 5.31.0 — 2026-11-04
 
 - Pass hover previews: the shop's hover preview moved into public/cos-preview.js (CSS injected, PALETTE, own-profile loading, show/hide, bind(container, selector, getItem)); shop.html and challenge.html (pass grid, tiers get data-tier) both use it.

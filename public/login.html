@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sign in – Three-Trick-Pony</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Spiegel:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+  <!-- Anmeldung (v5.33.0): Profil-Account mit eigenem Benutzernamen und
+       Passwort, online gespeichert (server/lib/cloud.js). Ohne Anmeldung
+       leitet nav.js jede Seite hierher. -->
+  <style>
+    body { display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    .site-header { text-align: center; }
+    .auth-card {
+      width: 100%;
+      max-width: 380px;
+      box-sizing: border-box;
+      margin: 34px 16px 40px;
+      padding: 22px 26px 24px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px) saturate(1.1);
+      -webkit-backdrop-filter: blur(12px) saturate(1.1);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    }
+    .auth-tabs { display: flex; gap: 6px; margin-bottom: 18px; padding: 4px; border: 1px solid var(--border); border-radius: 20px; }
+    .auth-tabs button {
+      flex: 1; padding: 7px 0; border: none; border-radius: 16px; background: none; cursor: pointer;
+      color: var(--text-dim); font-family: 'Cinzel', Georgia, serif; font-size: 0.85rem; letter-spacing: 0.5px;
+    }
+    .auth-tabs button.on { background: var(--gold); color: var(--bg); }
+    .auth-form { display: flex; flex-direction: column; gap: 12px; }
+    .auth-form[hidden] { display: none; }
+    .auth-form label { display: flex; flex-direction: column; gap: 5px; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.8rem; }
+    .auth-form label small { color: var(--text-faint); font-style: italic; }
+    .auth-form input {
+      padding: 9px 11px; border-radius: 7px; border: 1px solid var(--border); background: var(--input-bg);
+      color: var(--text); font-family: Georgia, serif; font-size: 0.95rem;
+    }
+    .auth-form input:focus { outline: none; border-color: var(--gold); }
+    .auth-submit {
+      margin-top: 4px; padding: 10px; border-radius: 20px; border: 1px solid var(--gold); background: var(--gold);
+      color: var(--bg); font-family: 'Cinzel', Georgia, serif; font-size: 0.95rem; cursor: pointer;
+    }
+    .auth-submit:disabled { opacity: 0.5; cursor: default; }
+    .auth-error { min-height: 1.2em; margin: 0; color: var(--red); font-family: Georgia, serif; font-size: 0.8rem; text-align: center; }
+    .auth-note { margin: 0; color: var(--text-faint); font-family: Georgia, serif; font-size: 0.75rem; line-height: 1.5; text-align: center; }
+    .auth-link { background: none; border: none; padding: 0; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.78rem; text-decoration: underline; cursor: pointer; align-self: center; }
+    .auth-link:hover { color: var(--gold); }
+    .live { min-height: 1em; font-size: 0.72rem; font-style: italic; color: var(--text-faint); }
+    .live.ok { color: var(--green); } .live.bad { color: var(--red); }
+    .conn-note { margin: -24px 0 0; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.8rem; text-align: center; min-height: 1.2em; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <h1>League of Legends</h1>
+    <p class="subtitle">Three-Trick-Pony</p>
+  </header>
+
+  <div class="auth-card">
+    <div class="auth-tabs" id="tabs">
+      <button type="button" data-tab="signin" class="on">Sign in</button>
+      <button type="button" data-tab="signup">Create account</button>
+    </div>
+
+    <form class="auth-form" id="signinForm" autocomplete="on">
+      <label>Username<input name="username" autocomplete="username" required></label>
+      <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+      <p class="auth-error" id="signinError"></p>
+      <button class="auth-submit" type="submit">Sign in</button>
+      <button class="auth-link" type="button" id="forgotLink">Forgot password?</button>
+    </form>
+
+    <form class="auth-form" id="signupForm" hidden autocomplete="off">
+      <label>Username <small>8-20 characters: letters, numbers, _</small><input name="username" maxlength="20" autocomplete="username" required><span class="live" id="nameLive"></span></label>
+      <label>Password <small>at least 8 characters</small><input name="password" type="password" autocomplete="new-password" required><span class="live" id="pwLive"></span></label>
+      <label>Repeat password<input name="password2" type="password" autocomplete="new-password" required><span class="live" id="pw2Live"></span></label>
+      <label>E-mail <small>optional - only to reset a forgotten password, never shown to anyone</small><input name="email" type="email" autocomplete="email"></label>
+      <p class="auth-error" id="signupError"></p>
+      <button class="auth-submit" type="submit">Create account</button>
+      <p class="auth-note">Your level, coins, cosmetics and pass are saved online with this account. Your summoners are linked afterwards.</p>
+    </form>
+
+    <form class="auth-form" id="resetForm" hidden autocomplete="off">
+      <p class="auth-note">Only works if you added an e-mail to your account. We send you a code.</p>
+      <label>E-mail<input name="email" type="email" required></label>
+      <button class="auth-submit" type="button" id="sendCodeBtn">Send code</button>
+      <label>Code from the e-mail<input name="code" inputmode="numeric" autocomplete="one-time-code"></label>
+      <label>New password<input name="password" type="password" autocomplete="new-password"></label>
+      <p class="auth-error" id="resetError"></p>
+      <button class="auth-submit" type="submit">Set new password</button>
+      <button class="auth-link" type="button" id="backLink">Back to sign in</button>
+    </form>
+  </div>
+  <p class="conn-note" id="connNote"></p>
+
+  <script>
+    const forms = { signin: signinForm, signup: signupForm, reset: resetForm };
+    function show(tab) {
+      Object.entries(forms).forEach(([k, f]) => { f.hidden = k !== tab; });
+      document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+      const first = forms[tab].querySelector('input');
+      if (first) first.focus();
+    }
+    document.getElementById('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) show(b.dataset.tab); });
+    forgotLink.addEventListener('click', () => show('reset'));
+    backLink.addEventListener('click', () => show('signin'));
+
+    async function post(url, body) {
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+      return data;
+    }
+    function done() {
+      try { localStorage.setItem('ttp_signed_in', '1'); } catch (e) {}
+      if (window.ttpMain && window.ttpMain.applyAppIcon) window.ttpMain.applyAppIcon();
+      location.replace('account.html?welcome=1');
+    }
+    async function submit(form, errEl, fn) {
+      const btn = form.querySelector('button[type=submit]');
+      errEl.textContent = '';
+      btn.disabled = true;
+      try { await fn(Object.fromEntries(new FormData(form))); }
+      catch (e) { errEl.textContent = e.message; }
+      btn.disabled = false;
+    }
+
+    signinForm.addEventListener('submit', e => {
+      e.preventDefault();
+      submit(signinForm, signinError, async v => { await post('/api/auth/signin', v); done(); });
+    });
+    // Live-Pruefung (Nutzerwunsch): Name frei? Laenge ok? Passwoerter gleich?
+    function live(el, text, cls) { el.textContent = text; el.className = `live ${cls || ''}`; }
+    const NAME_RE = /^[A-Za-z0-9_]{8,20}$/;
+    let nameTimer = null, nameSeq = 0, nameOk = false;
+    signupForm.username.addEventListener('input', () => {
+      const v = signupForm.username.value.trim();
+      nameOk = false;
+      clearTimeout(nameTimer);
+      if (!v) { live(nameLive, ''); return; }
+      if (v.length < 8) { live(nameLive, `${8 - v.length} more character${v.length === 7 ? '' : 's'}`, 'bad'); return; }
+      if (!NAME_RE.test(v)) { live(nameLive, 'Only letters, numbers and _', 'bad'); return; }
+      live(nameLive, 'Checking …');
+      const seq = ++nameSeq;
+      nameTimer = setTimeout(async () => {
+        try {
+          const r = await (await fetch(`/api/auth/username-available?${new URLSearchParams({ name: v })}`)).json();
+          if (seq !== nameSeq) return;
+          nameOk = !!r.available;
+          live(nameLive, r.available ? '✓ Available' : '✗ Already taken', r.available ? 'ok' : 'bad');
+        } catch (e) { if (seq === nameSeq) live(nameLive, ''); }
+      }, 350);
+    });
+    function checkPw() {
+      const a = signupForm.password.value, b = signupForm.password2.value;
+      if (!a) live(pwLive, ''); else if (a.length < 8) live(pwLive, `${8 - a.length} more character${a.length === 7 ? '' : 's'}`, 'bad'); else live(pwLive, '✓ Long enough', 'ok');
+      if (!b) live(pw2Live, ''); else live(pw2Live, a === b ? '✓ Matches' : "✗ Doesn't match", a === b ? 'ok' : 'bad');
+    }
+    signupForm.password.addEventListener('input', checkPw);
+    signupForm.password2.addEventListener('input', checkPw);
+
+    signupForm.addEventListener('submit', e => {
+      e.preventDefault();
+      submit(signupForm, signupError, async v => {
+        if (v.password !== v.password2) throw new Error("The passwords don't match.");
+        if (v.password.length < 8) throw new Error('Password: at least 8 characters.');
+        await post('/api/auth/signup', { username: v.username.trim(), password: v.password, email: v.email.trim() });
+        done();
+      });
+    });
+    sendCodeBtn.addEventListener('click', async () => {
+      resetError.textContent = '';
+      sendCodeBtn.disabled = true;
+      try {
+        await post('/api/auth/reset-password', { email: resetForm.email.value });
+        resetError.textContent = '';
+        sendCodeBtn.textContent = 'Code sent - check your inbox';
+      } catch (e) { resetError.textContent = e.message; sendCodeBtn.disabled = false; }
+    });
+    resetForm.addEventListener('submit', e => {
+      e.preventDefault();
+      submit(resetForm, resetError, async v => { await post('/api/auth/reset-password/complete', v); done(); });
+    });
+
+    // Schon angemeldet (z.B. Zurueck-Taste)? Dann direkt weiter.
+    fetch('/api/auth/me').then(r => r.json()).then(d => {
+      if (d.user) { try { localStorage.setItem('ttp_signed_in', '1'); } catch (e) {} location.replace('overview.html'); return; }
+      const st = d.connection && d.connection.status;
+      connNote.textContent = st === 'offline' ? "You're offline - signing in needs an internet connection."
+        : st === 'unreachable' ? '⚠ The online server is unreachable. The developer needs to restore the server connection.' : '';
+    }).catch(() => {});
+    forms.signin.querySelector('input').focus();
+  </script>
+</body>
+</html>

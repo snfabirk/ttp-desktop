@@ -1,0 +1,24 @@
+# Keeps the free Supabase project from pausing (it pauses after 7 days
+# without any request). Runs on GitHub's servers every 3 days and sends one
+# tiny read-only request with the public (publishable) key that ships in the
+# app anyway. If it fails, GitHub e-mails the repo owner.
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: '17 4 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            "https://qrpfbnnapsvsfxvpwjfu.supabase.co/rest/v1/rpc/username_available" \
+            -H "apikey: sb_publishable_ZiAFBoJeTHZZPQRvg_ylBQ_sSb6VO04" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"keepalive"}')
+          echo "Supabase answered HTTP $status"
+          test "$status" = "200"

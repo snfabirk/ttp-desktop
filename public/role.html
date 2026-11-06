@@ -393,7 +393,7 @@
   </div>
 
   <script>
-    const DDRAGON_VERSION = '16.17.1';
+    const DDRAGON_VERSION = window.TTP_DDRAGON_VERSION || '16.22.1';
     const statusEl = document.getElementById('roleStatus');
     const chartEl = document.getElementById('roleChart');
 
@@ -422,7 +422,7 @@
 
       if (!since) { statusEl.textContent = 'Start a challenge on the Setup page first.'; return; }
       const parts = summonerName.split('#');
-      if (parts.length !== 2 || !parts[0] || !parts[1]) { statusEl.textContent = 'No valid summoner set - please set one on the Setup page.'; return; }
+      if (parts.length !== 2 || !parts[0] || !parts[1]) { statusEl.textContent = 'No summoner linked yet - link one via the menu top right.'; return; }
       if (!champions.length) { statusEl.textContent = 'No champion pool set yet.'; return; }
 
       // Geruest sofort zeigen (statt leerer Karte + "Loading …"), die echten

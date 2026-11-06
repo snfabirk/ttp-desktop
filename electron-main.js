@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, Tray, ipcMain, screen, session, dialog, nativeImage } = require('electron');
+const { app, BrowserWindow, Menu, Tray, ipcMain, screen, session, dialog, nativeImage, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const windowStateKeeper = require('electron-window-state');
@@ -30,18 +30,105 @@ let tray = null;
 // ----- App-Icon-Skins (v5.28.0): Fenster-/Taskleisten- und Tray-Icon live -----
 // Ausgeruestetes Icon kommt aus dem Fortschritt (Server laeuft im selben
 // Prozess); ohne Skin bzw. "Classic 3TP" bleibt es beim Original-Icon.
-// Desktop-Verknuepfung/Startmenue/exe behalten das Original (bei der
-// Installation eingebrannt).
-function currentAppIcon() {
+// Seit v5.32.0 auch Desktop-Verknuepfung, Startmenue und an die Taskleiste
+// angeheftete Verknuepfung (Nutzer: neues Icon kam dort nicht an - eine
+// angeheftete App zeigt in der Taskleiste das Icon ihrer Verknuepfung, nicht
+// das des Fensters). Die exe selbst behaelt das Original.
+function equippedIconFile() {
   let id = null;
   try { id = require('./server/lib/progression').getEquippedIcon(); } catch (e) { id = null; }
   const file = id && id !== 'icon-base-classic' ? path.join(__dirname, 'public', 'app-icons', `${id}.png`) : null;
-  return file && fs.existsSync(file) ? nativeImage.createFromPath(file) : nativeImage.createFromPath(ICON_PATH);
+  return file && fs.existsSync(file) ? { id, file } : null;
+}
+function currentAppIcon() {
+  const eq = equippedIconFile();
+  return eq ? nativeImage.createFromPath(eq.file) : nativeImage.createFromPath(ICON_PATH);
+}
+
+// .ico aus dem PNG bauen (ICO darf PNG-Daten direkt enthalten). Liegt in
+// userData, weil der Installationsordner bei jedem Update ersetzt wird.
+function icoFor(eq) {
+  const dir = path.join(app.getPath('userData'), 'app-icons');
+  const out = path.join(dir, `${eq.id}.ico`);
+  if (fs.existsSync(out)) return out;
+  const sizes = [256, 64, 48, 32, 16];
+  const base = nativeImage.createFromPath(eq.file);
+  const pngs = sizes.map(sz => base.resize({ width: sz, height: sz, quality: 'best' }).toPNG());
+  const header = Buffer.alloc(6 + 16 * sizes.length);
+  header.writeUInt16LE(0, 0); header.writeUInt16LE(1, 2); header.writeUInt16LE(sizes.length, 4);
+  let offset = header.length;
+  sizes.forEach((sz, i) => {
+    const e = 6 + 16 * i;
+    header.writeUInt8(sz >= 256 ? 0 : sz, e); header.writeUInt8(sz >= 256 ? 0 : sz, e + 1);
+    header.writeUInt8(0, e + 2); header.writeUInt8(0, e + 3);
+    header.writeUInt16LE(1, e + 4); header.writeUInt16LE(32, e + 6);
+    header.writeUInt32LE(pngs[i].length, e + 8); header.writeUInt32LE(offset, e + 12);
+    offset += pngs[i].length;
+  });
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(out, Buffer.concat([header, ...pngs]));
+  return out;
+}
+
+// Nur die eigenen Verknuepfungen (Name = productName, so legt sie der
+// Installer an). Fremde .lnk werden bewusst NICHT gelesen: shell.
+// readShortcutLink laesst Electron bei manchen Verknuepfungen hart abstuerzen
+// (FATAL check.cc, z.B. bei VS Code). Im Dev-Modus nie (sonst wuerde die
+// Test-Instanz die echten Verknuepfungen umschreiben).
+function appShortcuts() {
+  if (process.platform !== 'win32' || !app.isPackaged) return [];
+  // Nur die installierte App (nicht z.B. eine gebaute Test-Kopie aus dist\) -
+  // sonst biegt eine Test-Kopie die echten Verknuepfungen auf sich um.
+  const exe = process.execPath.toLowerCase();
+  const installDir = path.join(process.env.LOCALAPPDATA || '', 'Programs', 'three-trick-pony-desktop').toLowerCase();
+  if (!process.env.LOCALAPPDATA || path.dirname(exe) !== installDir) return [];
+  const roaming = app.getPath('appData');
+  const name = 'Three-Trick-Pony.lnk';
+  return [
+    app.getPath('desktop'),
+    path.join(roaming, 'Microsoft', 'Windows', 'Start Menu', 'Programs'),
+    path.join(roaming, 'Microsoft', 'Internet Explorer', 'Quick Launch', 'User Pinned', 'TaskBar'),
+    path.join(roaming, 'Microsoft', 'Internet Explorer', 'Quick Launch', 'User Pinned', 'StartMenu')
+  ].map(dir => path.join(dir, name)).filter(f => {
+    if (!fs.existsSync(f)) return false;
+    // Die eigene Verknuepfung zu lesen ist sicher (nur fremde liessen
+    // Electron abstuerzen) - sie muss auf genau diese exe zeigen.
+    try { return (shell.readShortcutLink(f).target || '').toLowerCase() === exe; } catch (e) { return false; }
+  });
+}
+// Zuletzt gesetztes Icon je Verknuepfung merken, damit nicht bei jedem Start
+// neu geschrieben (und der Icon-Cache aufgefrischt) wird.
+function updateShortcutIcons() {
+  try {
+    const eq = equippedIconFile();
+    const icon = eq ? icoFor(eq) : process.execPath;
+    const stateFile = path.join(app.getPath('userData'), 'shortcut-icons.json');
+    let state = {};
+    try { state = JSON.parse(fs.readFileSync(stateFile, 'utf-8')); } catch (e) {}
+    let changed = false;
+    appShortcuts().forEach(full => {
+      let stamp = 0;
+      try { stamp = fs.statSync(full).mtimeMs; } catch (e) {}
+      const known = state[full];
+      // Ein Update legt die Verknuepfung neu an -> anderer Zeitstempel -> neu setzen
+      if (known && known.icon === icon && known.stamp === stamp) return;
+      if (shell.writeShortcutLink(full, 'update', { icon, iconIndex: 0 })) {
+        changed = true;
+        try { state[full] = { icon, stamp: fs.statSync(full).mtimeMs }; } catch (e) {}
+      }
+    });
+    if (changed) {
+      fs.writeFileSync(stateFile, JSON.stringify(state));
+      // Explorer-Icon-Cache auffrischen, sonst zeigt die Taskleiste noch das alte
+      require('child_process').execFile('ie4uinit.exe', ['-show'], () => {});
+    }
+  } catch (e) {}
 }
 function applyAppIcon() {
   const img = currentAppIcon();
   BrowserWindow.getAllWindows().forEach(w => { if (!w.isDestroyed()) w.setIcon(img); });
   if (tray && !tray.isDestroyed()) tray.setImage(img.resize({ width: 32, height: 32, quality: 'best' }));
+  updateShortcutIcons();
 }
 ipcMain.on('apply-app-icon', applyAppIcon);
 let serverPort = null;
@@ -319,6 +406,9 @@ ipcMain.handle('factory-reset', async () => {
   // Seit v4.27.0 update-fest unter userData (siehe server/lib/dataPaths.js);
   // die alten Orte im Installationsordner werden sicherheitshalber mit
   // geleert, damit dort nichts fuer eine spaetere Migration liegen bleibt.
+  // Online-Profil bleibt erhalten (nach dem Anmelden ist alles wieder da) -
+  // hier nur abmelden, lokal wird alles geloescht.
+  try { await require('./server/lib/cloud').signOut(); } catch (e) {}
   const { DATA_DIR, CACHE_DIR, LEGACY_DATA_DIR, LEGACY_CACHE_DIR } = require('./server/lib/dataPaths');
   for (const dir of new Set([DATA_DIR, CACHE_DIR, LEGACY_DATA_DIR, LEGACY_CACHE_DIR])) wipeDir(dir);
 
@@ -463,8 +553,11 @@ async function readChallengeStateFromRenderer() {
 async function backgroundStatsRefresh() {
   if (backgroundRefreshInProgress || !serverPort) return;
 
+  // v6.0: Account-XP gibt es auch ohne Challenge (Server kennt den aktiven Summoner)
+  try { await fetch(`http://localhost:${serverPort}/api/account-xp/scan`, { method: 'POST' }); } catch (e) {}
+
   const state = await readChallengeStateFromRenderer();
-  if (!state || !state.since) return; // keine laufende Challenge - nichts zu tun
+  if (!state || !state.since) return; // keine laufende Challenge - nichts weiter zu tun
 
   const summonerParts = state.summoner.trim().split('#');
   if (summonerParts.length !== 2 || !summonerParts[0] || !summonerParts[1]) return;
@@ -651,6 +744,8 @@ app.whenReady().then(() => {
   ready.then(() => {
     const win = createWindow(PORT);
     createTray();
+    // Ein Update legt die Verknuepfungen neu an (Original-Icon) - wieder angleichen
+    updateShortcutIcons();
     // Update-Check erst NACH dem Hauptfenster starten, damit ein evtl.
     // vorhandenes Update-Fenster nie das allererste sichtbare Fenster des
     // Prozesses ist.

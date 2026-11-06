@@ -681,7 +681,7 @@
   </aside>
 
   <script>
-    const DDRAGON_VERSION = '16.17.1';
+    const DDRAGON_VERSION = window.TTP_DDRAGON_VERSION || '16.22.1';
     const COLS = 6;
     const ls = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
     const fmtNum = n => Number(n).toLocaleString('en-US');
@@ -740,13 +740,13 @@
           const a = data.account;
           const lvl = s ? s.level : NO_LEVEL;
           const border = (editState ? editState.border : (s && s.equipped && s.equipped.border)) || 'none';
-          const icon = a && a.profileIconId != null ? `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${a.profileIconId}.png` : '';
+          const icon = window.ttpAvatar(); // eigenes Profilbild (Platzhalter), nicht das Riot-Icon
           const col = w.h >= 2;
           return `<div class="w-body identity${col ? ' col' : ''}">
             <span class="cos-border id-frame cos-${border}"><img src="${icon}" alt="" onload="this.classList.add('loaded')"></span>
             <div class="id-main">
               <div class="id-top">
-                <div class="id-name">${a ? esc(`${a.gameName}#${a.tagLine}`) : esc(/^.+#.+$/.test(ls('ttp_summoner_name').trim()) ? ls('ttp_summoner_name').trim() : 'No summoner set yet')}</div>
+                <div class="id-name">${esc(window.ttpUsername() || '…')}</div>
                 ${col ? '' : `<span class="coin-pill" title="Your coins - spend them in the shop">🪙 ${s ? fmtNum(s.coins) : '–'}</span>`}
               </div>
               ${w.w >= 6 || col ? `<div class="id-since">${s && s.challenges.firstStarted ? `Pony since ${fmtDate(s.challenges.firstStarted)}` : ''}</div>` : ''}
@@ -1025,6 +1025,8 @@
         <span class="w-size">${w.w}×${w.h}</span>`;
     }
 
+    // Benutzername kommt nach dem Laden von /api/auth/me (nav.js)
+    document.addEventListener('ttp-account', () => render());
     function render() {
       const rows = rowCount();
       let html = '';
@@ -1508,7 +1510,7 @@
           statusEl.textContent = `Could not load summoner: ${e.message}`;
         }
       } else {
-        statusEl.textContent = 'No valid summoner set - please set one on the Setup page.';
+        statusEl.textContent = 'No summoner linked yet - link one via the menu top right.';
       }
 
       try {

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Account – Three-Trick-Pony</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Spiegel:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+  <script src="nav.js"></script>
+  <script src="update-indicator.js"></script>
+  <script src="changelog.js"></script>
+  <!-- Account (v5.33.0): Profil-Account (Name, Passwort, optionale E-Mail,
+       Abmelden) und verknuepfte Riot-Accounts mit Besitz-Nachweis ueber ein
+       vorgegebenes Profil-Icon. Server: server/lib/cloud.js -->
+  <style>
+    body { display: flex; flex-direction: column; align-items: center; }
+    .site-header { text-align: center; }
+    .panel-heading { color: var(--gold); text-align: center; margin: 14px 0 0; font-family: 'Cinzel', Georgia, serif; font-size: 1.3rem; letter-spacing: 1px; }
+    .acc-wrap { width: 100%; max-width: 1000px; box-sizing: border-box; padding: 0 30px 50px; margin-top: 18px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 16px; align-items: start; }
+    @media (max-width: 900px) { .acc-wrap { grid-template-columns: minmax(0, 1fr); } }
+    .card { background: var(--panel-bg); backdrop-filter: blur(12px) saturate(1.1); -webkit-backdrop-filter: blur(12px) saturate(1.1); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22); }
+    .card h3 { margin: 0 0 12px; color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-size: 1.05rem; letter-spacing: 1px; }
+    .welcome { grid-column: 1 / -1; text-align: center; }
+    .welcome[hidden] { display: none; }
+    .welcome p { margin: 0; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.9rem; }
+    .welcome b { color: var(--gold); font-weight: normal; }
+    .me-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .avatar { width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--gold); display: grid; place-items: center; background: color-mix(in srgb, var(--gold) 14%, var(--input-bg)); color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-size: 1.6rem; flex-shrink: 0; }
+    .me-name { color: var(--text); font-family: 'Cinzel', Georgia, serif; font-size: 1.2rem; }
+    .me-sub { color: var(--text-faint); font-family: Georgia, serif; font-size: 0.75rem; font-style: italic; }
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.8rem; }
+    .field small { color: var(--text-faint); font-style: italic; }
+    .row { display: flex; gap: 8px; }
+    input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-family: Georgia, serif; font-size: 0.9rem; }
+    input:focus { outline: none; border-color: var(--gold); }
+    .btn { padding: 7px 14px; border-radius: 16px; border: 1px solid var(--gold); background: transparent; color: var(--gold); font-family: Georgia, serif; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
+    .btn:hover:not(:disabled) { background: color-mix(in srgb, var(--gold) 16%, transparent); }
+    .btn:disabled { opacity: 0.45; cursor: default; }
+    .btn.solid { background: var(--gold); color: var(--bg); }
+    .btn.danger { border-color: var(--border); color: var(--text-dim); }
+    .btn.danger:hover:not(:disabled) { border-color: var(--red); color: var(--red); background: none; }
+    .msg { min-height: 1.1em; margin: 2px 0 8px; font-family: Georgia, serif; font-size: 0.78rem; }
+    .msg.err { color: var(--red); } .msg.ok { color: var(--green); }
+    .divider { border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent); margin: 12px 0; }
+    .riot-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .riot-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 9px; background: color-mix(in srgb, var(--input-bg) 55%, transparent); }
+    .riot-item.on { border-color: var(--gold); }
+    .riot-name { flex: 1; min-width: 0; color: var(--text); font-family: 'Cinzel', Georgia, serif; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .riot-tag { color: var(--gold); font-family: Georgia, serif; font-size: 0.72rem; font-style: italic; }
+    .riot-empty { margin: 0 0 12px; color: var(--text-faint); font-family: Georgia, serif; font-size: 0.85rem; font-style: italic; }
+    .verify { margin-top: 12px; padding: 14px; border: 1px dashed var(--gold); border-radius: 10px; }
+    .verify[hidden] { display: none; }
+    .verify p { margin: 0 0 10px; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.85rem; line-height: 1.5; }
+    .verify b { color: var(--text); font-weight: normal; }
+    .icons { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 10px 0 14px; }
+    .icons figure { margin: 0; text-align: center; color: var(--text-faint); font-family: Georgia, serif; font-size: 0.72rem; }
+    .icons img { display: block; width: 72px; height: 72px; border-radius: 10px; border: 1px solid var(--border); margin: 0 auto 5px; }
+    .icons .target img { width: 96px; height: 96px; border: 2px solid var(--gold); box-shadow: 0 0 18px color-mix(in srgb, var(--gold) 40%, transparent); }
+    .icons .arrow { color: var(--gold); font-size: 1.4rem; }
+    .next-cta { display: inline-block; margin-top: 10px; }
+    .live { min-height: 1em; font-size: 0.72rem; font-style: italic; color: var(--text-faint); }
+    .live.ok { color: var(--green); } .live.bad { color: var(--red); }
+    .count { color: var(--text-faint); font-family: Georgia, serif; font-size: 0.75rem; font-style: italic; letter-spacing: 0; }
+    .limit-note { margin: 0 0 8px; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.82rem; font-style: italic; }
+    .limit-note[hidden], #linkArea[hidden] { display: none; }
+    .tip { margin: 0 0 12px; color: var(--text-faint); font-family: Georgia, serif; font-size: 0.78rem; font-style: italic; }
+    .next-cta[hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <button type="button" class="settings-gear-btn" id="settingsGearBtn" title="Settings" aria-label="Settings">⚙</button>
+  <button type="button" class="quit-btn" id="quitBtn" title="Quit completely" aria-label="Quit completely">⏻</button>
+  <header class="site-header">
+    <h1>League of Legends</h1>
+    <p class="subtitle">Three-Trick-Pony</p>
+  </header>
+  <h2 class="panel-heading">Account</h2>
+
+  <div class="acc-wrap">
+    <div class="card welcome" id="welcome" hidden>
+      <p>Welcome, <b id="welcomeName"></b>! Link your League account below - then you can start your first challenge.</p>
+    </div>
+
+    <div class="card">
+      <h3>Profile</h3>
+      <div class="me-row">
+        <div class="avatar" id="avatar" title="Profile pictures are coming to the shop soon">?</div>
+        <div>
+          <div class="me-name" id="meName">…</div>
+          <div class="me-sub">Profile picture: coming soon to the shop</div>
+        </div>
+      </div>
+
+      <label class="field">Username
+        <div class="row"><input id="nameInput" maxlength="20"><button class="btn" id="nameBtn">Change</button></div>
+        <span class="live" id="nameLive"></span>
+      </label>
+      <label class="field">New password <small>at least 8 characters</small>
+        <div class="row"><input id="pwInput" type="password" autocomplete="new-password"><button class="btn" id="pwBtn">Change</button></div>
+      </label>
+      <label class="field">E-mail <small>optional - only for resetting a forgotten password</small>
+        <div class="row"><input id="mailInput" type="email" placeholder="not set"><button class="btn" id="mailBtn">Save</button></div>
+      </label>
+      <p class="msg" id="profileMsg"></p>
+      <div class="divider"></div>
+      <button class="btn danger" id="signOutBtn">Sign out</button>
+    </div>
+
+    <div class="card" id="link">
+      <h3>League accounts <span class="count" id="riotCount"></span></h3>
+      <div class="riot-list" id="riotList"></div>
+
+      <div id="linkArea">
+      <p class="tip">Tip: open the League client and log in with that account - then it links instantly.</p>
+      <label class="field">Link a summoner <small>Riot ID, e.g. ShacoHater#EUW</small>
+        <div class="row"><input id="riotInput" placeholder="Name#Tag"><button class="btn" id="riotStartBtn">Link</button></div>
+      </label>
+      </div>
+      <p class="limit-note" id="limitNote" hidden>You have linked the maximum of 5 summoners - unlink one to add another.</p>
+      <p class="msg" id="riotMsg"></p>
+
+      <div class="verify" id="verify" hidden>
+        <p>To prove <b id="vName"></b> is yours, change its profile icon in the League client to the one below. You can switch back right after.</p>
+        <div class="icons">
+          <figure><img id="vCurrent" alt="">current</figure>
+          <span class="arrow">→</span>
+          <figure class="target"><img id="vTarget" alt="">change to this</figure>
+        </div>
+        <p>League client: click your profile picture (top right) → pick this icon → save. Or simply log into this account in the League client on this PC. The app checks automatically every 15 seconds.</p>
+        <div class="row">
+          <button class="btn solid" id="verifyBtn">Check now</button>
+          <button class="btn danger" id="verifyCancel">Cancel</button>
+        </div>
+        <p class="msg" id="verifyMsg"></p>
+      </div>
+      <a class="btn solid next-cta" id="nextCta" href="index.html" hidden>Set up your first challenge →</a>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    async function api(url, body) {
+      const res = await fetch(url, body === undefined ? undefined : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+      return data;
+    }
+    function say(el, text, ok) { el.textContent = text; el.className = `msg ${ok ? 'ok' : text ? 'err' : ''}`; }
+
+    let me = null, accounts = [];
+    function renderMe() {
+      $('meName').textContent = me.username;
+      $('avatar').textContent = me.username.charAt(0).toUpperCase();
+      $('nameInput').value = me.username;
+      $('mailInput').value = me.email || '';
+    }
+    function renderRiot() {
+      const list = $('riotList');
+      list.innerHTML = accounts.length
+        ? accounts.map(a => `<div class="riot-item${a.is_active ? ' on' : ''}">
+            <span class="riot-name">${esc(a.game_name)}#${esc(a.tag_line)}</span>
+            ${a.is_active ? '<span class="riot-tag">active</span>' : `<button class="btn" data-act="${a.id}">Use</button>`}
+            <button class="btn danger" data-rm="${a.id}" title="Unlink this summoner">✕</button>
+          </div>`).join('')
+        : '<p class="riot-empty">No summoner linked yet.</p>';
+      let hasChallenge = false;
+      try { hasChallenge = !!localStorage.getItem('ttp_challenge_start'); } catch (e) {}
+      $('nextCta').hidden = !accounts.length || hasChallenge;
+      // Hoechstens 5 Summoner pro Profil (Nutzerwunsch)
+      const full = accounts.length >= 5;
+      $('riotCount').textContent = accounts.length ? `${accounts.length} / 5` : '';
+      $('linkArea').hidden = full && !pending;
+      $('limitNote').hidden = !full;
+    }
+
+    $('riotList').addEventListener('click', async e => {
+      const act = e.target.closest('[data-act]'), rm = e.target.closest('[data-rm]');
+      if (act) {
+        act.disabled = true;
+        try { await window.ttpSwitchSummoner(act.dataset.act); } catch (err) { say($('riotMsg'), err.message); act.disabled = false; }
+      }
+      if (rm) {
+        const acc = accounts.find(a => a.id === rm.dataset.rm);
+        if (!rm.classList.contains('confirm')) {
+          rm.classList.add('confirm'); rm.textContent = 'Unlink?';
+          setTimeout(() => { rm.classList.remove('confirm'); rm.textContent = '✕'; }, 4000);
+          return;
+        }
+        rm.disabled = true;
+        try {
+          accounts = (await api('/api/riot-accounts/remove', { id: rm.dataset.rm })).accounts;
+          if (acc && acc.is_active) { window.ttpSyncSummoner(accounts.find(a => a.is_active) || null); location.reload(); return; }
+          renderRiot();
+        } catch (err) { say($('riotMsg'), err.message); rm.disabled = false; }
+      }
+    });
+
+    // ----- Summoner verknuepfen -----
+    // Sofort, wenn der League-Client mit dem Account eingeloggt ist; sonst
+    // Icon-Wechsel, automatisch alle 15 s geprueft, "Check now" mit 10 s
+    // Abklingzeit (Nutzerwunsch: nicht stur warten/klicken muessen).
+    let pending = null, pollTimer = null, cooldownTimer = null;
+    function linked(r, name) {
+      clearInterval(pollTimer); pollTimer = null;
+      accounts = r.accounts;
+      const wasFirst = accounts.length === 1;
+      $('verify').hidden = true;
+      $('riotInput').value = '';
+      say($('riotMsg'), r.via === 'client'
+        ? `${name} is linked - confirmed via your League client.`
+        : `${name} is linked. You can change your icon back now.`, true);
+      pending = null;
+      if (wasFirst) window.ttpAdoptSummoner(accounts[0]);
+      renderRiot();
+    }
+    async function check(manual) {
+      if (!pending) return;
+      if (manual) say($('verifyMsg'), 'Checking …', true);
+      try {
+        const name = `${pending.gameName}#${pending.tagLine}`;
+        const r = await api('/api/riot-accounts/verify/check', { puuid: pending.puuid });
+        if (r.verified) { linked(r, name); return; }
+        $('vCurrent').src = window.ttpProfileIcon(r.currentIcon);
+        const at = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        say($('verifyMsg'), `Not seen yet (last check ${at}). Riot's servers can be slow to show a new icon - logging into this account in the League client links it instantly.`);
+      } catch (e) {
+        say($('verifyMsg'), e.message);
+        if (/expired/i.test(e.message)) { clearInterval(pollTimer); pollTimer = null; }
+      }
+    }
+    $('riotStartBtn').addEventListener('click', async () => {
+      const parts = $('riotInput').value.trim().split('#');
+      say($('riotMsg'), '');
+      if (parts.length !== 2 || !parts[0] || !parts[1]) { say($('riotMsg'), 'Please use the format Name#Tag.'); return; }
+      $('riotStartBtn').disabled = true;
+      try {
+        const r = await api('/api/riot-accounts/verify/start', { gameName: parts[0].trim(), tagLine: parts[1].trim() });
+        if (r.verified) {
+          linked(r, `${parts[0].trim()}#${parts[1].trim()}`);
+        } else {
+          pending = r;
+          $('vName').textContent = `${pending.gameName}#${pending.tagLine}`;
+          $('vCurrent').src = window.ttpProfileIcon(pending.currentIcon);
+          $('vTarget').src = window.ttpProfileIcon(pending.targetIcon);
+          say($('verifyMsg'), '');
+          $('verify').hidden = false;
+          clearInterval(pollTimer);
+          pollTimer = setInterval(() => check(false), 15000);
+        }
+      } catch (e) { say($('riotMsg'), e.message); }
+      $('riotStartBtn').disabled = false;
+    });
+    $('verifyCancel').addEventListener('click', () => { clearInterval(pollTimer); pollTimer = null; pending = null; $('verify').hidden = true; });
+    $('verifyBtn').addEventListener('click', async () => {
+      const btn = $('verifyBtn');
+      btn.disabled = true;
+      await check(true);
+      let left = 10;
+      btn.textContent = `Check now (${left})`;
+      clearInterval(cooldownTimer);
+      cooldownTimer = setInterval(() => {
+        left -= 1;
+        if (left <= 0) { clearInterval(cooldownTimer); btn.textContent = 'Check now'; btn.disabled = false; }
+        else btn.textContent = `Check now (${left})`;
+      }, 1000);
+    });
+
+    // ----- Profil -----
+    async function update(body, okText) {
+      say($('profileMsg'), '');
+      try { me = (await api('/api/auth/update', body)).user; renderMe(); say($('profileMsg'), okText, true); }
+      catch (e) { say($('profileMsg'), e.message); }
+    }
+    $('nameBtn').addEventListener('click', () => update({ username: $('nameInput').value.trim() }, 'Username changed.'));
+    // Live-Pruefung beim Umbenennen (frei? 8-20 Zeichen?)
+    let nameSeq = 0, nameTimer = null;
+    $('nameInput').addEventListener('input', () => {
+      const v = $('nameInput').value.trim(), el = $('nameLive');
+      const live = (t, c) => { el.textContent = t; el.className = `live ${c || ''}`; };
+      clearTimeout(nameTimer);
+      if (!v || (me && v === me.username)) { live(''); $('nameBtn').disabled = false; return; }
+      if (v.length < 8) { live(`${8 - v.length} more character${v.length === 7 ? '' : 's'}`, 'bad'); $('nameBtn').disabled = true; return; }
+      if (!/^[A-Za-z0-9_]{8,20}$/.test(v)) { live('Only letters, numbers and _', 'bad'); $('nameBtn').disabled = true; return; }
+      live('Checking …');
+      const seq = ++nameSeq;
+      nameTimer = setTimeout(async () => {
+        try {
+          const r = await api(`/api/auth/username-available?${new URLSearchParams({ name: v })}`);
+          if (seq !== nameSeq) return;
+          live(r.available ? '✓ Available' : '✗ Already taken', r.available ? 'ok' : 'bad');
+          $('nameBtn').disabled = !r.available;
+        } catch (e) { if (seq === nameSeq) live(''); }
+      }, 350);
+    });
+
+    $('pwBtn').addEventListener('click', async () => { await update({ password: $('pwInput').value }, 'Password changed.'); $('pwInput').value = ''; });
+    $('mailBtn').addEventListener('click', () => update({ email: $('mailInput').value.trim() }, $('mailInput').value.trim() ? 'E-mail saved.' : 'E-mail removed.'));
+    $('signOutBtn').addEventListener('click', async () => {
+      $('signOutBtn').disabled = true;
+      try { await api('/api/auth/signout', {}); } catch (e) {}
+      try { localStorage.removeItem('ttp_signed_in'); } catch (e) {}
+      if (window.ttpMain && window.ttpMain.applyAppIcon) window.ttpMain.applyAppIcon();
+      location.replace('login.html');
+    });
+
+    $('settingsGearBtn').addEventListener('click', () => { if (window.ttpMain) window.ttpMain.openSettings(); });
+    $('quitBtn').addEventListener('click', () => {
+      const ok = confirm('Quit Three-Trick-Pony completely? It will no longer run in the background (no more update checks or LP tracking until you start it again).');
+      if (window.ttpMain) window.ttpMain.restoreFocus();
+      if (ok && window.ttpMain) window.ttpMain.quitApp();
+    });
+
+    document.addEventListener('ttp-account', e => {
+      me = e.detail.user;
+      accounts = e.detail.riotAccounts || [];
+      renderMe();
+      renderRiot();
+      const params = new URLSearchParams(location.search);
+      if (params.get('welcome')) {
+        if (accounts.length) { location.replace('overview.html'); return; }
+        $('welcomeName').textContent = me.username;
+        $('welcome').hidden = false;
+        $('riotInput').focus();
+      }
+      if (location.hash === '#link') $('riotInput').focus();
+    });
+  </script>
+</body>
+</html>
