@@ -328,6 +328,10 @@
   .booster .bwhen b { font-variant-numeric: tabular-nums; color: var(--text); font-weight: normal; }
   .booster.closed .bpack { filter: grayscale(.55) brightness(.75); }
   .booster .bbuy em { color: var(--text-faint); font-size: .76rem; }
+  /* 5er-Pack-Rabatt + LP-Bank-Gutschein (v6.6.0) */
+  .booster .bbuy .offer-buy { position: relative; white-space: nowrap; }
+  .booster .bdeal { position: absolute; top: -8px; right: -8px; padding: 0 5px; border-radius: 8px; background: #2f9e4a; color: #fff; font: bold .6rem/15px Georgia, serif; box-shadow: 0 1px 4px rgba(0,0,0,.45); }
+  .booster .offer-buy.voucher { border-color: var(--gold); color: var(--gold); }
   .booster .bpack.set-neon .bt, .booster .bpack.set-neon .bb { font-family: Bahnschrift, 'Arial Narrow', sans-serif; font-weight: 700; text-transform: uppercase; }
   .booster .bpack.set-neon .bt { color: #e8d43a; text-shadow: -1px 0 #5ef0f0, 1px 0 #ff2a4a, 0 1px 3px rgba(0,0,0,.7); }
   .booster .bpack.set-neon .bt small { color: #fff; }
@@ -700,11 +704,12 @@
     let boosterConfirm = null, boosterMsg = '', boosterMsgSpecial = false;
     function renderBoosters() {
       const list = shop.boosters || [];
+      const vouchers = shop.boosterVouchers || 0;
       const rt = shop.boosterRates || { animChance: .1, dupeRefund: { common: 3, uncommon: 8, holo: 50, anim: 300 } };
       const one = b => {
         const btn = (q) => {
-          const cost = b.price * q, key = `${b.id}:${q}`, conf = boosterConfirm === key, short = shop.coins < cost;
-          return `<button type="button" class="offer-buy${conf ? ' confirm' : ''}${short ? ' short' : ''}" data-booster="${b.id}" data-qty="${q}"${short ? ' disabled title="Not enough coins"' : ''}>${conf ? `Buy ${q} for 🪙 <b>${fmtNum(cost)}</b>?` : `${q > 1 ? `${q}× · ` : ''}🪙 <b>${fmtNum(cost)}</b>`}</button>`;
+          const bundle = shop.boosterBundle || 5, full = b.price * q, cost = b.price * (q - Math.floor(q / bundle)), key = `${b.id}:${q}`, conf = boosterConfirm === key, short = shop.coins < cost;
+          return `<button type="button" class="offer-buy${conf ? ' confirm' : ''}${short ? ' short' : ''}" data-booster="${b.id}" data-qty="${q}"${short ? ' disabled title="Not enough coins"' : ''}>${conf ? `Buy ${q} for 🪙 <b>${fmtNum(cost)}</b>?` : `${q > 1 ? `${q}× · ` : ''}🪙 <b>${fmtNum(cost)}</b>`}${cost < full && !conf ? `<span class="bdeal" title="Instead of ${fmtNum(full)}">-${Math.round((1 - cost / full) * 100)}%</span>` : ''}</button>`;
         };
         const canBuy = b.released && b.available !== false;
         return `<div class="booster${b.released ? '' : ' soon'}${b.special ? ' special' : ''}${b.special && !b.available ? ' closed' : ''}">
@@ -713,8 +718,8 @@
             <span class="bname">${esc(b.name)}</span>
             <span class="bown">You own <b>${b.owned}</b> unopened · album ${b.collected} / ${b.total}</span>
             ${b.special ? `<span class="bwhen${b.available ? ' open' : ''}">${whenHtml(b)}</span>` : ''}
-            <span class="bbuy">${canBuy ? btn(1) + btn(5) : b.released ? '<em>Sat &amp; Sun only</em>' : '<em>coming later</em>'}</span>
-            <span class="rates" tabindex="0">Pull rates ?<span class="rates-pop">${b.total} stickers in this set. 7 stickers per booster: 4 common, 2 uncommon and 1 rare slot (Holo Rare ${Math.round((1 - rt.animChance) * 100)}% · Animated Rare ${Math.round(rt.animChance * 100)}%).<br>Duplicates give coins back: ${rt.dupeRefund.common} / ${rt.dupeRefund.uncommon} / ${rt.dupeRefund.holo} / ${rt.dupeRefund.anim}.${b.special ? '<br>Special boosters can only be bought on Saturdays and Sundays - you can open them any time.' : ''}</span></span>
+            <span class="bbuy">${canBuy && !b.special && vouchers ? `<button type="button" class="offer-buy voucher" data-redeem="${b.id}" title="Redeem a voucher from your LP Bank for one booster">🎟 Voucher${vouchers > 1 ? ` ×${vouchers}` : ''}</button>` : ''}${canBuy ? btn(1) + btn(5) : b.released ? '<em>Sat &amp; Sun only</em>' : '<em>coming later</em>'}</span>
+            <span class="rates" tabindex="0">Pull rates ?<span class="rates-pop">${b.total} stickers in this set. 7 stickers per booster: 4 common, 2 uncommon and 1 rare slot (Holo Rare ${Math.round((1 - rt.animChance - (rt.faChance || 0)) * 100)}% · Animated Rare ${Math.round(rt.animChance * 100)}%${rt.faChance ? ` · Full Art ${Math.round(rt.faChance * 100)}%` : ''}).<br>Duplicates go to your Dupes in the Album - sell them for ${rt.dupeRefund.common} / ${rt.dupeRefund.uncommon} / ${rt.dupeRefund.holo} / ${rt.dupeRefund.anim}${rt.dupeRefund.fullart ? ` / ${rt.dupeRefund.fullart}` : ''}.${b.special ? '<br>Special boosters can only be bought on Saturdays and Sundays - you can open them any time.' : ''}</span></span>
           </span>
         </div>`;
       };
@@ -730,6 +735,16 @@
       if (flip) load();
     }, 1000);
     const onBoosterClick = async e => {
+      const rd = e.target.closest('[data-redeem]');
+      if (rd) {
+        let r;
+        try { r = await (await fetch('/api/boosters/redeem', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ set: rd.dataset.redeem }) })).json(); } catch (err) { r = { ok: false, error: 'Could not reach the app server.' }; }
+        boosterMsgSpecial = false;
+        boosterMsg = r.ok ? 'Voucher redeemed - your booster is waiting in the Album.' : (r.error || 'Something went wrong.');
+        if (r.ok && window.TTPNav) window.TTPNav.refreshBoosters();
+        await load();
+        return;
+      }
       const b = e.target.closest('[data-booster]');
       if (!b || b.disabled) return;
       const key = `${b.dataset.booster}:${b.dataset.qty}`;
@@ -742,6 +757,7 @@
       let r;
       try { r = await (await fetch('/api/boosters/buy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ set: b.dataset.booster, qty: Number(b.dataset.qty) }) })).json(); } catch (err) { r = { ok: false, error: 'Could not reach the app server.' }; }
       boosterMsgSpecial = !!b.closest('#specialOffers');
+      if (r.ok && window.TTPNav) window.TTPNav.refreshBoosters();
       boosterMsg = r.ok ? `Got ${b.dataset.qty > 1 ? `${b.dataset.qty} boosters` : 'a booster'}! Open them in your Album.` : (r.error || 'Something went wrong.');
       await load();
     };

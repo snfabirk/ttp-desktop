@@ -97,6 +97,98 @@
     }).join('');
     document.body.prepend(nav);
 
+    // Album-Reiter: Zahl der NEU hinzugekommenen Booster seit dem letzten
+    // Album-Besuch (v6.6.0, Nutzerwunsch). Auf der Album-Seite selbst wird der
+    // Zaehler zurueckgesetzt; Shop/Pass rufen TTPNav.refreshBoosters() auf.
+    const albumLink = nav.querySelector('a[href="album.html"]');
+    if (albumLink) {
+      const nb = document.createElement('b');
+      nb.className = 'nav-badge'; nb.hidden = true;
+      albumLink.appendChild(nb);
+      const show = n => { nb.hidden = !n; nb.textContent = n > 99 ? '99+' : `+${n}`; albumLink.title = n ? `${n} new booster${n > 1 ? 's' : ''}` : ''; };
+      const refresh = () => fetch(file === 'album.html' ? '/api/boosters/seen' : '/api/boosters/new', file === 'album.html' ? { method: 'POST' } : undefined)
+        .then(r => r.json()).then(d => show(d.newBoosters || 0)).catch(() => {});
+      window.TTPNav = Object.assign(window.TTPNav || {}, { refreshBoosters: refresh });
+      refresh();
+
+      // Geschenkte Booster (v6.6.0): beim Laden/Fokus abholen (hoechstens alle
+      // 30 s), dann ein Hinweisfenster je Absender; zaehlen fuer den Zaehler mit.
+      let lastClaim = 0;
+      const giftEsc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      const showGifts = gifts => {
+        const names = { base: 'Base Set', neon: 'Neon District' };
+        const byFrom = {};
+        gifts.forEach(g => { (byFrom[g.from] = byFrom[g.from] || []).push(g); });
+        const lines = Object.entries(byFrom).map(([from, list]) => `<div class="gift-in-line"><b>${giftEsc(from)}</b> sent you ${list.map(g => `${g.qty}× ${giftEsc(g.setName || names[g.set] || g.set)}`).join(', ')} booster${list.reduce((a, g) => a + g.qty, 0) > 1 ? 's' : ''}${list.filter(g => g.message).map(g => `<q>${giftEsc(g.message)}</q>`).join('')}</div>`).join('');
+        const ov = document.createElement('div'); ov.className = 'gift-in';
+        ov.innerHTML = `<div class="gift-in-box" role="dialog" aria-label="You got a gift"><div class="gift-in-ic">🎁</div><h3>You got a gift!</h3>${lines}
+          <div class="gift-in-btns">${file === 'album.html' ? '' : '<a class="gift-in-go" href="album.html">Open Album</a>'}<button type="button" class="gift-in-ok">${file === 'album.html' ? 'Nice!' : 'Later'}</button></div></div>`;
+        document.body.appendChild(ov);
+        requestAnimationFrame(() => ov.classList.add('on'));
+        const close = () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); };
+        ov.addEventListener('click', e => { if (e.target === ov || e.target.closest('.gift-in-ok')) close(); });
+      };
+      // Runder Geschenk-Knopf neben dem Summoner-Umschalter (Nutzerdesign):
+      // erscheint + pulsiert wie "What's New", sobald ein Freund etwas schickt
+      // (Live ueber /api/events); Klick holt die Geschenke ab.
+      // Hinweis-Leiste neben dem Summoner-Umschalter: 🎁 Geschenke, ⇄ Tausch
+      // (v6.6.0) - beide erscheinen nur, wenn etwas wartet, und pulsieren.
+      const dock = document.createElement('div');
+      dock.className = 'notice-dock';
+      const mkPill = (icon, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = `gift-pill ${cls}`; b.hidden = true; b.innerHTML = `<span aria-hidden="true">${icon}</span><b></b>`; dock.appendChild(b); return b; };
+      const tradeBtn = mkPill('⇄', 'trade-pill');
+      const giftBtn = mkPill('🎁', 'gift-only');
+      document.body.appendChild(dock);
+      const placeGift = () => {
+        const sb = document.querySelector('.summoner-switch .sw-btn');
+        if (!sb) return;
+        const r = sb.getBoundingClientRect();
+        if (r.left > innerWidth / 2) { dock.style.left = ''; dock.style.right = `${innerWidth - r.left + 10}px`; }
+        else { dock.style.right = ''; dock.style.left = `${r.right + 10}px`; }
+      };
+      const setPill = (btn, n, title) => {
+        const was = !btn.hidden;
+        btn.hidden = !n;
+        btn.querySelector('b').textContent = n > 1 ? n : '';
+        btn.title = n ? title : '';
+        if (n && !was) { placeGift(); btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop'); }
+      };
+      const showPending = n => setPill(giftBtn, n, `${n} gifted booster${n > 1 ? 's' : ''} - click to collect`);
+      const showTrades = n => setPill(tradeBtn, n, `${n} trade${n > 1 ? 's' : ''} waiting for you - click to open`);
+      tradeBtn.addEventListener('click', () => {
+        if (file === 'album.html' && window.TTPAlbum) window.TTPAlbum.showTrades();
+        else location.href = 'album.html?view=trades';
+      });
+      window.addEventListener('resize', placeGift);
+      // der Summoner-Umschalter entsteht erst nach der Leiste
+      setTimeout(() => { const swEl = document.querySelector('.summoner-switch .sw-btn'); if (swEl && window.ResizeObserver) new ResizeObserver(placeGift).observe(swEl); placeGift(); }, 0);
+      try {
+        const es = new EventSource('/api/events');
+        es.onmessage = ev => {
+          try {
+            const d = JSON.parse(ev.data);
+            showPending(d.gifts || 0); showTrades(d.trades || 0);
+            window.dispatchEvent(new CustomEvent('ttp:notices', { detail: d }));
+          } catch (e) {}
+        };
+      } catch (e) {
+        fetch('/api/gifts/pending').then(r => r.json()).then(d => showPending(d.pending || 0)).catch(() => {});
+      }
+      giftBtn.addEventListener('click', () => {
+        if (Date.now() - lastClaim < 1500) return;
+        lastClaim = Date.now();
+        fetch('/api/gifts/claim', { method: 'POST' }).then(r => r.json()).then(d => {
+          showPending(0);
+          if (!d || !d.gifts || !d.gifts.length) return;
+          refresh();
+          window.dispatchEvent(new CustomEvent('ttp:gifts', { detail: d.gifts }));
+          showGifts(d.gifts);
+        }).catch(() => {});
+      });
+      // auch wenn die Seite lange offen bleibt (Pass-Booster per Hintergrund-Abholung)
+      window.addEventListener('focus', refresh);
+    }
+
     // Gleitender Hintergrund unter dem aktiven Eintrag (Nutzerwunsch: beim
     // Klick nicht springen, sondern schnell rueber gleiten).
     const pill = document.createElement('span');

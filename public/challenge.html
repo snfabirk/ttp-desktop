@@ -1191,13 +1191,13 @@
           </div>
           <div class="games-today" id="gamesToday"></div>
           <div class="sub-head sub-head-gap">
-            <span>LP Bank <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Every LP you gain goes into the bank, LP losses are ignored. When it hits 100 you get XP and it starts over - extra LP carry over.</span></span></span>
+            <span>LP Bank <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Every LP you gain goes into the bank, LP losses are ignored. When it hits 100 you get XP plus a voucher for a regular booster (redeem it in the Shop), and it starts over - extra LP carry over.</span></span></span>
             <span class="reset-in" id="lpBankFills"></span>
           </div>
           <div class="xp-bar lp-bank-bar"><div class="xp-bar-fill" id="lpBankFill"></div></div>
           <div class="pass-summary">
             <span id="lpBankText">0 / 100 LP</span>
-            <span id="lpBankReward">+1,000 XP when full</span>
+            <span id="lpBankReward">+600 XP + 🎟 booster voucher when full</span>
           </div>
           <div class="sub-head sub-head-gap"><span>Recent games</span></div>
           <div class="recent-xp" id="recentXp"></div>
@@ -2013,9 +2013,9 @@
     function renderLpBank(bank) {
       document.getElementById('lpBankFill').style.width = `${(bank.progress / bank.size) * 100}%`;
       document.getElementById('lpBankText').textContent = `${bank.progress} / ${bank.size} LP`;
-      document.getElementById('lpBankReward').textContent = `+${fmtNum(bank.xpPerFill)} XP when full`;
+      document.getElementById('lpBankReward').textContent = `+${fmtNum(bank.xpPerFill)} XP + 🎟 booster voucher when full`;
       document.getElementById('lpBankFills').textContent = bank.fills
-        ? `filled ${bank.fills}× · +${fmtNum(bank.fills * bank.xpPerFill)} XP`
+        ? `filled ${bank.fills}×${bank.vouchers ? ` · ${bank.vouchers} voucher${bank.vouchers > 1 ? 's' : ''} to redeem` : ''}`
         : 'not filled yet';
       if (bank.recent.length) {
         const last = bank.recent[0];
@@ -2076,7 +2076,7 @@
         ['Win bonus (any game)', src.winBonus],
         ['Per kill', src.perKill],
         ['Per assist', src.perAssist],
-        [`Every ${src.lpBankSize} LP gained (LP Bank)`, src.perLpBank],
+        [`Every ${src.lpBankSize} LP gained (LP Bank)`, `+${fmtNum(src.perLpBank)} XP + 🎟 booster`],
         ['Coins for every ranked game (+20 on a win)', '+30 🪙'],
         [`After ${fullXpGames} games a day`, '½ XP and ½ coins']
       ];
@@ -2201,6 +2201,7 @@
         r = await (await fetch('/api/pass/claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
       } catch (err) { r = { ok: false }; }
       if (!r.ok) { loadProgression(); return; }
+      if ((r.boosters || []).length && window.TTPNav) setTimeout(window.TTPNav.refreshBoosters, 700);
       const before = shownCoins;
       (r.cosmetics || []).forEach(c => flyCosmetic(document.querySelector(`[data-claim-tier="${c.tier}"]`) || fromEl));
       // Booster fliegen zum Album (dort werden sie geoeffnet)

@@ -25,6 +25,21 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.6.0',
+      date: '2026-11-07',
+      notable: [
+        "Trade stickers with friends: make an offer from a friend's profile or the new Trades tab in the Album. Your offered stickers are reserved until they decide. Trade fee: 50 coins per sticker in the trade, paid by each side.",
+        'Gift boosters to friends - they see a glowing gift icon right away and collect it with one click.',
+        'Duplicates now go to your new Dupes collection: sort by set and rarity, sell them in bulk and keep as many spares as you like for trading.',
+        'Full Arts: very rare full-art versions of some cards, now 7 % in the rare slot. Which cards have one is a secret - you only find out when you pull it.',
+        'Complete a set for a gold frame around your album, collect every Full Art too for the holo Master Set frame. Two new profile widgets show your Complete Sets and Master Sets.',
+        'The Album tab shows how many new boosters you got since your last visit, and your unopened boosters are shown big on the pack.',
+        'A full LP Bank now gives 600 XP and a voucher for a regular booster. Buying 5 boosters costs as much as 4.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '6.5.0',
       date: '2026-11-06',
       notable: [

@@ -46,9 +46,9 @@ const fileStorage = {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { storage: fileStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
-  // Realtime wird nicht genutzt; Electrons Node 20 hat keinen eingebauten
-  // WebSocket, ohne Ersatz bricht createClient ab.
-  realtime: { transport: class NoRealtime { constructor() { this.readyState = 3; } close() {} send() {} } }
+  // Realtime (v6.6.0) fuer Geschenke: Electrons Node 20 hat keinen eingebauten
+  // WebSocket - das Paket "ws" springt ein.
+  realtime: { transport: require('ws') }
 });
 
 // ----- Verbindungsstatus fuer das Banner -----
@@ -220,6 +220,7 @@ async function activate(user) {
     await pushNow();
   }
   syncRuns();
+  watchGifts();
   return current;
 }
 
@@ -305,6 +306,7 @@ async function signIn({ username, password }) {
 }
 
 async function signOut() {
+  unwatchGifts();
   if (current) { clearTimeout(pushTimer); await pushNow(); }
   try { await supabase.auth.signOut(); } catch (e) {}
   fileStorage.removeItem('ttpProfile');
@@ -615,6 +617,205 @@ async function friendsActivity() {
   } catch (e) { throw friendly(e); }
 }
 
+// ----- Booster verschenken (v6.6.0, supabase/007-booster-gifts.sql) -----
+async function sendBoosterGift({ to, set, qty, message }) {
+  needUser();
+  qty = Math.floor(Number(qty) || 1);
+  const msg = String(message || '').replace(/\s+/g, ' ').trim().slice(0, 80) || null;
+  if (!to || to === current.id) { const err = new Error('Pick a friend to send it to.'); err.status = 400; throw err; }
+  const taken = progression.takeBoostersForGift(set, qty);
+  if (!taken.ok) { const err = new Error(taken.error); err.status = 400; throw err; }
+  try {
+    const { error } = await supabase.from('booster_gifts').insert({ sender: current.id, recipient: to, set_id: set, qty, message: msg });
+    if (error) {
+      // RLS lehnt ab = keine Freunde (mehr)
+      if (/row-level security/i.test(error.message || '')) { const err = new Error('You can only send gifts to friends.'); err.status = 400; throw err; }
+      throw error;
+    }
+    return { ok: true, owned: taken.owned };
+  } catch (e) {
+    progression.returnGiftBoosters(set, qty);
+    throw friendly(e);
+  }
+}
+// Offene Geschenke beobachten: Supabase Realtime meldet neue Zeilen sofort
+// (RLS: nur eigene), dazu alle 60 s ein Abgleich als Rueckfallebene. Die
+// Seiten hoeren ueber /api/events (SSE) mit und lassen das Symbol leuchten.
+let pendingGifts = 0, pendingTrades = 0, giftChannel = null, giftTimer = null;
+const giftListeners = new Set();
+function onGiftsChange(fn) { giftListeners.add(fn); return () => giftListeners.delete(fn); }
+function getPendingGifts() { return pendingGifts; }
+function getNotices() { return { gifts: pendingGifts, trades: pendingTrades }; }
+const emitNotices = () => giftListeners.forEach(fn => { try { fn(getNotices()); } catch (e) {} });
+function setPending(n) {
+  if (n === pendingGifts) return;
+  pendingGifts = n;
+  emitNotices();
+}
+function setPendingTrades(n) {
+  if (n === pendingTrades) return;
+  pendingTrades = n;
+  emitNotices();
+}
+// Tausch: offene Angebote AN mich + entschiedene eigene, noch nicht abgerechnet
+async function refreshPendingTrades() {
+  if (!current) { setPendingTrades(0); return 0; }
+  try {
+    const me = current.id;
+    const { data, error } = await supabase.from('sticker_trades').select('id, proposer, partner, status, proposer_settled')
+      .or(`and(partner.eq.${me},status.eq.open),and(proposer.eq.${me},proposer_settled.eq.false,status.neq.open)`);
+    if (error) throw error;
+    setPendingTrades((data || []).length);
+  } catch (e) { noteNetworkError(e); }
+  return pendingTrades;
+}
+async function refreshPendingGifts() {
+  if (!current) { setPending(0); return 0; }
+  try {
+    const { data, error } = await supabase.from('booster_gifts').select('qty')
+      .eq('recipient', current.id).is('claimed_at', null);
+    if (error) throw error;
+    setPending((data || []).reduce((a, r) => a + r.qty, 0));
+  } catch (e) { noteNetworkError(e); }
+  return pendingGifts;
+}
+async function watchGifts() {
+  unwatchGifts();
+  if (!current) return;
+  const me = current.id;
+  refreshPendingGifts(); refreshPendingTrades();
+  giftTimer = setInterval(() => { refreshPendingGifts(); refreshPendingTrades(); }, 60000);
+  try {
+    try { await supabase.realtime.setAuth(); } catch (e) {}
+    giftChannel = supabase.channel(`gifts-${me}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'booster_gifts', filter: `recipient=eq.${me}` }, () => refreshPendingGifts())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sticker_trades', filter: `partner=eq.${me}` }, () => refreshPendingTrades())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sticker_trades', filter: `proposer=eq.${me}` }, () => refreshPendingTrades())
+      .subscribe();
+  } catch (e) { /* Realtime nicht verfuegbar - der 60-s-Abgleich reicht */ }
+}
+function unwatchGifts() {
+  clearInterval(giftTimer); giftTimer = null;
+  if (giftChannel) { try { supabase.removeChannel(giftChannel); } catch (e) {} giftChannel = null; }
+  setPending(0); setPendingTrades(0);
+}
+
+// ----- Sticker tauschen (v6.6.0, supabase/009-sticker-trades.sql) -----
+const badReq = msg => { const err = new Error(msg); err.status = 400; return err; };
+async function createTrade({ to, give, want, message }) {
+  needUser();
+  const g = progression.normTradeItems(give), w = progression.normTradeItems(want);
+  if (!g || !w) throw badReq('Pick 1 to 10 stickers on each side.');
+  if (!to || to === current.id) throw badReq('Pick a friend to trade with.');
+  const msg = String(message || '').replace(/\s+/g, ' ').trim().slice(0, 80) || null;
+  const res = progression.tradeReserve(g, w);
+  if (!res.ok) throw badReq(res.error);
+  try {
+    const { error } = await supabase.from('sticker_trades').insert({ proposer: current.id, partner: to, give: g, want: w, message: msg });
+    if (error) {
+      if (/row-level security/i.test(error.message || '')) throw badReq('You can only trade with friends.');
+      throw error;
+    }
+    return { ok: true };
+  } catch (e) {
+    progression.tradeUnreserve(g, w);
+    throw friendly(e);
+  }
+}
+async function decideTrade(id, decision) {
+  needUser();
+  if (!['accepted', 'declined', 'cancelled'].includes(decision)) throw badReq('Unknown action.');
+  try {
+    const { data: row, error } = await supabase.from('sticker_trades').select('*').eq('id', id).maybeSingle();
+    if (error) throw error;
+    if (!row || row.status !== 'open') throw badReq('This offer is no longer open.');
+    const g = progression.normTradeItems(row.give) || [], w = progression.normTradeItems(row.want) || [];
+    if (decision === 'accepted') {
+      if (row.partner !== current.id) throw badReq('Only the other player can accept this.');
+      const took = progression.tradeAcceptTake(g, w);
+      if (!took.ok) throw badReq(took.error);
+      let done = null;
+      try {
+        const r = await supabase.rpc('decide_sticker_trade', { trade_id: id, decision });
+        if (r.error) throw r.error;
+        done = (r.data || [])[0];
+      } catch (e) { progression.tradeAcceptRollback(g, w); throw e; }
+      if (!done) { progression.tradeAcceptRollback(g, w); throw badReq('This offer is no longer open.'); }
+      progression.tradeReceive(g);
+    } else {
+      const r = await supabase.rpc('decide_sticker_trade', { trade_id: id, decision });
+      if (r.error) throw r.error;
+      if (!(r.data || []).length) throw badReq('This offer is no longer open.');
+      if (decision === 'cancelled') await settleTrades();
+    }
+    refreshPendingTrades();
+    return { ok: true };
+  } catch (e) { throw e.status === 400 ? e : friendly(e); }
+}
+// Eigene entschiedene Angebote genau einmal abrechnen
+async function settleTrades() {
+  const { data, error } = await supabase.rpc('settle_sticker_trades');
+  if (error) throw error;
+  const rows = data || [];
+  progression.tradeSettle(rows);
+  return rows;
+}
+async function listTrades() {
+  needUser();
+  try {
+    const settled = await settleTrades();
+    const me = current.id;
+    const { data, error } = await supabase.from('sticker_trades').select('*')
+      .or(`proposer.eq.${me},partner.eq.${me}`).order('created_at', { ascending: false }).limit(40);
+    if (error) throw error;
+    const rows = data || [];
+    const ids = [...new Set(rows.map(r => (r.proposer === me ? r.partner : r.proposer)))];
+    let profs = [];
+    if (ids.length) { const p = await supabase.from('profiles').select('id, username, avatar').in('id', ids); profs = p.data || []; }
+    const by = new Map(profs.map(p => [p.id, p]));
+    const newly = new Set(settled.map(r => r.id));
+    const view = r => {
+      const mine = r.proposer === me, other = by.get(mine ? r.partner : r.proposer) || {};
+      const g = progression.normTradeItems(r.give) || [], w = progression.normTradeItems(r.want) || [];
+      // aus MEINER Sicht: was ich gebe / bekomme
+      const iGive = mine ? g : w, iGet = mine ? w : g;
+      const out = { id: r.id, mine, with: { id: mine ? r.partner : r.proposer, username: other.username || '?', avatar: other.avatar || null },
+        give: iGive, get: iGet, myFee: progression.tradeFee(g, w), theirFee: progression.tradeFee(g, w),
+        message: r.message, status: r.status, at: r.created_at, decidedAt: r.decided_at, justSettled: newly.has(r.id) };
+      if (!mine && r.status === 'open') {
+        out.missing = progression.missingStickers(iGive);
+        out.warnings = progression.tradeWarnings(iGive);
+      }
+      return out;
+    };
+    const all = rows.map(view);
+    refreshPendingTrades();
+    return {
+      incoming: all.filter(t => !t.mine && t.status === 'open'),
+      outgoing: all.filter(t => t.mine && t.status === 'open'),
+      history: all.filter(t => t.status !== 'open').slice(0, 15),
+      coins: progression.tradeInfo().coins
+    };
+  } catch (e) { throw e.status === 400 ? e : friendly(e); }
+}
+
+// Offene Geschenke abholen (atomar in der Datenbank) und lokal gutschreiben
+async function claimBoosterGifts() {
+  if (!current) return { gifts: [] };
+  try {
+    const { data, error } = await supabase.rpc('claim_booster_gifts');
+    if (error) throw error;
+    const rows = data || [];
+    setPending(0);
+    if (!rows.length) return { gifts: [] };
+    progression.receiveGiftBoosters(rows);
+    const ids = [...new Set(rows.map(r => r.sender))];
+    const { data: profs } = await supabase.from('profiles').select('id, username, avatar').in('id', ids);
+    const by = new Map((profs || []).map(p => [p.id, p]));
+    return { gifts: rows.map(r => ({ id: r.id, from: (by.get(r.sender) || {}).username || 'A friend', avatar: (by.get(r.sender) || {}).avatar || null, set: r.set_id, setName: (require('./stickers').getSet(r.set_id) || {}).name || r.set_id, qty: r.qty, message: r.message, at: r.created_at })) };
+  } catch (e) { noteNetworkError(e); return { gifts: [], error: String(e.message || e) }; }
+}
+
 async function getFriendProfile(userId) {
   needUser();
   try {
@@ -629,5 +830,7 @@ module.exports = {
   restoreSession, signUp, signIn, signOut, requestPasswordReset, completePasswordReset, updateAccount,
   listRiotAccounts, startVerification, checkVerification, setActiveRiotAccount, removeRiotAccount,
   getCurrent, getConnection, checkConnection, usernameAvailable, MAX_RIOT_ACCOUNTS, getChallengeRun, activeRiotAccount, setAvatar,
-  searchUsers, listFriends, sendFriendRequest, acceptFriendRequest, removeFriendship, publishProfile, getFriendProfile, friendsActivity
+  searchUsers, listFriends, sendFriendRequest, acceptFriendRequest, removeFriendship, publishProfile, getFriendProfile, friendsActivity,
+  sendBoosterGift, claimBoosterGifts, onGiftsChange, getPendingGifts, refreshPendingGifts, getNotices,
+  createTrade, decideTrade, listTrades, tradeWarnings: items => progression.tradeWarnings(progression.normTradeItems(items) || [])
 };

@@ -1,5 +1,16 @@
 # Internal Changelog
 
+## 6.6.0 — 2026-11-07
+
+- Album tab badge "+N" = boosters gained since the last Album visit (progression newBoosters, gainBoosters() for shop/pass/gifts/vouchers; GET /api/boosters/new, POST /api/boosters/seen on album load; nav.js TTPNav.refreshBoosters). Unopened count as big gold badge on the pack + in the booster picker, other sets with unopened boosters as quick-switch chips.
+- LP Bank: 600 XP (was 1000) + 1 regular-booster voucher per fill (boosterVouchers, POST /api/boosters/redeem, not for special sets). 5 boosters = price of 4 (BUNDLE_SIZE) for every set.
+- Dupes collection: stickers[set][n] now counts copies; duplicates are kept (opening stamps "DUPE"). Album view "Dupes": rarity groups (FA first), set filter, "Keep dupes" N setting (localStorage ttp_dupe_keep), sell per set+rarity or all shown (POST /api/stickers/sell-dupes, two-click confirm).
+- Gift boosters (supabase/007-booster-gifts.sql + 008-gifts-realtime.sql): from a friend's profile, 1-10 own unopened boosters + optional message; sender removes locally, inserts row (RLS: friends only); recipient claims atomically (claim_booster_gifts). Live notice: Supabase Realtime (new dependency ws as Node WebSocket) -> SSE /api/events -> pulsing gift pill next to the summoner switch, click collects; 60 s fallback poll.
+- Sticker trades (supabase/009-sticker-trades.sql): offer-based escrow (proposer reserves give + pays fee on send; partner gives want + pays fee on accept via decide_sticker_trade; proposer settles once via settle_sticker_trades, cancel/decline returns stickers + fee). Fee 50 coins per sticker in the whole trade, paid by each side. Album "Trades" view (offers for you / your offers / history), trade builder (fixed size, 5 per row, sticker numbers + rarity tags C/U/H/A/FA + per-side sums, NEED/NEW tags, "only what they/I need", last-copy and on-profile warnings; giving away the last copy removes it from the profile). Pulsing trade pill.
+- Full Arts: secret per-set lists in server/lib/stickers.js (user's picks: base 3,4,10,12,18,25,27,30,31,49 - neon 1,5,6,11,16,22,25), rare slot 83 % holo / 10 % animated / 7 % FA, FA dupe 600. Separate fullArts collection; album shows an FA (#027FA) right next to its card only once pulled, counts stay x/50. FA art = full-bleed 120x168 scene + floating mid layer (background parts at ~45 % lift, user idea) + hologram figure; FA_ART/FA_MID/FA_POP in public/stickers.js and theme-lab/sticker-set-cyber.js (stickers-neon.js regenerated), shared rendering public/stickers-fa.js (seamless foil + glint). FAs work in dupes, trades, profile inventory/widgets.
+- Complete Set (all normal stickers) = gold album frame + "✓ COMPLETE SET"; Master Set (incl. all FAs, computed server-side) = holo frame + "★ MASTER SET"; set tabs ✓/★; profile widgets "Complete Sets" and "Master Sets" (no FA count shown). Profile editor lists the Collectables group.
+- Base #027 One More Game: clock hands now show 3:47.
+
 ## 6.5.0 — 2026-11-06
 
 - Special Set #1 "Neon District" (user: cyberpunk, half the size, double the price): 25 stickers (2 animated, 4 holo, 7 uncommon, 12 common, rarest first), booster 300. Art source theme-lab/sticker-set-cyber.js (gallery: theme-lab/sticker-cyber.html), app copy public/stickers-neon.js generated from it (.front.cy -> .stk-front.cy, 'face front cy' -> 'stk-face stk-front cy').

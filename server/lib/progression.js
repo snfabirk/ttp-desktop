@@ -50,7 +50,10 @@ const FULL_XP_GAMES_PER_DAY = 5;      // ab dem 6. Spiel des Tages: alle XP halb
 // und es beginnt von vorn - ueberschuessige LP werden mitgenommen. So
 // bekommen auch Spieler XP, die kaum netto climben (hardstuck).
 const LP_BANK_SIZE = 100;
-const XP_PER_LP_BANK = 1000;
+// v6.6.0 (Nutzerwunsch): 600 XP (= halbe Pass-Stufe) + 1 Gutschein fuer einen
+// regulaeren Booster pro voller Bank (frueher 1000 XP).
+const XP_PER_LP_BANK = 600;
+const BUNDLE_SIZE = 5; // 5 Booster kaufen = 4 bezahlen (v6.6.0)
 
 const PASS_TIERS = 30;
 // 1.200 statt 1.500 seit v5.21.0 (Nutzerwunsch: "auch mal abschalten koennen" -
@@ -429,7 +432,7 @@ function settleOldPasses(state, now = new Date()) {
     if (month === cur) return;
     (pass.pendingTiers || []).forEach(t => {
       const r = tierReward(month, t);
-      if (r.type === 'booster') state.boosters[r.set] = (state.boosters[r.set] || 0) + 1;
+      if (r.type === 'booster') gainBoosters(state, r.set, 1);
       else if (r.type === 'cosmetic') { if (!state.inventory.includes(r.id)) state.inventory.push(r.id); } else state.coins += r.amount || 0;
     });
     state.coins += (pass.pendingOverflow || 0) * COINS_PER_OVERFLOW_STEP;
@@ -452,7 +455,7 @@ function claimPassCoins({ tier, overflow, all } = {}) {
     pass.pendingTiers.splice(i, 1);
     const r = tierReward(month, t);
     if (r.type === 'booster') {
-      state.boosters[r.set] = (state.boosters[r.set] || 0) + 1;
+      gainBoosters(state, r.set, 1);
       boosters.push({ tier: t, set: r.set });
     } else if (r.type === 'cosmetic') {
       if (state.inventory.includes(r.id)) { markOwnedTier(pass, t); return true; }
@@ -476,6 +479,43 @@ function claimPassCoins({ tier, overflow, all } = {}) {
 }
 
 // ----- Booster & Sticker (v5.29.0) -----
+// Jeder neu erhaltene Booster (Pass, Shop) zaehlt fuer den Album-Reiter mit
+// (v6.6.0, Nutzerwunsch): "+N seit dem letzten Album-Besuch", nicht der Bestand.
+function gainBoosters(state, setId, n) {
+  state.boosters[setId] = (state.boosters[setId] || 0) + n;
+  state.newBoosters = (state.newBoosters || 0) + n;
+}
+// Booster verschenken (v6.6.0, supabase/007-booster-gifts.sql): beim Senden
+// lokal abziehen (bei Fehler zurueckgeben), beim Empfang gutschreiben - zaehlt
+// dann auch fuer den Album-Reiter.
+function takeBoostersForGift(setId, qty) {
+  const st = STICKERS.getSet(setId);
+  qty = Math.floor(Number(qty) || 0);
+  if (!st) return { ok: false, error: 'Unknown booster.' };
+  if (qty < 1 || qty > 10) return { ok: false, error: 'You can gift 1 to 10 boosters at once.' };
+  const state = readState();
+  if ((state.boosters[setId] || 0) < qty) return { ok: false, error: "You don't have that many unopened boosters." };
+  state.boosters[setId] -= qty;
+  writeState(state);
+  return { ok: true, owned: state.boosters[setId] };
+}
+function returnGiftBoosters(setId, qty) {
+  const state = readState();
+  state.boosters[setId] = (state.boosters[setId] || 0) + qty;
+  writeState(state);
+}
+function receiveGiftBoosters(gifts) {
+  if (!gifts.length) return;
+  const state = readState();
+  gifts.forEach(g => gainBoosters(state, g.set_id, g.qty));
+  writeState(state);
+}
+function newBoostersCount() { return readState().newBoosters || 0; }
+function markBoostersSeen() {
+  const state = readState();
+  if (state.newBoosters) { state.newBoosters = 0; writeState(state); }
+  return { ok: true, newBoosters: 0 };
+}
 function boosterSetsView(state) {
   const win = STICKERS.weekendWindow();
   return STICKERS.SETS.map(st => ({
@@ -487,21 +527,37 @@ function boosterSetsView(state) {
     collected: Object.keys(state.stickers[st.id] || {}).length
   }));
 }
+// 5er-Pack: jeder fuenfte Booster ist gratis (20 % Rabatt)
+const boosterCost = (price, qty) => price * (qty - Math.floor(qty / BUNDLE_SIZE));
+// LP-Bank-Gutschein gegen einen regulaeren (nicht Special) Booster einloesen
+function redeemBoosterVoucher(setId) {
+  const st = STICKERS.getSet(setId);
+  if (!st || !st.released) return { ok: false, error: 'This booster is not available.' };
+  if (st.special) return { ok: false, error: 'Vouchers only work on regular boosters.' };
+  const state = readState();
+  if (!(state.boosterVouchers > 0)) return { ok: false, error: 'You have no booster voucher.' };
+  state.boosterVouchers -= 1;
+  gainBoosters(state, setId, 1);
+  writeState(state);
+  return { ok: true, vouchers: state.boosterVouchers, owned: state.boosters[setId], newBoosters: state.newBoosters };
+}
 function buyBooster(setId, qty = 1) {
   const st = STICKERS.getSet(setId);
   if (!st || !st.released) return { ok: false, error: 'This booster is not available.' };
   if (!STICKERS.availableNow(st)) return { ok: false, error: 'Special boosters can only be bought on Saturdays and Sundays.' };
   qty = Math.max(1, Math.min(10, Math.floor(Number(qty) || 1)));
   const state = readState();
-  const cost = st.price * qty;
+  const cost = boosterCost(st.price, qty);
   if (state.coins < cost) return { ok: false, error: 'Not enough coins.' };
   state.coins -= cost;
-  state.boosters[setId] = (state.boosters[setId] || 0) + qty;
+  gainBoosters(state, setId, qty);
   writeState(state);
-  return { ok: true, coins: state.coins, owned: state.boosters[setId] };
+  return { ok: true, coins: state.coins, owned: state.boosters[setId], newBoosters: state.newBoosters };
 }
 // Oeffnet count Booster: jeder Sticker ist "neu", wenn man ihn bis dahin noch
-// nicht hatte (auch innerhalb desselben Openings); Doppelte geben Coins zurueck
+// nicht hatte (auch innerhalb desselben Openings). Doppelte landen seit v6.6.0
+// in der Dupes-Sammlung (stickers[set][n] = Anzahl Kopien) und werden dort
+// verkauft oder spaeter getauscht (Nutzeridee).
 function openBoosters(setId, count = 1) {
   const st = STICKERS.getSet(setId);
   if (!st) return { ok: false, error: 'Unknown booster.' };
@@ -510,29 +566,180 @@ function openBoosters(setId, count = 1) {
   count = Math.max(1, Math.min(have, Math.floor(Number(count) || 1)));
   if (!have) return { ok: false, error: 'You have no boosters of this set.' };
   const col = state.stickers[setId] = state.stickers[setId] || {};
+  const faCol = state.fullArts[setId] = state.fullArts[setId] || {};
   const cards = [];
   let refund = 0;
   for (let p = 0; p < count; p++) {
     for (const s of STICKERS.rollPack(st)) {
-      // Doppelte werden zu Coins - man besitzt jeden Sticker genau einmal
-      const isNew = !col[s.n];
-      if (isNew) col[s.n] = 1;
-      const back = isNew ? 0 : STICKERS.DUPE_REFUND[s.r];
-      refund += back;
-      cards.push({ n: s.n, id: s.id, r: s.r, isNew, refund: back });
+      const c = s.fa ? faCol : col;
+      const isNew = !c[s.n];
+      c[s.n] = (c[s.n] || 0) + 1;
+      cards.push({ n: s.n, id: s.id, r: s.r, fa: !!s.fa, isNew, dupe: !isNew, refund: 0 });
     }
   }
   state.boosters[setId] = have - count;
   state.coins += refund;
   writeState(state);
-  return { ok: true, cards, refund, coins: state.coins, owned: state.boosters[setId], stickers: col };
+  return { ok: true, cards, refund, coins: state.coins, owned: state.boosters[setId], stickers: col, fullArts: faCol };
 }
+// Dupes verkaufen (v6.6.0): pro Set (oder alle) und Seltenheit (oder alle);
+// keep = so viele Doppelte JE Sticker behalten (z.B. 1 als Tauschkopie).
+// Das Album-Exemplar selbst wird nie verkauft.
+function sellDupes({ set, rarity, keep } = {}) {
+  keep = Math.max(0, Math.min(99, Math.floor(Number(keep) || 0)));
+  const state = readState();
+  const sets = STICKERS.SETS.filter(st => !set || set === 'all' || st.id === set);
+  let sold = 0, coins = 0;
+  const sellFrom = (col, list, r) => list.forEach(n => {
+    const extra = Math.max(0, (col[n] || 0) - 1 - keep);
+    if (!extra) return;
+    col[n] -= extra;
+    sold += extra;
+    coins += extra * STICKERS.DUPE_REFUND[r];
+  });
+  sets.forEach(st => {
+    const col = state.stickers[st.id] || {};
+    st.stickers.forEach(s => { if (!rarity || rarity === 'all' || s.r === rarity) sellFrom(col, [s.n], s.r); });
+    if (!rarity || rarity === 'all' || rarity === 'fullart') sellFrom(state.fullArts[st.id] || {}, Object.keys(state.fullArts[st.id] || {}).map(Number), 'fullart');
+  });
+  if (!sold) return { ok: false, error: 'Nothing to sell.' };
+  state.coins += coins;
+  writeState(state);
+  return { ok: true, sold, refund: coins, coins: state.coins, stickers: state.stickers, fullArts: state.fullArts };
+}
+// ----- Sticker tauschen (v6.6.0, supabase/009-sticker-trades.sql) -----
+// Angebote: Der Anbieter reserviert seine Sticker + zahlt seine Gebuehr beim
+// Senden; der Partner gibt seine Sticker + Gebuehr beim Annehmen. Gebuehr =
+// je ERHALTENEM Sticker nach Seltenheit (Nutzer: kleine Gebuehr auf beiden Seiten).
+// Nutzer (v6.6.0): Gebuehr waechst mit der Groesse, damit sich ein riesiger
+// Sammeltausch nicht lohnt - 50 Coins je Sticker im GANZEN Tausch, beide Seiten
+// zahlen sie (1:1 = 100 je Seite, 3:1 = 200, 10:10 = 1000).
+const TRADE_FEE = 50;
+const stickerOf = (set, n, fa) => {
+  const st = STICKERS.getSet(set); if (!st) return null;
+  if (fa && !(st.fullArts || []).includes(Number(n))) return null;
+  return st.stickers.find(s => s.n === Number(n)) || null;
+};
+// Sammlung fuer ein Item: normale Sticker oder Full Arts (fa: true)
+const colFor = (state, it, create) => {
+  const root = it.fa ? state.fullArts : state.stickers;
+  if (create && !root[it.set]) root[it.set] = {};
+  return root[it.set] || {};
+};
+const itemKey = it => `${it.set}:${it.n}${it.fa ? 'fa' : ''}`;
+// [{set,n,qty,fa}] pruefen + zusammenfassen; null = ungueltig
+function normTradeItems(items) {
+  if (!Array.isArray(items) || !items.length || items.length > 10) return null;
+  const out = [];
+  for (const it of items) {
+    const fa = !!(it && it.fa);
+    const s = it && stickerOf(it.set, it.n, fa);
+    const qty = Math.floor(Number(it && it.qty) || 1);
+    if (!s || qty < 1 || qty > 10) return null;
+    const ex = out.find(o => o.set === it.set && o.n === s.n && !!o.fa === fa);
+    if (ex) ex.qty += qty; else out.push(fa ? { set: it.set, n: s.n, qty, fa: true } : { set: it.set, n: s.n, qty });
+  }
+  return out.length <= 10 ? out : null;
+}
+const qtyOf = items => (items || []).reduce((a, it) => a + (it.qty || 1), 0);
+const tradeFee = (give, want) => TRADE_FEE * (qtyOf(give) + qtyOf(want));
+const missingStickers = (state, items) => items.filter(it => (colFor(state, it)[it.n] || 0) < it.qty);
+const profileKey = c => `${c.set || 'base'}:${c.n}${c.fa ? 'fa' : ''}`;
+function takeStickers(state, items) {
+  items.forEach(it => {
+    const col = colFor(state, it, true);
+    col[it.n] = (col[it.n] || 0) - it.qty;
+    if (col[it.n] <= 0) delete col[it.n];
+  });
+  // Weggegebene letzte Exemplare verschwinden auch vom Profil
+  if (Array.isArray(state.profileLayout)) {
+    state.profileLayout = state.profileLayout.filter(w => !(w && w.type === 'sticker' && w.config && !colFor(state, { set: w.config.set || 'base', fa: w.config.fa })[w.config.n]));
+  }
+}
+function addStickers(state, items) {
+  items.forEach(it => {
+    const col = colFor(state, it, true);
+    col[it.n] = (col[it.n] || 0) + it.qty;
+  });
+}
+// Hinweise fuer die Oberflaeche: letztes Exemplar / klebt auf dem Profil
+function tradeWarnings(items) {
+  const state = readState();
+  const onProfile = new Set((state.profileLayout || []).filter(w => w && w.type === 'sticker' && w.config).map(w => profileKey(w.config)));
+  return items.map(it => {
+    const have = colFor(state, it)[it.n] || 0;
+    return { set: it.set, n: it.n, fa: !!it.fa, lastCopy: have - it.qty < 1, onProfile: onProfile.has(itemKey(it)) && have - it.qty < 1 };
+  });
+}
+// Anbieter: reservieren (give) + eigene Gebuehr (fuer want) zahlen
+function tradeReserve(give, want) {
+  const state = readState();
+  const miss = missingStickers(state, give);
+  if (miss.length) return { ok: false, error: "You don't have all the stickers you offered anymore." };
+  const fee = tradeFee(give, want);
+  if (state.coins < fee) return { ok: false, error: `Not enough coins for the trade fee (${fee}).` };
+  takeStickers(state, give);
+  state.coins -= fee;
+  writeState(state);
+  return { ok: true, fee };
+}
+function tradeUnreserve(give, want) {
+  const state = readState();
+  addStickers(state, give);
+  state.coins += tradeFee(give, want);
+  writeState(state);
+}
+// Partner: seine Sticker (want) geben + Gebuehr (fuer give) zahlen
+function tradeAcceptTake(give, want) {
+  const state = readState();
+  const miss = missingStickers(state, want);
+  if (miss.length) return { ok: false, error: "You don't have all the stickers they asked for anymore." };
+  const fee = tradeFee(give, want);
+  if (state.coins < fee) return { ok: false, error: `Not enough coins for the trade fee (${fee}).` };
+  takeStickers(state, want);
+  state.coins -= fee;
+  writeState(state);
+  return { ok: true, fee };
+}
+function tradeAcceptRollback(give, want) {
+  const state = readState();
+  addStickers(state, want);
+  state.coins += tradeFee(give, want);
+  writeState(state);
+}
+function tradeReceive(items) {
+  const state = readState();
+  addStickers(state, items);
+  writeState(state);
+}
+// Anbieter rechnet entschiedene Angebote ab: angenommen -> want bekommen,
+// sonst Reserviertes + Gebuehr zurueck
+function tradeSettle(rows) {
+  if (!rows.length) return;
+  const state = readState();
+  rows.forEach(r => {
+    const give = normTradeItems(r.give) || [], want = normTradeItems(r.want) || [];
+    if (r.status === 'accepted') addStickers(state, want);
+    else { addStickers(state, give); state.coins += tradeFee(give, want); }
+  });
+  writeState(state);
+}
+function tradeInfo() {
+  const state = readState();
+  return { coins: state.coins, stickers: state.stickers, fee: TRADE_FEE };
+}
+// { set: { complete, master } } - Master braucht alle (geheimen) Full Arts
+const setStatusAll = state => Object.fromEntries(STICKERS.SETS.map(st => [st.id, STICKERS.setStatus(st, state.stickers[st.id], state.fullArts[st.id])]));
 function getAlbum() {
   const state = readState();
   return {
     coins: state.coins,
     sets: boosterSetsView(state),
     stickers: state.stickers,
+    fullArts: state.fullArts,
+    setStatus: setStatusAll(state),
+    tradeFee: TRADE_FEE,
+    profileStickers: (state.profileLayout || []).filter(w => w && w.type === 'sticker' && w.config).map(w => profileKey(w.config)),
     rates: { pack: STICKERS.PACK, animChance: STICKERS.ANIM_CHANCE, dupeRefund: STICKERS.DUPE_REFUND }
   };
 }
@@ -655,7 +862,8 @@ function saveProfileLayout(layout) {
       text: typeof c.text === 'string' ? c.text.slice(0, 280) : undefined,
       champId: typeof c.champId === 'string' ? c.champId.slice(0, 40) : undefined,
       set: typeof c.set === 'string' ? c.set.slice(0, 20) : undefined,
-      n: Number.isInteger(c.n) ? c.n : undefined
+      n: Number.isInteger(c.n) ? c.n : undefined,
+      fa: c.fa === true ? true : undefined
     };
     clean.push({ id: w.id.slice(0, 40), type: w.type.slice(0, 30), x: w.x, y: w.y, w: w.w, h: w.h, config });
   }
@@ -706,7 +914,11 @@ function emptyState() {
     // passes['YYYY-MM'] = { xp, claimedTier, claimedOverflow }
     passes: {}, coins: 0, inventory: [], equipped: { border: null, frame: null, frameBg: true, icon: null, avatar: null },
     // Sticker (v5.29.0): ungeoeffnete Booster je Set + gesammelte Sticker je Set ({ n: Anzahl })
-    boosters: {}, stickers: {},
+    boosters: {}, stickers: {}, newBoosters: 0,
+    // Full Arts (v6.6.0): eigene Sammlung { set: { n: Anzahl } } neben stickers
+    fullArts: {},
+    // Gutscheine aus der LP Bank: je 1 regulaerer Booster nach Wahl (v6.6.0)
+    boosterVouchers: 0,
     // Profil-Layout (Widget-Raster auf profile.html), null = Standard-Layout
     // des Clients. [{ id, type, x, y, w, h, config }]
     profileLayout: null,
@@ -735,7 +947,7 @@ function readState() {
     return emptyState();
   }
   const state = { ...emptyState(), ...raw };
-  state.boosters = state.boosters || {}; state.stickers = state.stickers || {};
+  state.boosters = state.boosters || {}; state.stickers = state.stickers || {}; state.fullArts = state.fullArts || {};
   // v5.29.2: Base-Set neu nummeriert (seltenste zuerst) - Sammlung und Profil-
   // Sticker einmalig auf die neuen Nummern umziehen
   if (!state.stickerNumbering) {
@@ -896,9 +1108,10 @@ function creditLp({ puuid, currentLP, baselineLP }) {
       state.buffs = state.buffs.filter(b => b !== lpBoost);
     }
     bank.fills += filled;
+    if (filled) state.boosterVouchers = (state.boosterVouchers || 0) + filled;
     state.totalXp += xp;
     if (xp) addPassXp(state, monthKey(new Date()), xp);
-    event = { at: Date.now(), gained, filled, xp };
+    event = { at: Date.now(), gained, filled, xp, ...(filled ? { vouchers: filled } : {}) };
     bank.events.push(event);
     if (bank.events.length > 50) bank.events.splice(0, bank.events.length - 50);
   }
@@ -949,6 +1162,8 @@ function getLifetimeStats() {
     catalog: COSMETICS.map(c => ({ ...c, source: c.passMonth ? `${monthLabel(c.passMonth)} Pass · tier ${c.tier}` : c.base ? 'Basic' : 'Shop' })),
     profileLayout: state.profileLayout,
     stickers: state.stickers,
+    fullArts: state.fullArts,
+    setStatus: setStatusAll(state),
     // Fuer weitere Profil-Widgets (v5.6.0)
     pass: (({ label, tier, tiers, xpIntoTier, xpPerTier }) => ({ label, tier, tiers, xpIntoTier, xpPerTier }))(getPassOverview(state, new Date())),
     lpBank: { progress: state.lpBank.progress, size: LP_BANK_SIZE },
@@ -1373,7 +1588,9 @@ function getShopState() {
     buffs: buffsView(state),
     voucher: voucherView(state),
     boosters: boosterSetsView(state),
-    boosterRates: { pack: STICKERS.PACK, animChance: STICKERS.ANIM_CHANCE, dupeRefund: STICKERS.DUPE_REFUND },
+    boosterRates: { pack: STICKERS.PACK, animChance: STICKERS.ANIM_CHANCE, faChance: STICKERS.FA_CHANCE, dupeRefund: STICKERS.DUPE_REFUND },
+    boosterBundle: BUNDLE_SIZE,
+    boosterVouchers: state.boosterVouchers || 0,
     tryOn: lootableCosmetics(state).filter(c => !rentedIds(state).includes(c.id)).map(c => ({ id: c.id, name: c.name, type: c.type, rarity: c.rarity, themeKey: c.themeKey || null })),
     daily: state.shop.daily.map(id => offerView(id, owned)).filter(Boolean),
     weekly: state.shop.weekly.map(id => offerView(id, owned)).filter(Boolean),
@@ -1435,6 +1652,7 @@ function getOverview(context) {
       progress: state.lpBank.progress,
       fills: state.lpBank.fills,
       xpPerFill: XP_PER_LP_BANK,
+      vouchers: state.boosterVouchers || 0,
       recent: [...state.lpBank.events].reverse().slice(0, 3)
     },
     xpSources: {
@@ -1466,7 +1684,16 @@ module.exports = {
   buyConsumable,
   buyShopItem,
   buyBooster,
+  redeemBoosterVoucher,
   openBoosters,
+  sellDupes,
+  normTradeItems, tradeFee, missingStickers: (items) => missingStickers(readState(), items), tradeWarnings,
+  tradeReserve, tradeUnreserve, tradeAcceptTake, tradeAcceptRollback, tradeReceive, tradeSettle, tradeInfo,
+  newBoostersCount,
+  takeBoostersForGift,
+  returnGiftBoosters,
+  receiveGiftBoosters,
+  markBoostersSeen,
   getAlbum,
   discardBuff,
   themeAccess,

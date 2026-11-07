@@ -110,7 +110,7 @@
       <rect x="30" y="92" width="22" height="16" rx="2" fill="#6bc8ff" opacity=".7"/><rect x="58" y="96" width="32" height="4" rx="2" fill="#9a7ab0"/>
       <circle cx="60" cy="46" r="30" fill="#f6efe2" stroke="#3a2a1a" stroke-width="4"/>
       ${[...Array(12)].map((_, i) => { const a = i / 12 * Math.PI * 2; return `<line x1="${(60 + Math.sin(a) * 24).toFixed(1)}" y1="${(46 - Math.cos(a) * 24).toFixed(1)}" x2="${(60 + Math.sin(a) * 27).toFixed(1)}" y2="${(46 - Math.cos(a) * 27).toFixed(1)}" stroke="#3a2a1a" stroke-width="${i % 3 ? 1.5 : 3}"/>`; }).join('')}
-      <path d="M60 46 L60 26 M60 46 L74 54" stroke="#3a2a1a" stroke-width="4" stroke-linecap="round"/><circle cx="60" cy="46" r="3" fill="#c0392b"/>${txt('3:47 AM', 60, 114, 11, '#ff7a8a', '#2a1838', 2)}`,
+      <path d="M60 46 L72.8 51.6 M60 46 L39.5 41.6" stroke="#3a2a1a" stroke-width="4" stroke-linecap="round"/><circle cx="60" cy="46" r="3" fill="#c0392b"/>${txt('3:47 AM', 60, 114, 11, '#ff7a8a', '#2a1838', 2)}`,
     'ward': () => `${bg('#071a12', '#0f3a26')}${bush(14, 112, 50, '#123a22', '#0e2e1a')}${bush(104, 114, 50, '#123a22', '#0e2e1a')}${glow(60, 44, 46, '#ffe9a0', .85)}
       <path d="M54 62 L52 108 H68 L66 62 Z" fill="#6b4a2e" stroke="#3a2614" stroke-width="2"/>
       <path d="M40 46 C40 28 80 28 80 46 C80 58 70 64 60 64 C50 64 40 58 40 46 Z" fill="#ffd36b" stroke="#a87a1e" stroke-width="2.5"/>
@@ -252,6 +252,136 @@
     'secretly-a-unicorn': () => `<g class="a-float">${pony({ x: 18, y: 22, s: .82, eye: 'happy', body: '#ffffff', shade: '#e0c8f0', mane: '#ff7ad9', extra: '<path d="M42 12 L26 -22 L50 8 Z" fill="#ffe08a" stroke="#c8941c" stroke-width="1.5" stroke-linejoin="round"/><circle cx="26" cy="54" r="4" fill="#ff9ec8" opacity=".8"/>' })}</g>`
   };
 
+
+  // Hilfen fuer die Hochformat-Szenen (120x168)
+  const fbg = (top, mid, bottom) => { const a = U('fb'); return `<defs><linearGradient id="${a}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${top}"/><stop offset=".55" stop-color="${mid}"/><stop offset="1" stop-color="${bottom}"/></linearGradient></defs><rect width="120" height="168" fill="url(#${a})"/>`; };
+  const fvig = (op = .5) => { const v = U('fv'); return `<defs><radialGradient id="${v}" cx=".5" cy=".42" r=".8"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="${op}"/></radialGradient></defs><rect width="120" height="168" fill="url(#${v})"/>`; };
+  const cloud = (x, y, s = 1, c = '#fff', o = .9) => `<g transform="translate(${x} ${y}) scale(${s})" opacity="${o}"><ellipse cx="0" cy="0" rx="16" ry="8" fill="${c}"/><ellipse cx="-10" cy="2" rx="10" ry="6" fill="${c}"/><ellipse cx="11" cy="2" rx="11" ry="6.5" fill="${c}"/><ellipse cx="2" cy="-6" rx="9" ry="7" fill="${c}"/></g>`;
+  const ward = (x, y, s = 1, cls = '') => `<g class="${cls}" transform="translate(${x} ${y}) scale(${s})">${glow(0, 0, 14, '#ffe9a0', .6)}<path d="M-1.6 2 L-2.2 14 H2.2 L1.6 2 Z" fill="#6b4a2e"/><path d="M-7 -2 C-7 -9 7 -9 7 -2 C7 2 3 4 0 4 C-3 4 -7 2 -7 -2 Z" fill="#ffd36b" stroke="#a87a1e" stroke-width="1.2"/><circle cx="0" cy="-2" r="2" fill="#fff6c8"/></g>`;
+  // ---------- Full Arts (v6.6.0, Nutzerauswahl) ----------
+  // Vollbild-Szene im Hochformat (viewBox 120x168 = Kartenformat) + eigene
+  // Hologramm-Figur (120x120 wie POP, schwebt ueber der Karte). Alle FAs haben
+  // denselben Stil, egal welche Raritaet die Vorlage hat.
+  const FA_ART = {
+    'secretly-a-unicorn': () => `${fbg('#3a1050', '#8a3a8a', '#ffb0d8')}
+      <g class="a-hue">${rays(60, 70, '#ffd6f1', 18, .14, 130, 'a-spin')}</g>${glow(60, 70, 60, '#ffe0f4', .55, 'a-pulse')}
+      <path d="M0 132 Q30 120 60 128 T120 124 V168 H0 Z" fill="#c86aa8" opacity=".55"/><path d="M0 144 Q40 134 80 142 T120 138 V168 H0 Z" fill="#a24a8a"/>
+      <g fill="#6a2a6a" opacity=".7"><rect x="84" y="104" width="6" height="26"/><rect x="92" y="96" width="8" height="34"/><rect x="102" y="106" width="6" height="24"/><path d="M84 104 L87 96 L90 104 Z M92 96 L96 84 L100 96 Z M102 106 L105 98 L108 106 Z"/></g>
+      ${dots([[12, 18, 1], [30, 10, .8], [96, 14, 1.1], [110, 30, .8], [8, 60, .9], [114, 74, .8], [20, 96, .7]], '#fff', .9)}
+      <g class="a-hue">${sparks([[16, 30, .8], [104, 22, .9], [10, 112, .6], [110, 100, .7]], 'a-twinkle', '#ffd6f1')}</g>${fvig(.35)}`,
+    'pentakill': () => `${fbg('#12082a', '#2a1450', '#0a0618')}${rays(60, 62, '#ffd36b', 22, .1, 140, 'a-spin')}${glow(60, 66, 66, '#ffd36b', .4, 'a-pulse')}
+      <path d="M0 128 L18 118 L34 126 L52 114 L70 124 L88 112 L104 122 L120 116 V168 H0 Z" fill="#1c0e34"/><path d="M0 142 Q40 132 80 140 T120 136 V168 H0 Z" fill="#0e0820"/>
+      ${[[14, 128, -20], [34, 136, 14], [96, 130, 24], [108, 140, -12]].map(([x, y, r]) => `<g transform="translate(${x} ${y}) rotate(${r})"><rect x="-1.4" y="-12" width="2.8" height="16" fill="#4a3a6a"/><path d="M1.4 -12 H12 L8 -8 L12 -4 H1.4 Z" fill="#6a2a3a"/></g>`).join('')}
+      ${sparks([[14, 20, .8], [106, 16], [10, 92, .6], [112, 84, .7]], 'a-twinkle', '#fff2a8')}${fvig()}`,
+    'flawless': () => `${fbg('#2a4a7a', '#8ab4e0', '#f0e6d0')}${rays(60, 64, '#fff', 20, .12, 140, 'a-spin')}${glow(60, 64, 70, '#fff6e0', .6)}
+      ${cloud(18, 120, 1.2, '#fff', .85)}${cloud(100, 128, 1.4, '#fff', .9)}${cloud(60, 150, 1.8, '#fff', .95)}${cloud(10, 40, .7, '#fff', .5)}${cloud(108, 30, .8, '#fff', .5)}
+      ${sparks([[22, 22, .7], [96, 52, .6], [16, 80, .5]], 'a-twinkle', '#fff')}${fvig(.25)}`,
+    'tilted': () => `${fbg('#2a0606', '#6e1a10', '#1a0404')}${glow(60, 66, 70, '#ff5a3c', .4, 'a-pulse')}
+      <g opacity=".85">${[0, 1, 2, 3, 4, 5].map(i => `<path d="M${-10 + i * 26} 0 L${6 + i * 26} 40 L${-4 + i * 26} 44 L${14 + i * 26} 90" stroke="#ff8a5a" stroke-width="1.2" fill="none" opacity="${.15 + (i % 3) * .1}"/>`).join('')}</g>
+      <g transform="rotate(-8 60 140)"><path d="M-10 126 H130 V180 H-10 Z" fill="#3a0c08"/><path d="M10 126 L22 140 L16 152 M60 126 L54 138 L66 150 L60 168 M100 126 L108 142 L98 156" stroke="#ff6a3c" stroke-width="1.6" fill="none"/></g>
+      ${fvig(.55)}${txt('0 / 10 / 0', 60, 124, 14, '#ffb4a0', '#2a0606', 3)}`,
+    'shutdown': () => `${fbg('#3a2410', '#5a3a1a', '#2a1808')}
+      ${[...Array(9)].map((_, i) => `<rect x="0" y="${i * 19}" width="120" height="18" fill="${i % 2 ? '#5a3a1a' : '#62401e'}"/><path d="M0 ${i * 19 + 18} H120" stroke="#2a1808" stroke-width="1.2"/><circle cx="${10 + (i * 37) % 100}" cy="${i * 19 + 9}" r="1.2" fill="#2a1808"/>`).join('')}
+      ${glow(96, 20, 40, '#ffd36b', .45, 'a-pulse')}<path d="M96 0 V10" stroke="#2a1808" stroke-width="1.5"/><path d="M90 10 H102 L99 20 H93 Z" fill="#ffd36b" stroke="#6a4508" stroke-width="1"/>
+      <rect x="0" y="146" width="120" height="22" fill="#2a1808"/><rect x="0" y="146" width="120" height="2" fill="#7a5a2a"/>${fvig(.55)}`,
+    'vision-king': () => `${fbg('#03100a', '#0b2616', '#020a06')}
+      ${[...Array(8)].map((_, i) => `<path d="M0 ${12 + i * 21} H120" stroke="#1a3a24" stroke-width=".8"/>`).join('')}${[...Array(6)].map((_, i) => `<path d="M${10 + i * 20} 0 V168" stroke="#1a3a24" stroke-width=".8"/>`).join('')}
+      <path d="M0 168 L0 120 Q30 104 60 118 T120 110 V168 Z" fill="#0e2a18" opacity=".8"/>${bush(18, 150, 54, '#123a22', '#0e2e1a')}${bush(102, 154, 56, '#123a22', '#0e2e1a')}
+      ${glow(60, 66, 56, '#ffe9a0', .25, 'a-pulse')}${dots([[20, 30, .8], [100, 40, .9], [30, 96, .7], [94, 104, .8]], '#ffe9a0', .6)}${fvig(.5)}`,
+    'blue-buff': () => `${fbg('#020a1e', '#0a2a5a', '#020814')}${glow(60, 64, 70, '#3ab4ff', .4, 'a-pulse')}
+      <path d="M0 0 H22 Q14 40 26 70 Q10 100 18 168 H0 Z M120 0 H98 Q108 40 94 74 Q112 104 102 168 H120 Z" fill="#06142e"/>
+      <path d="M0 136 Q30 128 60 134 T120 130 V168 H0 Z" fill="#0d3a6e" opacity=".8"/>${[0, 1, 2].map(i => `<path d="M${14 + i * 34} ${146 + i * 5} q9 -4 18 0" stroke="#9ae4ff" stroke-width="1.6" fill="none" opacity=".55"/>`).join('')}
+      ${dots([[30, 20, 1], [92, 28, 1.2], [22, 110, .9], [100, 120, 1], [60, 12, .8]], '#9ae4ff', .85)}${sparks([[14, 52, .5], [108, 64, .6]], 'a-twinkle', '#cdf2ff')}${fvig(.5)}`,
+    'red-buff': () => `${fbg('#1e0402', '#5a1006', '#140200')}${glow(60, 64, 72, '#ff6a2a', .45, 'a-pulse')}
+      <path d="M0 0 H20 Q12 44 24 76 Q8 104 16 168 H0 Z M120 0 H100 Q110 44 96 78 Q114 106 104 168 H120 Z" fill="#2a0604"/>
+      <path d="M0 132 L20 126 L40 134 L64 124 L86 132 L120 124 V168 H0 Z" fill="#3a0a04"/><path d="M14 140 L30 150 L26 162 M70 136 L64 150 L76 160 M100 138 L108 152" stroke="#ff8a3a" stroke-width="1.6" fill="none"/>
+      ${dots([[24, 30, 1], [96, 24, 1.1], [18, 100, .8], [104, 110, 1], [60, 16, .7], [40, 120, .7], [84, 118, .8]], '#ffb46b', .9)}${fvig(.55)}`,
+    'mute-all': () => `${fbg('#140e1e', '#221a34', '#0e0a16')}
+      ${[['?!', 6, 14, -8, '#ff5a6a'], ['gg ez', 70, 10, 6, '#9aa6b8'], ['report', 8, 120, 8, '#ff7a8a'], ['ff 15', 78, 132, -6, '#9aa6b8'], ['???', 92, 92, 10, '#ffd36b'], ['jgl diff', 4, 60, -4, '#9aa6b8']].map(([t, x, y, r, c]) => `<g transform="translate(${x} ${y}) rotate(${r})" opacity=".55"><rect width="${t.length * 5 + 10}" height="13" rx="5" fill="#2a2040" stroke="#3a3058" stroke-width="1"/><text x="5" y="9.4" font-family="Arial,sans-serif" font-weight="700" font-size="7" fill="${c}">${t}</text></g>`).join('')}
+      ${fvig(.55)}`,
+    'one-more-game': () => {
+      const wall = U('fw'), scr = U('fsc'), kb = U('fkb');
+      return `<defs>
+          <linearGradient id="${wall}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#160a24"/><stop offset=".55" stop-color="#2c1438"/><stop offset="1" stop-color="#140818"/></linearGradient>
+          <linearGradient id="${scr}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c4088"/><stop offset="1" stop-color="#0a1838"/></linearGradient>
+          <linearGradient id="${kb}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff5ab4"/><stop offset=".25" stop-color="#ffd36b"/><stop offset=".5" stop-color="#7bffb4"/><stop offset=".75" stop-color="#6bc8ff"/><stop offset="1" stop-color="#b98cff"/></linearGradient></defs>
+        <rect width="120" height="168" fill="url(#${wall})"/>
+        <rect x="64" y="8" width="50" height="58" rx="2" fill="#0d0820" opacity=".55"/><circle cx="28" cy="30" r="20" fill="#0d0820" opacity=".4"/>
+        ${glow(60, 120, 70, '#5aa8ff', .42, 'a-pulse')}
+        <rect x="12" y="92" width="96" height="54" rx="4" fill="#0b0812" stroke="#3a2440" stroke-width="2"/>
+        <rect x="16" y="96" width="88" height="44" rx="2" fill="url(#${scr})"/>
+        <path d="M16 96 H104 L90 140 H16 Z" fill="#fff" opacity=".05"/>
+        ${txt('DEFEAT', 60, 111, 9, '#ff5a6a', '#0a1838', 2)}
+        <rect class="a-pulse" x="33" y="119" width="54" height="13" rx="3" fill="#ffd36b" stroke="#fff6c8" stroke-width="1.2"/>
+        ${txt('PLAY AGAIN', 60, 128.6, 6.6, '#3a1d0a', 'none', 0)}
+        <path d="M84 129 L84 138 L86.4 135.8 L88.4 140 L90 139.2 L88 135.2 L91.2 135 Z" fill="#fff" stroke="#000" stroke-width=".6"/>
+        <rect x="53" y="146" width="14" height="5" fill="#241628"/>
+        <rect x="0" y="150" width="120" height="18" fill="#3a2440"/><rect x="0" y="150" width="120" height="1.6" fill="#6b4a7a"/>
+        <rect x="24" y="154" width="72" height="8" rx="1.5" fill="#120c18"/><rect x="26" y="155.5" width="68" height="5" rx="1" fill="url(#${kb})" opacity=".8"/>
+        ${[0, 1, 2, 3, 4, 5, 6, 7].map(i => `<rect x="${27 + i * 8.4}" y="156" width="7" height="4" rx=".6" fill="#120c18" opacity=".55"/>`).join('')}
+        <rect x="3" y="128" width="9" height="22" rx="2" fill="#2ad86a" stroke="#0a3a1a" stroke-width="1"/><rect x="3" y="133" width="9" height="5" fill="#0a3a1a"/>
+        <g transform="rotate(-78 108 150)"><rect x="104" y="134" width="8" height="18" rx="2" fill="#ff5ab4" stroke="#5a0a3a" stroke-width="1"/><rect x="104" y="138" width="8" height="4" fill="#5a0a3a"/></g>
+        <rect x="98" y="134" width="20" height="12" rx="2" fill="#1a0a0a" stroke="#3a1a1a" stroke-width="1"/>
+        <text x="108" y="143" text-anchor="middle" font-family="Consolas,monospace" font-weight="700" font-size="7" fill="#ff3a4a">3:47</text>`;
+    }
+  };
+  // Mittlere Ebene (Nutzer): Teile des Hintergrunds schweben zwischen Szene und Figur
+  const FA_MID = {
+    'secretly-a-unicorn': () => { const rb = ['#ff6a8a', '#ffb45a', '#ffe46b', '#7be08a', '#6bc8ff', '#b98cff']; return `${rb.map((c, i) => `<path d="M${10 + i * 3.6} 124 A${50 - i * 3.6} ${50 - i * 3.6} 0 0 1 ${110 - i * 3.6} 124" stroke="${c}" stroke-width="3.6" fill="none" opacity=".9"/>`).join('')}${cloud(24, 122, .9)}${cloud(96, 122, .9)}${cloud(30, 30, .6, '#ffe8f6', .85)}`; },
+    'pentakill': () => `${crown(60, 12, .5)}${glow(60, 16, 30, '#fff2a8', .35)}
+      <g transform="translate(0 128)">${[0, 1, 2, 3, 4].map(i => `<g transform="translate(${24 + i * 18} 0)"><circle r="7.5" fill="#2a1450" stroke="#ffd36b" stroke-width="1.6"/><path d="M-3.6 -1 C-3.6 -5 3.6 -5 3.6 -1 V1.6 H-3.6 Z" fill="#ffd36b"/><rect x="-2.2" y="1.6" width="4.4" height="2.4" fill="#ffd36b"/><circle cx="-1.4" cy="-1.2" r=".9" fill="#2a1450"/><circle cx="1.4" cy="-1.2" r=".9" fill="#2a1450"/></g>`).join('')}</g>`,
+    'flawless': () => `<ellipse cx="60" cy="22" rx="26" ry="7" fill="none" stroke="#ffe46b" stroke-width="4.5"/><ellipse cx="60" cy="22" rx="26" ry="7" fill="none" stroke="#fff6c8" stroke-width="1.4"/>${glow(60, 22, 32, '#fff6c8', .5)}
+      <g transform="translate(60 128)"><path d="M-46 -8 H46 L40 0 L46 8 H-46 L-40 0 Z" fill="#e2b23c" stroke="#6a4508" stroke-width="1.5"/><path d="M-50 -2 L-46 -8 L-46 8 Z M50 -2 L46 -8 L46 8 Z" fill="#a4700e"/>${txt('0 DEATHS', 0, 4, 10, '#fff6c8', '#6a4508', 2)}</g>`,
+    'tilted': () => `${[[16, 22], [98, 30], [10, 96], [106, 104]].map(([x, y], i) => `<g transform="translate(${x} ${y}) rotate(${i * 23 - 30})"><rect x="-6" y="-6" width="12" height="12" rx="2" fill="#2a2030" stroke="#0a0408" stroke-width="1.2"/><text x="0" y="3" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="7" fill="#ff8a6a">${['Q', 'W', 'E', 'R'][i]}</text></g>`).join('')}
+      ${[0, 1, 2].map(i => `<path d="M${74 + i * 12} 40 q8 -9 0 -18 q-8 -9 0 -18" stroke="rgba(255,255,255,.6)" stroke-width="4" fill="none" stroke-linecap="round"/>`).join('')}`,
+    'shutdown': () => `<g transform="translate(-4 -6) rotate(-6 34 60)"><rect x="8" y="26" width="52" height="68" rx="2" fill="#e8d4a8" stroke="#6a4a20" stroke-width="2"/><circle cx="34" cy="30" r="2.2" fill="#8a2a1a"/>
+        ${txt('WANTED', 34, 41, 10, '#5a2a0a', '#e8d4a8', 0)}<g transform="translate(18 44) scale(.3)"><path d="${HEAD}" fill="#3a2410"/></g><text x="34" y="80" text-anchor="middle" font-family="Georgia,serif" font-size="5" fill="#5a2a0a">DEAD OR ALIVE</text>${txt('+1000', 34, 90, 9, '#8a2a0a', '#e8d4a8', 0)}</g>
+      ${coin(96, 118, 9)}${coin(84, 132, 7)}${coin(104, 136, 8)}${coin(20, 130, 6)}`,
+    'vision-king': () => `${ward(16, 30, 1.1, '')}${ward(104, 26, 1, '')}${ward(12, 110, .9, '')}${ward(108, 104, 1, '')}${ward(104, 62, .8, '')}`,
+    'blue-buff': () => `${rune(60, 70, 52, '#6bd8ff', '#1a5ab0', 'M-16 -20 L0 -32 L16 -20 M-20 0 H20 M-16 20 L0 32 L16 20', 'a-pulse')}`,
+    'red-buff': () => `${rune(60, 70, 52, '#ffb46b', '#b02a0a', 'M0 -32 L9 -6 L32 -6 L13 9 L19 32 L0 19 L-19 32 L-13 9 L-32 -6 L-9 -6 Z', 'a-pulse')}${flame(16, 130, .55)}${flame(104, 132, .55)}`,
+    'mute-all': () => `<g transform="translate(-4 4) scale(.66)"><path d="M24 26 H96 Q104 26 104 34 V70 Q104 78 96 78 H52 L36 92 L38 78 H24 Q16 78 16 70 V34 Q16 26 24 26 Z" fill="#e6e0f0" stroke="#2a2040" stroke-width="3"/>
+        ${[0, 1, 2].map(i => `<rect x="30" y="${38 + i * 12}" width="${60 - i * 12}" height="5" rx="2.5" fill="#8a80a0"/>`).join('')}<path d="M14 100 L106 20" stroke="#ff4a5a" stroke-width="8" stroke-linecap="round"/></g>`,
+    'one-more-game': () => {
+      const win = U('fwi');
+      const clock = (cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${r + 2}" fill="#2a1a30"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="#f6efe2" stroke="#3a2a1a" stroke-width="2.4"/>
+        ${[...Array(12)].map((_, i) => { const a = i / 12 * Math.PI * 2; return `<line x1="${(cx + Math.sin(a) * r * .8).toFixed(1)}" y1="${(cy - Math.cos(a) * r * .8).toFixed(1)}" x2="${(cx + Math.sin(a) * r * .92).toFixed(1)}" y2="${(cy - Math.cos(a) * r * .92).toFixed(1)}" stroke="#3a2a1a" stroke-width="${i % 3 ? .9 : 1.8}"/>`; }).join('')}
+        <path d="M${cx} ${cy} L${(cx + Math.sin(3.8 / 12 * Math.PI * 2) * r * .5).toFixed(1)} ${(cy - Math.cos(3.8 / 12 * Math.PI * 2) * r * .5).toFixed(1)} M${cx} ${cy} L${(cx + Math.sin(47 / 60 * Math.PI * 2) * r * .75).toFixed(1)} ${(cy - Math.cos(47 / 60 * Math.PI * 2) * r * .75).toFixed(1)}" stroke="#3a2a1a" stroke-width="2.2" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="1.8" fill="#c0392b"/>`;
+      const city = [[66, 50, 8], [74, 44, 7], [81, 52, 9], [90, 40, 8], [98, 48, 7], [105, 42, 9]].map(([x, y, w]) => `<rect x="${x}" y="${y}" width="${w}" height="${66 - y}" fill="#140c2a"/>${[0, 1, 2].map(k => `<rect x="${x + 2}" y="${y + 3 + k * 5}" width="1.6" height="2" fill="#ffd36b" opacity="${(k + x) % 3 ? .85 : .3}"/>`).join('')}`).join('');
+      return `<defs><linearGradient id="${win}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#080d2a"/><stop offset="1" stop-color="#2a1a4a"/></linearGradient></defs>
+        <rect x="64" y="8" width="50" height="58" rx="2" fill="url(#${win})"/>
+        ${dots([[70, 16, .7], [80, 13, .5], [86, 24, .6], [74, 30, .5], [96, 34, .5], [110, 14, .6]], '#fff', .85)}
+        <circle cx="100" cy="21" r="7.5" fill="#fff4c8"/><circle cx="103.5" cy="18.5" r="6.6" fill="#0b1030"/>${glow(100, 21, 16, '#fff4c8', .25)}
+        ${city}
+        <rect x="64" y="8" width="50" height="58" rx="2" fill="none" stroke="#4a2a52" stroke-width="3"/><path d="M89 8 V66 M64 37 H114" stroke="#4a2a52" stroke-width="2"/>
+        <rect x="60" y="66" width="58" height="4" rx="1" fill="#4a2a52"/>
+        ${clock(28, 30, 17)}
+        <g class="a-twinkle d1">${spark(76, 22, .45, .9)}</g><g class="a-twinkle d3">${spark(106, 50, .35, .9)}</g>
+`;
+    }
+  };
+  const FA_POP = {
+    'secretly-a-unicorn': () => POP['secretly-a-unicorn'](),
+    'pentakill': () => `<g class="a-float">${sword(88, 74, 56, 26, '#fff6c8', '#ffd36b')}${pony({ x: 18, y: 32, s: .74, eye: 'star', body: '#ffe08a', shade: '#c8941c', mane: '#fff4c8' })}</g>`,
+    'flawless': () => `<g class="a-float">${pony({ x: 16, y: 24, s: .82, eye: 'closed', body: '#f6efe2', shade: '#c8b89a', mane: '#ffd36b' })}</g>`,
+    'tilted': () => `<g class="a-float"><g transform="rotate(-14 60 64)">${pony({ x: 16, y: 26, s: .8, eye: 'angry', body: '#e8c48c', shade: '#b88848', extra: '<path d="M22 22 L30 26 M26 18 L30 26" stroke="#c0392b" stroke-width="2.4" stroke-linecap="round"/>' })}</g></g>`,
+    'shutdown': () => `<g class="a-float">${pony({ x: 50, y: 40, s: .64, eye: 'angry', extra: '<path d="M18 16 Q50 6 92 22 L86 30 Q52 18 22 26 Z" fill="#5a3a1a" stroke="#2a1808" stroke-width="1.5"/><path d="M34 16 Q40 -16 66 -8 Q80 -2 78 18 Q56 10 34 16 Z" fill="#6a4520" stroke="#2a1808" stroke-width="1.5"/><path d="M36 14 Q56 8 76 14" stroke="#c8a96e" stroke-width="2.4" fill="none"/>' })}</g>`,
+    'vision-king': () => `<g class="a-float">${pony({ x: 18, y: 32, s: .76, eye: 'happy' })}${crown(61, 23, .46, ['#6bc8ff', '#5fd08a', '#ffd36b', '#5fd08a', '#6bc8ff'])}</g>`,
+    'blue-buff': () => { const g = U('mana'); return `<g class="a-float">${pony({ x: 18, y: 30, s: .78, eye: 'happy', body: '#e8c48c', shade: '#b07d18', mane: '#3a7ad8' })}
+      <defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0f6ff"/><stop offset=".45" stop-color="#6bd8ff"/><stop offset="1" stop-color="#1a5ab0"/></linearGradient></defs>
+      ${glow(60, 14, 18, '#6bd8ff', .55, 'a-pulse')}<g transform="translate(60 10)"><path d="M0 -15 C5 -6 10 0 10 7 A10 10 0 0 1 -10 7 C-10 0 -5 -6 0 -15 Z" fill="url(#${g})" stroke="#e0f6ff" stroke-width="1.4"/><ellipse cx="-3.4" cy="4" rx="2.4" ry="4" fill="#fff" opacity=".75"/><circle cx="3" cy="9" r="1.2" fill="#fff" opacity=".6"/></g></g>`; },
+    'red-buff': () => `<g class="a-float">${pony({ x: 18, y: 30, s: .78, eye: 'angry', body: '#e8b48c', shade: '#a8601a', mane: '#ff5a1e' })}${flame(58, 18, .5)}</g>`,
+    'mute-all': () => `<g class="a-float">${pony({ x: 34, y: 38, s: .7, eye: 'closed', extra: '<path d="M30 30 C34 0 76 -4 86 30" stroke="#2a2040" stroke-width="6" fill="none" stroke-linecap="round"/><ellipse cx="86" cy="40" rx="10" ry="12" fill="#3a3058" stroke="#120a1a" stroke-width="1.6"/><path d="M82 36 L86 36 L90 32 V48 L86 44 L82 44 Z" fill="#e6e0f0"/><path d="M80 34 L92 46" stroke="#ff4a5a" stroke-width="2"/>' })}${txt('ahh...', 28, 96, 9, '#e6e0f0', '#2a2040', 2)}</g>`,
+    'one-more-game': () => `<g class="a-float">
+      <g transform="translate(-6 40)"><path d="M40 16 L52 25 L33 16 Z" fill="#fff" stroke="#3a1d5c" stroke-width="1.6" stroke-linejoin="round"/>
+        <rect width="54" height="18" rx="7" fill="#fff" stroke="#3a1d5c" stroke-width="1.6"/><rect x="32" y="15" width="10" height="3" fill="#fff"/>${txt('ONE MORE?', 27, 12.4, 6.6, '#3a1d5c', 'none', 0)}</g>
+      ${pony({ x: 38, y: 24, s: .72, eye: 'tired', extra: `<path d="M30 40 Q36 44 42 40" stroke="#8a5aa0" stroke-width="1.6" fill="none"/>
+        <path d="M31 28 C34 -2 76 -6 86 30" stroke="#1a1a24" stroke-width="5.5" fill="none" stroke-linecap="round"/><path d="M33 26 C37 2 72 -2 83 26" stroke="#ff5ab4" stroke-width="1.2" fill="none" opacity=".8"/>
+        <ellipse cx="85" cy="38" rx="8.5" ry="10.5" fill="#22202c" stroke="#0a0a10" stroke-width="1.5"/><ellipse cx="85" cy="38" rx="5" ry="7" fill="#ff5ab4" opacity=".85"/>
+        <path d="M80 47 Q60 72 25 72" stroke="#22202c" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="24" cy="72" r="4.2" fill="#3a3a48" stroke="#0a0a10" stroke-width="1"/>` })}
+    </g>`
+  };
+
   // Set-Liste: Nummer, Id, Name, Raritaet
   const LIST = [
     ['golden-pony', 'Golden Pony'], ['three-trick-legend', 'Three-Trick Legend'], ['secretly-a-unicorn', 'Secretly a Unicorn'], ['pentakill', 'Pentakill'], ['baron-steal', 'Baron Steal'],
@@ -276,8 +406,8 @@
   // Figur mit Volumen: Schatten auf der Karte + SLABS duenne, dunkle Schichten
   // (die Seitenkante, sichtbar beim Neigen) + farbige Vorderseite obenauf
   const SLABS = 12;
-  const popLayers = id => {
-    const svg = POP[id](), wrap = c => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${c}</svg>`;
+  const popLayers = (id, src = POP) => {
+    const svg = src[id](), wrap = c => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${c}</svg>`;
     let out = `<div class="pop-shadow">${wrap(svg)}</div>`;
     // Schichten in Bild-Einheiten etwas dicker als die Vorderseite (feMorphology):
     // der Rand waechst mit der Kartengroesse mit - klein und gross gleich massiv
@@ -405,7 +535,24 @@
   html.fx-off .stk-sq3d *, html.fx-paused .stk-sq3d * { animation-play-state: paused !important; }`;
   document.head.appendChild(sq);
 
-  window.STICKERS = { SET, RL, RC, art, frontHtml, square, square3d, enableTilt, tiltTo, untilt, TOTAL: SET.length, HEAD };
+  // Full Arts: Szene (Hochformat), Hologramm-Figur mit Schichten, flache Figur
+  const faArt = id => FA_ART[id] ? `<svg viewBox="0 0 120 168" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">${FA_ART[id]()}</svg>` : '';
+  const faPop = id => FA_POP[id] ? popLayers(id, FA_POP) : '';
+  // Mittlere Ebene: Schatten auf der Szene + duenne Kante + Vorderseite, auf ~45 % der Figurenhoehe
+  const MID_SLABS = 4;
+  const faMid = id => {
+    if (!FA_MID[id]) return '';
+    const svg = FA_MID[id](), wrap = x => `<svg viewBox="0 0 120 168" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">${x}</svg>`;
+    let out = `<div class="fa-mid-shadow">${wrap(svg)}</div>`;
+    for (let k = 0; k < MID_SLABS; k++) {
+      const fl = U('ml');
+      out += `<div class="fa-mid slab" style="--i:${k};--shade:${(.3 + k / MID_SLABS * .25).toFixed(2)}">${wrap(`<defs><filter id="${fl}" x="-10%" y="-10%" width="120%" height="120%"><feMorphology operator="dilate" radius="1.1"/></filter></defs><g filter="url(#${fl})">${svg}</g>`)}</div>`;
+    }
+    return out + `<div class="fa-mid" style="--i:${MID_SLABS}">${wrap(svg)}</div>`;
+  };
+  const faMidFlat = id => FA_MID[id] ? `<svg viewBox="0 0 120 168" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">${FA_MID[id]()}</svg>` : '';
+  const faPopFlat = id => FA_POP[id] ? `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${FA_POP[id]()}</svg>` : '';
+  window.STICKERS = { SET, RL, RC, art, frontHtml, square, square3d, enableTilt, tiltTo, untilt, TOTAL: SET.length, HEAD, faArt, faPop, faPopFlat, faMid, faMidFlat };
   // Alle Sticker-Sets nach id (v6.5.0) - weitere Sets melden sich hier an (stickers-neon.js)
   window.STICKER_SETS = window.STICKER_SETS || {};
   window.STICKER_SETS.base = window.STICKERS;

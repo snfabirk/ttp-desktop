@@ -1,6 +1,6 @@
 {
   "name": "three-trick-pony-desktop",
-  "version": "6.5.0",
+  "version": "6.6.0",
   "private": true,
   "description": "Desktop-App fuer die Three-Trick-Pony OTP-Uebersicht (Electron-Wrapper um den lokalen Server)",
   "author": "Fabian",
@@ -15,7 +15,8 @@
     "dotenv": "^16.4.5",
     "electron-updater": "^6.8.9",
     "electron-window-state": "^5.0.3",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "ws": "^8.22.1"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",

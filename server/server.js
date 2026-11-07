@@ -821,6 +821,26 @@ app.post('/api/friends/request', cloudRoute(async req => cloud.sendFriendRequest
 app.post('/api/friends/accept', cloudRoute(async req => cloud.acceptFriendRequest((req.body || {}).id)));
 app.post('/api/friends/remove', cloudRoute(async req => cloud.removeFriendship((req.body || {}).id)));
 app.get('/api/friends/profile', cloudRoute(async req => cloud.getFriendProfile(String(req.query.id || ''))));
+// Booster verschenken (v6.6.0)
+app.post('/api/gifts/send', cloudRoute(async req => cloud.sendBoosterGift(req.body || {})));
+app.post('/api/gifts/claim', cloudRoute(async () => cloud.claimBoosterGifts()));
+app.get('/api/gifts/pending', cloudRoute(async () => ({ pending: cloud.getPendingGifts() })));
+// Sticker tauschen (v6.6.0)
+app.get('/api/trades', cloudRoute(async () => cloud.listTrades()));
+app.post('/api/trades/create', cloudRoute(async req => cloud.createTrade(req.body || {})));
+app.post('/api/trades/decide', cloudRoute(async req => cloud.decideTrade(String((req.body || {}).id || ''), String((req.body || {}).decision || ''))));
+app.post('/api/trades/warnings', cloudRoute(async req => ({ warnings: cloud.tradeWarnings((req.body || {}).items) })));
+// Live-Hinweise an die Seiten (Server-Sent Events): zurzeit "gifts" = Anzahl
+// offener geschenkter Booster; leuchtet sofort, wenn ein Freund etwas schickt.
+app.get('/api/events', (req, res) => {
+  res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+  res.flushHeaders();
+  const send = n => res.write(`data: ${JSON.stringify(n)}\n\n`);
+  send(cloud.getNotices());
+  const off = cloud.onGiftsChange(send);
+  const ping = setInterval(() => res.write(': ping\n\n'), 25000);
+  req.on('close', () => { off(); clearInterval(ping); });
+});
 
 // Cosmetics ausruesten (nur eigene) - id null = ablegen.
 // Shop (v5.13.0, provisorisch): rotierende Angebote + taegliches Gluecksrad
@@ -840,6 +860,19 @@ app.post('/api/boosters/buy', (req, res) => {
   const result = progression.buyBooster(set || 'base', qty);
   res.status(result.ok ? 200 : 400).json(result);
 });
+// Dupes-Sammlung: Doppelte verkaufen { set, rarity, keep } (v6.6.0)
+app.post('/api/stickers/sell-dupes', (req, res) => {
+  const result = progression.sellDupes(req.body || {});
+  res.status(result.ok ? 200 : 400).json(result);
+});
+// LP-Bank-Gutschein -> 1 regulaerer Booster (v6.6.0)
+app.post('/api/boosters/redeem', (req, res) => {
+  const result = progression.redeemBoosterVoucher((req.body || {}).set || 'base');
+  res.status(result.ok ? 200 : 400).json(result);
+});
+// Album-Reiter: neu erhaltene Booster seit dem letzten Album-Besuch (v6.6.0)
+app.get('/api/boosters/new', (req, res) => res.json({ newBoosters: progression.newBoostersCount() }));
+app.post('/api/boosters/seen', (req, res) => res.json(progression.markBoostersSeen()));
 app.post('/api/boosters/open', (req, res) => {
   const { set, count } = req.body || {};
   const result = progression.openBoosters(set || 'base', count);

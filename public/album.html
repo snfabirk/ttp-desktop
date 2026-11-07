@@ -15,7 +15,8 @@
      Booster im Shop. Design freigegeben in theme-lab/booster-album.html,
      Sticker-Kunst in stickers.js (Freigabe: theme-lab/sticker-set.js). -->
 <style>
-  :root { --c-common: #9aa6b8; --c-uncommon: #5fd08a; --c-holo: #b98cff; --c-anim: #ff5ab4; }
+  :root { --c-common: #9aa6b8; --c-uncommon: #5fd08a; --c-holo: #b98cff; --c-anim: #ff5ab4; --c-fa: #ffd76a; }
+  .back.glow-fa { box-shadow: 0 0 34px 10px rgba(255,215,106,.75), 0 0 60px 18px rgba(143,216,255,.45), inset 0 0 36px rgba(255,154,213,.6); border-color: #fff3c4; animation: holoBack 1.4s linear infinite, pulseBack .9s ease-in-out infinite alternate; }
   body { display: flex; flex-direction: column; align-items: center; }
   .site-header { text-align: center; padding: 30px 30px 0; }
   .panel-heading.centered { color: var(--gold); text-align: center; margin: 14px 0 0; font-family: 'Cinzel', Georgia, serif; font-size: 1.3rem; letter-spacing: 1px; }
@@ -43,7 +44,25 @@
   /* Foil-Booster (v5.29.4): gezackte Schweissnaehte oben/unten (Maske), leicht
      gewoelbter Koerper (Lichtkante links, Schatten rechts), Riffelung in den Naehten.
      Der Schlagschatten sitzt am Wrapper, weil die Maske ihn sonst abschneiden wuerde. */
-  .pack-shadow { filter: drop-shadow(0 16px 22px rgba(0,0,0,.55)); }
+  .pack-shadow { filter: drop-shadow(0 16px 22px rgba(0,0,0,.55)); position: relative; }
+  /* Ungeoeffnete Booster gross sichtbar (v6.6.0, Nutzer: "man uebersieht es") */
+  #pack .count { display: none; }
+  .pack-num { position: absolute; top: -14px; right: -16px; z-index: 6; min-width: 46px; height: 46px; padding: 0 8px; box-sizing: border-box; border-radius: 23px; display: grid; place-items: center; background: var(--gold); color: var(--bg); font: 1.35rem/1 'Cinzel', Georgia, serif; font-weight: bold; border: 3px solid var(--panel-bg, #0b1220); box-shadow: 0 4px 12px rgba(0,0,0,.5); pointer-events: none; }
+  .pack-num[hidden] { display: none; }
+  .pick-wrap { position: relative; display: block; }
+  .pick-wrap .pack .count { display: none; }
+  .pick-wrap .pack-num { top: -10px; right: -12px; min-width: 36px; height: 36px; border-radius: 18px; font-size: 1.05rem; }
+  .pack-num.bump { animation: packNumBump .45s cubic-bezier(.3,1.6,.5,1); }
+  @keyframes packNumBump { from { transform: scale(.4); } to { transform: scale(1); } }
+  .pack-owned { margin-top: -2px; font-size: 1rem; color: var(--text-dim); text-align: center; }
+  .pack-owned b { color: var(--gold); font: 1.25rem 'Cinzel', Georgia, serif; font-weight: bold; }
+  .pack-owned.none b { color: var(--text-faint); }
+  .pack-others { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: -6px; }
+  .pack-others:empty { display: none; }
+  .pack-others button { font: inherit; font-size: .78rem; color: var(--text-dim); background: transparent; border: 1px solid var(--border); border-radius: 12px; padding: 3px 10px; cursor: pointer; transition: color .15s, border-color .15s; }
+  .pack-others button:hover { color: var(--text); border-color: var(--gold); }
+  .pack-others button b { color: var(--gold); font-weight: normal; }
+  .pack-others button.special::before { content: '\2605  '; color: #e8d43a; }
   .pack { width: 170px; height: 250px; position: relative; border-radius: 4px; cursor: pointer; font-size: 11px;
     background: linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%);
     box-shadow: inset 1.2em 0 1.6em -1.1em rgba(255,255,255,.38), inset -1.4em 0 1.8em -1.1em rgba(0,0,0,.55), inset 0 2.4em 2em -2em rgba(255,255,255,.18), inset 0 -2.4em 2em -2em rgba(0,0,0,.35);
@@ -176,6 +195,166 @@
   .album-slot.have { border: none; cursor: zoom-in; font-size: 9px; }
   .album-slot.have .stk-card { position: absolute; inset: 0; transition: transform .2s; }
 
+  /* ---------- Dupes-Sammlung (v6.6.0, Nutzeridee) ---------- */
+  .album-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .album-head h3 { margin: 0; }
+  .view-sw { display: flex; padding: 3px; gap: 2px; border: 1px solid var(--border); border-radius: 16px; }
+  .view-sw button { font: inherit; font-size: .78rem; color: var(--text-dim); background: transparent; border: none; border-radius: 13px; padding: 3px 12px; cursor: pointer; transition: color .15s, background .15s; }
+  .view-sw button:hover:not(.on) { color: var(--text); }
+  .view-sw button.on { background: var(--gold); color: var(--bg); }
+  .view-sw button b { font-weight: normal; font-size: .7rem; margin-left: 3px; padding: 0 6px; border-radius: 8px; background: color-mix(in srgb, var(--text) 14%, transparent); }
+  .view-sw button b:empty { display: none; }
+  .dupe-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 14px; }
+  .dupe-bar .album-tabs { margin: 0; }
+  .dupe-settings { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 12px 18px; margin-bottom: 14px; border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--input-bg) 55%, transparent); }
+  .dk-label { display: flex; flex-direction: column; gap: 3px; }
+  .dk-label b { font-family: 'Cinzel', Georgia, serif; font-weight: normal; color: var(--gold); font-size: .95rem; }
+  .dk-label small { color: var(--text-faint); font-size: .74rem; line-height: 1.35; }
+  .dk-ctrl { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .dk-ctrl button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; font: inherit; font-size: 1.2rem; line-height: 1; padding: 0; transition: border-color .15s, color .15s; }
+  .dk-ctrl button:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+  .dk-ctrl button:disabled { opacity: .35; cursor: default; }
+  .dk-ctrl b { min-width: 28px; text-align: center; color: var(--text); font-weight: normal; font-size: 1.6rem; font-family: 'Cinzel', Georgia, serif; }
+  .dk-ctrl small { color: var(--text-dim); font-size: .78rem; }
+  .dupe-sell { font: inherit; font-size: .76rem; padding: 4px 12px; border-radius: 14px; border: 1px solid var(--border); background: color-mix(in srgb, var(--input-bg) 70%, transparent); color: var(--text); cursor: pointer; white-space: nowrap; transition: border-color .15s, background .15s; }
+  .dupe-sell:hover:not(:disabled) { border-color: var(--gold); }
+  .dupe-sell.confirm { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 18%, transparent); color: var(--gold); }
+  .dupe-sell:disabled { opacity: .4; cursor: default; }
+  .dupe-sell.all { margin-left: auto; }
+  .dupe-group { margin-bottom: 16px; }
+  .dg-head { display: flex; align-items: center; gap: 10px; padding-bottom: 5px; margin-bottom: 8px; border-bottom: 1px solid var(--border); font-size: .8rem; color: var(--text-dim); }
+  .dg-head .dg-name { flex: 1; display: flex; align-items: center; gap: 7px; }
+  .dg-head .dg-name i { width: 8px; height: 8px; border-radius: 50%; }
+  .dg-head .dg-name b { font-family: 'Cinzel', Georgia, serif; font-weight: normal; color: var(--text); }
+  .dupe-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px; }
+  .dupe-x { position: absolute; right: -5px; bottom: -6px; z-index: 5; min-width: 22px; padding: 1px 6px; box-sizing: border-box; border-radius: 10px; background: var(--input-bg); border: 1px solid var(--gold); color: var(--gold); font: bold .7rem/16px Georgia, serif; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,.5); pointer-events: none; }
+  .album-slot.kept .stk-card { filter: brightness(.55) saturate(.6); }
+  .dupes-empty { color: var(--text-dim); font-size: .85rem; text-align: center; padding: 30px 10px; line-height: 1.6; }
+  .dupe-msg { color: var(--gold); font-size: .78rem; min-height: 1.1em; margin: -6px 0 10px; }
+
+
+  /* ---------- Tauschen (v6.6.0) ---------- */
+  .trade-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .trade-fee-note { font-size: .74rem; color: var(--text-faint); }
+  .t-head { font-family: 'Cinzel', Georgia, serif; font-weight: normal; color: var(--gold); font-size: .9rem; margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .t-head b { font-weight: normal; font-size: .7rem; padding: 0 7px; border-radius: 8px; background: var(--red); color: #fff; vertical-align: 2px; }
+  .t-empty { color: var(--text-faint); font-size: .82rem; margin: 6px 0 10px; }
+  .tcard { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; background: color-mix(in srgb, var(--input-bg) 45%, transparent); }
+  .tcard.in { border-color: color-mix(in srgb, var(--gold) 55%, var(--border)); }
+  .tc-head { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: var(--text-dim); }
+  .tc-head img { width: 26px; height: 26px; border-radius: 50%; }
+  .tc-head b { color: var(--text); font-weight: normal; font-family: 'Cinzel', Georgia, serif; }
+  .tc-msg { display: block; margin: 6px 0 0 34px; font-style: italic; color: var(--text); font-size: .85rem; }
+  .tc-body { display: flex; align-items: center; gap: 14px; margin: 10px 0 6px; }
+  .tc-side { flex: 1; min-width: 0; }
+  .tc-side small { display: block; color: var(--text-faint); font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+  .tc-items { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tc-arrow { color: var(--gold); font-size: 1.3rem; }
+  .tmini { position: relative; display: inline-block; width: 54px; height: 54px; cursor: zoom-in; border-radius: 9px; }
+  .tmini .stk-square { width: 100%; height: 100%; }
+  .tmini > b { position: absolute; right: -6px; bottom: -6px; padding: 0 5px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--gold); color: var(--gold); font: bold .62rem/15px Georgia, serif; }
+  .tmini > i, .tb-item > i, .tb-sub i { position: absolute; top: -6px; left: -4px; padding: 0 5px; border-radius: 7px; background: var(--c-uncommon); color: #062; font: bold .55rem/14px Georgia, serif; font-style: normal; letter-spacing: .5px; }
+  .tb-item > i.need, .tb-sub i.need { background: #e8d43a; color: #3a2f00; }
+  .tb-sub i { position: static; display: inline-block; }
+  .tc-warn { list-style: none; margin: 4px 0 6px; padding: 0; font-size: .78rem; color: #e8b13a; line-height: 1.5; }
+  .tc-warn li.bad { color: var(--red); }
+  .tc-warn b { font-weight: normal; color: var(--text); }
+  .tc-foot { display: flex; align-items: center; gap: 8px; justify-content: flex-end; font-size: .78rem; color: var(--text-dim); }
+  .tc-foot > span { margin-right: auto; }
+  .dupe-sell.accept:not(:disabled) { border-color: #2f9e4a; color: #7fe08a; }
+  .dupe-sell.accept.confirm { background: color-mix(in srgb, #2f9e4a 30%, transparent); color: #fff; }
+  .t-hist { display: flex; flex-direction: column; gap: 6px; }
+  .th-row { display: flex; align-items: center; gap: 10px; font-size: .78rem; color: var(--text-dim); padding: 6px 8px; border-radius: 10px; background: color-mix(in srgb, var(--input-bg) 35%, transparent); }
+  .th-row b { color: var(--text); font-weight: normal; }
+  .th-st { min-width: 70px; font-weight: bold; }
+  .th-row.accepted .th-st { color: #7fe08a; } .th-row.declined .th-st, .th-row.cancelled .th-st { color: var(--text-faint); }
+  .th-items { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+  .th-items .tmini { width: 30px; height: 30px; }
+  .th-items em { font-style: normal; color: var(--gold); margin: 0 4px; }
+  .th-when { color: var(--text-faint); min-width: 70px; text-align: right; }
+  .th-new { font-style: normal; color: var(--gold); min-width: 70px; text-align: right; }
+  .tb-ov { position: fixed; inset: 0; z-index: 260; display: grid; place-items: center; background: rgba(4,8,16,.78); backdrop-filter: blur(5px); opacity: 0; transition: opacity .2s; }
+  .tb-ov.on { opacity: 1; }
+  .tb-box { position: relative; width: min(1080px, 94vw); max-height: 92vh; overflow-y: auto; box-sizing: border-box; padding: 20px 24px; border-radius: 16px; border: 1px solid var(--border); background: var(--panel-bg, #111827); box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+  .tb-box.small { width: min(380px, 92vw); text-align: center; }
+  .tb-box h3 { margin: 0 0 4px; font-family: 'Cinzel', Georgia, serif; font-weight: normal; color: var(--gold); }
+  .tb-box h3 b { color: var(--text); font-weight: normal; }
+  .tb-x { position: absolute; top: 12px; right: 14px; background: none; border: none; color: var(--text-dim); font-size: 1.05rem; cursor: pointer; }
+  .tb-sub { margin: 0 0 12px; font-size: .75rem; color: var(--text-faint); }
+  .tb-friends { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  .tb-friends button { display: flex; align-items: center; gap: 10px; font: inherit; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; }
+  .tb-friends button:hover { border-color: var(--gold); }
+  .tb-friends img { width: 28px; height: 28px; border-radius: 50%; }
+  .tb-friends b { font-weight: normal; font-family: 'Cinzel', Georgia, serif; }
+  .tb-cols { display: flex; gap: 14px; align-items: stretch; }
+  .tb-mid { align-self: center; color: var(--gold); font-size: 1.6rem; }
+  .tb-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .tb-col-head { display: flex; justify-content: space-between; font-size: .82rem; color: var(--text-dim); }
+  .tb-col-head b { font-family: 'Cinzel', Georgia, serif; font-weight: normal; color: var(--gold); }
+  .tb-tray { height: 62px; flex-shrink: 0; display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; padding: 6px 8px; overflow-x: auto; overflow-y: hidden; border: 1px dashed var(--border); border-radius: 12px; }
+  .tb-tray .tmini { width: 46px; height: 46px; flex-shrink: 0; }
+  .tnum { position: absolute; left: 2px; bottom: 2px; z-index: 2; padding: 0 4px; border-radius: 6px; background: rgba(0,0,0,.72); color: #fff; font: bold .56rem/13px Georgia, serif; text-decoration: none; letter-spacing: .3px; pointer-events: none; }
+  .th-items .tnum, .th-items .rtag { display: none; }
+  .rtag { position: absolute; top: 2px; right: 2px; z-index: 2; min-width: 13px; padding: 0 3px; box-sizing: border-box; border-radius: 6px; text-align: center; text-decoration: none; font: bold .56rem/13px Georgia, serif; color: #0b0f18; pointer-events: none; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
+  .rtag.r-common { background: var(--c-common); } .rtag.r-uncommon { background: var(--c-uncommon); }
+  .rtag.r-holo { background: var(--c-holo); } .rtag.r-anim { background: var(--c-anim); color: #fff; }
+  .rtag.r-fullart { background: linear-gradient(135deg, #ffe08a, #ff9ad5 45%, #8fd8ff); }
+  .rsums { display: inline-flex; gap: 5px; margin: 0 8px 0 auto; text-transform: none; letter-spacing: 0; }
+  .rsum { font: bold .68rem/16px Georgia, serif; padding: 0 6px; border-radius: 8px; border: 1px solid currentColor; }
+  .rsum.r-common { color: var(--c-common); } .rsum.r-uncommon { color: var(--c-uncommon); } .rsum.r-holo { color: var(--c-holo); } .rsum.r-anim { color: var(--c-anim); } .rsum.r-fullart { color: #ffd76a; }
+  .tc-side small { display: flex !important; align-items: center; }
+  .tc-side small .rsums { margin-left: 8px; }
+  .tb-warns { height: 40px; overflow-y: auto; margin: 8px 0 0; }
+  .tb-tray .tmini { cursor: pointer; }
+  .tb-tray .tmini:hover::after { content: '−'; position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.55); color: #fff; font-size: 1.4rem; border-radius: 9px; }
+  .tb-hint { color: var(--text-faint); font-size: .78rem; }
+  .tb-col .album-tabs { margin: 0; }
+  .tb-tabs-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .tb-only { display: flex; align-items: center; gap: 6px; font-size: .76rem; color: var(--text-dim); cursor: pointer; user-select: none; white-space: nowrap; }
+  .tb-only input { accent-color: var(--gold); width: 15px; height: 15px; margin: 0; cursor: pointer; }
+  .tb-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-rows: max-content; align-content: start; gap: 14px; height: 340px; overflow-y: auto; padding: 8px 10px 6px 4px; }
+  .tb-grid .tnum { font-size: .66rem; line-height: 15px; left: 3px; bottom: 3px; }
+  .tb-grid .rtag { font-size: .64rem; line-height: 15px; min-width: 16px; top: 3px; right: 3px; }
+  .tb-grid .tb-cnt { font-size: .68rem; line-height: 16px; }
+  .tb-item { position: relative; aspect-ratio: 1; cursor: pointer; border-radius: 9px; transition: transform .12s; }
+  .tb-item:hover { transform: translateY(-2px); }
+  .tb-item .stk-square { width: 100%; height: 100%; }
+  .tb-item.used { opacity: .3; cursor: default; transform: none; }
+  .tb-cnt { position: absolute; right: -5px; bottom: -5px; padding: 0 5px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--border); color: var(--text); font: bold .6rem/14px Georgia, serif; }
+  .tb-foot { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+  .tb-foot .gift-msg { flex: 1; max-width: 320px; }
+  .tb-fees { font-size: .8rem; color: var(--text-dim); margin-left: auto; }
+  .tb-fees b { color: var(--gold); font-weight: normal; }
+  .tb-fees em { color: var(--red); font-style: normal; }
+  .tb-send { font: inherit; font-size: .9rem; padding: 8px 22px; border-radius: 18px; border: 1px solid var(--gold); background: var(--gold); color: var(--bg); cursor: pointer; }
+  .tb-send:disabled { opacity: .45; cursor: default; }
+  .tb-err { min-height: 1em; margin: 6px 0 0; color: var(--red); font-size: .8rem; text-align: right; }
+  .gift-msg { box-sizing: border-box; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font: inherit; font-size: .85rem; }
+
+
+  /* ---------- Master Set (v6.6.0, Nutzer): Holo-Rahmen ums Album bei komplettem Set ---------- */
+  .album-box { position: relative; }
+  .mf-badge { display: none; align-items: center; gap: 6px; margin-left: 10px; padding: 2px 11px; border-radius: 12px; font: bold .72rem/20px 'Cinzel', Georgia, serif; letter-spacing: 1px; color: #2a1d00; background: linear-gradient(135deg, #fff3b0, #e8c25a 45%, #b8862b); box-shadow: 0 2px 8px rgba(0,0,0,.4); vertical-align: 2px; }
+  .album-box.master .mf-badge, .album-box.complete .mf-badge { display: inline-flex; }
+  .album-box.master::before, .album-box.complete::before { content: ''; position: absolute; inset: -3px; border-radius: 14px; padding: 3px; pointer-events: none; z-index: 2;
+    background: linear-gradient(135deg, #fff3b0, #c8a96e 25%, #8a6420 50%, #e8c25a 75%, #fff3b0);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+  @keyframes mfShine { to { background-position: -250% 0; } }
+  html.fx-off .album-box.master::before { animation: none; }
+
+  .album-box.master::before { background: linear-gradient(115deg, #ff9ad5, #ffe08a 16%, #9dffb0 32%, #8fd8ff 48%, #c49bff 64%, #ff9ad5 80%, #ffe08a); background-size: 300% 100%; animation: mfShine 6s linear infinite; }
+  .album-box.master { box-shadow: 0 0 26px rgba(196,155,255,.28), 0 10px 30px rgba(0,0,0,.35); }
+  .album-box.master::after { content: ''; position: absolute; inset: 6px; border-radius: 10px; pointer-events: none; border: 1px solid transparent;
+    background: linear-gradient(115deg, rgba(255,154,213,.5), rgba(143,216,255,.5), rgba(157,255,176,.5)) border-box;
+    -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; }
+  .album-box.master .mf-badge { background: linear-gradient(115deg, #ffd1ea, #fff1b8, #c8ffd4, #c6ecff, #e3d1ff); }
+  .album-tabs span.master { border-color: #e8c25a; color: #f6e27a; }
+  .album-tabs span.master::after { content: ' \2605'; color: #f6e27a; }
+  .album-tabs span.complete { border-color: #c8a96e; color: #e8c25a; }
+  .album-tabs span.complete::after { content: ' \2713'; color: #e8c25a; }
+  .album-box.complete { box-shadow: 0 0 18px rgba(232,194,90,.18), 0 10px 30px rgba(0,0,0,.35); }
+  .album-slot.fa .num { color: var(--c-fa); font-weight: bold; }
+
   /* ---------- Inspizieren: 3D-Neigung mit dem Cursor ---------- */
   .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.86); backdrop-filter: blur(6px); display: grid; place-items: center; cursor: zoom-out; opacity: 0; transition: opacity .25s; }
   .insp.on { opacity: 1; }
@@ -204,40 +383,52 @@
       <div class="band">BOOSTER PACK · 7 STICKERS</div>
       <div class="count" id="packCount"></div>
       <div class="crimp bot"></div>
-    </div></div>
+    </div><span class="pack-num" id="packNum" hidden></span></div>
+    <div class="pack-owned" id="packOwned"></div>
+    <div class="pack-others" id="packOthers"></div>
     <div style="display:flex;gap:8px"><button class="btn" id="openBtn">Open 1</button><button class="btn" id="openAllBtn">Open all</button></div>
     <p class="album-empty" id="noBoosters" style="display:none">No boosters left.<br>Get more in the <a href="shop.html">shop</a> or from your monthly pass.</p>
     <span class="rates-hint" tabindex="0">Pull rates <span class="q">?</span>
       <span class="rates-pop"><div><span class="dot" style="background:var(--c-common)"></span><b>4×</b> Common</div>
       <div><span class="dot" style="background:var(--c-uncommon)"></span><b>2×</b> Uncommon</div>
-      <div><span class="dot" style="background:var(--c-holo)"></span><b>1×</b> <span style="color:var(--c-holo)">Holo Rare</span> 90% · <span style="color:var(--c-anim)">Animated Rare</span> 10%</div>
+      <div><span class="dot" style="background:var(--c-holo)"></span><b>1×</b> <span style="color:var(--c-holo)">Holo Rare</span> 83% · <span style="color:var(--c-anim)">Animated Rare</span> 10% · <span style="color:var(--c-fa)">Full Art</span> 7%</div>
       <div style="margin-top:6px" id="ratesSet"></div>
-      <div style="margin-top:4px">Duplicates give coins back: 3 / 8 / 50 / 300</div></span>
+      <div style="margin-top:4px">Duplicates go to your Dupes - sell them for 3 / 8 / 50 / 300 / 600 coins or keep them</div></span>
     </span>
   </section>
 
-  <section class="card-box">
-    <h3>Album</h3>
-    <div class="album-tabs" id="albumTabs"></div>
-    <div class="album-progress" id="albumProgress"></div>
-    <div class="album-grid" id="albumGrid"></div>
+  <section class="card-box album-box" id="albumBox">
+    <div class="album-head">
+      <h3>Album<span class="mf-badge">★ MASTER SET</span></h3>
+      <div class="view-sw" id="viewSw"><button type="button" data-view="album" class="on">Collection</button><button type="button" data-view="dupes">Dupes <b id="dupeTotal"></b></button><button type="button" data-view="trades">Trades <b id="tradeCount"></b></button></div>
+    </div>
+    <div id="albumView">
+      <div class="album-tabs" id="albumTabs"></div>
+      <div class="album-progress" id="albumProgress"></div>
+      <div class="album-grid" id="albumGrid"></div>
+    </div>
+    <div id="dupesView" hidden></div>
+    <div id="tradesView" hidden></div>
   </section>
 </div>
 
 <script src="stickers.js"></script>
 <script src="stickers-neon.js"></script>
+<script src="stickers-fa.js"></script>
 <script>
 // ===================== Sticker-Kunst (detailliert, ohne Die-Cut-Rand) =====================
 const HEAD = 'M42 4 L48 15 L54 3 L60 18 C74 20 86 30 90 48 C93 62 92 80 92 96 L48 96 C50 84 52 72 50 62 C40 64 28 74 16 75 C8 75 4 69 6 62 C10 52 26 36 37 22 Z';
 const BACK_LOGO = `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="#c8a96e" stroke-width="4"/><g transform="translate(20 14) scale(.82)"><path d="${HEAD}" fill="#c8a96e"/></g></svg>`;
 
 // ===================== Set (Entwurfsausschnitt aus 50) =====================
-const RC = { common: 'var(--c-common)', uncommon: 'var(--c-uncommon)', holo: 'var(--c-holo)', anim: 'var(--c-anim)' };
-const RL = { common: 'Common', uncommon: 'Uncommon', holo: 'Holo Rare', anim: 'Animated Rare' };
+const RC = { common: 'var(--c-common)', uncommon: 'var(--c-uncommon)', holo: 'var(--c-holo)', anim: 'var(--c-anim)', fullart: 'var(--c-fa)' };
+const RL = { common: 'Common', uncommon: 'Uncommon', holo: 'Holo Rare', anim: 'Animated Rare', fullart: 'Full Art' };
 // Sticker-Sets (v6.5.0): Base Set + Special Sets, Kunst je Set aus stickers*.js
 const LIB = id => (window.STICKER_SETS && window.STICKER_SETS[id]) || window.STICKERS;
 const lib = () => LIB(cur() ? cur().id : 'base');
-const frontHtml = s => lib().frontHtml(s);
+// Full Arts (v6.6.0): s.fa -> FA-Version der Karte (stickers-fa.js)
+const frontHtml = s => s.fa ? window.STICKER_FA.front(lib(), s) : lib().frontHtml(s);
+const asFa = s => ({ ...s, fa: true, r: 'fullart', baseR: s.r });
 // Daten vom Server (/api/album): Sets, ungeoeffnete Booster, gesammelte Sticker
 let DATA = null;
 let owned = {};                        // { n: Anzahl } fuer das gewaehlte Set
@@ -265,7 +456,7 @@ async function loadAlbum() {
   try { DATA = await (await fetch('/api/album')).json(); } catch (e) { DATA = { sets: [], stickers: {} }; }
   owned = { ...((DATA.stickers || {})[cur() ? cur().id : 'base'] || {}) };
   unopened = cur() ? cur().owned : 0;
-  updCount(); renderAlbum(); renderTabs();
+  updCount(); renderAlbum(); renderTabs(); renderDupes();
 }
 const pick = l => l[Math.floor(Math.random() * l.length)];
 const backHtml = s => `<div class="face back${s.r === 'holo' ? ' glow-holo' : s.r === 'anim' ? ' glow-anim' : ''}">${BACK_LOGO}</div>`;
@@ -301,6 +492,15 @@ const updCount = () => {
   const pack = document.getElementById('pack');
   if (pack.dataset.set !== cur().id) { pack.dataset.set = cur().id; dressPack(pack, cur().id, cur().name); }
   document.getElementById('packCount').textContent = `${unopened} unopened`;
+  // grosse Zahl am Pack + Zeile darunter + andere Sets mit ungeoeffneten Boostern
+  const num = document.getElementById('packNum');
+  if (num.textContent !== String(unopened)) { num.classList.remove('bump'); void num.offsetWidth; num.classList.add('bump'); }
+  num.hidden = !unopened; num.textContent = unopened;
+  const ow = document.getElementById('packOwned');
+  ow.className = `pack-owned${unopened ? '' : ' none'}`;
+  ow.innerHTML = `<b>${unopened}</b> unopened ${cur().name} booster${unopened === 1 ? '' : 's'}`;
+  document.getElementById('packOthers').innerHTML = (DATA.sets || []).map((st, i) => i !== sel && st.owned > 0
+    ? `<button type="button" class="${st.special ? 'special' : ''}" data-switch="${i}" title="Switch to ${st.name}">${st.name} <b>×${st.owned}</b></button>` : '').join('');
   renderRates();
   if (!pack.querySelector('.switch')) { const sw = document.createElement('span'); sw.className = 'switch'; sw.textContent = '⇄ set'; pack.appendChild(sw); }
   document.getElementById('openBtn').disabled = document.getElementById('openAllBtn').disabled = !unopened;
@@ -321,7 +521,7 @@ function openPicker() {
     dressPack(p, st.id, st.name);
     const c = p.querySelector('.count'); c.removeAttribute('id'); c.textContent = `${st.owned} unopened`;
     p.querySelectorAll('.switch').forEach(x => x.remove());
-    return `<button type="button" class="pick-opt${i === sel ? ' sel' : ''}" data-set="${i}">${p.outerHTML}<span class="pick-name">${st.name}</span><span class="pick-sub">${st.owned ? `${st.owned} unopened` : 'none - get some in the shop'} · album ${st.collected} / ${st.total}</span></button>`;
+    return `<button type="button" class="pick-opt${i === sel ? ' sel' : ''}" data-set="${i}"><span class="pick-wrap">${p.outerHTML}${st.owned ? `<span class="pack-num">${st.owned}</span>` : ''}</span><span class="pick-name">${st.name}</span><span class="pick-sub">${st.owned ? `${st.owned} unopened` : 'none - get some in the shop'} · album ${st.collected} / ${st.total}</span></button>`;
   };
   ov.innerHTML = `<div class="pick-box" role="dialog" aria-label="Choose booster">
       <button type="button" class="pick-x" aria-label="Close">✕</button>
@@ -345,7 +545,7 @@ async function openPacks(n) {
   opening = false;
   if (!res.ok) { loadAlbum(); return; }
   unopened = res.owned; updCount();
-  const cards = res.cards.map(c => ({ ...setCards().find(x => x.n === c.n), isNew: c.isNew, refund: c.refund }));
+  const cards = res.cards.map(c => { const b = setCards().find(x => x.n === c.n); return { ...(c.fa ? asFa(b) : b), isNew: c.isNew, refund: c.refund }; });
   const ov = document.createElement('div'); ov.className = 'ov';
   // Plaetze nie kleiner als MIN_W (Sticker bleiben erkennbar); so viele Spalten
   // wie ins Fenster passen, der Rest scrollt im Raster
@@ -356,7 +556,7 @@ async function openPacks(n) {
   const cols = Math.min(cards.length <= 7 ? 7 : fitCols, cards.length);
   ov.innerHTML = `<button class="btn ov-close" id="ovSkip" title="Reveal every sticker at once">Show all</button>
     <div class="ov-grid" style="grid-template-columns:repeat(${cols}, ${slotW}px)">${cards.map(() => `<div class="ov-slot" style="width:${slotW}px"></div>`).join('')}</div>
-    <div class="ov-coins" id="ovCoins">Duplicates: 🪙 <b>0</b></div>
+    <div class="ov-coins" id="ovCoins">Duplicates → Dupes: <b>0</b></div>
     <div class="ov-hint" id="ovHint">Drag across the top edge to tear the booster open</div>
     <button class="btn ov-done" id="ovDone">Done</button>`;
   document.body.appendChild(ov);
@@ -438,8 +638,9 @@ async function openPacks(n) {
   const tagFor = (el, s) => {
     if (s.isNew) { const t = document.createElement('span'); t.className = 'tag-new'; t.textContent = 'NEW'; el.appendChild(t); return; }
     el.classList.add('dupe');
-    const st = document.createElement('div'); st.className = 'dupe-stamp'; st.innerHTML = `<b>+${s.refund} 🪙</b>`; el.parentElement.appendChild(st);
-    coinsToCounter(el, s.refund);
+    const st = document.createElement('div'); st.className = 'dupe-stamp'; st.innerHTML = '<b>DUPE</b>'; el.parentElement.appendChild(st);
+    coinBox.classList.add('on'); dupeCoins++; coinBox.querySelector('b').textContent = dupeCoins;
+    coinBox.classList.remove('bump'); void coinBox.offsetWidth; coinBox.classList.add('bump');
   };
   const autoRun = () => {
     flipping = true;
@@ -493,6 +694,7 @@ async function openPacks(n) {
     const back = top.querySelector('.back');
     if (s.r === 'holo') back.classList.add('glow-holo');
     if (s.r === 'anim') back.classList.add('glow-anim');
+    if (s.r === 'fullart') back.classList.add('glow-fa');
   }
   // Wegstecken wie bei einem echten Stapel: die Karte bleibt OBEN und gleitet
   // zur Seite, bis sie ganz neben dem Stapel liegt (darunter wird der Stapel
@@ -533,10 +735,10 @@ async function openPacks(n) {
       if (idx >= cards.length) { flipping = false; finish(); return; }
       const el = stackEl.lastElementChild, s = cards[idx];
       if (stackEl.children.length <= 1) stackEl.classList.add('empty');
-      const rare = s.r === 'holo' || s.r === 'anim';
+      const rare = s.r === 'holo' || s.r === 'anim' || s.r === 'fullart';
       const back = el.querySelector('.back');
       // jetzt frei und verdeckt oben: seltene Ware scheint durch und zappelt kurz
-      if (rare) back.classList.add(s.r === 'holo' ? 'glow-holo' : 'glow-anim', 'shake');
+      if (rare) back.classList.add(s.r === 'holo' ? 'glow-holo' : s.r === 'fullart' ? 'glow-fa' : 'glow-anim', 'shake');
       revealTimer = setTimeout(() => {
         revealTimer = null;
         if (rare) { const b = document.createElement('div'); b.className = 'burst'; b.style.background = `radial-gradient(circle, ${RC[s.r]}, transparent 62%)`; el.appendChild(b); }
@@ -564,6 +766,7 @@ async function openPacks(n) {
 }
 // Klick auf den Pack OEFFNET nicht, sondern zeigt die Set-Auswahl (Nutzer)
 document.getElementById('pack').addEventListener('click', openPicker);
+document.getElementById('packOthers').addEventListener('click', e => { const b = e.target.closest('[data-switch]'); if (b) { sel = Number(b.dataset.switch); loadAlbum(); } });
 document.getElementById('openBtn').addEventListener('click', () => openPacks(1));
 document.getElementById('openAllBtn').addEventListener('click', () => openPacks(unopened));
 
@@ -574,9 +777,22 @@ function renderAlbum() {
     const s = setCards().find(x => x.n === n);
     if (s && owned[n]) { got++; html += `<div class="album-slot have" data-n="${n}"><span class="num">#${String(n).padStart(3, '0')}</span><div class="stk-card">${frontHtml(s)}</div></div>`; }
     else html += `<div class="album-slot"><span class="num">#${String(n).padStart(3, '0')}</span>?</div>`;
+    // Full Art: keine leeren Plaetze - erst nach dem Ziehen, direkt rechts daneben
+    if (s && faOwned()[n]) html += `<div class="album-slot have fa" data-n="${n}" data-fa="1"><span class="num">#${String(n).padStart(3, '0')}FA</span><div class="stk-card">${frontHtml(asFa(s))}</div></div>`;
   }
   document.getElementById('albumGrid').innerHTML = html;
   document.getElementById('albumProgress').textContent = `Collected ${got} / ${TOTAL_IN_SET()} · ${rangesText()}`;
+  applyMasterFrame();
+}
+const faOwned = () => ((DATA && DATA.fullArts) || {})[cur() ? cur().id : 'base'] || {};
+// Complete Set = alle normalen Sticker (Goldrahmen); Master Set = dazu alle
+// geheimen Full Arts (Holo-Rahmen, Nutzerwahl). Status rechnet der Server.
+const statusOf = id => ((DATA && DATA.setStatus) || {})[id] || {};
+function applyMasterFrame() {
+  const st = cur() ? statusOf(cur().id) : {}, box = document.getElementById('albumBox'), on = view === 'album';
+  box.classList.toggle('master', on && !!st.master);
+  box.classList.toggle('complete', on && !!st.complete && !st.master);
+  box.querySelector('.mf-badge').textContent = st.master ? '★ MASTER SET' : '✓ COMPLETE SET';
 }
 // "#1-3 animated rare · #4-10 holo rare ..." aus der Nummerierung des Sets
 const RNAME = { anim: 'animated rare', holo: 'holo rare', uncommon: 'uncommon', common: 'common' };
@@ -588,7 +804,7 @@ function renderRates() {
   document.getElementById('ratesSet').textContent = `${cur().name}: ${all.length} stickers - ${cnt('common')} common, ${cnt('uncommon')} uncommon, ${cnt('holo')} holo rare, ${cnt('anim')} animated rare`;
 }
 function renderTabs() {
-  document.getElementById('albumTabs').innerHTML = (DATA.sets || []).map((st, i) => `<span class="${i === sel ? 'on' : ''}${st.special ? ' special' : ''}" data-set="${i}" role="button" tabindex="0">${st.name}</span>`).join('') + '<span class="soon">More sets coming later</span>';
+  document.getElementById('albumTabs').innerHTML = (DATA.sets || []).map((st, i) => `<span class="${i === sel ? 'on' : ''}${st.special ? ' special' : ''}${statusOf(st.id).master ? ' master' : statusOf(st.id).complete ? ' complete' : ''}" data-set="${i}" role="button" tabindex="0"${statusOf(st.id).master ? ' title="Master Set"' : statusOf(st.id).complete ? ' title="Complete Set - every sticker collected"' : ''}>${st.name}</span>`).join('') + '<span class="soon">More sets coming later</span>';
 }
 document.getElementById('albumTabs').addEventListener('click', e => {
   const t = e.target.closest('[data-set]');
@@ -597,9 +813,12 @@ document.getElementById('albumTabs').addEventListener('click', e => {
 });
 document.getElementById('albumGrid').addEventListener('click', e => {
   const slot = e.target.closest('.album-slot.have'); if (!slot) return;
-  const s = setCards().find(x => x.n === Number(slot.dataset.n));
+  const s0 = setCards().find(x => x.n === Number(slot.dataset.n));
+  inspect(lib(), slot.dataset.fa ? asFa(s0) : s0);
+});
+function inspect(L, s, extra = '') {
   const ov = document.createElement('div'); ov.className = 'insp';
-  ov.innerHTML = `<div class="stk-card">${frontHtml(s)}</div><div class="insp-cap">${s.name} · ${RL[s.r]} · #${String(s.n).padStart(3, '0')} - hover the sticker to tilt it, click to close</div>`;
+  ov.innerHTML = `<div class="stk-card">${s.fa ? window.STICKER_FA.front(L, s) : L.frontHtml(s)}</div><div class="insp-cap">${s.name} · ${RL[s.r]} · #${String(s.n).padStart(3, '0')}${s.fa ? 'FA' : ''}${extra} - hover the sticker to tilt it, click to close</div>`;
   document.body.appendChild(ov); requestAnimationFrame(() => ov.classList.add('on'));
   const c = ov.querySelector('.stk-card');
   // 3D-Neigung: startet erst, wenn der Cursor ueber die Karte faehrt, folgt ihm
@@ -617,9 +836,302 @@ document.getElementById('albumGrid').addEventListener('click', e => {
     window.STICKERS.tiltTo(c, px / 2, py / 2, 18); // relativ zur Karte: am Rand volle Neigung
   });
   ov.addEventListener('click', () => { document.removeEventListener('mouseleave', rest); ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); });
-});
+}
 window.STICKERS.enableTilt(document.getElementById('albumGrid'));
-loadAlbum();
+
+// ===================== Dupes-Sammlung (v6.6.0, Nutzeridee) =====================
+// Doppelte nach Seltenheit sortiert, Filter nach Set; Verkaufen je Set +
+// Seltenheit oder alles auf einmal. "Keep" = so viele Doppelte je Sticker
+// behalten (Tauschkopie fuer spaeter). Zweimal klicken bestaetigt.
+let view = 'album', dupeSet = 'all', sellConfirm = null, dupeMsg = '';
+let keepN = (() => { try { return Math.max(0, Math.min(9, Number(localStorage.getItem('ttp_dupe_keep')) || 0)); } catch (e) { return 0; } })();
+const RORDER = ['fullart', 'anim', 'holo', 'uncommon', 'common'];
+const REFUND = { common: 3, uncommon: 8, holo: 50, anim: 300, fullart: 600 };
+const dupesOf = (id, n, fa) => Math.max(0, (((DATA && (fa ? DATA.fullArts : DATA.stickers)) || {})[id] || {})[n] - 1 || 0);
+const sellable = (id, s) => Math.max(0, dupesOf(id, s.n, s.fa) - keepN);
+// Eintraege einer Seltenheit: Full Arts sind FA-Versionen bestehender Karten
+const dupeList = (id, r) => r === 'fullart'
+  ? LIB(id).SET.filter(s => dupesOf(id, s.n, true)).map(asFa)
+  : LIB(id).SET.filter(s => s.r === r && dupesOf(id, s.n));
+function renderDupes() {
+  if (!DATA) return;
+  const sets = DATA.sets || [];
+  const total = sets.reduce((a, st) => a + LIB(st.id).SET.reduce((b, s) => b + dupesOf(st.id, s.n) + dupesOf(st.id, s.n, true), 0), 0);
+  document.getElementById('dupeTotal').textContent = total || '';
+  const box = document.getElementById('dupesView');
+  if (view !== 'dupes') return;
+  if (dupeSet !== 'all' && !sets.some(st => st.id === dupeSet)) dupeSet = 'all';
+  const shown = sets.filter(st => dupeSet === 'all' || st.id === dupeSet);
+  let groups = '', allCount = 0, allCoins = 0;
+  shown.forEach(st => {
+    const L = LIB(st.id);
+    RORDER.forEach(r => {
+      const list = dupeList(st.id, r);
+      if (!list.length) return;
+      const cnt = list.reduce((a, s) => a + dupesOf(st.id, s.n, s.fa), 0);
+      const sell = list.reduce((a, s) => a + sellable(st.id, s), 0), coins = sell * REFUND[r];
+      allCount += sell; allCoins += coins;
+      const key = `${st.id}:${r}`;
+      groups += `<div class="dupe-group"><div class="dg-head">
+          <span class="dg-name"><i style="background:${RC[r]}"></i><b>${RL[r]}</b>${dupeSet === 'all' ? ` · ${st.special ? '★ ' : ''}${st.name}` : ''}</span>
+          <span>${cnt} dupe${cnt > 1 ? 's' : ''}</span>
+          <button type="button" class="dupe-sell${sellConfirm === key ? ' confirm' : ''}" data-sell="${key}"${sell ? '' : ' disabled title="Everything here is kept"'}>${sellConfirm === key ? `Sell ${sell} for 🪙 ${coins}?` : `Sell ${sell} · 🪙 ${coins}`}</button>
+        </div><div class="dupe-grid">${list.map(s => `<div class="album-slot have${sellable(st.id, s) ? '' : ' kept'}" data-dset="${st.id}" data-n="${s.n}"${s.fa ? ' data-fa="1"' : ''} title="${sellable(st.id, s) ? '' : 'Kept as a spare'}"><span class="num">#${String(s.n).padStart(3, '0')}${s.fa ? 'FA' : ''}</span><div class="stk-card">${s.fa ? window.STICKER_FA.front(L, s) : L.frontHtml(s)}</div><b class="dupe-x">×${dupesOf(st.id, s.n, s.fa)}</b></div>`).join('')}</div></div>`;
+    });
+  });
+  const chips = `<div class="album-tabs"><span class="${dupeSet === 'all' ? 'on' : ''}" data-dfilter="all" role="button" tabindex="0">All sets</span>${sets.map(st => `<span class="${dupeSet === st.id ? 'on' : ''}${st.special ? ' special' : ''}" data-dfilter="${st.id}" role="button" tabindex="0">${st.name}</span>`).join('')}</div>`;
+  // Einstellung der Dupe-Sammlung (Nutzer: groesser, als Einstellung erkennbar)
+  const keep = `<div class="dupe-settings"><span class="dk-label"><b>Keep dupes</b></span>
+      <span class="dk-ctrl"><button type="button" data-keep="-1" aria-label="Keep fewer"${keepN ? '' : ' disabled'}>−</button><b>${keepN}</b><button type="button" data-keep="1" aria-label="Keep more"${keepN >= 9 ? ' disabled' : ''}>+</button><small>of each</small></span></div>`;
+  const sellAll = `<button type="button" class="dupe-sell all${sellConfirm === 'all' ? ' confirm' : ''}" data-sell="all"${allCount ? '' : ' disabled'}>${sellConfirm === 'all' ? `Sell all ${allCount} for 🪙 ${allCoins}?` : `Sell all shown · 🪙 ${allCoins}`}</button>`;
+  box.innerHTML = `${keep}<div class="dupe-bar">${chips}${sellAll}</div><div class="dupe-msg">${dupeMsg}</div>` +
+    (groups || `<p class="dupes-empty">${total ? 'No duplicates in this set.' : 'No duplicates yet.<br>Stickers you pull twice land here - sell them for coins or keep spares to trade later.'}</p>`);
+}
+function setView(v) {
+  view = v; sellConfirm = null; dupeMsg = '';
+  document.querySelectorAll('#viewSw button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+  document.getElementById('albumView').hidden = v !== 'album';
+  document.getElementById('dupesView').hidden = v !== 'dupes';
+  document.getElementById('tradesView').hidden = v !== 'trades';
+  renderDupes();
+  renderAlbum();
+  if (v === 'trades') { renderTrades(); loadTrades(); } else tradeMsg = '';
+}
+document.getElementById('viewSw').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b && b.dataset.view !== view) setView(b.dataset.view); });
+document.getElementById('dupesView').addEventListener('click', async e => {
+  const f = e.target.closest('[data-dfilter]'), k = e.target.closest('[data-keep]'), sb = e.target.closest('[data-sell]'), slot = e.target.closest('.album-slot[data-dset]');
+  if (f) { dupeSet = f.dataset.dfilter; sellConfirm = null; dupeMsg = ''; renderDupes(); return; }
+  if (k) { keepN = Math.max(0, Math.min(9, keepN + Number(k.dataset.keep))); try { localStorage.setItem('ttp_dupe_keep', keepN); } catch (err) {} sellConfirm = null; renderDupes(); return; }
+  if (slot) { const L = LIB(slot.dataset.dset), b = L.SET.find(x => x.n === Number(slot.dataset.n)), s = slot.dataset.fa ? asFa(b) : b, d = dupesOf(slot.dataset.dset, s.n, s.fa); inspect(L, s, ` · ${d} dupe${d > 1 ? 's' : ''}`); return; }
+  if (!sb || sb.disabled) return;
+  const key = sb.dataset.sell;
+  if (sellConfirm !== key) { sellConfirm = key; dupeMsg = ''; renderDupes(); return; }
+  sellConfirm = null;
+  const [set, rarity] = key === 'all' ? [dupeSet, 'all'] : key.split(':');
+  let r;
+  try { r = await (await fetch('/api/stickers/sell-dupes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ set, rarity, keep: keepN }) })).json(); } catch (err) { r = { ok: false, error: 'Could not reach the app server.' }; }
+  dupeMsg = r.ok ? `Sold ${r.sold} duplicate${r.sold > 1 ? 's' : ''} for 🪙 ${r.refund}.` : (r.error || 'Something went wrong.');
+  if (r.ok) { DATA.stickers = r.stickers; if (r.fullArts) DATA.fullArts = r.fullArts; }
+  renderDupes();
+});
+document.addEventListener('click', e => { if (sellConfirm && !e.target.closest('[data-sell]')) { sellConfirm = null; renderDupes(); } });
+window.STICKERS.enableTilt(document.getElementById('dupesView'));
+window.addEventListener('ttp:gifts', () => loadAlbum());
+// ===================== Tauschen (v6.6.0, supabase/009-sticker-trades.sql) =====================
+// Angebote unter Freunden: "ich gebe X, ich will Y". Der Anbieter reserviert
+// seine Sticker beim Senden; der Partner nimmt an oder lehnt ab. Gebuehr
+// pauschal pro Seite (DATA.tradeFee). Live-Aktualisierung ueber ttp:notices.
+const escT = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const pad3 = n => String(n).padStart(3, '0');
+const avatarOf = a => (a ? `avatars/${a}.svg` : 'avatar-placeholder.svg');
+const FEE = () => (DATA && typeof DATA.tradeFee === 'number' ? DATA.tradeFee : 50);
+const stkOf = (set, n) => (LIB(set).SET || []).find(x => x.n === Number(n));
+// Item {set, n, qty, fa}: Seltenheit/Nummer/Bild fuer Full Arts gesondert
+const itemR = it => it.fa ? 'fullart' : (stkOf(it.set, it.n) || {}).r;
+const itemNum = it => `#${String(it.n).padStart(3, '0')}${it.fa ? 'FA' : ''}`;
+const sqHtml = (it, s) => it.fa ? window.STICKER_FA.square(LIB(it.set), s) : LIB(it.set).square(s);
+const haveMine = it => (((it.fa ? DATA.fullArts : DATA.stickers) || {})[it.set] || {})[it.n] || 0;
+const qtySum = items => items.reduce((a, it) => a + it.qty, 0);
+const feeOf = (give, get) => FEE() * (qtySum(give) + qtySum(get));
+// Seltenheit als Kuerzel (Nutzer: "3 Holos fuer 1 Animated" auf einen Blick)
+const RABBR = { common: 'C', uncommon: 'U', holo: 'H', anim: 'A', fullart: 'FA' };  // FA: Full Arts (geplant)
+const rTag = r => `<s class="rtag r-${r}">${RABBR[r] || '?'}</s>`;
+const raritySum = items => ['fullart', 'anim', 'holo', 'uncommon', 'common'].map(r => { const n = items.reduce((a, it) => a + (itemR(it) === r ? it.qty : 0), 0); return n ? `<span class="rsum r-${r}">${n} ${RABBR[r]}</span>` : ''; }).join('');
+const ago = iso => { const m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000)); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`; };
+function miniHtml(it, extra = '', attrs = '') {
+  const s = stkOf(it.set, it.n); if (!s) return '';
+  const r = itemR(it);
+  return `<span class="tmini r-${r}" data-iset="${it.set}" data-in="${it.n}"${it.fa ? ' data-ifa="1"' : ''} title="${escT(s.name)} · ${RL[r]} · ${itemNum(it)}"${attrs}>${sqHtml(it, s)}<u class="tnum">${itemNum(it)}</u>${rTag(r)}${it.qty > 1 ? `<b>×${it.qty}</b>` : ''}${extra}</span>`;
+}
+let TRADES = null, tradeMsg = '', tradeConfirm = null, tradeErr = '';
+async function loadTrades() {
+  try {
+    const res = await fetch('/api/trades');
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Could not load trades.');
+    TRADES = d; tradeErr = '';
+    if ([...(d.history || [])].some(t => t.justSettled)) loadAlbum();
+  } catch (e) { TRADES = TRADES || { incoming: [], outgoing: [], history: [] }; tradeErr = e.message; }
+  document.getElementById('tradeCount').textContent = (TRADES.incoming || []).length || '';
+  if (view === 'trades') renderTrades();
+}
+function tradeCard(t) {
+  const name = escT(t.with.username);
+  const warn = (t.warnings || []).filter(w => w.lastCopy).map(w => { const s = stkOf(w.set, w.n); return s ? `<li>⚠ <b>${escT(s.name)}</b> is your last copy - it leaves your album${w.onProfile ? ' and your profile' : ''}.</li>` : ''; }).join('');
+  const miss = (t.missing || []).map(m => { const s = stkOf(m.set, m.n); return s ? `<li class="bad">You don't have <b>${escT(s.name)}</b>${m.qty > 1 ? ` ×${m.qty}` : ''} anymore.</li>` : ''; }).join('');
+  const poor = !t.mine && t.status === 'open' && (TRADES.coins || 0) < t.myFee;
+  let btns = '';
+  if (t.status === 'open' && !t.mine) {
+    const can = !(t.missing || []).length && !poor;
+    btns = `<button type="button" class="dupe-sell" data-decide="declined" data-id="${t.id}">Decline</button>
+      <button type="button" class="dupe-sell accept${tradeConfirm === t.id + 'a' ? ' confirm' : ''}" data-decide="accepted" data-id="${t.id}"${can ? '' : ' disabled'}>${tradeConfirm === t.id + 'a' ? 'Really accept?' : 'Accept'}</button>`;
+  } else if (t.status === 'open') {
+    btns = `<button type="button" class="dupe-sell${tradeConfirm === t.id + 'c' ? ' confirm' : ''}" data-decide="cancelled" data-id="${t.id}">${tradeConfirm === t.id + 'c' ? 'Really cancel?' : 'Cancel offer'}</button>`;
+  }
+  return `<div class="tcard${t.mine ? ' out' : ' in'}">
+    <div class="tc-head"><img src="${avatarOf(t.with.avatar)}" alt="" onerror="this.src='avatar-placeholder.svg'"><b>${name}</b><span>${t.mine ? 'your offer' : 'offers you a trade'} · ${ago(t.at)}</span></div>
+    ${t.message ? `<q class="tc-msg">${escT(t.message)}</q>` : ''}
+    <div class="tc-body">
+      <div class="tc-side"><small>You give <span class="rsums">${raritySum(t.give)}</span></small><div class="tc-items">${t.give.map(it => miniHtml(it)).join('')}</div></div>
+      <div class="tc-arrow">⇄</div>
+      <div class="tc-side"><small>You get <span class="rsums">${raritySum(t.get)}</span></small><div class="tc-items">${t.get.map(it => miniHtml(it, haveMine(it) ? '' : '<i>NEW</i>')).join('')}</div></div>
+    </div>
+    ${warn || miss || poor ? `<ul class="tc-warn">${miss}${warn}${poor ? `<li class="bad">You need 🪙 ${t.myFee} for the fee.</li>` : ''}</ul>` : ''}
+    <div class="tc-foot"><span>${t.mine ? `Fee paid: 🪙 ${t.myFee} · ${name} pays 🪙 ${t.theirFee} on accept` : `Fee: 🪙 ${t.myFee}`}</span>${btns}</div>
+  </div>`;
+}
+function renderTrades() {
+  const box = document.getElementById('tradesView');
+  const t = TRADES || { incoming: [], outgoing: [], history: [] };
+  const st = { accepted: 'Accepted', declined: 'Declined', cancelled: 'Cancelled' };
+  const hist = (t.history || []).map(h => `<div class="th-row ${h.status}">
+      <span class="th-st">${st[h.status] || h.status}</span>
+      <span class="th-who">${h.mine ? 'Your offer to' : 'Offer from'} <b>${escT(h.with.username)}</b></span>
+      <span class="th-items">${h.give.map(it => miniHtml(it)).join('')}<em>⇄</em>${h.get.map(it => miniHtml(it)).join('')}</span>
+      ${h.justSettled ? `<i class="th-new">${h.status === 'accepted' ? 'stickers received' : 'stickers returned'}</i>` : `<span class="th-when">${ago(h.decidedAt || h.at)}</span>`}
+    </div>`).join('');
+  box.innerHTML = `<div class="trade-top"><button type="button" class="dupe-sell big" data-newtrade>⇄ New trade</button>
+      <span class="trade-fee-note">Trade fee: 🪙 ${FEE()} per sticker in the trade, paid by each side · C/U/H/A/FA = Common, Uncommon, Holo, Animated, Full Art</span></div>
+    <div class="dupe-msg">${tradeErr ? `<span style="color:var(--red)">${escT(tradeErr)}</span>` : tradeMsg}</div>
+    <h4 class="t-head">Offers for you${t.incoming.length ? ` <b>${t.incoming.length}</b>` : ''}</h4>
+    ${t.incoming.length ? t.incoming.map(tradeCard).join('') : '<p class="t-empty">No open offers for you.</p>'}
+    <h4 class="t-head">Your offers</h4>
+    ${t.outgoing.length ? t.outgoing.map(tradeCard).join('') : '<p class="t-empty">You have no open offers. Start one with "New trade" or from a friend\'s profile.</p>'}
+    ${hist ? `<h4 class="t-head">History</h4><div class="t-hist">${hist}</div>` : ''}`;
+}
+document.getElementById('tradesView').addEventListener('click', async e => {
+  const nt = e.target.closest('[data-newtrade]'), dc = e.target.closest('[data-decide]'), mi = e.target.closest('.tmini');
+  if (nt) { openTradeBuilder(null); return; }
+  if (mi) { const s = stkOf(mi.dataset.iset, mi.dataset.in); if (s) inspect(LIB(mi.dataset.iset), mi.dataset.ifa ? asFa(s) : s); return; }
+  if (!dc || dc.disabled) return;
+  const id = dc.dataset.id, decision = dc.dataset.decide;
+  const key = id + (decision === 'accepted' ? 'a' : decision === 'cancelled' ? 'c' : 'd');
+  if (decision !== 'declined' && tradeConfirm !== key) { tradeConfirm = key; renderTrades(); return; }
+  tradeConfirm = null; dc.disabled = true;
+  let r;
+  try { const res = await fetch('/api/trades/decide', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, decision }) }); r = await res.json(); if (!res.ok) r.ok = false; } catch (err) { r = { ok: false, error: 'Could not reach the app server.' }; }
+  tradeMsg = r.ok ? ({ accepted: 'Trade done - the stickers are in your album.', declined: 'Offer declined.', cancelled: 'Offer cancelled - your stickers are back.' })[decision] : `<span style="color:var(--red)">${escT(r.error || 'Something went wrong.')}</span>`;
+  await loadAlbum(); await loadTrades();
+});
+document.addEventListener('click', e => { if (tradeConfirm && !e.target.closest('[data-decide]')) { tradeConfirm = null; if (view === 'trades') renderTrades(); } });
+let lastNoticeTrades = -1;
+window.addEventListener('ttp:notices', e => { const n = e.detail.trades || 0; if (n !== lastNoticeTrades) { lastNoticeTrades = n; loadTrades(); } });
+
+// ---------- Angebot zusammenstellen ----------
+async function openTradeBuilder(friendId) {
+  if (document.querySelector('.tb-ov')) return;
+  const ov = document.createElement('div'); ov.className = 'tb-ov';
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => ov.classList.add('on'));
+  const close = () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 200); };
+  ov.innerHTML = '<div class="tb-box"><p class="t-empty">Loading …</p></div>';
+  let friends = [];
+  try { friends = (await (await fetch('/api/friends')).json()).friends || []; } catch (e) {}
+  if (!friendId) {
+    ov.innerHTML = `<div class="tb-box small"><button type="button" class="tb-x" aria-label="Close">✕</button><h3>Trade with …</h3>
+      ${friends.length ? `<div class="tb-friends">${friends.map(f => `<button type="button" data-friend="${f.userId}"><img src="${avatarOf(f.avatar)}" alt="" onerror="this.src='avatar-placeholder.svg'"><b>${escT(f.username)}</b></button>`).join('')}</div>` : '<p class="t-empty">Add friends first (Friends tab on the right).</p>'}</div>`;
+    ov.addEventListener('click', function pickF(e) {
+      if (e.target === ov || e.target.closest('.tb-x')) { close(); return; }
+      const b = e.target.closest('[data-friend]'); if (!b) return;
+      ov.removeEventListener('click', pickF); ov.remove(); openTradeBuilder(b.dataset.friend);
+    });
+    return;
+  }
+  const friend = friends.find(f => f.userId === friendId) || { userId: friendId, username: 'your friend' };
+  let theirs = {}, theirsFa = {}, snapAt = null;
+  try {
+    const res = await fetch(`/api/friends/profile?${new URLSearchParams({ id: friendId })}`);
+    const snap = await res.json();
+    if (!res.ok) throw new Error(snap.error);
+    theirs = (snap.stats && snap.stats.stickers) || {}; theirsFa = (snap.stats && snap.stats.fullArts) || {}; snapAt = snap.updatedAt; friend.username = snap.username || friend.username;
+  } catch (e) { ov.innerHTML = `<div class="tb-box small"><button type="button" class="tb-x">✕</button><p class="t-empty">${escT(e.message || 'Could not load their collection.')}</p></div>`; ov.addEventListener('click', ev => { if (ev.target === ov || ev.target.closest('.tb-x')) close(); }); return; }
+  const mine = DATA.stickers || {}, mineFa = DATA.fullArts || {};
+  const sets = DATA.sets || [];
+  const pick = { give: [], get: [] }, tab = { give: sets[0].id, get: sets[0].id };
+  // "Show only needed" je Seite (Nutzer): links nur was der Freund braucht, rechts nur was mir fehlt
+  const onlyNeed = { give: false, get: false };
+  const src = (side, fa) => side === 'give' ? (fa ? mineFa : mine) : (fa ? theirsFa : theirs);
+  const needed = (side, set, n, fa) => !(src(side === 'give' ? 'get' : 'give', fa)[set] || {})[n];
+  let msgText = '', err = '', busy = false;
+  const count = (side, set, n, fa) => (src(side, fa)[set] || {})[n] || 0;
+  const picked = (side, set, n, fa) => (pick[side].find(it => it.set === set && it.n === n && !!it.fa === !!fa) || { qty: 0 }).qty;
+  const total = side => pick[side].reduce((a, it) => a + it.qty, 0);
+  const onProfile = new Set(DATA.profileStickers || []);
+  const col = side => {
+    const L = LIB(tab[side]), set = tab[side];
+    // Full Arts zuerst, dann wie im Album nach Nummer (= seltenste zuerst)
+    const show = (s, fa) => count(side, set, s.n, fa) > 0 && (!onlyNeed[side] || needed(side, set, s.n, fa) || picked(side, set, s.n, fa));
+    const list = [...L.SET.filter(s => show(s, true)).map(s => ({ s, fa: true })), ...L.SET.filter(s => show(s, false)).map(s => ({ s, fa: false }))];
+    const items = list.map(({ s, fa }) => {
+      const it = { set, n: s.n, fa }, r = itemR(it);
+      const left = count(side, set, s.n, fa) - picked(side, set, s.n, fa);
+      const tag = needed(side, set, s.n, fa) ? (side === 'give' ? '<i class="need">NEED</i>' : '<i>NEW</i>') : '';
+      return `<span class="tb-item${left ? '' : ' used'}" data-add="${side}" data-set="${set}" data-n="${s.n}"${fa ? ' data-fa="1"' : ''} title="${escT(s.name)} · ${RL[r]} · ${itemNum(it)}">${sqHtml(it, s)}<u class="tnum">${itemNum(it)}</u>${rTag(r)}<b class="tb-cnt">×${left}</b>${tag}</span>`;
+    }).join('');
+    return `<div class="tb-col">
+      <div class="tb-col-head"><b>${side === 'give' ? 'You give' : `You get from ${escT(friend.username)}`}</b><span class="rsums">${raritySum(pick[side])}</span><span>${total(side)} / 10</span></div>
+      <div class="tb-tray">${pick[side].length ? pick[side].map(it => miniHtml(it, '', ` data-rm="${side}"`)).join('') : `<span class="tb-hint">${side === 'give' ? 'Click your stickers below' : 'Click their stickers below'}</span>`}</div>
+      <div class="tb-tabs-row"><div class="album-tabs">${sets.map(st => `<span class="${tab[side] === st.id ? 'on' : ''}${st.special ? ' special' : ''}" data-tab="${side}" data-set="${st.id}" role="button" tabindex="0">${st.name}</span>`).join('')}</div>
+        <label class="tb-only"><input type="checkbox" data-only="${side}"${onlyNeed[side] ? ' checked' : ''}>${side === 'give' ? 'Only what they need' : 'Only what I need'}</label></div>
+      <div class="tb-grid">${items || `<p class="t-empty">${onlyNeed[side] ? (side === 'give' ? 'Nothing here they need.' : 'Nothing here you need.') : `${side === 'give' ? 'You have' : 'They have'} no stickers from this set.`}</p>`}</div>
+    </div>`;
+  };
+  const draw = () => {
+    const keepMsg = ov.querySelector('#tbMsg'); if (keepMsg) msgText = keepMsg.value;
+    const myFee = feeOf(pick.give, pick.get), theirFee = myFee;
+    const warns = pick.give.filter(it => count('give', it.set, it.n, it.fa) - it.qty < 1).map(it => { const s = stkOf(it.set, it.n); return `<li>⚠ <b>${escT(s.name)}${it.fa ? ' (Full Art)' : ''}</b> is your last copy - it leaves your album${onProfile.has(`${it.set}:${it.n}${it.fa ? 'fa' : ''}`) ? ' and is removed from your profile' : ''}.</li>`; }).join('');
+    const ready = pick.give.length && pick.get.length && !busy;
+    const when = snapAt ? new Date(snapAt).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+    ov.innerHTML = `<div class="tb-box"><button type="button" class="tb-x" aria-label="Close">✕</button>
+      <h3>⇄ Trade with <b>${escT(friend.username)}</b></h3>
+      <p class="tb-sub">${when ? `Their collection as of ${when}. ` : ''}<i class="need">NEED</i> = they don't have it · <i>NEW</i> = you don't have it</p>
+      <div class="tb-cols">${col('give')}<div class="tb-mid">⇄</div>${col('get')}</div>
+      <ul class="tc-warn tb-warns">${warns}</ul>
+      <div class="tb-foot">
+        <input id="tbMsg" class="gift-msg" maxlength="80" placeholder="Message (optional)" value="${escT(msgText)}">
+        <span class="tb-fees">You pay 🪙 <b>${myFee}</b> now · ${escT(friend.username)} pays 🪙 <b>${theirFee}</b> if they accept${(DATA.coins || 0) < myFee ? ' · <em>not enough coins</em>' : ''}</span>
+        <button type="button" class="tb-send" data-send${ready && (DATA.coins || 0) >= myFee ? '' : ' disabled'}>${busy ? 'Sending …' : 'Send offer'}</button>
+      </div>
+      <p class="tb-err">${escT(err)}</p></div>`;
+  };
+  draw();
+  ov.addEventListener('click', async e => {
+    if (e.target === ov || e.target.closest('.tb-x')) { close(); return; }
+    const add = e.target.closest('[data-add]'), rm = e.target.closest('[data-rm]'), tb = e.target.closest('[data-tab]'), send = e.target.closest('[data-send]');
+    if (tb) { tab[tb.dataset.tab] = tb.dataset.set; draw(); return; }
+    const on = e.target.closest('[data-only]');
+    if (on) { onlyNeed[on.dataset.only] = on.checked; draw(); return; }
+    if (add) {
+      const side = add.dataset.add, set = add.dataset.set, n = Number(add.dataset.n), fa = !!add.dataset.fa;
+      if (count(side, set, n, fa) - picked(side, set, n, fa) < 1 || pick[side].length >= 10 && !picked(side, set, n, fa)) return;
+      const ex = pick[side].find(it => it.set === set && it.n === n && !!it.fa === fa);
+      if (ex) { if (ex.qty >= 10) return; ex.qty++; } else pick[side].push(fa ? { set, n, qty: 1, fa: true } : { set, n, qty: 1 });
+      err = ''; draw(); return;
+    }
+    if (rm) {
+      const side = rm.dataset.rm, it = pick[side].find(x => x.set === rm.dataset.iset && x.n === Number(rm.dataset.in) && !!x.fa === !!rm.dataset.ifa);
+      if (it) { it.qty--; if (!it.qty) pick[side] = pick[side].filter(x => x !== it); }
+      draw(); return;
+    }
+    if (!send || send.disabled || busy) return;
+    msgText = ov.querySelector('#tbMsg').value; busy = true; draw();
+    let r;
+    try { const res = await fetch('/api/trades/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: friendId, give: pick.give, want: pick.get, message: msgText }) }); r = await res.json(); if (!res.ok) r.ok = false; } catch (er) { r = { ok: false, error: 'Could not reach the app server.' }; }
+    busy = false;
+    if (!r.ok) { err = r.error || 'Something went wrong.'; draw(); return; }
+    close();
+    tradeMsg = `Offer sent to ${escT(friend.username)}. Your stickers are reserved until they decide.`;
+    await loadAlbum(); setView('trades');
+  });
+}
+window.TTPAlbum = { showTrades: () => setView('trades') };
+
+loadAlbum().then(() => {
+  const q = new URLSearchParams(location.search);
+  if (q.get('view') === 'trades' || q.get('trade')) setView('trades');
+  else loadTrades();
+  if (q.get('trade')) openTradeBuilder(q.get('trade'));
+});
 document.getElementById('settingsGearBtn').addEventListener('click', () => { if (window.ttpMain) window.ttpMain.openSettings(); });
 document.getElementById('quitBtn').addEventListener('click', () => {
   const ok = confirm('Quit Three-Trick-Pony completely? It will no longer run in the background (no more update checks or LP tracking until you start it again).');

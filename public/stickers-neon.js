@@ -454,6 +454,137 @@
     </g>`
   };
 
+
+  // ---------- Full Arts (v6.6.0, Nutzerauswahl) ----------
+  // Vollbild-Szene 120x168 (Kartenformat) + Hologramm-Figur (120x120).
+  const hexP = (cx, cy, r) => 'M' + [0, 1, 2, 3, 4, 5].map(i => { const a = Math.PI / 3 * i - Math.PI / 2; return `${f(cx + Math.cos(a) * r)} ${f(cy + Math.sin(a) * r)}`; }).join(' L') + ' Z';
+  const faFin = () => { const v = U('fv'), p = U('fp'); return `<defs><radialGradient id="${v}" cx=".5" cy=".45" r=".8"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".6"/></radialGradient>
+      <pattern id="${p}" width="4" height="3" patternUnits="userSpaceOnUse"><rect width="4" height="1" fill="#000" opacity=".14"/></pattern></defs><rect width="120" height="168" fill="url(#${p})"/><rect width="120" height="168" fill="url(#${v})"/>`; };
+  const fcb = (top, mid, bottom) => { const a = U('fcb'); return `<defs><linearGradient id="${a}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${top}"/><stop offset=".55" stop-color="${mid}"/><stop offset="1" stop-color="${bottom}"/></linearGradient></defs><rect width="120" height="168" fill="url(#${a})"/>`; };
+  const errWin = (x, y, w, title, body, c1, rot = 0) => `<g transform="translate(${x} ${y}) rotate(${rot})"><rect width="${w}" height="22" fill="#07080c" stroke="${c1}" stroke-width="1.1"/><rect width="${w}" height="6" fill="${c1}"/><text x="2" y="4.8" font-family="${FONT}" font-weight="700" font-size="4.4" fill="${INK}">${title}</text><text x="${w / 2}" y="16" text-anchor="middle" font-family="${FONT}" font-weight="700" font-size="6.4" fill="${c1}">${body}</text></g>`;
+  const miniDrone = (x, y, s = 1) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-12 -2 H12 M-12 -2 L-16 -6 M12 -2 L16 -6" stroke="#2a2e38" stroke-width="2.4"/><ellipse cx="-16" cy="-7" rx="6" ry="1.4" fill="#9aa2b0" opacity=".4"/><ellipse cx="16" cy="-7" rx="6" ry="1.4" fill="#9aa2b0" opacity=".4"/><path d="M-7 -2 L-4 -6 H4 L7 -2 L4 2 H-4 Z" fill="#20242e" stroke="${INK}"/><circle cx="0" cy="2" r="2.2" fill="${R}"/></g>`;
+  const FA_ART = {
+    'breach-protocol': () => {
+      const codes = ['1C', '55', 'BD', 'E9', '7A', 'FF'], r = rng(23); let grid = '';
+      for (let j = 0; j < 15; j++) for (let i = 0; i < 6; i++) { const col = i === 2 || i === 3; grid += `<text x="${12 + i * 19.2}" y="${f(14 + j * 10.6)}" text-anchor="middle" font-family="${FONT}" font-weight="700" font-size="6.4" fill="${col ? C : '#b8a82a'}" opacity="${f((col ? .7 : .35) * (.5 + r() * .5))}">${codes[Math.floor(r() * 6)]}</text>`; }
+      return `${fcb('#030405', '#0c120e', '#020302')}${glow(60, 80, 70, Y, .1)}${grid}${blocks(31, 14, [0, 0, 120, 168], [Y, C], .35)}${faFin()}`;
+    },
+    'street-samurai': () => `${fcb('#05050b', '#2a0a16', '#08030a')}${glow(70, 56, 70, R, .42, 'a-pulse')}${skyline(41, 150, '#120a16', 40, 96, [R, Y], .16, 9, 16)}
+      <rect x="0" y="146" width="120" height="22" fill="#07060a"/>${[20, 60, 98].map(x => `<rect x="${x - 6}" y="148" width="12" height="20" fill="${R}" opacity=".12"/>`).join('')}
+      <g transform="translate(0 40)">${rain(13, 60, .42)}</g>${rain(17, 40, .35)}${faFin()}`,
+    'surveillance-drone': () => `${fcb('#05070f', '#120c1c', '#030308')}${glow(60, 40, 50, R, .25)}${skyline(71, 168, '#0c0a16', 40, 84, [Y, C], .24, 8, 14)}
+      <path d="M54 66 L14 168 H106 L66 66 Z" fill="${Y}" opacity=".12"/><path d="M54 66 L14 168 M66 66 L106 168" stroke="${Y}" stroke-width=".6" opacity=".5"/>
+      <ellipse cx="60" cy="160" rx="40" ry="6" fill="none" stroke="${Y}" stroke-width=".9" opacity=".7"/>${hud(46, 146, 28, 18, R, 4, 1)}<circle cx="60" cy="156" r="3" fill="${R}" opacity=".7"/>${faFin()}`,
+    'rain-alley': () => {
+      const sky = U('fas');
+      return `${fcb('#05060e', '#0a0c18', '#04050a')}<defs><linearGradient id="${sky}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1a4a"/><stop offset="1" stop-color="#ff2a6a" stop-opacity=".55"/></linearGradient></defs>
+      <path d="M38 0 H82 L66 92 H54 Z" fill="url(#${sky})"/>${glow(60, 90, 30, R, .5)}
+      <path d="M0 0 H38 L54 92 L54 104 L0 168 Z" fill="#0b0d18"/><path d="M120 0 H82 L66 92 L66 104 L120 168 Z" fill="#0d0b18"/><path d="M54 104 H66 L120 168 H0 Z" fill="#05060b"/>
+      ${[0, 1, 2, 3, 4, 5, 6].map(i => `<path d="M0 ${f(8 + i * 24)} L54 ${f(30 + i * 11)}" stroke="#181c2c" stroke-width=".8"/><path d="M120 ${f(8 + i * 24)} L66 ${f(30 + i * 11)}" stroke="#1a182c" stroke-width=".8"/>`).join('')}
+      ${[[30, '#5ef0f0'], [60, '#ff2a4a'], [92, '#e8d43a']].map(([x, col]) => `<rect x="${x - 7}" y="140" width="14" height="28" fill="${col}" opacity=".14"/>`).join('')}
+      <g transform="translate(0 30)">${rain(29, 60, .45)}</g>${rain(3, 40, .4)}${faFin()}`;
+    },
+    'smart-gun': () => `${fcb('#07070b', '#1a0a12', '#050307')}${glow(96, 30, 50, R, .3)}${skyline(19, 168, '#100810', 30, 70, [R, Y], .2, 8, 15)}
+      ${[[18, 120], [44, 132], [86, 126]].map(([x, y]) => `<g transform="translate(${x} ${y}) scale(.5)" opacity=".6"><path d="${HEAD}" fill="#05060a"/></g>`).join('')}${rain(41, 30, .3)}${faFin()}`,
+    'hacked-minion': () => `${fcb('#070910', '#101624', '#04060a')}
+      ${[4, 92].map(x => `<rect x="${x}" y="10" width="24" height="150" fill="#0c0f18" stroke="#1a2030" stroke-width="1"/>${[...Array(14)].map((_, i) => `<rect x="${x + 3}" y="${14 + i * 10.4}" width="18" height="7" fill="#141a26"/><circle class="c-blink${i % 3 ? ' d' + (i % 3) : ''}" cx="${x + 18}" cy="${17.5 + i * 10.4}" r="1" fill="${i % 4 ? C : R}"/>`).join('')}`).join('')}
+      ${glow(60, 70, 50, R, .3, 'a-pulse')}${blocks(9, 26, [0, 0, 118, 166], [C, R], .5)}${faFin()}`,
+    'netrunner': () => {
+      const r = rng(11); let cols = '';
+      const glyph = '01アイウエオカキクケコサシスセソ7F3A';
+      for (let x = 3; x < 120; x += 8) {
+        const len = 8 + Math.floor(r() * 12), y0 = r() * 168;
+        for (let k = 0; k < len; k++) {
+          const ch = glyph[Math.floor(r() * glyph.length)], yy = (y0 + k * 8) % 168, op = k === len - 1 ? 1 : .12 + k / len * .5;
+          const t = `<text x="${x}" y="${f(yy)}" font-size="6.5" font-family="'Yu Gothic',${FONT}" fill="${k === len - 1 ? '#e8ffff' : C}" opacity="${f(op)}">${ch}</text>`;
+          cols += t + t.replace(`y="${f(yy)}"`, `y="${f(yy - 168)}"`);
+        }
+      }
+      const b = U('fnb');
+      return `<defs><linearGradient id="${b}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#01040a"/><stop offset=".55" stop-color="#06202c"/><stop offset="1" stop-color="#020509"/></linearGradient></defs>
+        <rect width="120" height="168" fill="url(#${b})"/>
+        <g class="c-rain-fa" opacity=".5">${cols}</g>
+        <g opacity=".9">${skyline(3, 132, '#06141c', 34, 78, [C, Y], .2)}</g>
+        ${glow(60, 74, 64, C, .38, 'a-pulse')}
+        <g fill="none" stroke-linecap="round">
+          <path d="M22 0 C22 26 40 34 48 52" stroke="#10141c" stroke-width="3.4"/><path d="M22 0 C22 26 40 34 48 52" stroke="${C}" stroke-width=".9"/>
+          <path d="M98 0 C98 24 82 36 74 50" stroke="#10141c" stroke-width="3.4"/><path d="M98 0 C98 24 82 36 74 50" stroke="${Y}" stroke-width=".9"/>
+          <path d="M60 0 V30" stroke="#10141c" stroke-width="3"/><path d="M60 0 V30" stroke="${R}" stroke-width=".8"/></g>
+        <circle class="c-blink" cx="48" cy="52" r="1.6" fill="${C}"/><circle class="c-blink d2" cx="74" cy="50" r="1.6" fill="${Y}"/>
+        ${skyline(9, 168, '#020508', 10, 30, [C, Y, R], .3)}
+        <g transform="translate(0 48)">${rain(5, 26, .22)}</g>${rain(8, 20, .2)}
+        ${hud(5, 5, 110, 158, C, 10, 1, .65)}${ntext('JACK-IN // DEEP DIVE', 10, 13, 4.4, C, 'start', .8, .85)}${ntext('SYNC 99%', 110, 13, 4.4, Y, 'end', .5, .85)}
+        ${faFin()}`;
+    }
+  };
+  // Mittlere Ebene (Nutzer): Portal, Schilder und Kabel schweben zwischen Szene und Figur
+  const FA_MID = {
+    'breach-protocol': () => `<rect x="8" y="8" width="104" height="12" fill="${Y}"/><text x="11" y="16.4" font-family="${FONT}" font-weight="700" font-size="5.4" fill="${INK}" letter-spacing=".6">BREACH // CODE MATRIX</text><text x="109" y="16.4" text-anchor="end" font-family="${FONT}" font-weight="700" font-size="5.4" fill="${INK}">00:14</text>
+      <g font-family="${FONT}" font-weight="700" font-size="6" text-anchor="middle">${['1C', 'E9', '55', '--'].map((t, i) => `<rect x="${10 + i * 15}" y="24" width="13" height="10" fill="#07080a" stroke="${i < 3 ? C : '#3a4440'}" stroke-width=".9"/><text x="${16.5 + i * 15}" y="31.2" fill="${i < 3 ? C : '#3a4440'}">${t}</text>`).join('')}</g>
+      <rect x="49" y="40" width="22" height="86" fill="none" stroke="${C}" stroke-width="1.2"/><rect x="49" y="40" width="22" height="86" fill="none" stroke="${C}" stroke-width="4" opacity=".2"/>
+      <rect x="8" y="131" width="104" height="3" fill="#2a1014"/><rect class="a-pulse" x="8" y="131" width="66" height="3" fill="${R}"/>`,
+    'street-samurai': () => `${vsign(102, 10, 'サムライ', R, 12)}${neon('M8 118 Q40 70 112 40', R, 1.8)}
+      ${[[20, 30], [30, 60], [100, 120], [88, 136], [14, 100]].map(([x, y], i) => `<path transform="translate(${x} ${y}) rotate(${i * 40})" d="M0 -3 Q3 0 0 3 Q-3 0 0 -3 Z" fill="#ff8ab0" opacity=".85"/>`).join('')}`,
+    'surveillance-drone': () => `${miniDrone(18, 26, .8)}${miniDrone(102, 40, .7)}${hud(8, 96, 26, 20, R, 4, 1)}${hud(86, 104, 24, 18, Y, 4, 1)}${ntext('TRACKING', 21, 124, 4.4, R, 'middle', 1)}${ntext('ID: TTP', 98, 128, 4.4, Y, 'middle', 1)}`,
+    'rain-alley': () => `<g transform="translate(0 16)">
+      <path d="M26 20 L40 30 L40 66 L26 62 Z" fill="#07060c" stroke="${C}" stroke-width="1.1"/><path d="M26 20 L40 30 L40 66 L26 62 Z" fill="none" stroke="${C}" stroke-width="3.6" opacity=".22"/>
+      ${['バ', 'ー', 'ル'].map((c, i) => `<text x="33" y="${38 + i * 11}" text-anchor="middle" font-family="'Yu Gothic','Meiryo',sans-serif" font-weight="700" font-size="9" fill="${C}">${c}</text>`).join('')}
+      <path d="M82 28 L98 20 L98 36 L82 42 Z" fill="#0a0610" stroke="${R}" stroke-width="1.1"/><path d="M82 28 L98 20 L98 36 L82 42 Z" fill="none" stroke="${R}" stroke-width="3.6" opacity=".25"/><text x="90" y="34" text-anchor="middle" font-family="${FONT}" font-weight="700" font-size="7" fill="${R}" transform="rotate(-24 90 32)">HOTEL</text>
+      <path d="M86 52 L100 46 L100 56 L86 61 Z" fill="${Y}" opacity=".9"/><path d="M86 52 L100 46 L100 56 L86 61 Z" fill="none" stroke="${Y}" stroke-width="3" opacity=".3"/><text x="93" y="56.5" text-anchor="middle" font-family="${FONT}" font-weight="700" font-size="5" fill="${INK}" transform="rotate(-22 93 55)">24H</text>
+      </g>`,
+    'smart-gun': () => `${[[102, 26], [22, 22], [100, 108]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="8" fill="none" stroke="${R}" stroke-width="1.2"/><circle cx="${x}" cy="${y}" r="3" fill="${R}" opacity=".5"/><path d="M${x} ${y - 12} V${y - 7} M${x} ${y + 7} V${y + 12} M${x - 12} ${y} H${x - 7} M${x + 7} ${y} H${x + 12}" stroke="${R}" stroke-width="1.2"/>${ntext('LOCK', x, y + 20, 4.6, R, 'middle', 1)}`).join('')}
+      <path d="M80 66 Q96 40 102 26 M80 68 Q50 30 22 22 M80 70 Q104 90 100 108" stroke="${C}" stroke-width="1" stroke-dasharray="2.4 2" fill="none" opacity=".9"/>`,
+    'hacked-minion': () => `${errWin(8, 22, 46, 'SYS.ERR', 'ERR_0x3F', R, -6)}${errWin(74, 96, 40, 'ICE', 'PWNED', C, 5)}${errWin(6, 104, 50, 'NET', 'ACCESS DENIED', R, -4)}`,
+    'netrunner': () => `
+        <g class="a-spin" style="transform-origin:60px 74px">${neon(hexP(60, 74, 47), C, 1.1)}${[0, 1, 2, 3, 4, 5].map(i => { const a = Math.PI / 3 * i - Math.PI / 2; return `<circle cx="${f(60 + Math.cos(a) * 47)}" cy="${f(74 + Math.sin(a) * 47)}" r="1.8" fill="#e8ffff"/>`; }).join('')}</g>
+        <g class="a-spin-rev" style="transform-origin:60px 74px">${neon(hexP(60, 74, 37), Y, .8)}<path d="${hexP(60, 74, 29)}" fill="none" stroke="${C}" stroke-width=".6" stroke-dasharray="2 3" opacity=".7"/></g>
+        ${vsign(4, 20, 'ネット', C, 10)}${vsign(106, 46, '電脳', Y, 10)}
+`
+  };
+  const FA_POP = {
+    'breach-protocol': () => `<g class="a-float">${cpony({ x: 20, y: 24, s: .78, body: '#3a3f4a', shade: '#0e1016', mane: Y, eye: 'optic', eyeC: C })}
+      <g transform="translate(6 92) rotate(-8)"><rect width="34" height="18" rx="2" fill="${C}" opacity=".18" stroke="${C}" stroke-width="1"/>${[0, 1, 2].map(i => `<rect x="${4 + i * 10}" y="5" width="7" height="8" fill="none" stroke="${C}" stroke-width=".8"/>`).join('')}</g></g>`,
+    'street-samurai': () => { const ch = U('ch'); return `<defs>${chromeDef(ch)}</defs><g class="a-float">
+        ${cpony({ x: 6, y: 18, s: .8, body: '#2a2d38', shade: '#07080c', mane: '#16181f', eye: 'optic', eyeC: R, chrome: true, lines: false, led: false })}
+        <path d="${HEAD}" transform="translate(6 18) scale(.8)" fill="none" stroke="${R}" stroke-width="2" opacity=".9"/><path d="${MANE}" transform="translate(6 18) scale(.8)" fill="none" stroke="${R}" stroke-width="1.6" opacity=".7"/>
+        <path d="M24 120 L34 92 L52 82 L80 92 L90 120 Z" fill="#101118" stroke="#000" stroke-width="1.2"/><path d="M34 92 L52 82 L56 104 Z" fill="#1d1f28"/><path d="M80 92 L52 82 L62 106 Z" fill="#171920"/><path d="M34 92 L52 82 L80 92" stroke="${Y}" stroke-width="1.3" fill="none"/><path d="M80 92 L90 120" stroke="${R}" stroke-width="1" opacity=".7"/>
+        <g transform="translate(56 76) rotate(-50)">
+          <rect x="-40" y="-3.6" width="28" height="7.2" rx="1.6" fill="#0e0e14" stroke="#000" stroke-width=".8"/>${[0, 1, 2, 3, 4].map(i => `<path d="M${-38 + i * 5.2} 0 L${-35.4 + i * 5.2} -3 L${-32.8 + i * 5.2} 0 L${-35.4 + i * 5.2} 3 Z" fill="${Y}"/>`).join('')}
+          <rect x="-12" y="-8" width="3.6" height="16" rx="1.4" fill="url(#${ch})" stroke="#000" stroke-width=".7"/>
+          <path d="M-8 -3 L62 -3 Q70 -2 73 1.5 L62 3 L-8 3 Z" fill="url(#${ch})" stroke="#000" stroke-width=".6"/><path d="M-8 -1 L62 -1" stroke="#fff" stroke-width=".7" opacity=".7"/>
+          <path d="M-8 3 L62 3 L73 1.5" stroke="${R}" stroke-width="7" opacity=".22" fill="none"/><path d="M-8 3 L62 3 L73 1.5" stroke="${R}" stroke-width="1.8" fill="none"/><path d="M-8 2.8 L62 2.8 L73 1.4" stroke="#ffe0e4" stroke-width=".5" fill="none"/>
+        </g>
+      </g>`; },
+    'surveillance-drone': () => `<g class="a-float"><g transform="translate(60 46) scale(1.12) translate(-60 -38)">
+      ${[[30, 28], [90, 28], [36, 44], [84, 44]].map(([x, y]) => `<line x1="60" y1="36" x2="${x}" y2="${y}" stroke="#2a2e38" stroke-width="3"/><ellipse cx="${x}" cy="${y - 2}" rx="11" ry="2.2" fill="#9aa2b0" opacity=".35"/><circle cx="${x}" cy="${y}" r="2.4" fill="#1a1d24" stroke="${INK}"/>`).join('')}
+      <path d="M46 36 L52 28 H68 L74 36 L68 44 H52 Z" fill="#20242e" stroke="${INK}" stroke-width="1.3"/><path d="M52 28 H68" stroke="${Y}" stroke-width="1.2"/>
+      <circle cx="60" cy="44" r="5.4" fill="#0a0c12" stroke="#9aa2b0" stroke-width="1.2"/><circle cx="60" cy="44" r="2.8" fill="${R}"/><circle cx="60" cy="44" r="7" fill="${R}" opacity=".25"/><circle cx="59" cy="43" r=".9" fill="#fff"/>
+      <circle cx="30" cy="28" r="1" fill="${R}"/><circle cx="90" cy="28" r="1" fill="${C}"/>      </g></g>`,
+    'rain-alley': () => `<g class="a-float">${cpony({ x: 28, y: 50, s: .62, body: '#2a2d38', shade: '#07080c', mane: C, eye: 'visor', eyeC: C, chrome: false, lines: false, led: false })}
+      <g transform="translate(0 -2)"><path d="M62 30 V44" stroke="#9aa2b0" stroke-width="1.8" fill="none"/>
+      <path d="M14 34 Q62 -14 110 34 Z" fill="#07060c"/>${neon('M14 34 Q62 -14 110 34', C, 1.4)}<path d="M14 34 Q26 28 38 34 Q50 28 62 34 Q74 28 86 34 Q98 28 110 34" stroke="${C}" stroke-width="1" fill="none"/>
+      ${[[16, 44], [38, 46], [86, 46], [108, 44]].map(([x, y]) => `<path d="M${x} ${y} l-1 5" stroke="#9fdcff" stroke-width="1" opacity=".7"/>`).join('')}</g></g>`,
+    'smart-gun': () => { const ch = U('ch'); return `<defs>${chromeDef(ch)}</defs><g class="a-float"><g transform="translate(60 64) scale(1.25) rotate(-6) translate(-48 -72)">
+      <path d="M14 52 H76 L80 56 V64 H14 Z" fill="url(#${ch})" stroke="${INK}" stroke-width="1.4"/>
+      <path d="M18 52 V46 H66 L70 52" fill="#2a2e38" stroke="${INK}" stroke-width="1.2"/><rect x="24" y="47.5" width="30" height="3" rx="1" fill="${C}" opacity=".8"/>
+      <path d="M20 56 H72" stroke="${Y}" stroke-width="1.8"/>${[0, 1, 2, 3, 4].map(i => `<rect x="${58 + i * 3.4}" y="58" width="1.6" height="4" fill="#20242c"/>`).join('')}
+      <path d="M22 64 L18 96 Q18 100 22 100 H34 Q38 100 38 96 L40 64 Z" fill="#1a1c24" stroke="${INK}" stroke-width="1.4"/>${[0, 1, 2, 3].map(i => `<path d="M${22 - i * .6} ${72 + i * 6} H${38 - i * .3}" stroke="#2e323c" stroke-width="1.6"/>`).join('')}
+      <path d="M40 64 Q46 76 54 64" fill="none" stroke="${INK}" stroke-width="2.2"/><path d="M44 64 L46 72" stroke="#9aa2b0" stroke-width="1.6"/>
+      <rect x="27" y="80" width="4" height="12" rx="1" fill="${Y}"/><circle cx="29" cy="70" r="1.4" fill="${R}"/>
+      <rect x="76" y="57" width="6" height="6" fill="#0a0c12"/><circle cx="80" cy="60" r="2" fill="${C}"/><circle cx="80" cy="60" r="5" fill="${C}" opacity=".3"/>      </g></g>`; },
+    'hacked-minion': () => { const bd = U('mb'); return `<defs><radialGradient id="${bd}" cx=".38" cy=".3" r=".8"><stop offset="0" stop-color="#6a8ae8"/><stop offset=".6" stop-color="#3a5aa8"/><stop offset="1" stop-color="#1a2a5a"/></radialGradient></defs><g class="a-float"><g transform="translate(0 -6)">
+      <path d="M36 70 Q30 82 34 96 M84 70 Q92 80 88 96" stroke="#1a2440" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M36 70 Q30 82 34 96" stroke="${C}" stroke-width="1.2" fill="none"/>
+      <ellipse cx="60" cy="72" rx="26" ry="32" fill="url(#${bd})" stroke="${INK}" stroke-width="2"/>
+      <path d="M33 60 Q60 18 87 60 Q60 54 33 60 Z" fill="#232838" stroke="${INK}" stroke-width="2"/><path d="M40 52 Q60 30 80 52" stroke="#4a5266" stroke-width="2" fill="none"/><path d="M60 40 V46" stroke="${Y}" stroke-width="2"/>
+      <path d="M36 60 Q60 54 84 60 L82 70 Q60 66 38 70 Z" fill="#05060a" stroke="${INK}" stroke-width="1.2"/>
+      <path d="M40 64 Q60 59 80 64" stroke="${R}" stroke-width="3" stroke-linecap="round" fill="none"/><path d="M40 64 Q60 59 80 64" stroke="${R}" stroke-width="8" stroke-linecap="round" fill="none" opacity=".25"/><path d="M44 63.4 Q60 59.6 76 63.4" stroke="#ffd0d6" stroke-width=".8" fill="none"/>
+      <path d="M48 84 L54 80 L60 84 L66 80 L72 84" stroke="${INK}" stroke-width="1.8" fill="none" stroke-linejoin="round"/>
+      <path d="M68 42 L76 20" stroke="#9aa2b0" stroke-width="1.6"/><circle cx="76" cy="19" r="2.4" fill="${R}" class="c-blink"/><circle cx="76" cy="19" r="5.4" fill="${R}" opacity=".3"/>
+      <path d="M46 74 L50 80 L46 88 M76 76 L72 82" stroke="${C}" stroke-width="1" fill="none"/><circle cx="46" cy="88" r="1.4" fill="${C}"/>
+      </g></g>`; },
+    'netrunner': () => POP['netrunner']()
+  };
+
   const LIST = [
     ['netrunner', 'Netrunner Pony'], ['neon-overdrive', 'Neon Overdrive'],
     ['chrome-hoof', 'Chrome Hoof'], ['megacity', 'Megacity'], ['breach-protocol', 'Breach Protocol'], ['street-samurai', 'Street Samurai'],
@@ -468,8 +599,8 @@
 
   const art = id => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${ART[id]()}</svg>`;
   const SLABS = 12;
-  const popLayers = id => {
-    const svg = POP[id](), wrap = c => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${c}</svg>`;
+  const popLayers = (id, src = POP) => {
+    const svg = src[id](), wrap = c => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${c}</svg>`;
     let out = `<div class="pop-shadow">${wrap(svg)}</div>`;
     for (let k = 0; k < SLABS; k++) {
       const fl = U('dl');
@@ -494,6 +625,9 @@
   .stk-front.cy .name { font-family: ${FONT}; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; font-size: .64em; }
   .stk-front.cy .meta { font-family: ${FONT}; letter-spacing: .5px; }
   .c-rain { animation: cRain 5s linear infinite; }
+  .c-rain-fa { animation: cRainFa 7s linear infinite; }
+  @keyframes cRainFa { from { transform: translateY(0); } to { transform: translateY(168px); } }
+  .a-spin-rev { animation: aSpin 10s linear infinite reverse; transform-box: view-box; }
   @keyframes cRain { from { transform: translateY(0); } to { transform: translateY(120px); } }
   .c-speed { animation: cSpeed .9s linear infinite; }
   @keyframes cSpeed { from { transform: translateX(0); } to { transform: translateX(120px); } }
@@ -509,7 +643,24 @@
   // Sticker-Quadrat mit echter Hologramm-Figur wie im Album (v6.5.0): Animated
   // Rares bekommen Schatten + Schichten (popLayers), tiltTo hebt sie an.
   const square3d = s => POP[s.id] ? `<div class="stk-sq3d r-${s.r}"><div class="stk-square r-${s.r}">${art(s.id)}</div>${popLayers(s.id)}</div>` : square(s);
-  window.STICKERS_CYBER = { id: 'neon', name: 'Neon District', special: true, SET, RL, RC, art, frontHtml, square, square3d, TOTAL: SET.length };
+  // Full Arts: Szene (Hochformat), Hologramm-Figur mit Schichten, flache Figur
+  const faArt = id => FA_ART[id] ? `<svg viewBox="0 0 120 168" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">${FA_ART[id]()}</svg>` : '';
+  const faPop = id => FA_POP[id] ? popLayers(id, FA_POP) : '';
+  // Mittlere Ebene: Schatten auf der Szene + duenne Kante + Vorderseite, auf ~45 % der Figurenhoehe
+  const MID_SLABS = 4;
+  const faMid = id => {
+    if (!FA_MID[id]) return '';
+    const svg = FA_MID[id](), wrap = x => `<svg viewBox="0 0 120 168" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">${x}</svg>`;
+    let out = `<div class="fa-mid-shadow">${wrap(svg)}</div>`;
+    for (let k = 0; k < MID_SLABS; k++) {
+      const fl = U('ml');
+      out += `<div class="fa-mid slab" style="--i:${k};--shade:${(.3 + k / MID_SLABS * .25).toFixed(2)}">${wrap(`<defs><filter id="${fl}" x="-10%" y="-10%" width="120%" height="120%"><feMorphology operator="dilate" radius="1.1"/></filter></defs><g filter="url(#${fl})">${svg}</g>`)}</div>`;
+    }
+    return out + `<div class="fa-mid" style="--i:${MID_SLABS}">${wrap(svg)}</div>`;
+  };
+  const faMidFlat = id => FA_MID[id] ? `<svg viewBox="0 0 120 168" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">${FA_MID[id]()}</svg>` : '';
+  const faPopFlat = id => FA_POP[id] ? `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${FA_POP[id]()}</svg>` : '';
+  window.STICKERS_CYBER = { id: 'neon', name: 'Neon District', special: true, SET, RL, RC, art, frontHtml, square, square3d, TOTAL: SET.length, faArt, faPop, faPopFlat, faMid, faMidFlat };
   window.STICKER_SETS = window.STICKER_SETS || {};
   window.STICKER_SETS.neon = window.STICKERS_CYBER;
 })();

@@ -109,7 +109,7 @@
       <rect x="30" y="92" width="22" height="16" rx="2" fill="#6bc8ff" opacity=".7"/><rect x="58" y="96" width="32" height="4" rx="2" fill="#9a7ab0"/>
       <circle cx="60" cy="46" r="30" fill="#f6efe2" stroke="#3a2a1a" stroke-width="4"/>
       ${[...Array(12)].map((_, i) => { const a = i / 12 * Math.PI * 2; return `<line x1="${(60 + Math.sin(a) * 24).toFixed(1)}" y1="${(46 - Math.cos(a) * 24).toFixed(1)}" x2="${(60 + Math.sin(a) * 27).toFixed(1)}" y2="${(46 - Math.cos(a) * 27).toFixed(1)}" stroke="#3a2a1a" stroke-width="${i % 3 ? 1.5 : 3}"/>`; }).join('')}
-      <path d="M60 46 L60 26 M60 46 L74 54" stroke="#3a2a1a" stroke-width="4" stroke-linecap="round"/><circle cx="60" cy="46" r="3" fill="#c0392b"/>${txt('3:47 AM', 60, 114, 11, '#ff7a8a', '#2a1838', 2)}`,
+      <path d="M60 46 L72.8 51.6 M60 46 L39.5 41.6" stroke="#3a2a1a" stroke-width="4" stroke-linecap="round"/><circle cx="60" cy="46" r="3" fill="#c0392b"/>${txt('3:47 AM', 60, 114, 11, '#ff7a8a', '#2a1838', 2)}`,
     'ward': () => `${bg('#071a12', '#0f3a26')}${bush(14, 112, 50, '#123a22', '#0e2e1a')}${bush(104, 114, 50, '#123a22', '#0e2e1a')}${glow(60, 44, 46, '#ffe9a0', .85)}
       <path d="M54 62 L52 108 H68 L66 62 Z" fill="#6b4a2e" stroke="#3a2614" stroke-width="2"/>
       <path d="M40 46 C40 28 80 28 80 46 C80 58 70 64 60 64 C50 64 40 58 40 46 Z" fill="#ffd36b" stroke="#a87a1e" stroke-width="2.5"/>
