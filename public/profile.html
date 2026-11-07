@@ -1806,7 +1806,7 @@
         if (snap.theme && snap.theme !== 'classic') document.documentElement.setAttribute('data-theme', snap.theme);
         else document.documentElement.removeAttribute('data-theme');
         const when = snap.updatedAt ? new Date(snap.updatedAt).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
-        banner.innerHTML = `<a href="profile.html">← My profile</a><span>Visiting <b>${esc(snap.username || '')}</b>${when ? ` · updated ${when}` : ''}</span><button type="button" class="gift-btn" id="giftBtn">🎁 Gift a booster</button><a class="gift-btn" href="album.html?trade=${encodeURIComponent(VISIT)}">⇄ Trade stickers</a>`;
+        banner.innerHTML = `<a href="profile.html">← My profile</a><span>Visiting <b>${esc(snap.username || '')}</b>${snap.summoner ? ` · stats of ${esc(snap.summoner)}` : ''}${when ? ` · updated ${when}` : ''}</span><button type="button" class="gift-btn" id="giftBtn">🎁 Gift a booster</button><a class="gift-btn" href="album.html?trade=${encodeURIComponent(VISIT)}">⇄ Trade stickers</a>`;
         document.getElementById('giftBtn').addEventListener('click', () => openGiftDialog(VISIT, snap.username || 'your friend'));
         document.title = `${snap.username || 'Profile'} – Three-Trick-Pony`;
         renderVisitChallenge(snap);

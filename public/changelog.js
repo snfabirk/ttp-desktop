@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.7.0',
+      date: '2026-11-07',
+      notable: [
+        'Profile stats now always belong to the summoner selected at the top - games, win rate, KDA, most played, LP and more are never mixed between accounts. Level, coins, pass and your collection stay with your profile.',
+        "On a friend's profile you can see which of their accounts the stats belong to."
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '6.6.1',
       date: '2026-11-07',
       notable: [],

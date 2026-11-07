@@ -1,6 +1,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const fs = require('fs');
+const { CACHE_DIR } = require('./lib/dataPaths');
 const express = require('express');
 const { getAccountByRiotId, getAccountByPuuid, getAllMatchIds, getMatch, getMatchTimeline, getLeagueEntriesByPuuid, getSummonerByPuuid, getActiveGame } = require('./lib/riot');
 const { loadPersistedApiKey, savePersistedApiKey } = require('./lib/envStore');
@@ -416,6 +417,7 @@ async function runSummaryBatch(jobId, { puuid, champions, since, startTime, main
 
       xpGames.push({
         matchId,
+        puuid,
         gameCreation: match.info.gameCreation,
         category: { mainPony: 'poolChamp', mainOther: 'sameRoleOther', second: 'secondRole', off: 'offRole' }[category],
         win: me.win,
@@ -743,12 +745,35 @@ app.post('/api/progression/reroll', (req, res) => {
 // Spielerprofil (profile.html): Lebenszeit-Stats ueber alle Challenges -
 // Challenges/Trophies aus der Challenge History, Spiele/XP aus dem
 // Progression-Ledger. Rein lokal.
+// Alte Spiele ohne Summoner (vor v6.7.0) zuordnen: bei nur einem Account
+// alles diesem, sonst ueber die zwischengespeicherten Match-Daten (puuid oder
+// Riot-ID, falls sich die puuid geaendert hat). Nicht zuordenbar = 'unknown'.
+function backfillSummoners() {
+  const accs = cloud.linkedRiotAccounts();
+  if (!accs.length) return;
+  const byPuuid = new Set(accs.map(a => a.puuid));
+  const byName = new Map(accs.map(a => [`${String(a.game_name).toLowerCase()}#${String(a.tag_line).toLowerCase()}`, a.puuid]));
+  progression.assignSummoners(e => {
+    if (accs.length === 1) return accs[0].puuid;
+    if (!e.matchId) return null;
+    try {
+      const m = JSON.parse(fs.readFileSync(path.join(CACHE_DIR, `${e.matchId}.json`), 'utf-8'));
+      for (const p of (m.info && m.info.participants) || []) {
+        if (byPuuid.has(p.puuid)) return p.puuid;
+        const k = `${String(p.riotIdGameName || '').toLowerCase()}#${String(p.riotIdTagline || '').toLowerCase()}`;
+        if (byName.has(k)) return byName.get(k);
+      }
+    } catch (err) { /* nicht im Cache */ }
+    return null;
+  });
+}
 function buildProfileStats(puuid) {
+  backfillSummoners();
   const entries = puuid ? listHistoryEntries(puuid) : [];
   const goalReached = e => Array.isArray(e.trophies) && e.trophies.some(t => t.id === 'goal-reached' && t.unlocked);
   const best = entries.reduce((b, e) => (!b || (e.unlockedCount || 0) > (b.unlockedCount || 0) ? e : b), null);
   return {
-    ...progression.getLifetimeStats(),
+    ...progression.getLifetimeStats(puuid),
     challenges: {
       started: entries.length,
       finished: entries.filter(e => e.until).length,
@@ -811,7 +836,9 @@ app.post('/api/public-profile/publish', cloudRoute(async req => {
     pool: run ? { champions: run.champions.map(c => ({ id: c.id, name: c.name })), mainRole: run.mainRole } : null,
     activity: myActivity(puuid, run),
     challenge: run ? challengeSummary(puuid, run) : null,
-    theme: typeof body.theme === 'string' ? body.theme.slice(0, 40) : 'classic'
+    theme: typeof body.theme === 'string' ? body.theme.slice(0, 40) : 'classic',
+    // fuer wen die Spiel-Statistiken gelten (Freunde sehen den gewaehlten Summoner)
+    summoner: acc ? `${acc.game_name}#${acc.tag_line}` : null
   });
 }));
 app.get('/api/friends', cloudRoute(async () => cloud.listFriends()));
@@ -1150,6 +1177,7 @@ async function runAccountScan() {
     const info = championByKey.get(String(me.championId));
     xpGames.push({
       matchId,
+      puuid: acc.puuid,
       gameCreation: match.info.gameCreation,
       category: 'noChallenge',
       pass: false,

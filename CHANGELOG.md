@@ -1,5 +1,11 @@
 # Internal Changelog
 
+## 6.7.0 — 2026-11-07
+
+- Profile stats per summoner (user: never mixed, only the summoner chosen in the top switcher): ledger entries and LP-bank events now store puuid; getLifetimeStats(puuid) filters games/LP to that summoner (no summoner = no game stats); level/XP/coins/pass/collection stay profile-wide.
+- One-time backfill of older entries (progression.assignSummoners via server backfillSummoners): single linked account gets everything, otherwise matched through the cached match JSON (puuid or Riot ID for puuid drift); unresolvable -> 'unknown' (shown for no summoner).
+- Friend snapshot carries summoner (Riot ID); visit banner shows 'stats of Name#TAG'.
+
 ## 6.6.1 — 2026-11-07
 
 - Bug fix: profile-frame previews in the shop were drawn at 140x98 instead of 104x62 (.pframe brings padding: 18px, content-box) and stuck out over the card edge and the rarity tag. .pv-frame-live and the scaled big-frame inner .pframe use box-sizing: border-box; arcane/clock/cobweb/snowdrift/fireside added to BIG_FRAME_PV (phoenix/dragon scaled down a bit more); daily/weekly offers get a little more room under the rarity tag.

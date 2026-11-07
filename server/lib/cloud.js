@@ -487,6 +487,11 @@ function activeRiotAccount() {
   if (!current) return null;
   return (readAuthFile().ttpRiot || []).find(a => a.is_active && a.user_id === current.id) || null;
 }
+// Alle verknuepften Riot-Accounts des angemeldeten Profils (lokal gespeichert)
+function linkedRiotAccounts() {
+  if (!current) return [];
+  return (readAuthFile().ttpRiot || []).filter(a => a.user_id === current.id);
+}
 function getConnection() { return { status: connection, checkedAt: lastCheck }; }
 
 // ----- Freunde (v6.1.0, supabase/005-friends.sql) -----
@@ -829,7 +834,7 @@ async function getFriendProfile(userId) {
 module.exports = {
   restoreSession, signUp, signIn, signOut, requestPasswordReset, completePasswordReset, updateAccount,
   listRiotAccounts, startVerification, checkVerification, setActiveRiotAccount, removeRiotAccount,
-  getCurrent, getConnection, checkConnection, usernameAvailable, MAX_RIOT_ACCOUNTS, getChallengeRun, activeRiotAccount, setAvatar,
+  getCurrent, getConnection, checkConnection, linkedRiotAccounts, usernameAvailable, MAX_RIOT_ACCOUNTS, getChallengeRun, activeRiotAccount, setAvatar,
   searchUsers, listFriends, sendFriendRequest, acceptFriendRequest, removeFriendship, publishProfile, getFriendProfile, friendsActivity,
   sendBoosterGift, claimBoosterGifts, onGiftsChange, getPendingGifts, refreshPendingGifts, getNotices,
   createTrade, decideTrade, listTrades, tradeWarnings: items => progression.tradeWarnings(progression.normTradeItems(items) || [])

@@ -1053,6 +1053,8 @@ function creditMatches(games) {
       }
       const entry = {
         matchId: g.matchId, gameCreation: g.gameCreation, day, gameOfDay,
+        // v6.7.0: von welchem Summoner das Spiel kam (Profil-Stats je Summoner)
+        puuid: g.puuid || null,
         category: g.category, win: !!g.win, kills: g.kills || 0, deaths: g.deaths || 0, assists: g.assists || 0,
         champId: g.champId || '', champName: g.champName || '', base, halved, xp, coins,
         levelBonus,
@@ -1111,7 +1113,7 @@ function creditLp({ puuid, currentLP, baselineLP }) {
     if (filled) state.boosterVouchers = (state.boosterVouchers || 0) + filled;
     state.totalXp += xp;
     if (xp) addPassXp(state, monthKey(new Date()), xp);
-    event = { at: Date.now(), gained, filled, xp, ...(filled ? { vouchers: filled } : {}) };
+    event = { at: Date.now(), gained, filled, xp, puuid, ...(filled ? { vouchers: filled } : {}) };
     bank.events.push(event);
     if (bank.events.length > 50) bank.events.splice(0, bank.events.length - 50);
   }
@@ -1133,9 +1135,13 @@ function getRecentActivity(limit = 10) {
   return [...games, ...bank, ...levels].sort((a, b) => b.at - a.at).slice(0, limit);
 }
 
-function getLifetimeStats() {
+// Profil-Stats (v6.7.0, Nutzer): Spiel-Statistiken immer nur fuer EINEN
+// Summoner - den oben gewaehlten - nie gemischt. Level/XP/Coins/Sammlung
+// bleiben profilweit. Ohne Summoner gibt es keine Spiel-Statistiken.
+function getLifetimeStats(puuid) {
   const state = readState();
-  const games = state.ledger;
+  const games = puuid ? state.ledger.filter(g => g.puuid === puuid) : [];
+  const lpEvents = puuid ? state.lpBank.events.filter(e => e.puuid === puuid) : [];
   const champCounts = {};
   games.forEach(g => {
     if (!g.champId) return;
@@ -1152,8 +1158,8 @@ function getLifetimeStats() {
     deaths: games.reduce((n, g) => n + (g.deaths || 0), 0),
     assists: games.reduce((n, g) => n + (g.assists || 0), 0),
     topChamps: Object.values(champCounts).sort((a, b) => b.games - a.games || b.wins - a.wins).slice(0, 3),
-    lpGained: state.lpBank.events.reduce((n, e) => n + e.gained, 0),
-    lpBankFills: state.lpBank.fills,
+    lpGained: lpEvents.reduce((n, e) => n + e.gained, 0),
+    lpBankFills: lpEvents.reduce((n, e) => n + (e.filled || 0), 0),
     coins: state.coins,
     equipped: state.equipped,
     owned: ownedList(state),
@@ -1174,6 +1180,17 @@ function getLifetimeStats() {
     poolGames: games.filter(g => g.category === 'poolChamp').length,
     trackedSince: games.length ? Math.min(...games.map(g => g.gameCreation)) : null
   };
+}
+
+// Alte Spiele/LP-Ereignisse (vor v6.7.0 ohne Summoner) einmalig zuordnen.
+// resolve(entry) liefert die puuid oder null (= nicht zuordenbar, 'unknown').
+function assignSummoners(resolve) {
+  const state = readState();
+  let changed = 0;
+  state.ledger.forEach(e => { if (e.puuid === undefined || e.puuid === null) { e.puuid = resolve(e) || 'unknown'; changed++; } });
+  state.lpBank.events.forEach(e => { if (e.puuid === undefined || e.puuid === null) { e.puuid = resolve(e) || 'unknown'; changed++; } });
+  if (changed) writeState(state);
+  return changed;
 }
 
 function rerollDaily(context) {
@@ -1674,6 +1691,7 @@ module.exports = {
   getRecentActivity,
   creditLp,
   getLifetimeStats,
+  assignSummoners,
   getCosmeticsState,
   equipCosmetic,
   saveProfileLayout,
