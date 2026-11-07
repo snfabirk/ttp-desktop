@@ -917,6 +917,9 @@ function emptyState() {
     boosters: {}, stickers: {}, newBoosters: 0,
     // Full Arts (v6.6.0): eigene Sammlung { set: { n: Anzahl } } neben stickers
     fullArts: {},
+    // Profil-Stats (v6.7.1, Nutzer): Summoner, dessen Statistiken das Profil zeigt -
+    // im Profil-Editor gewaehlt, unabhaengig vom Umschalter oben (null = aktiver)
+    profileStatsPuuid: null,
     // Gutscheine aus der LP Bank: je 1 regulaerer Booster nach Wahl (v6.6.0)
     boosterVouchers: 0,
     // Profil-Layout (Widget-Raster auf profile.html), null = Standard-Layout
@@ -1184,6 +1187,13 @@ function getLifetimeStats(puuid) {
 
 // Alte Spiele/LP-Ereignisse (vor v6.7.0 ohne Summoner) einmalig zuordnen.
 // resolve(entry) liefert die puuid oder null (= nicht zuordenbar, 'unknown').
+function getProfileStatsPuuid() { return readState().profileStatsPuuid || null; }
+function setProfileStatsPuuid(puuid) {
+  const state = readState();
+  state.profileStatsPuuid = puuid || null;
+  writeState(state);
+  return { ok: true };
+}
 function assignSummoners(resolve) {
   const state = readState();
   let changed = 0;
@@ -1692,6 +1702,8 @@ module.exports = {
   creditLp,
   getLifetimeStats,
   assignSummoners,
+  getProfileStatsPuuid,
+  setProfileStatsPuuid,
   getCosmeticsState,
   equipCosmetic,
   saveProfileLayout,

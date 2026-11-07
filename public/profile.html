@@ -678,6 +678,11 @@
     /* Besuchsmodus (v6.1.0): Freundesprofil */
     .visit-banner { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 6px auto 12px; padding: 7px 16px; width: fit-content; max-width: 100%; box-sizing: border-box; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 18px; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.85rem; }
     .visit-banner[hidden] { display: none; }
+    /* Stats-Summoner im Editor (v6.7.1) */
+    .stats-src { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; padding: 10px 12px; border: 1px solid var(--gold); border-radius: 10px; background: color-mix(in srgb, var(--gold) 6%, transparent); }
+    .stats-src span { font-family: 'Cinzel', Georgia, serif; color: var(--gold); font-size: .85rem; display: flex; flex-direction: column; gap: 2px; }
+    .stats-src small { font-family: Georgia, serif; color: var(--text-faint); font-size: .7rem; line-height: 1.35; }
+    .stats-src select { font: inherit; font-size: .85rem; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); cursor: pointer; }
     /* Master Sets (v6.6.0) */
     .ms-one .w-big { color: var(--text-dim); }
     .ms-one.has .w-big { color: #f6e27a; text-shadow: 0 0 14px rgba(232,194,90,.45); }
@@ -1374,7 +1379,10 @@
 
     function renderPanels() {
       const present = new Set(layout.map(w => w.type));
-      document.getElementById('addList').innerHTML = GROUPS.map(group => {
+      const accs = (S() && S().statsAccounts) || [];
+      const statsPick = accs.length ? `<label class="stats-src"><span>Stats from<small>Your stat widgets show this summoner - no matter which one is selected at the top.</small></span>
+          <select id="statsSrc">${accs.map(a => `<option value="${esc(a.puuid)}"${editState && editState.statsPuuid === a.puuid ? ' selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label>` : '';
+      document.getElementById('addList').innerHTML = statsPick + GROUPS.map(group => {
         // Einzelne Sticker kommen aus dem Inventar (Reiter Stickers), nicht aus dieser Liste
         const items = Object.entries(WIDGETS).filter(([type, def]) => def.group === group && !def.fixed && type !== 'sticker');
         if (!items.length) return '';
@@ -1655,7 +1663,9 @@
         snapshot: JSON.parse(JSON.stringify(layout)),
         border: (S() && S().equipped && S().equipped.border) || 'none',
         frame: (S() && S().equipped && S().equipped.frame) || 'none',
-        frameBg: !S() || !S().equipped || S().equipped.frameBg !== false
+        frameBg: !S() || !S().equipped || S().equipped.frameBg !== false,
+        statsPuuid: S() && S().statsSummoner ? S().statsSummoner.puuid : null,
+        statsBefore: S() && S().statsSummoner ? S().statsSummoner.puuid : null
       };
       document.body.classList.add('editing');
       render();
@@ -1669,10 +1679,35 @@
     }
 
     document.getElementById('editToggle').addEventListener('click', enterEdit);
+    document.getElementById('addList').addEventListener('change', e => {
+      const sel = e.target.closest('#statsSrc');
+      if (!sel || !editState) return;
+      editState.statsPuuid = sel.value;
+      loadStatsFor(sel.value);
+    });
     document.getElementById('cancelBtn').addEventListener('click', () => {
       layout = editState.snapshot;
+      const back = editState.statsPuuid !== editState.statsBefore ? editState.statsBefore : null;
       leaveEdit();
+      if (back) loadStatsFor(back);
     });
+    // Stats eines anderen eigenen Summoners laden (Vorschau im Editor bzw.
+    // nach Abbrechen zurueck) - das Layout bleibt dabei unangetastet
+    async function loadStatsFor(puuid) {
+      try {
+        const res = await fetch(`/api/profile-stats?${new URLSearchParams({ preview: puuid })}`);
+        const stats = await parseApiResponse(res);
+        if (!res.ok) throw new Error(stats.error || 'Unknown error');
+        const keep = data.stats ? data.stats.profileLayout : null;
+        data.stats = { ...stats, profileLayout: keep };
+        data.rank = null;
+        render();
+        const r = await fetch(`/api/current-rank?${new URLSearchParams({ puuid })}`);
+        const rk = await parseApiResponse(r);
+        if (r.ok) data.rank = rk.current || null;
+        if (!drag) render();
+      } catch (e) { statusEl.textContent = `Could not load stats: ${e.message}`; }
+    }
     document.getElementById('resetLayoutBtn').addEventListener('click', () => {
       const bio = layout.find(w => w.type === 'bio');
       layout = DEFAULT_LAYOUT.map(w => (w.type === 'bio' && bio ? { ...w, config: bio.config } : { ...w }));
@@ -1689,6 +1724,11 @@
         });
         const out = await parseApiResponse(res);
         if (!res.ok) throw new Error(out.error || 'Unknown error');
+        if (editState.statsPuuid && editState.statsPuuid !== editState.statsBefore) {
+          const rs = await fetch('/api/profile/stats-summoner', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puuid: editState.statsPuuid }) });
+          const os = await parseApiResponse(rs);
+          if (!rs.ok) throw new Error(os.error || 'Unknown error');
+        }
         const eq = (S() && S().equipped) || {};
         const changes = [
           ['border', editState.border === 'none' ? null : editState.border, eq.border || null],
@@ -1820,27 +1860,15 @@
     async function loadProfile() {
       if (VISIT) { await loadVisit(); return; }
       render();
-      const parts = ls('ttp_summoner_name').trim().split('#');
+      // Stats-Summoner bestimmt der Server (Wahl im Profil-Editor, v6.7.1)
       let puuid = '';
-      if (parts.length === 2 && parts[0] && parts[1]) {
-        try {
-          const res = await fetch(`/api/account?${new URLSearchParams({ gameName: parts[0], tagLine: parts[1] })}`);
-          const account = await parseApiResponse(res);
-          if (!res.ok) throw new Error(account.error || 'Could not find summoner.');
-          data.account = account;
-          puuid = account.puuid;
-        } catch (e) {
-          statusEl.textContent = `Could not load summoner: ${e.message}`;
-        }
-      } else {
-        statusEl.textContent = 'No summoner linked yet - link one via the menu top right.';
-      }
-
       try {
-        const res = await fetch(`/api/profile-stats?${new URLSearchParams({ puuid })}`);
+        const res = await fetch('/api/profile-stats');
         const stats = await parseApiResponse(res);
         if (!res.ok) throw new Error(stats.error || 'Unknown error');
         data.stats = stats;
+        puuid = stats.statsSummoner ? stats.statsSummoner.puuid : '';
+        if (!puuid) statusEl.textContent = 'No summoner linked yet - link one via the menu top right.';
         if (Array.isArray(stats.profileLayout) && stats.profileLayout.length) {
           layout = stats.profileLayout.filter(w => WIDGETS[w.type]);
           if (!layout.some(w => w.type === 'identity')) layout.unshift({ ...DEFAULT_LAYOUT[0] });

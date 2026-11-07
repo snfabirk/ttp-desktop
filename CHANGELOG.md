@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 6.7.1 — 2026-11-07
+
+- Profile stats summoner chosen in the profile editor (user): progression profileStatsPuuid; server statsSummoner(preview) = editor choice -> else active summoner; GET /api/profile-stats returns statsSummoner + statsAccounts (preview=<puuid> for the editor), POST /api/profile/stats-summoner (only linked accounts). Editor: "Stats from" select at the top of the widget list, live preview, applied on Save, reverted on Cancel. Snapshot stats/rank/summoner label use the chosen summoner; challenge/pool stay with the active one.
+
 ## 6.7.0 — 2026-11-07
 
 - Profile stats per summoner (user: never mixed, only the summoner chosen in the top switcher): ledger entries and LP-bank events now store puuid; getLifetimeStats(puuid) filters games/LP to that summoner (no summoner = no game stats); level/XP/coins/pass/collection stay profile-wide.

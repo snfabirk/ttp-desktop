@@ -785,8 +785,24 @@ function buildProfileStats(puuid) {
     }
   };
 }
+// Welcher Summoner die Profil-Stats liefert (v6.7.1, Nutzer): die Wahl im
+// Profil-Editor; ohne (gueltige) Wahl der oben aktive. preview = Vorschau im
+// Editor vor dem Speichern (muss ein eigener Account sein).
+function statsSummoner(preview) {
+  const accs = cloud.linkedRiotAccounts();
+  const pick = id => accs.find(a => a.puuid === id);
+  const acc = pick(preview) || pick(progression.getProfileStatsPuuid()) || cloud.activeRiotAccount() || accs[0] || null;
+  return { acc, accounts: accs.map(a => ({ puuid: a.puuid, name: `${a.game_name}#${a.tag_line}` })) };
+}
 app.get('/api/profile-stats', (req, res) => {
-  res.json(buildProfileStats(req.query.puuid));
+  const { acc, accounts } = statsSummoner(req.query.preview);
+  const puuid = acc ? acc.puuid : '';
+  res.json({ ...buildProfileStats(puuid), statsSummoner: acc ? { puuid, name: `${acc.game_name}#${acc.tag_line}` } : null, statsAccounts: accounts });
+});
+app.post('/api/profile/stats-summoner', (req, res) => {
+  const puuid = (req.body || {}).puuid || null;
+  if (puuid && !cloud.linkedRiotAccounts().some(a => a.puuid === puuid)) return res.status(400).json({ error: 'That summoner is not linked to your profile.' });
+  res.json(progression.setProfileStatsPuuid(puuid));
 });
 
 // Eigene Ereignisse: Spiele, LP-Bank, Level-Ups + Trophies der laufenden Challenge
@@ -827,18 +843,21 @@ app.get('/api/activity/mine', (req, res) => {
 app.post('/api/public-profile/publish', cloudRoute(async req => {
   const acc = cloud.activeRiotAccount();
   const puuid = acc ? acc.puuid : '';
-  const last = puuid ? readHistory(puuid).slice(-1)[0] : null;
+  // Stats + Rang vom im Profil gewaehlten Summoner, Challenge/Pool vom aktiven
+  const sAcc = statsSummoner().acc;
+  const sPuuid = sAcc ? sAcc.puuid : '';
+  const last = sPuuid ? readHistory(sPuuid).slice(-1)[0] : null;
   const run = puuid ? challengeRuns.getRun(puuid) : null;
   const body = req.body || {};
   return cloud.publishProfile({
-    stats: buildProfileStats(puuid),
+    stats: buildProfileStats(sPuuid),
     rank: last ? { tier: last.tier, rank: last.rank, leaguePoints: last.leaguePoints } : null,
     pool: run ? { champions: run.champions.map(c => ({ id: c.id, name: c.name })), mainRole: run.mainRole } : null,
     activity: myActivity(puuid, run),
     challenge: run ? challengeSummary(puuid, run) : null,
     theme: typeof body.theme === 'string' ? body.theme.slice(0, 40) : 'classic',
     // fuer wen die Spiel-Statistiken gelten (Freunde sehen den gewaehlten Summoner)
-    summoner: acc ? `${acc.game_name}#${acc.tag_line}` : null
+    summoner: sAcc ? `${sAcc.game_name}#${sAcc.tag_line}` : null
   });
 }));
 app.get('/api/friends', cloudRoute(async () => cloud.listFriends()));

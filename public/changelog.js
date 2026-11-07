@@ -25,6 +25,15 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.7.1',
+      date: '2026-11-07',
+      notable: [
+        'Choose which of your summoners your profile stats come from: Edit profile -> "Stats from" at the top of the widget list. Your profile keeps showing that summoner, no matter which one is selected at the top.'
+      ],
+      refinements: 0,
+      bugfixes: 0
+    },
+    {
       version: '6.7.0',
       date: '2026-11-07',
       notable: [
