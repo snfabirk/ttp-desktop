@@ -74,7 +74,8 @@
     transition: border-color 0.15s ease, transform 0.15s ease;
   }
   .offer:hover { border-color: var(--border-hover); transform: translateY(-2px); }
-  .weekly .offer { padding: 22px 14px 16px; }
+  .weekly .offer { padding: 30px 14px 16px; }
+  .daily .offer { padding-top: 24px; } /* v6.6.1: Platz unter dem Seltenheits-Schild */
   .offer-tag {
     position: absolute; top: 8px; left: 8px;
     padding: 1px 7px; border-radius: 8px;
@@ -126,12 +127,14 @@
   .weekly .offer-pv { height: 124px; }
   .offer-pv .cos-border { width: 56px; height: 56px; }
   .weekly .offer-pv .cos-border { width: 72px; height: 72px; }
-  .offer-pv .pv-frame-live { position: relative; width: 104px; height: 62px; border-radius: 10px; background: rgba(255,255,255,.04); }
+  /* box-sizing (v6.6.1): .pframe bringt 18px padding mit - sonst wird die Vorschau
+     140x98 statt 104x62 gross und ragt ueber Rand und Seltenheits-Schild */
+  .offer-pv .pv-frame-live { position: relative; width: 104px; height: 62px; box-sizing: border-box; border-radius: 10px; background: rgba(255,255,255,.04); }
   .weekly .offer-pv .pv-frame-live { width: 140px; height: 84px; }
   .offer-pv .pv-frame-big { background: none; }
   .offer-pv .pv-frame-big:has(.pframe-frame-shop-kraken) { top: -12px; }
   .offer-pv:has(.cos-border-dev-optic) { padding-top: 14px; box-sizing: border-box; }
-  .offer-pv .pv-frame-big > .pframe { position: absolute; left: 0; top: 0; transform-origin: 0 0; border-radius: 24px; background: rgba(255,255,255,.04); }
+  .offer-pv .pv-frame-big > .pframe { position: absolute; left: 0; top: 0; box-sizing: border-box; transform-origin: 0 0; border-radius: 24px; background: rgba(255,255,255,.04); }
   .offer-pv .mini-theme { width: 72px; height: 72px; border-radius: 50%; }
   .offer-pv .pv-avatar { border-radius: 50%; }
   .offer-pv .pv-app-icon { width: 64px; height: 64px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.45)); }
@@ -411,9 +414,11 @@
     // Vorschau: Borders und Rahmen werden live gezeichnet (cosmetics-fx.js /
     // shop-cosmetics.js), Themes als Farbkreis
     const ICON = 'avatar-placeholder.svg';
-    const BIG_FRAME_PV = { 'frame-shop-kraken': 3.4, 'frame-shop-phoenix': 3.4, 'frame-shop-dragon': 2.4, 'frame-dev-netrunner': 2.6, 'frame-shop-vines': 2.3,
+    const BIG_FRAME_PV = { 'frame-shop-kraken': 3.4, 'frame-shop-phoenix': 4, 'frame-shop-dragon': 2.7, 'frame-dev-netrunner': 2.6, 'frame-shop-vines': 2.3,
       // stehende Refined/Basic-Rahmen (v5.20.0) sind fuer Profilgroesse gezeichnet
-      'frame-shop-circuit': 2.6, 'frame-shop-kintsugi': 2.6, 'frame-shop-origami': 2.6, 'frame-shop-carved': 2.6, 'frame-shop-mosaic': 2.6, 'frame-shop-linen': 2.6, 'frame-shop-night': 2.6 };
+      'frame-shop-circuit': 2.6, 'frame-shop-kintsugi': 2.6, 'frame-shop-origami': 2.6, 'frame-shop-carved': 2.6, 'frame-shop-mosaic': 2.6, 'frame-shop-linen': 2.6, 'frame-shop-night': 2.6,
+      // v6.6.1: Verzierungen ragten im Shop ueber Karte/Seltenheits-Schild
+      'frame-shop-arcane': 1.7, 'frame-shop-clock': 1.5, 'frame-2026-10-cobweb': 2.4, 'frame-2026-12-snowdrift': 1.7, 'frame-2026-12-fireside': 1.8 };
     function previewHtml(o) {
       let inner;
       if (o.type === 'border') inner = `<span class="cos-border cos-${o.id}"><img src="${ICON}" alt=""></span>`;

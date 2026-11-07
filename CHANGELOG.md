@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 6.6.1 — 2026-11-07
+
+- Bug fix: profile-frame previews in the shop were drawn at 140x98 instead of 104x62 (.pframe brings padding: 18px, content-box) and stuck out over the card edge and the rarity tag. .pv-frame-live and the scaled big-frame inner .pframe use box-sizing: border-box; arcane/clock/cobweb/snowdrift/fireside added to BIG_FRAME_PV (phoenix/dragon scaled down a bit more); daily/weekly offers get a little more room under the rarity tag.
+
 ## 6.6.0 — 2026-11-07
 
 - Album tab badge "+N" = boosters gained since the last Album visit (progression newBoosters, gainBoosters() for shop/pass/gifts/vouchers; GET /api/boosters/new, POST /api/boosters/seen on album load; nav.js TTPNav.refreshBoosters). Unopened count as big gold badge on the pack + in the booster picker, other sets with unopened boosters as quick-switch chips.
