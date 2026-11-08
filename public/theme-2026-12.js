@@ -132,8 +132,33 @@
   let modP = null;
   const loadXmas = () => modP || (modP = import('./xmas-scene.js').catch(e => { console.warn('[Christmas Eve] 3D konnte nicht geladen werden', e); modP = null; return null; }));
 
+  // Ruhe-Knopf (v6.7.2, Nutzer: "kann overwhelming sein"): unten links,
+  // schaltet durch Schnee an -> Schnee aus -> Standbild (alles steht still,
+  // der Schnee bleibt als ruhiges Bild im Hintergrund). Gemerkt pro Geraet.
+  const CALM_KEY = 'ttp_xmas_calm';
+  const CALM = ['on', 'nosnow', 'still'];
+  const CALM_UI = {
+    on: { label: 'Snow', title: 'Snow is falling - click to turn it off' },
+    nosnow: { label: 'No snow', title: 'Snow is off - click for a still picture' },
+    still: { label: 'Still', title: 'Still picture - click to let it snow again' }
+  };
+  const getCalm = () => { try { const v = localStorage.getItem(CALM_KEY); return CALM.includes(v) ? v : 'on'; } catch (e) { return 'on'; } };
+
   function christmasScene(ctx) {
     let root = null, canvas = null, warm = null, inst = null, dead = false, lvl = 0, inside = 0;
+    let calm = getCalm(), stillShown = false, btn = null;
+    const applyCalm = () => {
+      if (inst && inst.setSnow) inst.setSnow(calm !== 'nosnow');
+      stillShown = false;
+      if (btn) {
+        btn.dataset.calm = calm;
+        btn.title = CALM_UI[calm].title;
+        btn.querySelector('span').textContent = CALM_UI[calm].label;
+      }
+      if (calm === 'still' && warm) warm.style.opacity = 0;
+      // sofort neu zeichnen (auch wenn die Szene gerade ruht)
+      if (inst) { inst.render(performance.now() / 1000, input()); if (calm === 'still') stillShown = true; }
+    };
     const size = () => { if (inst) inst.resize(innerWidth, innerHeight); };
     const input = () => ({ mx: ctx.pointer.x / innerWidth * 2 - 1, my: ctx.pointer.y / innerHeight * 2 - 1, inside: ctx.inside() });
     // Standbild (Animations: Off / nach Groessenaenderung im Ruhezustand)
@@ -154,11 +179,23 @@
         warm.className = 'xmas-warm';
         root.append(canvas, warm);
         document.body.appendChild(root);
+        btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'xmas-calm';
+        btn.innerHTML = '<b>❄</b><span></span>';
+        btn.addEventListener('click', () => {
+          calm = CALM[(CALM.indexOf(calm) + 1) % CALM.length];
+          try { localStorage.setItem(CALM_KEY, calm); } catch (e) { /* egal */ }
+          applyCalm();
+        });
+        document.body.appendChild(btn);
+        applyCalm();
         document.addEventListener('click', onClick, true);
         loadXmas().then(mod => {
           if (dead || !mod) return;
           try { inst = mod.create(canvas); } catch (e) { console.warn('[Christmas Eve]', e); return; }
           size();
+          applyCalm();
           inst.render(0, input());          // sofort ein Bild (auch bei "Animations: Off")
           root.classList.add('ready');
         });
@@ -168,12 +205,15 @@
         document.removeEventListener('click', onClick, true);
         if (inst) inst.dispose();
         if (root) root.remove();
-        inst = root = canvas = warm = null;
+        if (btn) btn.remove();
+        inst = root = canvas = warm = btn = null;
       },
-      resize() { size(); setTimeout(still, 0); },
+      resize() { size(); stillShown = false; setTimeout(still, 0); },
       setLevel(v) { lvl = v; },
       frame(dt, t) {
         if (!inst) return;
+        // Standbild: einmal zeichnen, dann steht alles
+        if (calm === 'still') { if (!stillShown) { inst.render(t, input()); stillShown = true; } return; }
         inside += ((ctx.inside() ? 1 : 0) - inside) * Math.min(1, dt * 3);
         if (warm) {
           warm.style.setProperty('--mx', `${ctx.pointer.x}px`);

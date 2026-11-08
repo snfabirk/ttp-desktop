@@ -125,6 +125,29 @@ void main(){
     const root = document.documentElement;
     root.classList.toggle('fx-off', m === 'off');
     root.classList.toggle('fx-paused', m === 'active' && !isActive());
+    holdLoops(m === 'off' || (m === 'active' && !isActive()));
+  }
+  // v6.7.2 (Nutzer): ALLE Endlos-Animationen der Seite halten an, wenn
+  // Animationen aus sind bzw. die App gerade nicht benutzt wird - nicht nur
+  // die mit eigener fx-Regel (Booster-Foil, Gutschein, Badges, ...).
+  // Einmalige Animationen (Einblenden, Bump) laufen normal zu Ende. Die
+  // Halloween-/Dorf-Szenen regeln das selbst (dort bleiben z.B. Flammen an).
+  // (Set als Funktions-Eigenschaft: syncCssState kann schon vor dieser Zeile laufen)
+  function holdLoops(hold) {
+    const heldLoops = holdLoops.held || (holdLoops.held = new Set());
+    if (!document.getAnimations) return;
+    if (hold) {
+      document.getAnimations().forEach(a => {
+        if (a.playState !== 'running' || !a.effect || a.effect.getTiming().iterations !== Infinity) return;
+        const t = a.effect.target;
+        if (t && t.closest && t.closest('.hallows-fx, .village-fx')) return;
+        a.pause();
+        heldLoops.add(a);
+      });
+    } else if (heldLoops.size) {
+      heldLoops.forEach(a => { try { if (a.playState === 'paused') a.play(); } catch (e) { /* entfernt */ } });
+      heldLoops.clear();
+    }
   }
 
   // ----- Aktivitaet -----

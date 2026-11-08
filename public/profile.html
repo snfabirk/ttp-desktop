@@ -337,6 +337,7 @@
     /* ----- Bearbeitungsmodus ----- */
     body.editing .widget { cursor: grab; user-select: none; }
     body.editing .widget.dragging { cursor: grabbing; opacity: 0.85; z-index: 5; border-color: var(--gold); }
+    body.editing .widget.swap-preview { opacity: .45; border-style: dashed; border-color: var(--gold); pointer-events: none; }
     body.editing .widget.invalid { border-color: var(--red); box-shadow: 0 0 0 2px color-mix(in srgb, var(--red) 50%, transparent); }
     body.editing .widget.selected { border-color: var(--gold); box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 45%, transparent); }
     .w-remove, .w-resize, .w-size {
@@ -414,8 +415,14 @@
       letter-spacing: 1px;
     }
     .panel-scroll { flex: 1; overflow-y: auto; margin: 0 -6px; padding: 0 6px; }
-    .panel-actions { display: flex; gap: 8px; margin-top: 12px; }
-    .panel-actions button {
+    .edit-bar { position: fixed; left: 50%; bottom: 18px; z-index: 35; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 16px;
+      border: 1px solid var(--border); border-radius: 14px; background: var(--input-bg); box-shadow: 0 10px 28px rgba(0,0,0,.45);
+      opacity: 0; pointer-events: none; transform: translate(-50%, 16px); transition: opacity .2s, transform .2s; }
+    body.editing .edit-bar { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+    .edit-dirty { font-size: .75rem; color: var(--text-faint); font-style: italic; min-width: 110px; }
+    .edit-dirty.on { color: var(--gold); }
+    .edit-bar button {
+      min-width: 96px;
       flex: 1;
       padding: 8px 0;
       border-radius: 8px;
@@ -426,6 +433,8 @@
     .btn-save { border: 1px solid var(--gold); background: var(--gold); color: var(--bg); }
     .btn-cancel { border: 1px solid var(--border); background: transparent; color: var(--text-dim); }
     .btn-cancel:hover { color: var(--text); border-color: var(--border-hover); }
+    /* Platz fuer die Leiste unter der Widget-Flaeche */
+    body.editing .canvas-wrap { margin-bottom: 70px; }
     .btn-reset {
       margin-top: 8px;
       border: none;
@@ -767,12 +776,15 @@
   <aside class="side-panel left" id="toolPanel" aria-label="Profile tools">
     <h3>Widgets <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Drag a widget from this list onto your profile. On the profile: drag to move, pull the corner to resize (each widget has its own sizes - bigger shows more), × removes. Empty spaces are fine.</span></span></h3>
     <div class="panel-scroll" id="addList"></div>
-    <div class="panel-actions">
-      <button type="button" class="btn-cancel" id="cancelBtn">Cancel</button>
-      <button type="button" class="btn-save" id="saveBtn">Save</button>
-    </div>
     <button type="button" class="btn-reset" id="resetLayoutBtn">Reset to default layout</button>
   </aside>
+  <!-- v6.7.2 (Nutzer): ALLES im Editor (Widgets, Cosmetics, Theme, Profilbild,
+       App-Icon, Stats-Summoner) gilt erst nach Save - darum eine eigene Leiste -->
+  <div class="edit-bar" id="editBar">
+    <span class="edit-dirty" id="editDirty">Unsaved changes</span>
+    <button type="button" class="btn-cancel" id="cancelBtn">Cancel</button>
+    <button type="button" class="btn-save" id="saveBtn">Save</button>
+  </div>
 
   <aside class="side-panel right" id="invPanel" aria-label="Cosmetics">
     <h3>Cosmetics</h3>
@@ -1233,15 +1245,77 @@
       el.classList.add('dragging');
       el.setPointerCapture(e.pointerId);
     });
+    // ===== Platz machen (v6.7.2, Nutzer: "umfassend alles verschieben") =====
+    // Fuer eine Zielflaeche R des Widgets id (null = neues Widget) wird
+    // berechnet, wohin die getroffenen Widgets ausweichen:
+    // 1. Tausch: passen alle getroffenen Widgets (gleicher Versatz) in den Platz,
+    //    den das gezogene Widget frei macht, wandern sie dorthin - z.B. ein 3x1
+    //    auf drei (oder zwei) 1x1, oder zwei 1x1 auf ein 2x1.
+    // 2. Sonst werden sie nach unten weggeschoben (und alles, was dann im Weg
+    //    ist, ebenfalls) - so laesst sich ein Widget ueberall dazwischenschieben.
+    // layout bleibt waehrend des Ziehens unveraendert = Ausgangsstand.
+    function planMove(id, R, allowSwap) {
+      const others = layout.filter(w => w.id !== id && WIDGETS[w.type]);
+      const hit = others.filter(w => overlaps(R, w));
+      const plan = new Map();
+      if (!hit.length) return plan;
+      const O = id ? layout.find(w => w.id === id) : null;
+      if (O && allowSwap) {
+        const dx = O.x - R.x, dy = O.y - R.y;
+        const hitIds = new Set(hit.map(w => w.id));
+        const moved = hit.map(w => ({ id: w.id, r: { x: w.x + dx, y: w.y + dy, w: w.w, h: w.h } }));
+        const inO = r => r.x >= O.x && r.y >= O.y && r.x + r.w <= O.x + O.w && r.y + r.h <= O.y + O.h;
+        if (moved.every(m => inO(m.r) && !overlaps(m.r, R) && others.every(w => hitIds.has(w.id) || !overlaps(m.r, w)))) {
+          moved.forEach(m => plan.set(m.id, m.r));
+          return plan;
+        }
+      }
+      const placed = [R];
+      [...others].sort((p, q) => p.y - q.y || p.x - q.x).forEach(w => {
+        let r = { x: w.x, y: w.y, w: w.w, h: w.h };
+        for (let guard = 0; guard < 500; guard++) {
+          const blk = placed.filter(q => overlaps(r, q));
+          if (!blk.length) break;
+          r = { ...r, y: Math.max(...blk.map(q => q.y + q.h)) };
+        }
+        placed.push(r);
+        if (r.y !== w.y || r.x !== w.x) plan.set(w.id, r);
+      });
+      return plan;
+    }
+    // Vorschau: ausweichende Widgets halb durchsichtig an ihrem neuen Platz
+    function showPlan(plan) {
+      let bottom = 0;
+      canvas.querySelectorAll('.widget[data-id]').forEach(el => {
+        if (drag && drag.el === el) return;
+        const w = layout.find(x => x.id === el.dataset.id);
+        if (!w) return;
+        const r = plan.get(w.id) || w;
+        el.classList.toggle('swap-preview', plan.has(w.id));
+        el.style.gridColumn = `${r.x + 1} / span ${r.w}`;
+        el.style.gridRow = `${r.y + 1} / span ${r.h}`;
+        bottom = Math.max(bottom, r.y + r.h);
+      });
+      return bottom;
+    }
+    function commitPlan(plan) {
+      plan.forEach((r, id) => { const w = layout.find(x => x.id === id); if (w) Object.assign(w, { x: r.x, y: r.y }); });
+    }
     canvas.addEventListener('pointermove', e => {
       if (!drag || drag.mode === 'new') return;
-      const { step } = cellStep();
+      const { rect, step } = cellStep();
       const o = drag.orig;
       let next;
       if (drag.mode === 'move') {
-        next = { ...o, x: o.x + Math.round((e.clientX - drag.startX) / step), y: o.y + Math.round((e.clientY - drag.startY) / step) };
-        next.x = Math.max(0, Math.min(COLS - o.w, next.x));
-        next.y = Math.max(0, next.y);
+        // Ueber einem gleich grossen Widget: genau auf dessen Platz einrasten (Tausch)
+        const cx = Math.floor((e.clientX - rect.left) / step), cy = Math.floor((e.clientY - rect.top) / step);
+        const mate = layout.find(b => b.id !== drag.w.id && b.w === o.w && b.h === o.h && cx >= b.x && cx < b.x + b.w && cy >= b.y && cy < b.y + b.h);
+        if (mate) next = { ...o, x: mate.x, y: mate.y };
+        else {
+          next = { ...o, x: o.x + Math.round((e.clientX - drag.startX) / step), y: o.y + Math.round((e.clientY - drag.startY) / step) };
+          next.x = Math.max(0, Math.min(COLS - o.w, next.x));
+          next.y = Math.max(0, next.y);
+        }
       } else {
         // Naechste erlaubte Groesse zum Mauszeiger
         const wantW = o.w + (e.clientX - drag.startX) / step;
@@ -1260,16 +1334,24 @@
           drag.el.innerHTML = widgetInner({ ...drag.w, ...next });
         }
       }
-      drag.ok = fits(next, drag.w.id);
+      const same = drag.next && ['x', 'y', 'w', 'h'].every(k => drag.next[k] === next[k]);
       drag.next = next;
+      drag.ok = true;
       drag.el.style.gridColumn = `${next.x + 1} / span ${next.w}`;
       drag.el.style.gridRow = `${next.y + 1} / span ${next.h}`;
-      drag.el.classList.toggle('invalid', !drag.ok);
-      setRows(next.y + next.h + 1);
+      drag.el.classList.remove('invalid');
+      if (same) return;
+      drag.plan = planMove(drag.w.id, next, drag.mode === 'move');
+      const bottom = showPlan(drag.plan);
+      setRows(Math.max(bottom, next.y + next.h) + 1);
     });
     function endDrag() {
       if (!drag || drag.mode === 'new') return;
-      if (drag.next && drag.ok) Object.assign(drag.w, { x: drag.next.x, y: drag.next.y, w: drag.next.w, h: drag.next.h });
+      if (drag.next && drag.ok) {
+        markDirty(true);
+        commitPlan(drag.plan || new Map());
+        Object.assign(drag.w, { x: drag.next.x, y: drag.next.y, w: drag.next.w, h: drag.next.h });
+      }
       drag = null;
       render();
     }
@@ -1303,26 +1385,33 @@
       if (!inside) {
         drag.ghost.remove();
         drag.ok = false;
+        drag.plan = new Map();
+        showPlan(drag.plan);
         return;
       }
       const x = Math.max(0, Math.min(COLS - drag.w, Math.round((e.clientX - rect.left) / step - drag.w / 2)));
       const y = Math.max(0, Math.round((e.clientY - rect.top) / step - drag.h / 2));
       drag.next = { x, y, w: drag.w, h: drag.h };
-      drag.ok = fits(drag.next, null);
+      drag.ok = true;
       drag.ghost.style.gridColumn = `${x + 1} / span ${drag.w}`;
       drag.ghost.style.gridRow = `${y + 1} / span ${drag.h}`;
-      drag.ghost.classList.toggle('invalid', !drag.ok);
+      drag.ghost.classList.remove('invalid');
       if (!drag.ghost.isConnected) canvas.appendChild(drag.ghost);
-      setRows(y + drag.h + 1);
+      // neue Widgets schieben die getroffenen ebenfalls nach unten weg
+      drag.plan = planMove(null, drag.next, false);
+      const bottom = showPlan(drag.plan);
+      setRows(Math.max(bottom, y + drag.h) + 1);
     }
     document.addEventListener('pointermove', e => { if (drag && drag.mode === 'new') moveNew(e); });
     document.addEventListener('pointerup', () => {
       if (!drag || drag.mode !== 'new') return;
-      const { type, next, ok, config } = drag;
+      const { type, next, ok, config, plan } = drag;
       drag.ghost.remove();
       chip.style.display = 'none';
       drag = null;
       if (ok && next) {
+        markDirty(true);
+        commitPlan(plan || new Map());
         const id = type === 'sticker' ? `sticker-${Date.now().toString(36)}` : type;
         layout.push({ id, type, ...next, config: config || (type === 'bio' ? { text: '' } : {}) });
       }
@@ -1333,11 +1422,13 @@
       if (!editState || !e.target.closest('[data-remove]')) return;
       const id = e.target.closest('.widget').dataset.id;
       layout = layout.filter(w => w.id !== id);
+      markDirty(true);
       render();
     });
     canvas.addEventListener('input', e => {
       const ta = e.target.closest('[data-bio]');
       if (!ta) return;
+      markDirty(true);
       const w = layout.find(x => x.id === ta.dataset.bio);
       if (w) w.config = { ...(w.config || {}), text: ta.value };
     });
@@ -1346,6 +1437,7 @@
       if (!sel) return;
       const w = layout.find(x => x.id === sel.dataset.fav);
       if (w) w.config = { ...(w.config || {}), champId: sel.value };
+      markDirty(true);
       render();
     });
 
@@ -1481,12 +1573,11 @@
           </div>`;
         };
         list.innerHTML = countLine(counts.icon) + sections(ofType('icon'), cell) +
-          '<p class="inv-note">Changes your app icon right away - window, tray, taskbar and your desktop / start menu shortcut.</p>';
+          '<p class="inv-note">Changes your app icon when you save - window, tray, taskbar and your desktop / start menu shortcut.</p>';
       } else if (invTab === 'theme') {
-        // Themes sind persoenlich (nur die eigene App), daher sofort aktiv
-        // und nicht Teil von Speichern/Abbrechen.
+        // Themes: Vorschau sofort, gespeichert erst mit Save (v6.7.2)
         const passThemes = ofType('theme');
-        const active = currentThemeKey();
+        const active = editState ? editState.theme : currentThemeKey();
         const item = c => {
           const has = !c.id || usableIds.has(c.id);
           return `<div ${has ? `class="inv-item${c.themeKey === active ? ' equipped' : ''}" data-theme-key="${c.themeKey}"` : lockAttr(c)}>
@@ -1578,41 +1669,33 @@
       const f = e.target.closest('[data-frame]');
       const t = e.target.closest('[data-theme-key]');
       const av = e.target.closest('[data-avatar]');
+      if (!editState) return;
       if (av) {
         const id = av.dataset.avatar === 'none' ? null : av.dataset.avatar;
-        fetch('/api/cosmetics/equip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'avatar', id }) })
-          .then(r => r.json()).then(r => {
-            if (r.ok && S()) S().equipped = r.equipped;
-            try { if (id) localStorage.setItem('ttp_avatar', id); else localStorage.removeItem('ttp_avatar'); } catch (err) {}
-            render();
-            if (window.ttpPublishProfile) window.ttpPublishProfile(true);
-          }).catch(() => {});
+        if (S()) S().equipped = { ...(S().equipped || {}), avatar: id };
+        markDirty(true);
+        render();
         return;
       }
       const ic = e.target.closest('[data-app-icon]');
       if (ic) {
         const id = ic.dataset.appIcon;
-        fetch('/api/cosmetics/equip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'icon', id: id === 'icon-base-classic' ? null : id }) })
-          .then(r => r.json()).then(r => {
-            if (r.ok && S()) S().equipped = r.equipped;
-            if (window.ttpMain && window.ttpMain.applyAppIcon) window.ttpMain.applyAppIcon();
-            renderPanels();
-          }).catch(() => {});
+        if (S()) S().equipped = { ...(S().equipped || {}), icon: id === 'icon-base-classic' ? null : id };
+        markDirty(true);
+        renderPanels();
         return;
       }
-      if (b) { editState.border = b.dataset.equip; render(); }
-      if (f) { editState.frame = f.dataset.frame; render(); }
+      if (b) { editState.border = b.dataset.equip; markDirty(true); render(); }
+      if (f) { editState.frame = f.dataset.frame; markDirty(true); render(); }
       if (t) {
-        const key = t.dataset.themeKey;
-        try { localStorage.setItem('ttp_theme', key); } catch (err) {}
-        if (window.ttpPublishProfile) setTimeout(() => window.ttpPublishProfile(true), 300);
-        if (key === 'classic') document.documentElement.removeAttribute('data-theme');
-        else document.documentElement.setAttribute('data-theme', key);
+        editState.theme = t.dataset.themeKey;
+        showTheme(editState.theme);
+        markDirty(true);
         renderPanels();
       }
     });
     document.getElementById('invList').addEventListener('change', e => {
-      if (e.target.id === 'frameBgToggle') { editState.frameBg = e.target.checked; applyFrame(); }
+      if (e.target.id === 'frameBgToggle') { editState.frameBg = e.target.checked; markDirty(true); applyFrame(); }
     });
 
     // ===== Profil-Rahmen um die Widget-Flaeche =====
@@ -1665,9 +1748,14 @@
         frame: (S() && S().equipped && S().equipped.frame) || 'none',
         frameBg: !S() || !S().equipped || S().equipped.frameBg !== false,
         statsPuuid: S() && S().statsSummoner ? S().statsSummoner.puuid : null,
-        statsBefore: S() && S().statsSummoner ? S().statsSummoner.puuid : null
+        statsBefore: S() && S().statsSummoner ? S().statsSummoner.puuid : null,
+        // v6.7.2: Profilbild, App-Icon und Theme sind nur Vorschau bis Save
+        eqBefore: JSON.parse(JSON.stringify((S() && S().equipped) || {})),
+        theme: currentThemeKey(),
+        themeBefore: currentThemeKey()
       };
       document.body.classList.add('editing');
+      markDirty(false);
       render();
       await loadChampionList();
       if (editState && !drag) render();
@@ -1675,7 +1763,20 @@
     function leaveEdit() {
       editState = null;
       document.body.classList.remove('editing');
+      markDirty();
       render();
+    }
+    // Theme anzeigen (Vorschau im Editor bzw. zurueck auf das gespeicherte)
+    function showTheme(key) {
+      if (key === 'classic') document.documentElement.removeAttribute('data-theme');
+      else document.documentElement.setAttribute('data-theme', key);
+    }
+    // "Unsaved changes": grob - sobald im Editor etwas angefasst wurde
+    function markDirty(on = false) {
+      const el = document.getElementById('editDirty');
+      if (!el) return;
+      el.classList.toggle('on', on);
+      el.textContent = on ? '● Unsaved changes' : 'Nothing changed yet';
     }
 
     document.getElementById('editToggle').addEventListener('click', enterEdit);
@@ -1683,10 +1784,14 @@
       const sel = e.target.closest('#statsSrc');
       if (!sel || !editState) return;
       editState.statsPuuid = sel.value;
+      markDirty(true);
       loadStatsFor(sel.value);
     });
     document.getElementById('cancelBtn').addEventListener('click', () => {
       layout = editState.snapshot;
+      // Vorschau von Profilbild/App-Icon/Theme zuruecknehmen
+      if (S()) S().equipped = editState.eqBefore;
+      showTheme(editState.themeBefore);
       const back = editState.statsPuuid !== editState.statsBefore ? editState.statsBefore : null;
       leaveEdit();
       if (back) loadStatsFor(back);
@@ -1711,6 +1816,7 @@
     document.getElementById('resetLayoutBtn').addEventListener('click', () => {
       const bio = layout.find(w => w.type === 'bio');
       layout = DEFAULT_LAYOUT.map(w => (w.type === 'bio' && bio ? { ...w, config: bio.config } : { ...w }));
+      markDirty(true);
       render();
     });
     document.getElementById('saveBtn').addEventListener('click', async () => {
@@ -1729,11 +1835,14 @@
           const os = await parseApiResponse(rs);
           if (!rs.ok) throw new Error(os.error || 'Unknown error');
         }
-        const eq = (S() && S().equipped) || {};
+        const eq = editState.eqBefore || {};
+        const cur = (S() && S().equipped) || {};
         const changes = [
           ['border', editState.border === 'none' ? null : editState.border, eq.border || null],
           ['frame', editState.frame === 'none' ? null : editState.frame, eq.frame || null],
-          ['frameBg', editState.frameBg ? 'on' : 'off', eq.frameBg === false ? 'off' : 'on']
+          ['frameBg', editState.frameBg ? 'on' : 'off', eq.frameBg === false ? 'off' : 'on'],
+          ['avatar', cur.avatar || null, eq.avatar || null],
+          ['icon', cur.icon || null, eq.icon || null]
         ].filter(([, now, before]) => now !== before);
         for (const [type, id] of changes) {
           const r2 = await fetch('/api/cosmetics/equip', {
@@ -1744,6 +1853,11 @@
           const o2 = await parseApiResponse(r2);
           if (!r2.ok) throw new Error(o2.error || 'Unknown error');
           data.stats.equipped = o2.equipped;
+          if (type === 'avatar') { try { if (id) localStorage.setItem('ttp_avatar', id); else localStorage.removeItem('ttp_avatar'); } catch (err) {} }
+          if (type === 'icon' && window.ttpMain && window.ttpMain.applyAppIcon) window.ttpMain.applyAppIcon();
+        }
+        if (editState.theme !== editState.themeBefore) {
+          try { localStorage.setItem('ttp_theme', editState.theme); } catch (err) {}
         }
         statusEl.textContent = '';
         leaveEdit();

@@ -431,5 +431,7 @@ export function create(canvas, opts = {}) {
     try { renderer.forceContextLoss(); } catch (e) {}
   }
 
-  return { render, resize, click, dispose, get egg() { return !!egg; } };
+  // Schneefall an/aus (v6.7.2, Knopf unten links im Theme)
+  const setSnow = on => { snowFall.visible = !!on; };
+  return { render, resize, click, dispose, setSnow, get egg() { return !!egg; } };
 }

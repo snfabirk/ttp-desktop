@@ -104,8 +104,10 @@ function writeSync(userId, s) { fs.mkdirSync(path.dirname(syncFile(userId)), { r
 
 let pushTimer = null;
 let pushing = false;
+// Isolierte Testinstanz (TTP_TEST_NO_PUSH=1): nichts in die Cloud schreiben
+const NO_PUSH = process.env.TTP_TEST_NO_PUSH === '1';
 async function pushNow() {
-  if (!current || pushing) return;
+  if (!current || pushing || NO_PUSH) return;
   pushing = true;
   const userId = current.id;
   try {
@@ -138,6 +140,7 @@ progression.setOnWrite(schedulePush);
 // nicht hochging, steht in pendingRuns und wird nachgeholt.
 const pendingRuns = new Set();
 async function pushRun(puuid) {
+  if (NO_PUSH) return;
   if (!current) { pendingRuns.add(puuid); return; }
   const rec = challengeRuns.getRecord(puuid);
   if (!rec) return;

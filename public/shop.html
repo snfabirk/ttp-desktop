@@ -86,11 +86,16 @@
   .offer-tag.rar-refined { border-color: var(--rar-refined); }
   .offer-tag.rar-fancy { border-color: var(--rar-fancy); }
   .offer-tag.rar-animated { border-color: var(--rar-animated); }
-  .offer-tag.rar-animatedplus { border-color: var(--rar-animatedplus); }
+  .offer-tag.rar-animatedplus { border-color: var(--rar-animatedplus); color: color-mix(in srgb, var(--rar-animatedplus) 60%, #fff); }
+  html[data-theme="light"] .offer-tag.rar-animatedplus { color: var(--rar-animatedplus); }
   .offer.rar-animatedplus { border-color: color-mix(in srgb, var(--rar-animatedplus) 70%, var(--border)); animation: offerCrimson 2.6s linear infinite; }
   @keyframes offerCrimson { 0%, 100% { box-shadow: 0 0 18px rgba(224, 20, 60, .35); } 8% { box-shadow: 0 0 30px rgba(255, 42, 82, .6); } 11% { box-shadow: 0 0 10px rgba(160, 12, 36, .25); } 14% { box-shadow: 0 0 24px rgba(255, 42, 82, .5); } 57% { box-shadow: 0 0 32px rgba(255, 42, 82, .6); } 60% { box-shadow: 0 0 10px rgba(160, 12, 36, .25); } }
   html.fx-off .offer.rar-animatedplus, html.fx-paused .offer.rar-animatedplus { animation-play-state: paused; }
   .offer .dev-choice { position: absolute; top: 8px; right: 8px; }
+  /* v6.7.2: Dailies sind zu schmal fuer beide Schilder oben - Developer's Choice
+     steht dort unter dem Typ, die Kauf-Knoepfe einer Reihe bleiben auf einer Hoehe */
+  .daily .offer .dev-choice { position: static; }
+  .daily .offer > .offer-buy { margin-top: auto; }
   .offer.rar-fancy { border-color: color-mix(in srgb, var(--rar-fancy) 45%, var(--border)); }
   .offer.rar-animated { border-color: color-mix(in srgb, var(--rar-animated) 55%, var(--border)); box-shadow: 0 0 18px color-mix(in srgb, var(--rar-animated) 18%, transparent); }
   .offer-from { color: var(--text-faint); font-size: 0.68rem; font-style: italic; }
@@ -332,7 +337,25 @@
   .booster.closed .bpack { filter: grayscale(.55) brightness(.75); }
   .booster .bbuy em { color: var(--text-faint); font-size: .76rem; }
   /* 5er-Pack-Rabatt + LP-Bank-Gutschein (v6.6.0) */
-  .booster .bbuy .offer-buy { position: relative; white-space: nowrap; }
+  .booster .bbuy { position: relative; }
+  .booster .bbuy .offer-buy { position: relative; white-space: nowrap; max-width: 100%; }
+  /* v6.7.2: Bestaetigung deckt die Kauf-Knoepfe ab, statt den Kasten zu vergroessern */
+  .booster .bbuy .bconfirm { position: absolute; inset: 0; z-index: 2; margin: 0; justify-content: center; white-space: normal; line-height: 1.15; font-size: .8rem; padding: 2px 8px; background: var(--gold); color: var(--bg); border-color: var(--gold); }
+  .booster .bbuy .bconfirm b { color: var(--bg); }
+  /* Gutschein als Marke am Pack (aendert die Kastengroesse nicht) */
+  .booster .bwrap { position: relative; }
+  /* goldenes Ticket mit Kerben an den Seiten, leicht schraeg, sanftes Leuchten */
+  .booster .bvoucher { position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%) rotate(-5deg); z-index: 4; padding: 0; border: 0; background: none; cursor: pointer; animation: bvGlow 3.2s ease-in-out infinite; transition: transform .15s; }
+  .booster .bvoucher .tk { display: flex; align-items: center; gap: 4px; white-space: nowrap; padding: 3px 11px; border-radius: 3px;
+    background: linear-gradient(135deg, #f6e3a1 0%, #d9b45c 45%, #b8892e 100%); color: #2a1a05; font: bold .62rem/14px Georgia, serif; letter-spacing: .08em;
+    -webkit-mask: radial-gradient(circle 4px at 0 50%, #0000 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 4px at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat;
+    mask: radial-gradient(circle 4px at 0 50%, #0000 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 4px at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat; }
+  .booster .bvoucher .tk span { padding: 0 2px; border-top: 1px dashed rgba(42, 26, 5, .45); border-bottom: 1px dashed rgba(42, 26, 5, .45); }
+  .booster .bvoucher b { background: #2a1a05; color: #f6e3a1; border-radius: 6px; padding: 0 4px; font-size: .58rem; line-height: 12px; }
+  .booster .bvoucher:hover { transform: translateX(-50%) rotate(-5deg) scale(1.08); }
+  /* Leuchten als Filter (der Schatten wuerde von der Maske abgeschnitten) */
+  @keyframes bvGlow { 0%, 100% { filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); } 50% { filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)) drop-shadow(0 0 6px rgba(246, 227, 161, .7)); } }
+  html.fx-off .booster .bvoucher { animation: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
   .booster .bdeal { position: absolute; top: -8px; right: -8px; padding: 0 5px; border-radius: 8px; background: #2f9e4a; color: #fff; font: bold .6rem/15px Georgia, serif; box-shadow: 0 1px 4px rgba(0,0,0,.45); }
   .booster .offer-buy.voucher { border-color: var(--gold); color: var(--gold); }
   .booster .bpack.set-neon .bt, .booster .bpack.set-neon .bb { font-family: Bahnschrift, 'Arial Narrow', sans-serif; font-weight: 700; text-transform: uppercase; }
@@ -707,6 +730,9 @@
       ? `<span class="dot"></span>On sale this weekend<br>ends in <b data-cd="${b.closesAt}">${countdown(b.closesAt)}</b>`
       : `<span class="dot"></span>Only on weekends<br>available in <b data-cd="${b.opensAt}">${countdown(b.opensAt)}</b>`;
     let boosterConfirm = null, boosterMsg = '', boosterMsgSpecial = false;
+    // Endlos-Animationen an der Uhr ausrichten: nach jedem Neuzeichnen geht es
+    // an derselben Stelle weiter (v6.7.2, Nutzer: Foil soll nicht neu starten)
+    const clockDelay = ms => `-${Date.now() % ms}ms`;
     function renderBoosters() {
       const list = shop.boosters || [];
       const vouchers = shop.boosterVouchers || 0;
@@ -714,24 +740,52 @@
       const one = b => {
         const btn = (q) => {
           const bundle = shop.boosterBundle || 5, full = b.price * q, cost = b.price * (q - Math.floor(q / bundle)), key = `${b.id}:${q}`, conf = boosterConfirm === key, short = shop.coins < cost;
-          return `<button type="button" class="offer-buy${conf ? ' confirm' : ''}${short ? ' short' : ''}" data-booster="${b.id}" data-qty="${q}"${short ? ' disabled title="Not enough coins"' : ''}>${conf ? `Buy ${q} for 🪙 <b>${fmtNum(cost)}</b>?` : `${q > 1 ? `${q}× · ` : ''}🪙 <b>${fmtNum(cost)}</b>`}${cost < full && !conf ? `<span class="bdeal" title="Instead of ${fmtNum(full)}">-${Math.round((1 - cost / full) * 100)}%</span>` : ''}</button>`;
+          return `<button type="button" class="offer-buy${short ? ' short' : ''}" data-booster="${b.id}" data-qty="${q}"${short ? ' disabled title="Not enough coins"' : ''}>${q > 1 ? `${q}× · ` : ''}🪙 <b>${fmtNum(cost)}</b>${cost < full ? `<span class="bdeal" title="Instead of ${fmtNum(full)}">-${Math.round((1 - cost / full) * 100)}%</span>` : ''}</button>`;
+        };
+        // v6.7.2: Bestaetigung als Ebene ueber den Kauf-Knoepfen - der Kasten
+        // aendert dabei seine Groesse nicht
+        const confirmHtml = () => {
+          const m = boosterConfirm && boosterConfirm.split(':');
+          if (!m || m[0] !== b.id) return '';
+          const q = Number(m[1]), bundle = shop.boosterBundle || 5, cost = b.price * (q - Math.floor(q / bundle));
+          return `<button type="button" class="offer-buy bconfirm" data-booster="${b.id}" data-qty="${q}">Buy ${q > 1 ? `${q} ` : ''}for 🪙 <b>${fmtNum(cost)}</b>?</button>`;
         };
         const canBuy = b.released && b.available !== false;
         return `<div class="booster${b.released ? '' : ' soon'}${b.special ? ' special' : ''}${b.special && !b.available ? ' closed' : ''}">
-          <span class="bwrap"><span class="bpack set-${b.id}" style="background:${BOOSTER_GRAD[b.id] || '#333'}"><span class="bc t"></span><span class="bfan">${bfan(b.id)}</span><span class="bt">Three-Trick-Pony<br><small>${esc(b.name)}</small></span><span class="bb">${b.special ? 'SPECIAL BOOSTER' : 'BOOSTER PACK'}</span><i></i><span class="bc b"></span></span></span>
+          <span class="bwrap">${canBuy && !b.special && vouchers ? `<button type="button" class="bvoucher" data-redeem="${b.id}" style="animation-delay:${clockDelay(3200)}" title="Redeem a booster voucher for one ${esc(b.name)} booster"><span class="tk"><span>FREE</span>${vouchers > 1 ? `<b>×${vouchers}</b>` : ''}</span></button>` : ''}<span class="bpack set-${b.id}" style="background:${BOOSTER_GRAD[b.id] || '#333'}"><span class="bc t"></span><span class="bfan">${bfan(b.id)}</span><span class="bt">Three-Trick-Pony<br><small>${esc(b.name)}</small></span><span class="bb">${b.special ? 'SPECIAL BOOSTER' : 'BOOSTER PACK'}</span><i style="animation-delay:${clockDelay(5000)}"></i><span class="bc b"></span></span></span>
           <span class="binfo">
             <span class="bname">${esc(b.name)}</span>
             <span class="bown">You own <b>${b.owned}</b> unopened · album ${b.collected} / ${b.total}</span>
             ${b.special ? `<span class="bwhen${b.available ? ' open' : ''}">${whenHtml(b)}</span>` : ''}
-            <span class="bbuy">${canBuy && !b.special && vouchers ? `<button type="button" class="offer-buy voucher" data-redeem="${b.id}" title="Redeem a voucher from your LP Bank for one booster">🎟 Voucher${vouchers > 1 ? ` ×${vouchers}` : ''}</button>` : ''}${canBuy ? btn(1) + btn(5) : b.released ? '<em>Sat &amp; Sun only</em>' : '<em>coming later</em>'}</span>
+            <span class="bbuy">${canBuy ? btn(1) + btn(5) + confirmHtml() : b.released ? '<em>Sat &amp; Sun only</em>' : '<em>coming later</em>'}</span>
             <span class="rates" tabindex="0">Pull rates ?<span class="rates-pop">${b.total} stickers in this set. 7 stickers per booster: 4 common, 2 uncommon and 1 rare slot (Holo Rare ${Math.round((1 - rt.animChance - (rt.faChance || 0)) * 100)}% · Animated Rare ${Math.round(rt.animChance * 100)}%${rt.faChance ? ` · Full Art ${Math.round(rt.faChance * 100)}%` : ''}).<br>Duplicates go to your Dupes in the Album - sell them for ${rt.dupeRefund.common} / ${rt.dupeRefund.uncommon} / ${rt.dupeRefund.holo} / ${rt.dupeRefund.anim}${rt.dupeRefund.fullart ? ` / ${rt.dupeRefund.fullart}` : ''}.${b.special ? '<br>Special boosters can only be bought on Saturdays and Sundays - you can open them any time.' : ''}</span></span>
           </span>
         </div>`;
       };
       const msg = sp => `<div class="booster-msg">${sp === boosterMsgSpecial ? esc(boosterMsg) : ''}</div>`;
-      document.getElementById('boosterOffers').innerHTML = list.filter(b => !b.special).map(one).join('') + msg(false);
+      patchBoosters(document.getElementById('boosterOffers'), list.filter(b => !b.special).map(one).join('') + msg(false));
       const sp = list.filter(b => b.special);
-      document.getElementById('specialOffers').innerHTML = (sp.length ? sp.map(one).join('') : '<p class="muted">No special sets yet.</p>') + msg(true);
+      patchBoosters(document.getElementById('specialOffers'), (sp.length ? sp.map(one).join('') : '<p class="muted">No special sets yet.</p>') + msg(true));
+    }
+    // Neu zeichnen ohne das Pack anzufassen (v6.7.2, Nutzer): Foil und die
+    // bewegten Sticker im Pack laufen weiter, nur Text/Knoepfe/Gutschein werden
+    // ersetzt. Aendert sich der Aufbau, wird alles neu gebaut.
+    function patchBoosters(box, html) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      const olds = [...box.children], news = [...tmp.children];
+      const same = (a, b) => a.classList.contains('booster') && a.className === b.className
+        && a.querySelector('.bpack') && b.querySelector('.bpack') && a.querySelector('.bpack').className === b.querySelector('.bpack').className;
+      if (olds.length !== news.length) { box.innerHTML = html; return; }
+      olds.forEach((o, i) => {
+        const n = news[i];
+        if (!same(o, n)) { o.replaceWith(n); return; }
+        o.querySelector('.binfo').replaceWith(n.querySelector('.binfo'));
+        const ov = o.querySelector('.bvoucher'), nv = n.querySelector('.bvoucher');
+        if (ov && nv && ov.outerHTML.replace(/animation-delay:[^"]*/, '') === nv.outerHTML.replace(/animation-delay:[^"]*/, '')) return;
+        if (ov) ov.remove();
+        if (nv) o.querySelector('.bwrap').prepend(nv);
+      });
     }
     // Countdown jede Sekunde; beim Wechsel (Wochenende beginnt/endet) Shop neu laden
     setInterval(() => {
@@ -767,6 +821,9 @@
       await load();
     };
     document.getElementById('boosterOffers').addEventListener('click', onBoosterClick);
+    document.addEventListener('click', e => {
+      if (boosterConfirm && !e.target.closest('[data-booster]')) { boosterConfirm = null; renderBoosters(); }
+    });
     document.getElementById('specialOffers').addEventListener('click', onBoosterClick);
 
     // shop-scenes-2.js laedt evtl. erst nach dem Shop - kurz nachfassen

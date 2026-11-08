@@ -370,12 +370,14 @@ function passProgress(xp) {
 
 // Gratis-Booster im Pass (v5.29.0, Nutzer: unregelmaessig verteilt, 8 Stueck,
 // gelten fuer jedes Set - aktuell gibt es nur das Base Set)
+// v6.7.2 (Nutzer): statt eines Base-Boosters ein Gutschein fuer einen
+// regulaeren Booster nach Wahl (wie aus der LP Bank, Einloesen im Shop)
 const BOOSTER_TIERS = [3, 7, 12, 16, 19, 23, 27, 29];
 // Profilbilder im Pass (v6.3.0, Nutzerdesign): Stufe 13 simpel, 22 besser.
 // Monate ohne angelegte Profilbilder geben dort ganz normal Coins.
 const AVATAR_TIERS = [13, 22];
 function tierReward(month, tier) {
-  if (BOOSTER_TIERS.includes(tier)) return { type: 'booster', set: 'base', amount: 1 };
+  if (BOOSTER_TIERS.includes(tier)) return { type: 'boosterVoucher', amount: 1 };
   if (AVATAR_TIERS.includes(tier)) {
     const av = passCosmetic(month, tier);
     if (av) return { type: 'cosmetic', id: av.id, name: av.name, cosmeticType: av.type, animated: !!av.animated };
@@ -432,7 +434,7 @@ function settleOldPasses(state, now = new Date()) {
     if (month === cur) return;
     (pass.pendingTiers || []).forEach(t => {
       const r = tierReward(month, t);
-      if (r.type === 'booster') gainBoosters(state, r.set, 1);
+      if (r.type === 'boosterVoucher') state.boosterVouchers = (state.boosterVouchers || 0) + 1;
       else if (r.type === 'cosmetic') { if (!state.inventory.includes(r.id)) state.inventory.push(r.id); } else state.coins += r.amount || 0;
     });
     state.coins += (pass.pendingOverflow || 0) * COINS_PER_OVERFLOW_STEP;
@@ -454,9 +456,9 @@ function claimPassCoins({ tier, overflow, all } = {}) {
     const i = pass.pendingTiers.indexOf(t); if (i < 0) return false;
     pass.pendingTiers.splice(i, 1);
     const r = tierReward(month, t);
-    if (r.type === 'booster') {
-      gainBoosters(state, r.set, 1);
-      boosters.push({ tier: t, set: r.set });
+    if (r.type === 'boosterVoucher') {
+      state.boosterVouchers = (state.boosterVouchers || 0) + 1;
+      boosters.push({ tier: t, voucher: true });
     } else if (r.type === 'cosmetic') {
       if (state.inventory.includes(r.id)) { markOwnedTier(pass, t); return true; }
       state.inventory.push(r.id);

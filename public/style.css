@@ -1321,3 +1321,43 @@ html[data-theme="christmas"] .site-header h1 { text-shadow: 0 0 24px rgba(242, 1
 .xmas-fx .xmas-warm { position: absolute; inset: 0; opacity: 0; mix-blend-mode: screen;
   background: radial-gradient(circle 360px at var(--mx, 50%) var(--my, 50%), rgba(255, 190, 110, .16), transparent 70%); }
 .pv-pop canvas.xmas-pv { position: absolute; inset: 0; z-index: 0; border-radius: 14px; }
+
+/* ===== Lesbarkeit in allen Themes (v6.7.2, Nutzer: "dass bei keinem Theme
+   irgendwas untergeht") - per Pixel-Messung aller Seiten x Themes geprueft.
+   Signaturfarben (Gold, Animated+, Developer's Choice) bleiben, sie bekommen
+   bei Bedarf einen Untergrund statt einer anderen Farbe. ===== */
+/* Helle/bunte Szenen: deckendere Karten + hellere Nebentexte */
+html[data-theme="desert"], html[data-theme="skyisles"], html[data-theme="arctic"], html[data-theme="village"],
+html[data-theme="cherry"], html[data-theme="lanterns"], html[data-theme="christmas"], html[data-theme="koi"] { --panel-bg: rgba(var(--bg-rgb), 0.82); }
+html[data-theme="koi"] { --gold: #ff4b55; --border-hover: #ff4b55; --history-view-accent: #ff4b55; --text-faint: #8a8d92; }
+html[data-theme="desert"] { --text-faint: #a8907f; }
+html[data-theme="lanterns"] { --text-faint: #9a7a6c; }
+html[data-theme="skyisles"] { --text-faint: #a0a6c0; }
+html[data-theme="cherry"] { --text-faint: #958aa4; }
+html[data-theme="arctic"] { --text-faint: #91a4b8; }
+html[data-theme="village"] { --text-faint: #8396ae; }
+html[data-theme="christmas"] { --text-faint: #9c8274; }
+html[data-theme="aurora"] { --text-faint: #6f8e9a; }
+/* Text, der direkt auf der Szene steht (keine Karte dahinter): dunkler Schein */
+:is(html[data-theme="desert"], html[data-theme="skyisles"], html[data-theme="arctic"], html[data-theme="village"],
+    html[data-theme="cherry"], html[data-theme="lanterns"], html[data-theme="christmas"], html[data-theme="koi"], html[data-theme="magma"], html[data-theme="magmaplus"])
+  :is(.site-header h1, .site-header h2, .site-header p, .panel-heading, .profile-heading, .trophies-main > p, .role-note, .achievements-status, .rules-status, .edit-toggle, .album-tabs span) {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .9), 0 0 10px rgba(0, 0, 0, .75), 0 0 22px rgba(0, 0, 0, .5);
+}
+html[data-theme="village"] .nav-badge { background: #d93a4e; }
+/* Developer's Choice / Wochenend-Gelb und Neon-Gruen auf hellem Theme: dunkler Untergrund */
+html[data-theme="light"] .dev-choice { background: #23200f; }
+html[data-theme="light"] .weekend-tag { background: #23200f; padding: 1px 8px; border-radius: 8px; }
+html[data-theme="light"] .booster .bwhen.open { color: var(--green); }
+html[data-theme="light"] .booster .bwhen.open .dot { background: var(--green); box-shadow: none; }
+
+/* Christmas Eve: Ruhe-Knopf unten links (v6.7.2) */
+.xmas-calm { position: fixed; left: 14px; bottom: 14px; z-index: 60; display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px 4px 9px; border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent); background: rgba(var(--bg-rgb), .78); backdrop-filter: blur(6px);
+  color: var(--text-dim); font: .72rem Georgia, serif; cursor: pointer; opacity: .75; transition: opacity .15s, border-color .15s, color .15s; }
+.xmas-calm:hover { opacity: 1; color: var(--text); border-color: var(--gold); }
+.xmas-calm b { color: #e8f2ff; font-weight: normal; font-size: .85rem; }
+.xmas-calm[data-calm="nosnow"] b { opacity: .45; text-decoration: line-through; }
+.xmas-calm[data-calm="still"] b { color: var(--gold); }
+/* im Profil-Editor liegt dort die Seitenleiste */
+body.editing .xmas-calm { display: none; }

@@ -25,6 +25,21 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.8.0',
+      date: '2026-11-08',
+      notable: [
+        'Profile editor: drop a widget onto others and they make room - same-size widgets (or several small ones) swap places, everything else slides down. A faded preview shows where everything lands.',
+        'Profile editor: nothing is saved until you click Save - including theme, profile picture and app icon. Save and Cancel now sit in a bar at the bottom.',
+        'Switching boosters in the Album: your booster lifts to the middle and the others slide in from the sides. Click one to bring it forward, click again to take it, click next to it to put yours back.',
+        'Pass booster tiers now give a booster voucher - redeem it in the Shop for any regular booster you like.',
+        'Christmas Eve theme: a small snow button in the bottom left corner - snow on, snow off or a still picture.',
+        'Every theme was checked for readability - text on bright themes like Desert, Sky Isles, Arctic and Winter Village is much easier to read now.',
+        'When animations are set to run only while you use the app, every looping effect now really pauses.'
+      ],
+      refinements: 5,
+      bugfixes: 3
+    },
+    {
       version: '6.7.1',
       date: '2026-11-07',
       notable: [
