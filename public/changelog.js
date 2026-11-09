@@ -25,6 +25,15 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.9.1',
+      date: '2026-11-09',
+      notable: [
+        'The Album runs a lot smoother - especially with many animated stickers and Full Arts.'
+      ],
+      refinements: 2,
+      bugfixes: 6
+    },
+    {
       version: '6.9.0',
       date: '2026-11-09',
       notable: [

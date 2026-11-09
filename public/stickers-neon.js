@@ -600,13 +600,14 @@
   const art = id => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${ART[id]()}</svg>`;
   const SLABS = 12;
   const popLayers = (id, src = POP) => {
-    const svg = src[id](), wrap = c => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${c}</svg>`;
-    let out = `<div class="pop-shadow">${wrap(svg)}</div>`;
+    // Schweben auf die Ebenen verlegen (Leistung, siehe stickers.js liftFloat)
+    const { svg, cls: fc } = BASE.liftFloat(src[id]()), wrap = c => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${c}</svg>`;
+    let out = `<div class="pop-shadow${fc}">${wrap(svg)}</div>`;
     for (let k = 0; k < SLABS; k++) {
       const fl = U('dl');
-      out += `<div class="pop slab" style="--i:${k};--shade:${(.28 + k / SLABS * .3).toFixed(2)}">${wrap(`<defs><filter id="${fl}" x="-10%" y="-10%" width="120%" height="120%"><feMorphology operator="dilate" radius="1.6"/></filter></defs><g filter="url(#${fl})">${svg}</g>`)}</div>`;
+      out += `<div class="pop slab${fc}" style="--i:${k};--shade:${(.28 + k / SLABS * .3).toFixed(2)}">${wrap(`<defs><filter id="${fl}" x="-10%" y="-10%" width="120%" height="120%"><feMorphology operator="dilate" radius="1.6"/></filter></defs><g filter="url(#${fl})">${svg}</g>`)}</div>`;
     }
-    return out + `<div class="pop" style="--i:${SLABS}">${wrap(svg)}</div>`;
+    return out + `<div class="pop${fc}" style="--i:${SLABS}">${wrap(svg)}</div>`;
   };
   const frontHtml = s => `<div class="stk-face stk-front cy r-${s.r}" style="--rc:${RC[s.r]}">
       <div class="art">${art(s.id)}</div>

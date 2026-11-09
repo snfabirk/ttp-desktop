@@ -454,7 +454,7 @@
   /* Zwei Binder (Nutzer): regulaeres Album + Special-Sets-Binder, getrennt waehlbar */
   /* vertikal clip: der aufschwingende Deckel / die Seite verlaengert sonst kurz die Seite (Scrollbalken),
      seitlich darf er weiter ueber die Booster-Spalte schwingen; Polster fuer den Schatten */
-  #albumView { position: relative; overflow-x: visible; overflow-y: clip; padding-bottom: 34px; margin-bottom: -34px; }
+  #albumView { position: relative; overflow-x: visible; overflow-y: clip; padding-top: 6px; margin-top: -6px; padding-bottom: 34px; margin-bottom: -34px; }  /* oben Platz fuer den Hover-Lift der Binder-Knoepfe */
   .binder-pick { display: flex; gap: 10px; margin-bottom: 12px; }
   .binder-pick button { display: flex; align-items: center; gap: 9px; font: inherit; font-size: .85rem; color: var(--text-dim); cursor: pointer; padding: 6px 14px 6px 8px; border-radius: 10px;
     border: 1px solid var(--border); background: color-mix(in srgb, var(--input-bg) 60%, transparent); transition: color .15s, border-color .15s, transform .15s; }
@@ -474,6 +474,12 @@
   .binder-ghost .stk-card { transform-style: flat !important; }
   .page-under { position: absolute; left: 12px; top: 10px; right: 10px; z-index: 5; pointer-events: none; }
 
+  /* Leistung (v6.9.1): Kanten-Schichten der Hologramm-Figuren nur beim Hovern - in Ruhe
+     liegen sie deckungsgleich hinter der Figur (unsichtbar), kosten aber je Karte bis zu
+     17 eigene 3D-Ebenen, die der Browser jedes Bild zusammensetzen muss */
+  #albumGrid .album-slot:not(:hover) .pop.slab, #albumGrid .album-slot:not(:hover) .fa-mid.slab,
+  #dupesView .album-slot:not(:hover) .pop.slab, #dupesView .album-slot:not(:hover) .fa-mid.slab,
+  .page-flip .pop.slab, .page-flip .fa-mid.slab, .page-under .pop.slab, .page-under .fa-mid.slab, .binder-ghost .pop.slab, .binder-ghost .fa-mid.slab { display: none; }
   /* ---------- Inspizieren: 3D-Neigung mit dem Cursor ---------- */
   .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.86); backdrop-filter: blur(6px); display: grid; place-items: center; cursor: zoom-out; opacity: 0; transition: opacity .25s; }
   .insp.on { opacity: 1; }
@@ -633,7 +639,7 @@ function animApply(r, clone) {
   });
 }
 window.addEventListener('resize', () => { if (document.getElementById('albumGrid').style.height) fitBinderPage(); });
-let packQuiet = false;   // true: Karussell hat den Pack schon getauscht
+let packQuiet = false, packAnim = null;   // true: Karussell hat den Pack schon getauscht
 // Pack-Tausch: der alte fliegt zur Seite hinaus, der neue kommt von der anderen Seite
 function swapPack(snap, forward) {
   const real = document.getElementById('pack').parentElement;
@@ -647,7 +653,8 @@ function swapPack(snap, forward) {
   const d = forward ? -1 : 1;
   const out = g.animate([{ transform: 'none', opacity: 1 }, { transform: `translate(${d * 150}px, 30px) rotate(${d * 14}deg) scale(.85)`, opacity: 0 }], { duration: 380, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'forwards' });
   out.onfinish = out.oncancel = () => g.remove();
-  real.animate([{ transform: `translate(${-d * 150}px, -30px) rotate(${-d * 14}deg) scale(.85)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 480, delay: 200, easing: 'cubic-bezier(.2,.9,.3,1.15)', fill: 'backwards' });
+  packAnim = real.animate([{ transform: `translate(${-d * 150}px, -30px) rotate(${-d * 14}deg) scale(.85)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 480, delay: 200, easing: 'cubic-bezier(.2,.9,.3,1.15)', fill: 'backwards' });
+  packAnim.onfinish = () => { packAnim = null; };
 }
 let shownSet = null, shownIdx = -1, shownKind = null;   // welches Set gerade im Binder aufgeschlagen ist
 const lastOfKind = {};                                     // zuletzt offenes Set je Binder
@@ -683,6 +690,7 @@ function swapBinder(snap, toSpecial) {
   if (document.documentElement.classList.contains('fx-off') || !binder.animate) { wrap.style.minHeight = ''; return; }
   const g = snap.binder;
   unId(g);
+  g.querySelectorAll('.page-flip, .page-under, .binder-cover').forEach(x => x.remove());
   g.classList.add('binder-ghost');
   Object.assign(g.style, { top: `${snap.top}px`, left: `${snap.left}px`, width: `${snap.w}px` });
   wrap.appendChild(g);
@@ -705,9 +713,10 @@ function swapBinder(snap, toSpecial) {
   let op = null;
   // groesser -> kleiner (Nutzer: frueher): sobald der alte Ordner draussen ist,
   // schrumpft der Platz darunter - parallel zum Hereingleiten des neuen
+  let shrinkAnim = null;
   const shrink = setTimeout(() => {
     const want = binder.offsetTop + binder.offsetHeight, have = parseFloat(wrap.style.minHeight) || 0;
-    if (have > want + 2) wrap.animate([{ minHeight: `${have}px` }, { minHeight: `${want}px` }], { duration: 420, easing: 'cubic-bezier(.3,.7,.3,1)' });
+    if (have > want + 2) shrinkAnim = wrap.animate([{ minHeight: `${have}px` }, { minHeight: `${want}px` }], { duration: 420, easing: 'cubic-bezier(.3,.7,.3,1)' });
     wrap.style.minHeight = '';
   }, 760);
   const done = () => { clearTimeout(shrink); g.remove(); nc.remove(); wrap.style.overflow = ''; wrap.style.minHeight = ''; flipBusy = null; };
@@ -719,41 +728,59 @@ function swapBinder(snap, toSpecial) {
     op = openCover(binder, toSpecial ? 'special' : 'regular', 60);
     op.addEventListener('finish', done);
   };
-  flipBusy = () => { anims.forEach(a => a.cancel()); if (op) op.cancel(); done(); };
+  flipBusy = () => { anims.forEach(a => a.cancel()); if (op) op.cancel(); if (shrinkAnim) shrinkAnim.cancel(); done(); };
 }
+let loadSeq = 0;
 async function loadAlbum() {
-  // alte Seite festhalten, falls gleich umgeblaettert wird
-  const oldPage = document.getElementById('binderPage');
-  const binderEl = document.getElementById('binder');
-  const oldSc = document.getElementById('albumGrid').scrollTop;
-  const snap = shownSet && view === 'album' ? { sc: oldSc, anims: animRecord(oldPage), banims: animRecord(binderEl), el: oldPage.cloneNode(true), h: oldPage.offsetHeight, binder: binderEl.cloneNode(true), top: binderEl.offsetTop, left: binderEl.offsetLeft, w: binderEl.offsetWidth } : null;
-  try { DATA = await (await fetch('/api/album')).json(); } catch (e) { DATA = { sets: [], stickers: {} }; }
-  owned = { ...((DATA.stickers || {})[cur() ? cur().id : 'base'] || {}) };
+  // (v6.9.1) Nur die neueste Anfrage zaehlt; der Schnappschuss fuers Umblaettern
+  // entsteht erst NACH dem Laden (DOM ist bis dahin unveraendert) und nur, wenn
+  // wirklich gewechselt wird - Seite ODER Binder, nicht beides
+  const seq = ++loadSeq;
+  let data;
+  try { data = await (await fetch('/api/album')).json(); } catch (e) { data = { sets: [], stickers: {} }; }
+  if (seq !== loadSeq) return;
+  DATA = data;
+  const id = cur() ? cur().id : null;
+  const kind = cur() && cur().special ? 'special' : 'regular';
+  const changing = !!(shownSet && id && id !== shownSet && view === 'album');
+  const swapping = changing && kind !== shownKind;
+  const grid = document.getElementById('albumGrid'), viewEl = document.getElementById('albumView');
+  const oldSc = grid.scrollTop;
+  let snap = null;
+  if (changing) {
+    if (flipBusy) flipBusy();                       // laufende Animation erst sauber beenden
+    const oldPage = document.getElementById('binderPage'), binderEl = document.getElementById('binder');
+    snap = { sc: oldSc, h: oldPage.offsetHeight };
+    if (swapping) {
+      // Hoehe halten, bis die Wechsel-Animation uebernimmt (sonst springt die Seite hoch)
+      viewEl.style.minHeight = `${viewEl.offsetHeight}px`;
+      Object.assign(snap, { banims: animRecord(binderEl), binder: binderEl.cloneNode(true), top: binderEl.offsetTop, left: binderEl.offsetLeft, w: binderEl.offsetWidth });
+    } else Object.assign(snap, { anims: animRecord(oldPage), el: oldPage.cloneNode(true) });
+  }
+  owned = { ...((DATA.stickers || {})[id || 'base'] || {}) };
   unopened = cur() ? cur().owned : 0;
-  // Hoehe halten, bis die Wechsel-Animation uebernimmt (sonst springt die Seite hoch)
-  const viewEl = document.getElementById('albumView');
-  if (snap) viewEl.style.minHeight = `${viewEl.offsetHeight}px`;
   // Booster links wechselt sichtbar mit (Nutzer), ausser das Karussell hat ihn schon gebracht
   const packEl = document.getElementById('pack'), packWas = packEl.dataset.set;
-  const packSnap = packWas && !packQuiet ? { el: packEl.parentElement.cloneNode(true), r: packEl.parentElement.getBoundingClientRect() } : null;
+  if (packAnim) packAnim.finish();                  // nicht mitten im Hereinfliegen messen
+  const packSnap = packWas && !packQuiet && id && packWas !== id ? { el: packEl.parentElement.cloneNode(true), r: packEl.parentElement.getBoundingClientRect() } : null;
   packQuiet = false;
   updCount(); renderAlbum(); renderTabs(); renderDupes();
-  const id = cur() ? cur().id : null;
-  if (packSnap && id && packWas !== id) swapPack(packSnap, sel > shownIdx);
-  const kind = cur() && cur().special ? 'special' : 'regular';
+  if (packSnap) swapPack(packSnap, sel > shownIdx);
   document.getElementById('binder').classList.toggle('special', kind === 'special');
   if (cur()) lastOfKind[kind] = sel;
-  if (!shownSet && id && view === 'album' && !document.documentElement.classList.contains('fx-off')) openCover(document.getElementById('binder'), kind, 250);
+  if (!shownSet && id && view === 'album' && !document.documentElement.classList.contains('fx-off')) {
+    // erstes Aufklappen - ein schneller Wechsel danach bricht es sauber ab
+    const a = openCover(document.getElementById('binder'), kind, 250);
+    const kill = () => { a.cancel(); if (flipBusy === kill) flipBusy = null; };
+    flipBusy = kill;
+    a.addEventListener('finish', () => { if (flipBusy === kill) flipBusy = null; });
+  }
   // gleiche Stelle auch im naechsten Set derselben Mappe; nur ein anderer
   // Binder (wird ja zugeklappt) beginnt oben
-  document.getElementById('albumGrid').scrollTop = shownKind && kind !== shownKind ? 0 : oldSc;
+  grid.scrollTop = swapping ? 0 : oldSc;
   syncRings();
-  const swapping = snap && id && id !== shownSet && kind !== shownKind;
-  if (snap && !swapping) viewEl.style.minHeight = '';
-  if (snap && id && id !== shownSet) {
-    if (swapping) swapBinder(snap, kind === 'special');             // anderer Ordner
-    else turnPage(snap, sel > shownIdx);                            // gleiche Mappe: umblaettern
-  }
+  if (swapping) swapBinder(snap, kind === 'special');            // anderer Ordner
+  else if (changing) turnPage(snap, sel > shownIdx);             // gleiche Mappe: umblaettern
   shownSet = id; shownIdx = sel; shownKind = kind;
 }
 // Seite umblaettern (v6.9.0, Nutzer): vorwaerts klappt die alte Seite nach links
@@ -863,7 +890,7 @@ const updCount = () => {
 // mittlere = nehmen (wandert in den Slot, die anderen verschwinden seitlich).
 // Klick daneben / Esc = das alte Pack wird wieder zurueckgelegt.
 function openPicker() {
-  if (!DATA || !DATA.sets || document.querySelector('.car-ov')) return;
+  if (!DATA || !DATA.sets || opening || document.querySelector('.car-ov')) return;
   const slot = document.querySelector('.pack-area .pack-shadow');
   const src = document.getElementById('pack');
   const r0 = src.getBoundingClientRect();
@@ -954,8 +981,10 @@ async function openPacks(n) {
   n = Math.min(n, unopened);
   let res;
   try { res = await (await fetch('/api/boosters/open', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ set: cur().id, count: n }) })).json(); } catch (e) { res = { ok: false }; }
-  opening = false;
-  if (!res.ok) { loadAlbum(); return; }
+  // (v6.9.1) opening bleibt true, bis das Fenster mit Done geschlossen wird -
+  // kein zweites Oeffnen per Enter/Leertaste, kein Set-Wechsel dazwischen
+  if (!res.ok) { opening = false; loadAlbum(); return; }
+  document.activeElement && document.activeElement.blur && document.activeElement.blur();
   unopened = res.owned; updCount();
   const cards = res.cards.map(c => { const b = setCards().find(x => x.n === c.n); return { ...(c.fa ? asFa(b) : b), isNew: c.isNew, refund: c.refund }; });
   const ov = document.createElement('div'); ov.className = `ov set-${cur().id}`;   // Rueckseiten in Set-Farbe
@@ -1169,7 +1198,7 @@ async function openPacks(n) {
     ov.querySelector('#ovSkip').style.display = 'none';
     ov.querySelector('#ovDone').style.display = 'block';
   }
-  ov.querySelector('#ovDone').addEventListener('click', () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 350); loadAlbum(); });
+  ov.querySelector('#ovDone').addEventListener('click', () => { opening = false; ov.classList.remove('on'); setTimeout(() => ov.remove(), 350); loadAlbum(); });
   // Ueberspringen: aufreissen und alles zuegig in die Plaetze
   ov.querySelector('#ovSkip').addEventListener('click', () => {
     skipAll = true;
@@ -1178,7 +1207,7 @@ async function openPacks(n) {
 }
 // Klick auf den Pack OEFFNET nicht, sondern zeigt die Set-Auswahl (Nutzer)
 document.getElementById('pack').addEventListener('click', openPicker);
-document.getElementById('packOthers').addEventListener('click', e => { const b = e.target.closest('[data-switch]'); if (b) { sel = Number(b.dataset.switch); loadAlbum(); } });
+document.getElementById('packOthers').addEventListener('click', e => { const b = e.target.closest('[data-switch]'); if (b && !opening) { sel = Number(b.dataset.switch); loadAlbum(); } });
 document.getElementById('openBtn').addEventListener('click', () => openPacks(1));
 document.getElementById('openAllBtn').addEventListener('click', () => openPacks(unopened));
 
@@ -1227,6 +1256,7 @@ function renderTabs() {
 // Gratis-Booster eines neuen Sets abgeholt (set-release.js): Album neu laden
 window.addEventListener('ttp:boosters', () => loadAlbum());
 // sanftes Scrollen mit fester Dauer (Promise erst, wenn es oben ist)
+let binderPending = false;
 function smoothScrollTo(y) {
   const from = scrollY, d = y - from;
   if (Math.abs(d) < 2 || document.documentElement.classList.contains('fx-off')) { scrollTo(0, y); return Promise.resolve(); }
@@ -1242,7 +1272,7 @@ function smoothScrollTo(y) {
 }
 document.getElementById('binderPick').addEventListener('click', e => {
   const b = e.target.closest('[data-binder]');
-  if (!b || b.classList.contains('on')) return;
+  if (!b || b.classList.contains('on') || opening || binderPending) return;
   const kk = b.dataset.binder, sets = DATA.sets || [];
   // aufgeklappter Ordner beginnt immer beim 1. Set (Nutzer)
   const i = sets.findIndex(st => (st.special ? 'special' : 'regular') === kk);
@@ -1256,11 +1286,12 @@ document.getElementById('binderPick').addEventListener('click', e => {
   const shrink = Math.max(0, (PAGE_ROWS - ROWS[kk]) * pitch);
   const maxAfter = document.documentElement.scrollHeight - shrink - innerHeight;
   const target = Math.max(0, Math.min(scrollY, box.getBoundingClientRect().top + scrollY - 16, maxAfter));
-  smoothScrollTo(target).then(() => { sel = i; loadAlbum(); });
+  binderPending = true;   // Doppelklick: nur ein Wechsel
+  smoothScrollTo(target).then(() => { sel = i; return loadAlbum(); }).finally(() => { binderPending = false; });
 });
 document.getElementById('albumTabs').addEventListener('click', e => {
   const t = e.target.closest('[data-set]');
-  if (!t || Number(t.dataset.set) === sel) return;
+  if (!t || Number(t.dataset.set) === sel || opening) return;
   sel = Number(t.dataset.set); loadAlbum();
 });
 document.getElementById('albumGrid').addEventListener('click', e => {

@@ -406,16 +406,26 @@
   // Figur mit Volumen: Schatten auf der Karte + SLABS duenne, dunkle Schichten
   // (die Seitenkante, sichtbar beim Neigen) + farbige Vorderseite obenauf
   const SLABS = 12;
+  // Leistung (v6.9.1): Schwebt die ganze Figur (aeusseres <g class="a-float">), wird
+  // das Schweben auf die Ebenen-DIVs verlegt (CSS translate/rotate = nur Compositor).
+  // Animiert man es IN jeder Schicht, muss der Browser die gefilterten Schichten
+  // jedes Bild neu zeichnen - bei 13 Schichten x vielen Karten ~70 ms pro Bild.
+  const liftFloat = svg => {
+    const m = svg.match(/^\s*<g class="a-float">([\s\S]*)<\/g>\s*$/);
+    if (!m) return { svg, cls: '' };
+    const inner = m[1], open = (inner.match(/<g[\s>]/g) || []).length, close = (inner.match(/<\/g>/g) || []).length;
+    return open === close ? { svg: inner, cls: ' floaty' } : { svg, cls: '' };
+  };
   const popLayers = (id, src = POP) => {
-    const svg = src[id](), wrap = c => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${c}</svg>`;
-    let out = `<div class="pop-shadow">${wrap(svg)}</div>`;
+    const { svg, cls: fc } = liftFloat(src[id]()), wrap = c => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${c}</svg>`;
+    let out = `<div class="pop-shadow${fc}">${wrap(svg)}</div>`;
     // Schichten in Bild-Einheiten etwas dicker als die Vorderseite (feMorphology):
     // der Rand waechst mit der Kartengroesse mit - klein und gross gleich massiv
     for (let k = 0; k < SLABS; k++) {
       const f = U('dl');
-      out += `<div class="pop slab" style="--i:${k};--shade:${(.28 + k / SLABS * .3).toFixed(2)}">${wrap(`<defs><filter id="${f}" x="-10%" y="-10%" width="120%" height="120%"><feMorphology operator="dilate" radius="1.6"/></filter></defs><g filter="url(#${f})">${svg}</g>`)}</div>`;
+      out += `<div class="pop slab${fc}" style="--i:${k};--shade:${(.28 + k / SLABS * .3).toFixed(2)}">${wrap(`<defs><filter id="${f}" x="-10%" y="-10%" width="120%" height="120%"><feMorphology operator="dilate" radius="1.6"/></filter></defs><g filter="url(#${f})">${svg}</g>`)}</div>`;
     }
-    return out + `<div class="pop" style="--i:${SLABS}">${wrap(svg)}</div>`;
+    return out + `<div class="pop${fc}" style="--i:${SLABS}">${wrap(svg)}</div>`;
   };
   const frontHtml = s => `<div class="stk-face stk-front r-${s.r}" style="--rc:${RC[s.r]}">
       <div class="art">${art(s.id)}</div>
@@ -447,8 +457,13 @@
   @keyframes holoSweep { from { background-position: 100% 100%; } to { background-position: 0% 0%; } }
   .stk-front.r-holo .name { background: linear-gradient(180deg, #fff6c8, #e2b23c 60%, #a4700e); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: bold; filter: drop-shadow(0 1px 0 #3a2400); }
   /* Animated: pulsierender Pink-Gold-Rahmen, bewegte Kunst */
-  .stk-front.r-anim { border-color: transparent; border-width: 3px; background: radial-gradient(circle at 50% 30%, #3a1040, #120a24 70%) padding-box, linear-gradient(var(--hb, 0deg), #ff5ab4, #ffd36b, #ff5ab4, #b98cff, #ff5ab4) border-box; animation: holoFrame 2.6s linear infinite, animPulse 1.6s ease-in-out infinite; }
+  .stk-front.r-anim { border-color: transparent; border-width: 3px; background: radial-gradient(circle at 50% 30%, #3a1040, #120a24 70%) padding-box, linear-gradient(var(--hb, 0deg), #ff5ab4, #ffd36b, #ff5ab4, #b98cff, #ff5ab4) border-box; animation: holoFrame 2.6s linear infinite; box-shadow: 0 0 8px rgba(255,90,180,.45), inset 0 0 14px rgba(255,90,180,.25); }
   @keyframes animPulse { 0%,100% { box-shadow: 0 0 8px rgba(255,90,180,.45), inset 0 0 14px rgba(255,90,180,.25); } 50% { box-shadow: 0 0 22px rgba(255,211,107,.75), inset 0 0 22px rgba(255,211,107,.35); } }
+  /* Leistung (v6.9.1): das Gold-Leuchten liegt fertig auf einer eigenen Schicht und nur deren
+     Deckkraft pulsiert (laeuft ohne Neumalen) - vorher wurde box-shadow jedes Bild neu gemalt */
+  .stk-front.r-anim::after { content: ''; position: absolute; inset: -3px; border-radius: inherit; pointer-events: none; z-index: 0;
+    box-shadow: 0 0 22px rgba(255,211,107,.75), inset 0 0 22px rgba(255,211,107,.35); opacity: 0; animation: animGlow 1.6s ease-in-out infinite; }
+  @keyframes animGlow { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
   .stk-front.r-anim .name { background: linear-gradient(90deg, #ffd6f1, #ffd36b, #ff9ae4, #ffd36b, #ffd6f1); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: bold; animation: nameShine 2.4s linear infinite; }
   @keyframes nameShine { to { background-position: 200% 0; } }
   /* Hologramm-Effekt der Animated Rares: Die Figur liegt auf einer Ebene
@@ -471,6 +486,9 @@
   @keyframes aSpin { to { transform: rotate(360deg); } }
   .a-orbit { animation: aSpin 9s linear infinite; transform-box: view-box; }
   .a-float { animation: aFloat 2.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  /* gleiches Schweben auf Ebenen-Ebene (liftFloat) - translate/rotate laufen ohne Neuzeichnen */
+  .floaty { animation: popFloat 2.2s ease-in-out infinite; }
+  @keyframes popFloat { 0%, 100% { translate: 0 1.7%; rotate: -1.5deg; } 50% { translate: 0 -4.2%; rotate: 1.5deg; } }
   @keyframes aFloat { 0%,100% { transform: translateY(2px) rotate(-1.5deg); } 50% { transform: translateY(-5px) rotate(1.5deg); } }
   .a-pulse { animation: aPulse 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
   @keyframes aPulse { 0%,100% { opacity: .55; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.06); } }
@@ -554,6 +572,7 @@
   const faPopFlat = id => FA_POP[id] ? `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${FA_POP[id]()}</svg>` : '';
   window.STICKERS = { SET, RL, RC, art, frontHtml, square, square3d, enableTilt, tiltTo, untilt, TOTAL: SET.length, HEAD, faArt, faPop, faPopFlat, faMid, faMidFlat, popLayersOf: (svgFn) => popLayers('x', { x: svgFn }),
     // Zeichen-Bausteine fuer weitere regulaere Sets (v6.9.0, Set 2 "Lock In")
+    liftFloat,
     KIT: { U, pony, bg, glow, rays, spark, sparks, dots, txt, sword, crown, flame, coin, bush, rune, ground, tower, minion, dragonEye, MANE } };
   // Alle Sticker-Sets nach id (v6.5.0) - weitere Sets melden sich hier an (stickers-neon.js)
   window.STICKER_SETS = window.STICKER_SETS || {};

@@ -1,5 +1,12 @@
 # Internal Changelog
 
+## 6.9.1 — 2026-11-09
+
+- Album performance: floating pop figures animate on the layer divs (liftFloat -> class floaty, compositor-only) instead of inside every filtered slab; slab layers only shown on hover/tilt; animated-rare gold glow pulses via ::after opacity instead of box-shadow. Idle frame ~87 ms -> ~37 ms with everything unlocked.
+- Binder button hover no longer clipped (#albumView padding/negative margin).
+- loadAlbum robustness: only the newest response counts (loadSeq), snapshot taken after fetch and only on a real change, running flip/cover/shrink cancelled before a new one, ghost binder without frozen flip/cover parts, binder double-click guarded, pack not measured mid fly-in, set switches + Enter blocked while a booster is opening (until Done).
+- Lock In still gated to test instances (not in What's New).
+
 ## 6.9.0 — 2026-11-09
 
 - Album = binder (user): cover opens on page load (hinged at the ring spine), page flip around the rings when switching sets inside a binder (forward: old page turns left, backward: new page turns in from the left), live sticker animations carried onto the turning page (animRecord/animApply), SVG ids kept in clones (art looked different), fixed page height 8x8 slots (= 50 + max 14 FAs) for regular sets / 8x4 (25 + max 7 FAs) for special sets, no FA placeholders, 4 rings (3 in the Special Album), all slots border-box (rows no longer change height).
