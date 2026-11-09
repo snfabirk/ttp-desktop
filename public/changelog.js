@@ -25,6 +25,21 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.9.0',
+      date: '2026-11-09',
+      notable: [
+        'The Album is now a real binder: it opens when you visit it, and switching sets turns the page.',
+        'Two binders: your regular Album and a separate Special Album for special sets - switching closes one binder and opens the other.',
+        'The booster on the left now swaps along with the set you are looking at.',
+        'Full Arts on your profile now pop out in real 3D, just like in the Album.',
+        'Every set has its own colors - card backs while opening a Neon District booster are now black.',
+        'Finished sets get a gold star on their tab, Master Sets (with every Full Art) a rainbow star.',
+        'Lucky wheel: click the wheel itself to spin it.'
+      ],
+      refinements: 6,
+      bugfixes: 2
+    },
+    {
       version: '6.8.0',
       date: '2026-11-08',
       notable: [

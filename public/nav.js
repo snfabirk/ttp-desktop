@@ -111,6 +111,16 @@
       window.TTPNav = Object.assign(window.TTPNav || {}, { refreshBoosters: refresh });
       refresh();
 
+      // Neues Set erschienen (v6.9.0): grosse Ankuendigung + Gratis-Booster
+      // abholen - das Skript wird nur nachgeladen, wenn wirklich etwas wartet
+      fetch('/api/sets/release').then(r => r.json()).then(d => {
+        if (!d || !d.pending || !d.pending.length) return;
+        const sc = document.createElement('script');
+        sc.src = 'set-release.js';
+        sc.onload = () => window.TTPSetRelease && window.TTPSetRelease.check();
+        document.head.appendChild(sc);
+      }).catch(() => {});
+
       // Geschenkte Booster (v6.6.0): beim Laden/Fokus abholen (hoechstens alle
       // 30 s), dann ein Hinweisfenster je Absender; zaehlen fuer den Zaehler mit.
       let lastClaim = 0;

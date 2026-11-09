@@ -14,6 +14,7 @@
 <script src="changelog.js"></script>
 <script src="stickers.js"></script>
 <script src="stickers-neon.js"></script>
+<script src="stickers-lockin.js"></script>
 <script src="cos-preview.js"></script>
 <style>
   /* Shop (v5.13.0, provisorisch): rotierende Angebote (taeglich 3, woechentlich
@@ -195,6 +196,7 @@
     transition: left 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
   .wheel-big .wheel-rot { width: 100%; height: 100%; }
+  .wheel-big.can { cursor: pointer; }
   .wheel-big-ui {
     position: fixed; left: 50%; z-index: 502; transform: translateX(-50%);
     display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -721,7 +723,7 @@
     }
 
     // ----- Booster: Kauf mit Zwei-Klick-Bestaetigung; Pull Rates nur hinter "?" -----
-    const BOOSTER_GRAD = { base: 'linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%)', neon: 'linear-gradient(160deg, #07080c 0%, #14161e 38%, #2a0a14 72%, #5a0a1e 100%)' };
+    const BOOSTER_GRAD = { base: 'linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%)', neon: 'linear-gradient(160deg, #07080c 0%, #14161e 38%, #2a0a14 72%, #5a0a1e 100%)', lockin: 'linear-gradient(150deg, #1c0306 0%, #4a0c14 38%, #7a1620 70%, #c8a96e 100%)' };
     const STK = id => (window.STICKER_SETS && window.STICKER_SETS[id]) || window.STICKERS;
     const bfan = id => { const L = STK(id); if (!L) return ''; const an = L.SET.filter(x => x.r === 'anim'), cls = an.length === 2 ? ['f0', 'f2'] : ['f0', 'f1', 'f2']; return an.map((x, i) => `<div class="${cls[i] || ''}">${L.square(x)}</div>`).join(''); };
     // "2d 14h 32m 10s" bis zum Zeitpunkt
@@ -865,7 +867,7 @@
       const overlay = document.createElement('div');
       overlay.className = 'wheel-overlay';
       const wheel = document.createElement('div');
-      wheel.className = 'wheel-big';
+      wheel.className = 'wheel-big' + (shop.wheel.canSpin ? ' can' : '');
       wheel.innerHTML = wheelSvg(shop.wheel.segments);
       wheel.querySelector('.wheel-rot').style.transform = `rotate(${rotation}deg)`;
       const ui = document.createElement('div');
@@ -886,6 +888,8 @@
       }));
       overlay.addEventListener('click', closeWheel);
       ui.querySelector('#spinBtn').addEventListener('click', spin);
+      // Klick aufs grosse Rad dreht auch (nicht nur der Spin-Knopf)
+      wheel.addEventListener('click', spin);
     }
 
     function closeWheel() {
@@ -907,6 +911,7 @@
       spinning = true;
       const btn = big.ui.querySelector('#spinBtn');
       btn.disabled = true;
+      big.wheel.classList.remove('can');
       let result;
       try {
         const res = await fetch('/api/shop/spin', { method: 'POST' });
@@ -915,6 +920,7 @@
       if (!result.ok) {
         big.ui.querySelector('#spinResult').textContent = result.error || 'Spin failed.';
         spinning = false;
+        btn.disabled = false; big.wheel.classList.add('can');
         return;
       }
       // Ziel: Mitte des gewonnenen Felds unter den Zeiger (oben), 6 volle Runden

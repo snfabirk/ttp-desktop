@@ -552,7 +552,9 @@
   };
   const faMidFlat = id => FA_MID[id] ? `<svg viewBox="0 0 120 168" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">${FA_MID[id]()}</svg>` : '';
   const faPopFlat = id => FA_POP[id] ? `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${FA_POP[id]()}</svg>` : '';
-  window.STICKERS = { SET, RL, RC, art, frontHtml, square, square3d, enableTilt, tiltTo, untilt, TOTAL: SET.length, HEAD, faArt, faPop, faPopFlat, faMid, faMidFlat };
+  window.STICKERS = { SET, RL, RC, art, frontHtml, square, square3d, enableTilt, tiltTo, untilt, TOTAL: SET.length, HEAD, faArt, faPop, faPopFlat, faMid, faMidFlat, popLayersOf: (svgFn) => popLayers('x', { x: svgFn }),
+    // Zeichen-Bausteine fuer weitere regulaere Sets (v6.9.0, Set 2 "Lock In")
+    KIT: { U, pony, bg, glow, rays, spark, sparks, dots, txt, sword, crown, flame, coin, bush, rune, ground, tower, minion, dragonEye, MANE } };
   // Alle Sticker-Sets nach id (v6.5.0) - weitere Sets melden sich hier an (stickers-neon.js)
   window.STICKER_SETS = window.STICKER_SETS || {};
   window.STICKER_SETS.base = window.STICKERS;

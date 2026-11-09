@@ -916,6 +916,12 @@ app.post('/api/boosters/redeem', (req, res) => {
   const result = progression.redeemBoosterVoucher((req.body || {}).set || 'base');
   res.status(result.ok ? 200 : 400).json(result);
 });
+// Neues Set: Gratis-Booster zum Release (v6.9.0)
+app.get('/api/sets/release', (req, res) => res.json(progression.releaseGiftsPending()));
+app.post('/api/sets/release/claim', (req, res) => {
+  const result = progression.claimReleaseGift((req.body || {}).set);
+  res.status(result.ok ? 200 : 400).json(result);
+});
 // Album-Reiter: neu erhaltene Booster seit dem letzten Album-Besuch (v6.6.0)
 app.get('/api/boosters/new', (req, res) => res.json({ newBoosters: progression.newBoostersCount() }));
 app.post('/api/boosters/seen', (req, res) => res.json(progression.markBoostersSeen()));

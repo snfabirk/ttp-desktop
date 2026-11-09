@@ -14,6 +14,7 @@
   <script src="changelog.js"></script>
   <script src="stickers.js"></script>
   <script src="stickers-neon.js"></script>
+  <script src="stickers-lockin.js"></script>
   <script src="stickers-fa.js"></script>
   <style>
     /* Spielerprofil (v5.5.0): eine Widget-Flaeche, die genau so aussieht, wie
@@ -925,7 +926,7 @@
           const n = w.config && w.config.n;
           const L = stickerLib(w.config && w.config.set);
           const s = L && L.SET.find(x => x.n === n);
-          if (s && w.config.fa) return `<div class="sticker-w">${window.STICKER_FA.square(L, s)}<span class="stk-glare"></span></div>`;
+          if (s && w.config.fa) return `<div class="sticker-w">${window.STICKER_FA.square3d(L, s)}<span class="stk-glare"></span></div>`;
           return `<div class="sticker-w">${s ? (L.square3d ? L.square3d(s) : L.square(s)) + '<span class="stk-glare"></span>' : ''}</div>`;
         }
       },

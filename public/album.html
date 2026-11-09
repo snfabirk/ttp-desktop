@@ -23,7 +23,7 @@
   .album-empty { color: var(--text-dim); font-size: .8rem; text-align: center; line-height: 1.5; }
   .album-empty a { color: var(--gold); }
   .album-tabs span.on { cursor: default; }
-  .album-wrap { width: 100%; max-width: 1180px; margin: 18px auto 60px; padding: 0 20px; box-sizing: border-box; display: grid; grid-template-columns: 300px 1fr; gap: 22px; align-items: start; }
+  .album-wrap { width: 100%; max-width: 1280px; margin: 18px auto 60px; padding: 0 20px; box-sizing: border-box; display: grid; grid-template-columns: 300px 1fr; gap: 22px; align-items: start; }
   .card-box { background: var(--panel-bg); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
   .card-box h3 { margin: 0 0 12px; color: var(--gold); font-family: 'Cinzel', Georgia, serif; letter-spacing: 1px; font-size: 1.05rem; }
   .album-wrap .btn, .ov .btn { padding: 8px 18px; border-radius: 16px; border: 1px solid var(--gold); background: transparent; color: var(--gold); font-family: inherit; font-size: .9rem; cursor: pointer; }
@@ -40,7 +40,10 @@
   .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 
   /* ---------- Booster-Pack ---------- */
-  .pack-area { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .pack-area { display: flex; flex-direction: column; align-items: center; gap: 14px; position: relative; z-index: 1; }
+  /* Ebenen (Nutzer: saubere Animationen): Booster-Spalte hinten, Binder (umklappende
+     Seite, Deckel) immer davor - auch wenn eine Seite ueber den Booster schwingt */
+  .album-wrap > .album-box { z-index: 3; }
   /* Foil-Booster (v5.29.4): gezackte Schweissnaehte oben/unten (Maske), leicht
      gewoelbter Koerper (Lichtkante links, Schatten rechts), Riffelung in den Naehten.
      Der Schlagschatten sitzt am Wrapper, weil die Maske ihn sonst abschneiden wuerde. */
@@ -185,6 +188,11 @@
   .face { position: absolute; inset: 0; border-radius: 12px; overflow: hidden; }
   .back { background: radial-gradient(circle at 50% 40%, #24365e, #0c1426 70%); border: 2px solid #3a4a70; display: grid; place-items: center; }
   .back svg { width: 54%; opacity: .55; }
+  /* Rueckseiten je Set (Nutzer, v6.9.0): Base blau, Special schwarz/gelb, Lock In dunkelrot/gold */
+  .ov.set-neon .back { background: radial-gradient(circle at 50% 40%, #22222c, #050508 70%); border-color: #8a7a1a; }
+  .ov.set-neon .back svg circle { stroke: #e8d43a; } .ov.set-neon .back svg path { fill: #e8d43a; }
+  .ov.set-lockin .back { background: radial-gradient(circle at 50% 40%, #5e1622, #1a0306 72%); border-color: #8a2a34; }
+  .ov.set-lockin .back svg { opacity: .7; }
   .back.shake { animation: suspense .12s linear infinite; }
   @keyframes suspense { 0% { transform: translate(0, 0); } 25% { transform: translate(-1.5px, .5px); } 50% { transform: translate(1px, -1px); } 75% { transform: translate(1.5px, .5px); } }
   .back.glow-holo { box-shadow: 0 0 26px 6px color-mix(in srgb, var(--c-holo) 75%, transparent), inset 0 0 30px rgba(255,255,255,.25); border-color: #e0d0ff; animation: holoBack 2.2s linear infinite; }
@@ -207,7 +215,7 @@
   .album-tabs span.soon { opacity: .7; border-style: dashed; }
   .album-progress { font-size: .8rem; color: var(--text-dim); margin: -4px 0 12px; }
   .album-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px; }
-  .album-slot { aspect-ratio: 190 / 266; border-radius: 9px; border: 1px dashed var(--border); position: relative; display: grid; place-items: center; color: #34405c; font-size: .8rem; }
+  .album-slot { box-sizing: border-box; aspect-ratio: 190 / 266; border-radius: 9px; border: 1px dashed var(--border); position: relative; display: grid; place-items: center; color: #34405c; font-size: .8rem; }
   .album-slot .num { position: absolute; top: 4px; left: 6px; font-size: .6rem; color: var(--text-dim); z-index: 3; }
   /* auf dem Sticker: kleine dunkle Marke, damit die Nummer in jedem Theme lesbar ist (v6.7.2) */
   .album-slot.have .num { top: 3px; left: 4px; padding: 0 4px; border-radius: 6px; background: rgba(0, 0, 0, .5); color: #ece6d6; }
@@ -367,12 +375,104 @@
     background: linear-gradient(115deg, rgba(255,154,213,.5), rgba(143,216,255,.5), rgba(157,255,176,.5)) border-box;
     -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; }
   .album-box.master .mf-badge { background: linear-gradient(115deg, #ffd1ea, #fff1b8, #c8ffd4, #c6ecff, #e3d1ff); }
-  .album-tabs span.master { border-color: #e8c25a; color: #f6e27a; }
-  .album-tabs span.master::after { content: ' \2605'; color: #f6e27a; }
-  .album-tabs span.complete { border-color: #c8a96e; color: #e8c25a; }
-  .album-tabs span.complete::after { content: ' \2713'; color: #e8c25a; }
+  /* Fertige Sets (Nutzer): nur ein Stern hinter dem Namen, kein eigener Rahmen
+     (sonst sieht der Tab ausgewaehlt aus) - Complete = goldener Stern, Master = Regenbogen-Stern */
+  .album-tabs span.complete::after, .album-tabs span.master::after { content: ' \2605'; color: #f2c94c; text-shadow: 0 0 6px rgba(242,201,76,.5); }
+  .album-tabs span.master::after { color: transparent; text-shadow: none; background: linear-gradient(115deg, #ff9ad5, #ffe08a, #9dffb0, #8fd8ff, #c49bff); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 0 3px rgba(196,155,255,.6)); }
   .album-box.complete { box-shadow: 0 0 18px rgba(232,194,90,.18), 0 10px 30px rgba(0,0,0,.35); }
   .album-slot.fa .num { color: var(--c-fa); font-weight: bold; }
+
+
+  /* ---------- Binder (v6.9.0, Nutzer): das Album als Sammelordner mit Ringen,
+     Einsteckhuellen und umblaetternder Seite beim Set-Wechsel ---------- */
+  .binder { position: relative; perspective: 2400px; padding: 10px 10px 12px 12px; border-radius: 14px;
+    background: radial-gradient(120% 90% at 30% 0%, rgba(255,255,255,.06), transparent 60%), linear-gradient(160deg, color-mix(in srgb, var(--gold) 16%, #1c120c), color-mix(in srgb, var(--gold) 8%, #0e0906));
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), inset 0 2px 6px rgba(255,255,255,.05), 0 10px 26px rgba(0,0,0,.4); }
+  /* Naht am Einband */
+  .binder::before { content: ''; position: absolute; inset: 4px; border-radius: 11px; border: 1px dashed color-mix(in srgb, var(--gold) 38%, transparent); pointer-events: none; }
+  .binder-page { position: relative; border-radius: 6px 12px 12px 6px; padding: 14px 16px 18px 58px;
+    background: linear-gradient(90deg, rgba(0,0,0,.28), rgba(0,0,0,0) 70px, rgba(255,255,255,.025) 72px, rgba(0,0,0,0) 74px),
+                color-mix(in srgb, var(--input-bg) 88%, var(--gold) 4%);
+    border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.03), 0 2px 0 -1px color-mix(in srgb, var(--input-bg) 70%, #000), 0 4px 0 -2px color-mix(in srgb, var(--input-bg) 55%, #000), 0 8px 18px rgba(0,0,0,.3); }
+  /* Lochung + Ringe links */
+  .binder-rings { position: absolute; left: 0; top: 0; bottom: 0; width: 50px; z-index: 4; display: flex; flex-direction: column; justify-content: space-evenly; pointer-events: none; }
+  .binder-rings i { position: relative; display: block; height: 14px; }
+  .binder-rings i::before { content: ''; position: absolute; left: 30px; top: 1px; width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle at 50% 40%, rgba(0,0,0,.85), rgba(0,0,0,.55)); box-shadow: inset 0 1px 2px #000, 0 1px 0 rgba(255,255,255,.08); }
+  .binder-rings i::after { content: ''; position: absolute; left: -4px; top: 3px; width: 42px; height: 8px; border-radius: 5px;
+    background: linear-gradient(180deg, #f4f4fa 0%, #b8bccb 35%, #6e7284 70%, #9ca0b2 100%); box-shadow: 0 2px 3px rgba(0,0,0,.55), inset 0 -1px 0 rgba(0,0,0,.25); }
+  /* Einsteckhuellen: leichte Folie mit Oeffnungskante oben */
+  .binder .album-slot { border: 1px solid color-mix(in srgb, var(--border) 70%, rgba(255,255,255,.12)); background: linear-gradient(160deg, rgba(255,255,255,.06), rgba(255,255,255,.015) 40%, rgba(0,0,0,.06)); box-shadow: inset 0 1px 0 rgba(255,255,255,.08); }
+  .binder .album-slot::before { content: ''; position: absolute; left: 6%; right: 6%; top: 7%; height: 1px; background: rgba(255,255,255,.12); pointer-events: none; }
+  .binder .album-slot.have { border: none; background: none; box-shadow: none; }
+  .binder .album-slot.have::before { display: none; }
+  .binder .album-slot.have::after { content: ''; position: absolute; inset: -3px; border-radius: 11px; border: 1px solid rgba(255,255,255,.1); pointer-events: none;
+    background: linear-gradient(130deg, rgba(255,255,255,.07), transparent 30%); }
+  /* umblaetternde Seite */
+  .page-flip { position: absolute; left: 12px; top: 10px; right: 10px; z-index: 6; transform-origin: 0 50%; transform-style: preserve-3d; pointer-events: none; will-change: transform; }
+  .page-flip > .pf-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform-style: flat; overflow: hidden; border-radius: 6px 12px 12px 6px; }
+  .page-flip > .pf-face.front > .binder-page { height: 100%; box-sizing: border-box; }
+  /* blickdicht, sonst scheint die neue Seite durch die umklappende */
+  .page-flip > .pf-face.front, .page-under { background: var(--bg); border-radius: 6px 12px 12px 6px; }
+  .page-flip > .pf-face.back { transform: rotateY(180deg); border-radius: 12px 6px 6px 12px; background: linear-gradient(270deg, rgba(0,0,0,.3), rgba(0,0,0,0) 70px), color-mix(in srgb, var(--input-bg) 82%, var(--gold) 4%); border: 1px solid var(--border); }
+  .page-flip .pf-face * { transition: none !important; }
+  /* Ringe laufen beim Scrollen mit (eine Ring-Reihe je Sticker-Reihe) */
+  .binder-rings { display: block; overflow: hidden; }
+  .rings-strip { position: absolute; left: 0; top: 0; width: 50px; will-change: transform; }
+  .rings-strip i { position: absolute; left: 0; width: 50px; }
+  .page-flip .pf-face .stk-card { transform-style: flat !important; }
+  .page-flip .pf-shade { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background: linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,.45)); opacity: 0; }
+  /* Einband (v6.9.0, Nutzer: "einen Binder klappt man ja auf"): Deckel klappt
+     an der Ringseite auf bzw. zu */
+  .binder-cover { position: absolute; inset: 0; z-index: 8; transform-origin: 0 50%; transform-style: preserve-3d; pointer-events: none; will-change: transform; }
+  .bc-face { position: absolute; inset: 0; border-radius: 14px; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; }
+  .bc-face.front { display: flex; flex-direction: column; align-items: center; padding-top: 70px; box-sizing: border-box;
+    background: linear-gradient(90deg, rgba(0,0,0,.4) 0 3px, rgba(255,255,255,.06) 3px 5px, transparent 5px) 30px 0 / 100% 100% no-repeat,
+                radial-gradient(120% 70% at 35% 0%, rgba(255,255,255,.09), transparent 60%),
+                linear-gradient(160deg, color-mix(in srgb, var(--gold) 18%, #22160d), color-mix(in srgb, var(--gold) 8%, #0e0906));
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.07), inset 0 0 40px rgba(0,0,0,.45); }
+  .bc-face.front::before { content: ''; position: absolute; inset: 9px 9px 9px 42px; border-radius: 10px; border: 1px dashed color-mix(in srgb, var(--gold) 45%, transparent); }
+  .bc-face.front::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 30px; background: linear-gradient(90deg, rgba(0,0,0,.35), rgba(0,0,0,.1)); }
+  .bc-logo { width: 110px; height: 110px; margin-left: 30px; opacity: .9; filter: drop-shadow(0 1px 0 rgba(255,255,255,.15)) drop-shadow(0 -1px 0 rgba(0,0,0,.6)); }
+  .bc-logo svg { width: 100%; height: 100%; }
+  .bc-title { margin: 14px 0 0 30px; font: 700 2.3rem/1.1 'Cinzel', Georgia, serif; letter-spacing: .12em; color: #e2c27a; text-shadow: 0 1px 0 rgba(255,255,255,.18), 0 -1px 0 rgba(0,0,0,.7), 0 0 18px rgba(226,194,122,.18); }
+  .bc-sub { margin: 6px 0 0 30px; font: .75rem 'Cinzel', Georgia, serif; letter-spacing: .4em; color: color-mix(in srgb, #e2c27a 70%, transparent); }
+  .bc-face.back { transform: rotateY(180deg); background: linear-gradient(270deg, rgba(0,0,0,.4), transparent 50px), repeating-linear-gradient(45deg, rgba(255,255,255,.025) 0 2px, transparent 2px 6px), color-mix(in srgb, var(--gold) 10%, #140d08); }
+  .binder-cover.special .bc-face.front { background: linear-gradient(90deg, rgba(0,0,0,.5) 0 3px, rgba(255,255,255,.05) 3px 5px, transparent 5px) 30px 0 / 100% 100% no-repeat, radial-gradient(120% 70% at 35% 0%, rgba(255,255,255,.07), transparent 60%), linear-gradient(160deg, #26262f, #08080c); }
+  .binder-cover.special .bc-face.front::before { border-color: rgba(232,212,58,.55); }
+  .binder-cover.special .bc-title { color: #e8d43a; text-shadow: -2px 0 rgba(94,240,240,.55), 2px 0 rgba(255,42,74,.55), 0 0 18px rgba(232,212,58,.25); }
+  .binder-cover.special .bc-sub { color: rgba(232,212,58,.7); }
+  .binder-cover.special .bc-logo svg circle, .binder-cover.special .bc-logo svg path { stroke: #e8d43a; }
+  .binder-cover.special .bc-logo svg path { fill: #e8d43a; }
+  .binder-cover.special .bc-face.back { background: linear-gradient(270deg, rgba(0,0,0,.45), transparent 50px), repeating-linear-gradient(45deg, rgba(232,212,58,.035) 0 2px, transparent 2px 6px), #0c0c11; }
+  .binder-cover .bc-shade { position: absolute; inset: 0; border-radius: 14px; pointer-events: none; background: linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,.5)); opacity: 0; }
+  /* feste Seitenhoehe (Nutzer-Test): beide Binder gleich hoch (4 Reihen), groessere Sets scrollen in der Seite */
+  .binder .album-grid { align-content: start; overflow: visible; overscroll-behavior: contain; padding: 6px 8px 6px 4px; margin: -6px -8px -6px -4px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--gold) 45%, transparent) transparent; }
+  .binder .album-grid::-webkit-scrollbar { width: 8px; }
+  .binder .album-grid::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--gold) 40%, transparent); border-radius: 4px; }
+  .binder .album-grid::-webkit-scrollbar-track { background: rgba(0,0,0,.18); border-radius: 4px; }
+  /* Zwei Binder (Nutzer): regulaeres Album + Special-Sets-Binder, getrennt waehlbar */
+  /* vertikal clip: der aufschwingende Deckel / die Seite verlaengert sonst kurz die Seite (Scrollbalken),
+     seitlich darf er weiter ueber die Booster-Spalte schwingen; Polster fuer den Schatten */
+  #albumView { position: relative; overflow-x: visible; overflow-y: clip; padding-bottom: 34px; margin-bottom: -34px; }
+  .binder-pick { display: flex; gap: 10px; margin-bottom: 12px; }
+  .binder-pick button { display: flex; align-items: center; gap: 9px; font: inherit; font-size: .85rem; color: var(--text-dim); cursor: pointer; padding: 6px 14px 6px 8px; border-radius: 10px;
+    border: 1px solid var(--border); background: color-mix(in srgb, var(--input-bg) 60%, transparent); transition: color .15s, border-color .15s, transform .15s; }
+  .binder-pick button:hover:not(.on) { color: var(--text); border-color: var(--border-hover); transform: translateY(-1px); }
+  .binder-pick button.on { color: var(--gold); border-color: var(--gold); cursor: default; }
+  .binder-pick button small { color: var(--text-faint); font-size: .72rem; }
+  /* kleiner Ordnerruecken als Symbol */
+  .binder-pick .bp-ic { width: 16px; height: 22px; border-radius: 3px 2px 2px 3px; position: relative; flex-shrink: 0;
+    background: linear-gradient(90deg, rgba(0,0,0,.35) 0 4px, transparent 4px), color-mix(in srgb, var(--gold) 45%, #3a2410); box-shadow: 0 1px 3px rgba(0,0,0,.5); }
+  .binder-pick .bp-ic.sp { background: linear-gradient(90deg, rgba(0,0,0,.4) 0 4px, transparent 4px), linear-gradient(160deg, #2a2a34, #0c0c12); box-shadow: inset 0 0 0 1px #e8d43a, 0 1px 3px rgba(0,0,0,.5); }
+  .binder-pick .bp-ic::after { content: ''; position: absolute; left: 6px; right: 3px; top: 5px; height: 3px; border-radius: 1px; background: rgba(255,255,255,.55); }
+  .binder.special { background: radial-gradient(120% 90% at 30% 0%, rgba(255,255,255,.05), transparent 60%), linear-gradient(160deg, #23232c, #09090e); }
+  .binder.special::before { border-color: rgba(232,212,58,.45); }
+  .binder.special .binder-page { background: linear-gradient(90deg, rgba(0,0,0,.32), rgba(0,0,0,0) 70px), color-mix(in srgb, var(--input-bg) 80%, #000 12%); }
+  .binder-ghost { position: absolute; z-index: 7; pointer-events: none; margin: 0 !important; }
+  .binder-ghost * { transition: none !important; }
+  .binder-ghost .stk-card { transform-style: flat !important; }
+  .page-under { position: absolute; left: 12px; top: 10px; right: 10px; z-index: 5; pointer-events: none; }
 
   /* ---------- Inspizieren: 3D-Neigung mit dem Cursor ---------- */
   .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.86); backdrop-filter: blur(6px); display: grid; place-items: center; cursor: zoom-out; opacity: 0; transition: opacity .25s; }
@@ -422,9 +522,15 @@
       <div class="view-sw" id="viewSw"><button type="button" data-view="album" class="on">Collection</button><button type="button" data-view="dupes">Dupes <b id="dupeTotal"></b></button><button type="button" data-view="trades">Trades <b id="tradeCount"></b></button></div>
     </div>
     <div id="albumView">
+      <div class="binder-pick" id="binderPick"></div>
       <div class="album-tabs" id="albumTabs"></div>
-      <div class="album-progress" id="albumProgress"></div>
-      <div class="album-grid" id="albumGrid"></div>
+      <div class="binder" id="binder">
+        <div class="binder-page" id="binderPage">
+          <div class="binder-rings"><div class="rings-strip"></div></div>
+          <div class="album-progress" id="albumProgress"></div>
+          <div class="album-grid" id="albumGrid"></div>
+        </div>
+      </div>
     </div>
     <div id="dupesView" hidden></div>
     <div id="tradesView" hidden></div>
@@ -433,6 +539,7 @@
 
 <script src="stickers.js"></script>
 <script src="stickers-neon.js"></script>
+<script src="stickers-lockin.js"></script>
 <script src="stickers-fa.js"></script>
 <script>
 // ===================== Sticker-Kunst (detailliert, ohne Die-Cut-Rand) =====================
@@ -453,6 +560,7 @@ let DATA = null;
 let owned = {};                        // { n: Anzahl } fuer das gewaehlte Set
 const SET_STYLE = {
   base: { name: 'BASE SET', band: 'BOOSTER PACK · 7 STICKERS', grad: 'linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%)' },
+  lockin: { name: 'LOCK IN', band: 'BOOSTER PACK · 7 STICKERS', grad: 'linear-gradient(150deg, #1c0306 0%, #4a0c14 38%, #7a1620 70%, #c8a96e 100%)' },
   neon: { name: 'NEON DISTRICT', band: 'SPECIAL BOOSTER · 7 STICKERS', grad: 'linear-gradient(160deg, #07080c 0%, #14161e 38%, #2a0a14 72%, #5a0a1e 100%)' }
 };
 const setCards = () => lib().SET;
@@ -471,11 +579,232 @@ const TOTAL_IN_SET = () => (cur() ? cur().total : 50);
 let sel = 0;
 const cur = () => DATA && DATA.sets[sel];
 let unopened = 0;
+// Seite immer genau 4 Reihen hoch (wie das Special Album), Rest scrollt
+// Feste Seitengroesse je Binder (Nutzer): 8 Spalten; regulaer 8 Reihen = 64
+// (50 Sticker + max. 14 FAs), Special 4 Reihen = 32 (25 + max. 7 FAs). Keine
+// Platzhalter fuer FAs - die Seite ist nur so lang, man sieht nicht, wie viele es gibt.
+const ROWS = { regular: 8, special: 4 };
+let PAGE_ROWS = ROWS.regular;
+function fitBinderPage() {
+  const g = document.getElementById('albumGrid'), slot = g.querySelector('.album-slot');
+  if (!slot) return;
+  PAGE_ROWS = cur() && cur().special ? ROWS.special : ROWS.regular;
+  const gap = parseFloat(getComputedStyle(g).rowGap) || 10;
+  g.style.height = `${slot.offsetHeight * PAGE_ROWS + gap * (PAGE_ROWS - 1) + 12}px`;
+  layoutRings();
+}
+// Ringe (Nutzer: weniger, ca. 4): gleichmaessig ueber die Seite verteilt -
+// regulaerer Binder 4, der halb so hohe Special-Binder 3
+function layoutRings() {
+  const page = document.getElementById('binderPage'), strip = page.querySelector('.rings-strip');
+  if (!strip) return;
+  const n = cur() && cur().special ? 3 : 4, h = page.offsetHeight;
+  strip.innerHTML = Array.from({ length: n }, (_, k) => `<i style="top:${(h * (k + .5) / n - 7).toFixed(1)}px;height:14px"></i>`).join('');
+  syncRings();
+}
+function syncRings() {
+  const strip = document.querySelector('#binderPage .rings-strip');
+  if (strip) strip.style.transform = `translateY(${-document.getElementById('albumGrid').scrollTop}px)`;
+}
+document.getElementById('albumGrid').addEventListener('scroll', syncRings, { passive: true });
+// Laufende Sticker-Animationen merken / auf Klone uebertragen, damit beim
+// Blaettern nichts neu startet (Nutzer: Animationen laufen weiter, bis die
+// alte Seite nicht mehr zu sehen ist)
+function animRecord(root) {
+  if (!document.getAnimations) return null;
+  const els = [root, ...root.querySelectorAll('*')], idx = new Map(els.map((e, i) => [e, i]));
+  const rec = new Map();
+  document.getAnimations().forEach(a => {
+    const t = a.effect && a.effect.target;
+    if (!t || !idx.has(t) || !a.animationName) return;
+    rec.set(`${idx.get(t)}|${a.effect.pseudoElement || ''}|${a.animationName}`, a.currentTime);
+  });
+  return { rec, at: performance.now() };
+}
+function animApply(r, clone) {
+  if (!r || !document.getAnimations) return;
+  const els = [clone, ...clone.querySelectorAll('*')], idx = new Map(els.map((e, i) => [e, i]));
+  const dt = performance.now() - r.at;
+  document.getAnimations().forEach(a => {
+    const t = a.effect && a.effect.target;
+    if (!t || !idx.has(t) || !a.animationName) return;
+    const v = r.rec.get(`${idx.get(t)}|${a.effect.pseudoElement || ''}|${a.animationName}`);
+    if (v != null) { try { a.currentTime = v + dt; } catch (e) { /* egal */ } }
+  });
+}
+window.addEventListener('resize', () => { if (document.getElementById('albumGrid').style.height) fitBinderPage(); });
+let packQuiet = false;   // true: Karussell hat den Pack schon getauscht
+// Pack-Tausch: der alte fliegt zur Seite hinaus, der neue kommt von der anderen Seite
+function swapPack(snap, forward) {
+  const real = document.getElementById('pack').parentElement;
+  if (document.documentElement.classList.contains('fx-off') || !real.animate) return;
+  const g = snap.el;
+  [g, ...g.querySelectorAll('[id]')].forEach(x => x.removeAttribute('id'));
+  // der fliegende alte Pack bleibt in der Booster-Spalte (gleiche Ebene wie der echte)
+  const area = real.closest('.pack-area'), ar = area.getBoundingClientRect();
+  Object.assign(g.style, { position: 'absolute', left: `${snap.r.left - ar.left}px`, top: `${snap.r.top - ar.top}px`, width: `${snap.r.width}px`, height: `${snap.r.height}px`, margin: 0, zIndex: 2, pointerEvents: 'none' });
+  area.appendChild(g);
+  const d = forward ? -1 : 1;
+  const out = g.animate([{ transform: 'none', opacity: 1 }, { transform: `translate(${d * 150}px, 30px) rotate(${d * 14}deg) scale(.85)`, opacity: 0 }], { duration: 380, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'forwards' });
+  out.onfinish = out.oncancel = () => g.remove();
+  real.animate([{ transform: `translate(${-d * 150}px, -30px) rotate(${-d * 14}deg) scale(.85)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 480, delay: 200, easing: 'cubic-bezier(.2,.9,.3,1.15)', fill: 'backwards' });
+}
+let shownSet = null, shownIdx = -1, shownKind = null;   // welches Set gerade im Binder aufgeschlagen ist
+const lastOfKind = {};                                     // zuletzt offenes Set je Binder
+// Klone: nur die Seiten-IDs entfernen. Die IDs IN den Sticker-SVGs (Verlaeufe,
+// Filter) muessen bleiben, sonst sehen die Bilder auf der Klon-Seite anders aus.
+const unId = el => { [el, ...el.querySelectorAll('#binderPage, #albumProgress, #albumGrid, #binder')].forEach(x => x.removeAttribute('id')); return el; };
+// Deckel des Binders (v6.9.0, Nutzer): klappt an der Ringseite auf / zu
+function makeCover(kind) {
+  const c = document.createElement('div');
+  c.className = `binder-cover${kind === 'special' ? ' special' : ''}`;
+  c.innerHTML = `<div class="bc-face front"><div class="bc-logo">${BACK_LOGO}</div><div class="bc-title">${kind === 'special' ? 'SPECIAL ALBUM' : 'ALBUM'}</div><div class="bc-sub">THREE-TRICK-PONY</div><div class="bc-shade"></div></div><div class="bc-face back"><div class="bc-shade"></div></div>`;
+  return c;
+}
+const COVER_EASE = 'cubic-bezier(.45,.05,.25,1)';
+// aufklappen: liefert die Animation (der Deckel verschwindet danach)
+function openCover(binder, kind, delay = 0) {
+  const c = makeCover(kind);
+  binder.appendChild(c);
+  const opt = { duration: 900, delay, easing: COVER_EASE, fill: 'backwards' };
+  const a = c.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(-180deg)' }], opt);
+  c.querySelectorAll('.bc-shade').forEach(s => s.animate([{ opacity: 0 }, { opacity: .85, offset: .5 }, { opacity: 0 }], opt));
+  // liegt am Ende links ueber den Boostern -> dort ausblenden
+  c.querySelector('.bc-face.back').animate([{ opacity: 1 }, { opacity: 1, offset: .7 }, { opacity: 0 }], { ...opt, fill: 'forwards' });
+  a.onfinish = () => c.remove();
+  a.oncancel = () => c.remove();
+  return a;
+}
+// Binder tauschen (v6.9.0, Nutzer): alter Ordner klappt zu und gleitet weg, der
+// andere kommt geschlossen von der anderen Seite und klappt auf
+function swapBinder(snap, toSpecial) {
+  const binder = document.getElementById('binder'), wrap = document.getElementById('albumView');
+  if (flipBusy) flipBusy();
+  if (document.documentElement.classList.contains('fx-off') || !binder.animate) { wrap.style.minHeight = ''; return; }
+  const g = snap.binder;
+  unId(g);
+  g.classList.add('binder-ghost');
+  Object.assign(g.style, { top: `${snap.top}px`, left: `${snap.left}px`, width: `${snap.w}px` });
+  wrap.appendChild(g);
+  { const gg = g.querySelector('.album-grid'); if (gg) gg.scrollTop = snap.sc; }
+  animApply(snap.banims, g);
+  wrap.style.minHeight = `${snap.top + g.offsetHeight}px`;
+  const dir = toSpecial ? -1 : 1, anims = [];
+  // 1) alter Deckel klappt zu
+  const oc = makeCover(toSpecial ? 'regular' : 'special'); g.appendChild(oc);
+  const copt = { duration: 480, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'both' };
+  anims.push(oc.animate([{ transform: 'rotateY(-180deg)' }, { transform: 'rotateY(0deg)' }], copt));
+  oc.querySelector('.bc-face.back').animate([{ opacity: 0 }, { opacity: 1, offset: .3 }, { opacity: 1 }], copt);
+  oc.querySelectorAll('.bc-shade').forEach(s => s.animate([{ opacity: 0 }, { opacity: .85, offset: .5 }, { opacity: 0 }], copt));
+  // 2) geschlossen hinausgleiten
+  anims.push(g.animate([{ transform: 'none', opacity: 1 }, { transform: `translateX(${dir * 160}px) rotate(${dir * -1.5}deg) scale(.94)`, opacity: 0 }], { duration: 300, delay: 480, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'both' }));
+  // 3) neuer Ordner kommt geschlossen herein ...
+  const nc = makeCover(toSpecial ? 'special' : 'regular'); binder.appendChild(nc);
+  const inn = binder.animate([{ transform: `translateX(${-dir * 160}px) rotate(${dir * 1.5}deg) scale(.94)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 420, delay: 700, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'backwards' });
+  anims.push(inn);
+  let op = null;
+  // groesser -> kleiner (Nutzer: frueher): sobald der alte Ordner draussen ist,
+  // schrumpft der Platz darunter - parallel zum Hereingleiten des neuen
+  const shrink = setTimeout(() => {
+    const want = binder.offsetTop + binder.offsetHeight, have = parseFloat(wrap.style.minHeight) || 0;
+    if (have > want + 2) wrap.animate([{ minHeight: `${have}px` }, { minHeight: `${want}px` }], { duration: 420, easing: 'cubic-bezier(.3,.7,.3,1)' });
+    wrap.style.minHeight = '';
+  }, 760);
+  const done = () => { clearTimeout(shrink); g.remove(); nc.remove(); wrap.style.overflow = ''; wrap.style.minHeight = ''; flipBusy = null; };
+  wrap.style.overflow = 'hidden';
+  inn.onfinish = () => {
+    // 4) ... und klappt auf (darf jetzt ueber den Rand hinaus)
+    wrap.style.overflow = ''; g.remove();
+    nc.remove();
+    op = openCover(binder, toSpecial ? 'special' : 'regular', 60);
+    op.addEventListener('finish', done);
+  };
+  flipBusy = () => { anims.forEach(a => a.cancel()); if (op) op.cancel(); done(); };
+}
 async function loadAlbum() {
+  // alte Seite festhalten, falls gleich umgeblaettert wird
+  const oldPage = document.getElementById('binderPage');
+  const binderEl = document.getElementById('binder');
+  const oldSc = document.getElementById('albumGrid').scrollTop;
+  const snap = shownSet && view === 'album' ? { sc: oldSc, anims: animRecord(oldPage), banims: animRecord(binderEl), el: oldPage.cloneNode(true), h: oldPage.offsetHeight, binder: binderEl.cloneNode(true), top: binderEl.offsetTop, left: binderEl.offsetLeft, w: binderEl.offsetWidth } : null;
   try { DATA = await (await fetch('/api/album')).json(); } catch (e) { DATA = { sets: [], stickers: {} }; }
   owned = { ...((DATA.stickers || {})[cur() ? cur().id : 'base'] || {}) };
   unopened = cur() ? cur().owned : 0;
+  // Hoehe halten, bis die Wechsel-Animation uebernimmt (sonst springt die Seite hoch)
+  const viewEl = document.getElementById('albumView');
+  if (snap) viewEl.style.minHeight = `${viewEl.offsetHeight}px`;
+  // Booster links wechselt sichtbar mit (Nutzer), ausser das Karussell hat ihn schon gebracht
+  const packEl = document.getElementById('pack'), packWas = packEl.dataset.set;
+  const packSnap = packWas && !packQuiet ? { el: packEl.parentElement.cloneNode(true), r: packEl.parentElement.getBoundingClientRect() } : null;
+  packQuiet = false;
   updCount(); renderAlbum(); renderTabs(); renderDupes();
+  const id = cur() ? cur().id : null;
+  if (packSnap && id && packWas !== id) swapPack(packSnap, sel > shownIdx);
+  const kind = cur() && cur().special ? 'special' : 'regular';
+  document.getElementById('binder').classList.toggle('special', kind === 'special');
+  if (cur()) lastOfKind[kind] = sel;
+  if (!shownSet && id && view === 'album' && !document.documentElement.classList.contains('fx-off')) openCover(document.getElementById('binder'), kind, 250);
+  // gleiche Stelle auch im naechsten Set derselben Mappe; nur ein anderer
+  // Binder (wird ja zugeklappt) beginnt oben
+  document.getElementById('albumGrid').scrollTop = shownKind && kind !== shownKind ? 0 : oldSc;
+  syncRings();
+  const swapping = snap && id && id !== shownSet && kind !== shownKind;
+  if (snap && !swapping) viewEl.style.minHeight = '';
+  if (snap && id && id !== shownSet) {
+    if (swapping) swapBinder(snap, kind === 'special');             // anderer Ordner
+    else turnPage(snap, sel > shownIdx);                            // gleiche Mappe: umblaettern
+  }
+  shownSet = id; shownIdx = sel; shownKind = kind;
+}
+// Seite umblaettern (v6.9.0, Nutzer): vorwaerts klappt die alte Seite nach links
+// ueber die Ringe weg, rueckwaerts klappt die neue Seite von links herein.
+let flipBusy = null;
+function turnPage(snap, forward) {
+  const binder = document.getElementById('binder'), page = document.getElementById('binderPage');
+  if (flipBusy) flipBusy();
+  if (document.documentElement.classList.contains('fx-off') || !binder.animate) return;
+  const strip = unId;
+  const mk = (pageEl, h) => {
+    const f = document.createElement('div');
+    f.className = 'page-flip';
+    f.style.height = `${h}px`;
+    f.innerHTML = '<div class="pf-face front"></div><div class="pf-face back"><div class="pf-shade"></div></div>';
+    f.firstChild.appendChild(strip(pageEl));
+    const sh = document.createElement('div'); sh.className = 'pf-shade'; f.firstChild.appendChild(sh);
+    return f;
+  };
+  const newH = page.offsetHeight;
+  const parts = [];
+  let flip, frames, newAnims = null;
+  if (forward) {
+    flip = mk(snap.el, snap.h);
+    frames = [{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(-180deg)' }];
+  } else {
+    // alte Seite liegt still obenauf, die neue klappt von links darueber
+    const under = document.createElement('div'); under.className = 'page-under'; under.style.height = `${snap.h}px`;
+    under.appendChild(strip(snap.el)); binder.appendChild(under); parts.push(under);
+    newAnims = animRecord(page);
+    flip = mk(page.cloneNode(true), newH);
+    frames = [{ transform: 'rotateY(-180deg)' }, { transform: 'rotateY(0deg)' }];
+  }
+  binder.appendChild(flip); parts.push(flip);
+  // geklonte Seiten zeigen dieselbe Scrollstelle wie vorher, Animationen laufen weiter
+  const realGrid = document.getElementById('albumGrid');
+  parts.forEach(p => {
+    const gg = p.querySelector('.album-grid'), isNew = p === flip && !forward;
+    if (gg) gg.scrollTop = isNew ? realGrid.scrollTop : snap.sc;
+    const pg = p.querySelector('.binder-page');
+    if (pg) animApply(isNew ? newAnims : snap.anims, pg);
+  });
+  const opt = { duration: 760, easing: 'cubic-bezier(.45,.05,.25,1)' };
+  const a = flip.animate(frames, opt);
+  // Schatten: Seite wird zur Mitte der Drehung dunkler
+  flip.querySelectorAll('.pf-shade').forEach(s => s.animate([{ opacity: 0 }, { opacity: .9, offset: .5 }, { opacity: 0 }], opt));
+  // vorwaerts: zum Schluss ausblenden (liegt dann links ueber dem Booster)
+  if (forward) flip.querySelector('.pf-face.back').animate([{ opacity: 1, offset: 0 }, { opacity: 1, offset: .72 }, { opacity: 0 }], opt);
+  const done = () => { parts.forEach(p => p.remove()); flipBusy = null; };
+  flipBusy = () => { a.cancel(); done(); };
+  a.onfinish = done;
 }
 const pick = l => l[Math.floor(Math.random() * l.length)];
 const backHtml = s => `<div class="face back${s.r === 'holo' ? ' glow-holo' : s.r === 'anim' ? ' glow-anim' : ''}">${BACK_LOGO}</div>`;
@@ -597,7 +926,7 @@ function openPicker() {
     els.forEach((el, j) => { if (j === k) { el.classList.remove('dim'); atSlot(el); } else offside(j, k, el); });
     document.removeEventListener('keydown', onKey);
     await new Promise(r => setTimeout(r, fxOff ? 0 : 480));
-    if (k !== sel) { sel = k; await loadAlbum(); }
+    if (k !== sel) { sel = k; packQuiet = true; await loadAlbum(); }
     slot.style.visibility = '';
     ov.remove();
   }
@@ -629,7 +958,7 @@ async function openPacks(n) {
   if (!res.ok) { loadAlbum(); return; }
   unopened = res.owned; updCount();
   const cards = res.cards.map(c => { const b = setCards().find(x => x.n === c.n); return { ...(c.fa ? asFa(b) : b), isNew: c.isNew, refund: c.refund }; });
-  const ov = document.createElement('div'); ov.className = 'ov';
+  const ov = document.createElement('div'); ov.className = `ov set-${cur().id}`;   // Rueckseiten in Set-Farbe
   // Plaetze nie kleiner als MIN_W (Sticker bleiben erkennbar); so viele Spalten
   // wie ins Fenster passen, der Rest scrollt im Raster
   const MIN_W = 78;
@@ -864,6 +1193,7 @@ function renderAlbum() {
     if (s && faOwned()[n]) html += `<div class="album-slot have fa" data-n="${n}" data-fa="1"><span class="num">#${String(n).padStart(3, '0')}FA</span><div class="stk-card">${frontHtml(asFa(s))}</div></div>`;
   }
   document.getElementById('albumGrid').innerHTML = html;
+  fitBinderPage();
   document.getElementById('albumProgress').textContent = `Collected ${got} / ${TOTAL_IN_SET()} · ${rangesText()}`;
   applyMasterFrame();
 }
@@ -887,8 +1217,47 @@ function renderRates() {
   document.getElementById('ratesSet').textContent = `${cur().name}: ${all.length} stickers - ${cnt('common')} common, ${cnt('uncommon')} uncommon, ${cnt('holo')} holo rare, ${cnt('anim')} animated rare`;
 }
 function renderTabs() {
-  document.getElementById('albumTabs').innerHTML = (DATA.sets || []).map((st, i) => `<span class="${i === sel ? 'on' : ''}${st.special ? ' special' : ''}${statusOf(st.id).master ? ' master' : statusOf(st.id).complete ? ' complete' : ''}" data-set="${i}" role="button" tabindex="0"${statusOf(st.id).master ? ' title="Master Set"' : statusOf(st.id).complete ? ' title="Complete Set - every sticker collected"' : ''}>${st.name}</span>`).join('') + '<span class="soon">More sets coming later</span>';
+  const kindOf = st => st.special ? 'special' : 'regular', k = cur() ? kindOf(cur()) : 'regular';
+  const sets = DATA.sets || [], count = kk => sets.filter(st => kindOf(st) === kk).length;
+  document.getElementById('binderPick').innerHTML = [['regular', 'Album', 'regular sets', ''], ['special', '★ Special Album', 'limited sets', 'sp']]
+    .filter(([kk]) => count(kk))
+    .map(([kk, label, sub, ic]) => `<button type="button" class="${kk === k ? 'on' : ''}" data-binder="${kk}"><span class="bp-ic ${ic}"></span><span>${label} <small>· ${count(kk)} ${count(kk) === 1 ? 'set' : 'sets'}</small></span></button>`).join('');
+  document.getElementById('albumTabs').innerHTML = sets.map((st, i) => kindOf(st) !== k ? '' : `<span class="${i === sel ? 'on' : ''}${st.special ? ' special' : ''}${statusOf(st.id).master ? ' master' : statusOf(st.id).complete ? ' complete' : ''}" data-set="${i}" role="button" tabindex="0"${statusOf(st.id).master ? ' title="Master Set"' : statusOf(st.id).complete ? ' title="Complete Set - every sticker collected"' : ''}>${st.name}</span>`).join('') + `<span class="soon">More ${k === 'special' ? 'special ' : ''}sets coming later</span>`;
 }
+// Gratis-Booster eines neuen Sets abgeholt (set-release.js): Album neu laden
+window.addEventListener('ttp:boosters', () => loadAlbum());
+// sanftes Scrollen mit fester Dauer (Promise erst, wenn es oben ist)
+function smoothScrollTo(y) {
+  const from = scrollY, d = y - from;
+  if (Math.abs(d) < 2 || document.documentElement.classList.contains('fx-off')) { scrollTo(0, y); return Promise.resolve(); }
+  const dur = Math.min(650, 250 + Math.abs(d) * .45), t0 = performance.now();
+  return new Promise(res => {
+    const step = now => {
+      const k = Math.min(1, (now - t0) / dur), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      scrollTo(0, from + d * e);
+      if (k < 1) requestAnimationFrame(step); else res();
+    };
+    requestAnimationFrame(step);
+  });
+}
+document.getElementById('binderPick').addEventListener('click', e => {
+  const b = e.target.closest('[data-binder]');
+  if (!b || b.classList.contains('on')) return;
+  const kk = b.dataset.binder, sets = DATA.sets || [];
+  // aufgeklappter Ordner beginnt immer beim 1. Set (Nutzer)
+  const i = sets.findIndex(st => (st.special ? 'special' : 'regular') === kk);
+  if (i < 0) return;
+  // Nutzer: erst sanft hochscrollen (zum Binder), dann wechseln - sonst springt
+  // die Seite, weil der Special-Binder viel kuerzer ist
+  const box = document.getElementById('albumBox');
+  // gleich auf die Endposition: so weit, wie die Seite nach dem Wechsel noch scrollbar ist
+  const g = document.getElementById('albumGrid'), slot = g.querySelector('.album-slot');
+  const pitch = slot ? slot.offsetHeight + (parseFloat(getComputedStyle(g).rowGap) || 10) : 0;
+  const shrink = Math.max(0, (PAGE_ROWS - ROWS[kk]) * pitch);
+  const maxAfter = document.documentElement.scrollHeight - shrink - innerHeight;
+  const target = Math.max(0, Math.min(scrollY, box.getBoundingClientRect().top + scrollY - 16, maxAfter));
+  smoothScrollTo(target).then(() => { sel = i; loadAlbum(); });
+});
 document.getElementById('albumTabs').addEventListener('click', e => {
   const t = e.target.closest('[data-set]');
   if (!t || Number(t.dataset.set) === sel) return;

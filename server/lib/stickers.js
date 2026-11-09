@@ -34,6 +34,21 @@ const SETS = [
   { id: 'neon', name: 'Neon District', price: 300, released: true, special: true, fullArts: [1, 5, 6, 11, 16, 22, 25], stickers: NEON_LIST.map((id, i) => ({ n: i + 1, id, r: rarityOfSpecial(i + 1) })) }
 ];
 
+// Set 2 "Lock In" (v6.9.0, Nutzer 2026-11-09): regulaeres Set, das Pony in
+// seinen Rollen + Momente einer Runde. Kunst: public/stickers-lockin.js.
+// Noch nicht veroeffentlicht - nur in der Testinstanz (TTP_TEST_SET2=1) sichtbar.
+// Full Arts (Nutzerwahl 2026-11-09): 2, 5, 10, 14, 20, 28, 37, 38, 44, 48 - GEHEIM.
+const LOCKIN_LIST = [
+  'hypercarry', 'shadow-strike', 'last-stand', 'archmage', 'iron-bulwark', 'blade-dancer', 'guardian-wings', 'wild-hunter', 'siege-engine', 'duelists-oath',
+  'combo-starter', 'hook-shot', 'peel', 'kite', 'engage', 'backline-dive', 'zone-control', 'burst-window', 'frontline', 'sustain',
+  'split-push', 'bubble-shield', 'crowd-control', 'execute', 'healing-aura', 'auto-attack', 'last-hit', 'out-of-mana', 'on-cooldown', 'level-up',
+  'skill-point', 'starter-item', 'shop-run', 'rune-page', 'lane-swap', 'on-my-way', 'missing', 'back-off', 'top-lane', 'mid-lane',
+  'bot-lane', 'jungle-path', 'support-item', 'duo-queue', 'champ-select', 'instalock', 'loading-screen', 'respawn', 'dodge-roll', 'victory-pose'
+];
+if (process.env.TTP_TEST_SET2 === '1') {
+  SETS.splice(1, 0, { id: 'lockin', name: 'Lock In', price: 150, released: true, fullArts: [2, 5, 10, 14, 20, 28, 37, 38, 44, 48], stickers: LOCKIN_LIST.map((id, i) => ({ n: i + 1, id, r: rarityOf(i + 1) })) });
+}
+
 // Special-Booster nur Samstag + Sonntag (Ortszeit des Rechners, Nutzer 2026-11-06).
 // Liefert, ob gerade offen ist, und wann es oeffnet/schliesst (ms).
 function weekendWindow(now = new Date()) {
@@ -70,6 +85,22 @@ function rollPack(set) {
 // Set-Status: komplett (alle normalen Sticker) / Master (dazu alle Full Arts)
 function setStatus(set, col = {}, faCol = {}) {
   const complete = set.stickers.every(s => col[s.n]);
-  return { complete, master: complete && (set.fullArts || []).every(n => faCol[n]) };
+  // Master nur, wenn das Set ueberhaupt FAs hat (Nutzer: ohne FAs nur Complete)
+  return { complete, master: complete && (set.fullArts || []).length > 0 && set.fullArts.every(n => faCol[n]) };
 }
-module.exports = { SETS, getSet, rollPack, setStatus, DUPE_REFUND, ANIM_CHANCE, FA_CHANCE, PACK, migrateBaseN, weekendWindow, availableNow };
+// Neues Set (v6.9.0, Nutzer): zum Release gibt es RELEASE_GIFT Booster gratis -
+// grosse Ankuendigung beim Start, einmal abholbar pro Konto, RELEASE_DAYS lang
+// ab set.releasedAt ('YYYY-MM-DD', Ortszeit). Alte Sets ohne releasedAt: nichts.
+// Testinstanz: TTP_TEST_RELEASE=<setId> tut so, als waere das Set heute erschienen.
+const RELEASE_GIFT = 3;
+const RELEASE_DAYS = 30;
+function releaseWindowOpen(set, now = new Date()) {
+  if (!set || !set.released) return false;
+  if (process.env.TTP_TEST_RELEASE && process.env.TTP_TEST_RELEASE === set.id) return true;
+  if (!set.releasedAt) return false;
+  const [y, m, d] = set.releasedAt.split('-').map(Number);
+  const start = new Date(y, m - 1, d).getTime();
+  return now.getTime() >= start && now.getTime() < start + RELEASE_DAYS * 86400000;
+}
+
+module.exports = { SETS, getSet, rollPack, setStatus, DUPE_REFUND, ANIM_CHANCE, FA_CHANCE, PACK, migrateBaseN, weekendWindow, availableNow, RELEASE_GIFT, releaseWindowOpen };

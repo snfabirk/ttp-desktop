@@ -1,5 +1,17 @@
 # Internal Changelog
 
+## 6.9.0 — 2026-11-09
+
+- Album = binder (user): cover opens on page load (hinged at the ring spine), page flip around the rings when switching sets inside a binder (forward: old page turns left, backward: new page turns in from the left), live sticker animations carried onto the turning page (animRecord/animApply), SVG ids kept in clones (art looked different), fixed page height 8x8 slots (= 50 + max 14 FAs) for regular sets / 8x4 (25 + max 7 FAs) for special sets, no FA placeholders, 4 rings (3 in the Special Album), all slots border-box (rows no longer change height).
+- Two binders (user): "Album" (regular) + "★ Special Album"; switching = smooth scroll up first, old cover closes + slides out, the other slides in closed and opens; opening a binder always starts at its 1st set; "More (special) sets coming later" tab. Layering: booster column behind, binder (turning pages, covers) always in front.
+- Booster pack on the left swaps (old flies out, new flies in) on every set change except via the carousel.
+- New set release (built, not used yet): set.releasedAt + 30 days -> big full-screen announcement on app start with 3 free boosters to claim, packs fly into the Album tab (public/set-release.js, /api/sets/release[/claim], state.releaseGifts). Test: TTP_TEST_RELEASE=<setId>.
+- Set 2 "Lock In" (regular set, 50 stickers, 10 secret FAs) is finished but NOT released - only active in test instances (TTP_TEST_SET2=1). Art: public/stickers-lockin.js (role ponies, uses stickers.js KIT), dark-red card fronts/backs/pack.
+- Profile Full Arts in real 3D (STICKER_FA.square3d: scene + mid layer + hologram figure, top-aligned crop, parts cut >25% at the bottom hidden). New optional FA layer faFx (one flat moving sheet at ~65% lift, crisp while spinning).
+- Card backs per set while opening (Neon black/yellow, Lock In dark red).
+- Set tabs: Complete = gold star, Master = rainbow star, no extra border; Master only for sets that have Full Arts (server setStatus).
+- Shop wheel: clicking the big wheel spins too.
+
 ## 6.8.0 — 2026-11-08
 
 - Profile editor widget moving (user): planMove() - target overlapping widgets either swap into the dragged widget's freed rect (same offset, must fit inside it: 3x1 onto three/two 1x1, two 1x1 onto 2x1; same-size widget under the pointer snaps exactly) or get pushed down (cascading). Applies to move, resize and new widgets/stickers from the side panels; no more invalid (red) positions. Live preview: displaced widgets semi-transparent + dashed at their new spot; committed on drop.

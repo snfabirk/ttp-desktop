@@ -513,6 +513,25 @@ function receiveGiftBoosters(gifts) {
   writeState(state);
 }
 function newBoostersCount() { return readState().newBoosters || 0; }
+// Release-Geschenk (v6.9.0): offene Gratis-Booster neuer Sets
+function releaseGiftsPending() {
+  const state = readState(), got = state.releaseGifts || {};
+  return {
+    pending: STICKERS.SETS.filter(st => STICKERS.releaseWindowOpen(st) && !got[st.id])
+      .map(st => ({ id: st.id, name: st.name, special: !!st.special, total: st.stickers.length, qty: STICKERS.RELEASE_GIFT }))
+  };
+}
+function claimReleaseGift(setId) {
+  const st = STICKERS.getSet(setId);
+  if (!st || !STICKERS.releaseWindowOpen(st)) return { ok: false, error: 'There is nothing to claim for this set.' };
+  const state = readState();
+  state.releaseGifts = state.releaseGifts || {};
+  if (state.releaseGifts[setId]) return { ok: false, error: 'You already claimed these boosters.' };
+  state.releaseGifts[setId] = new Date().toISOString();
+  gainBoosters(state, setId, STICKERS.RELEASE_GIFT);
+  writeState(state);
+  return { ok: true, qty: STICKERS.RELEASE_GIFT, owned: state.boosters[setId], newBoosters: state.newBoosters };
+}
 function markBoostersSeen() {
   const state = readState();
   if (state.newBoosters) { state.newBoosters = 0; writeState(state); }
@@ -1722,6 +1741,8 @@ module.exports = {
   normTradeItems, tradeFee, missingStickers: (items) => missingStickers(readState(), items), tradeWarnings,
   tradeReserve, tradeUnreserve, tradeAcceptTake, tradeAcceptRollback, tradeReceive, tradeSettle, tradeInfo,
   newBoostersCount,
+  releaseGiftsPending,
+  claimReleaseGift,
   takeBoostersForGift,
   returnGiftBoosters,
   receiveGiftBoosters,
