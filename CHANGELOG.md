@@ -1,5 +1,11 @@
 # Internal Changelog
 
+## 6.9.3 — 2026-11-09
+
+- Booster panel only inside the binder (user): Dupes/Trades no longer show the old "Your Boosters" card, the album box is full width there (dupe grid 10 columns so cards keep their size).
+- Scroll performance (user): sticker CSS animations in the album box are held while scrolling and resume 180 ms after the last scroll event (~23 -> ~60 fps with everything unlocked).
+- Fix: switching to the Album page briefly showed part of the booster / "Your Boosters" in the wrong place - the binder now starts hidden + closed ("booting") until the first render, then appears as the closed cover.
+
 ## 6.9.2 — 2026-11-09
 
 - Album = open two-page binder (user): left page (#binderLeft, hangs outside #binder via right:100%, same width) holds the booster panel on top + a bottom grid; right page: progress + 5x4 grid (#1-20) + bottom grid. Bottom rows run across both pages (5 left + 5 right per row): regular 4 rows (60 slots = 50 + 10 FAs), special 2 rows (40). Rings in the middle (.spine-rings, 4 / 3). Spine corners square, outer corners round (also cover + ghost binder).

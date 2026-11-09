@@ -25,6 +25,16 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.9.3',
+      date: '2026-11-09',
+      notable: [
+        'Scrolling through the Album is a lot smoother - sticker effects pause for a moment while you scroll.',
+        'Dupes and Trades now use the full width; your boosters live in the binder.'
+      ],
+      refinements: 1,
+      bugfixes: 1
+    },
+    {
       version: '6.9.2',
       date: '2026-11-09',
       notable: [

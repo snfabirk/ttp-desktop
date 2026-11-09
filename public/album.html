@@ -271,6 +271,7 @@
   .dg-head .dg-name i { width: 8px; height: 8px; border-radius: 50%; }
   .dg-head .dg-name b { font-family: 'Cinzel', Georgia, serif; font-weight: normal; color: var(--text); }
   .dupe-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px; }
+  .binder-mode .dupe-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); }   /* volle Breite ohne Booster-Spalte: Karten bleiben etwa gleich gross */
   .dupe-x { position: absolute; right: -5px; bottom: -6px; z-index: 5; min-width: 22px; padding: 1px 6px; box-sizing: border-box; border-radius: 10px; background: var(--input-bg); border: 1px solid var(--gold); color: var(--gold); font: bold .7rem/16px Georgia, serif; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,.5); pointer-events: none; }
   .album-slot.kept .stk-card { filter: brightness(.55) saturate(.6); }
   .dupes-empty { color: var(--text-dim); font-size: .85rem; text-align: center; padding: 30px 10px; line-height: 1.6; }
@@ -521,6 +522,7 @@
   .binder .album-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .binder .album-grid.bottom, #albumGridL { margin-top: 0; }
   .binder.closed > .binder-left { visibility: hidden; }
+  .binder.booting { visibility: hidden; }   /* bis zum ersten Aufbau nichts Halbfertiges (auch kein leerer Ordner-Streifen) */
   .spine-rings { position: absolute; left: -46px; width: 92px; top: 0; bottom: 0; z-index: 7; pointer-events: none; }
   .spine-rings i { position: absolute; left: 0; right: 0; height: 14px; }
   .spine-rings i::before { content: ''; position: absolute; left: 10px; top: 1px; width: 12px; height: 12px; border-radius: 50%; background: rgba(0,0,0,.8);
@@ -571,7 +573,8 @@
     <div id="albumView">
       <div class="binder-pick" id="binderPick"></div>
       <div class="album-tabs" id="albumTabs"></div>
-      <div class="binder" id="binder">
+      <!-- startet zugeklappt (booting): bis zum ersten Aufbau keine halbfertige linke Seite / Ringe -->
+      <div class="binder closed booting" id="binder">
         <!-- (v6.9.2, Nutzer) linke Innenseite des aufgeklappten Binders: darauf liegt der Booster -->
         <div class="binder-left" id="binderLeft"><div class="bl-page">
         <div class="bl-top">
@@ -915,6 +918,13 @@ async function loadAlbum() {
     flipBusy = kill;
     a.addEventListener('finish', () => { if (flipBusy === kill) flipBusy = null; });
   }
+  // (v6.9.3, Nutzer) Startzustand aufloesen: der Deckel (falls er aufklappt) haelt 'closed'
+  // selbst; ohne Deckel (Animationen aus / andere Ansicht) gleich offen zeigen
+  const bEl = document.getElementById('binder');
+  if (bEl.classList.contains('booting')) {
+    bEl.classList.remove('booting');
+    if (!bEl.querySelector(':scope > .binder-cover')) bEl.classList.remove('closed');
+  }
   // gleiche Stelle auch im naechsten Set derselben Mappe; nur ein anderer
   // Binder (wird ja zugeklappt) beginnt oben
   grid.scrollTop = swapping ? 0 : oldSc;
@@ -1027,6 +1037,14 @@ function turnPage(snap, forward) {
   flipBusy = () => { a.cancel(); done(); };
   a.onfinish = done;
 }
+// (v6.9.3, Nutzer) Beim Scrollen stehen die Sticker-Effekte kurz still und laufen kurz nach
+// dem Loslassen an derselben Stelle weiter - gemessen ~23 -> ~45 Bilder/s beim Scrollen
+let scrollRelease = null, scrollTimer = 0;
+window.addEventListener('scroll', () => {
+  if (!scrollRelease) scrollRelease = holdStickerFx(document.getElementById('albumBox'));
+  clearTimeout(scrollTimer);
+  scrollTimer = setTimeout(() => { const r = scrollRelease; scrollRelease = null; if (r) r(); }, 180);
+}, { passive: true });
 // laufende Sticker-Effekte (CSS-Animationen) unter root anhalten; liefert die Freigabe
 function holdStickerFx(root) {
   const held = root.getAnimations({ subtree: true }).filter(x => x.animationName && x.playState === 'running');
@@ -1617,12 +1635,9 @@ function renderDupes() {
   box.innerHTML = `${keep}<div class="dupe-bar">${chips}${sellAll}</div><div class="dupe-msg">${dupeMsg}</div>` +
     (groups || `<p class="dupes-empty">${total ? 'No duplicates in this set.' : 'No duplicates yet.<br>Stickers you pull twice land here - sell them for coins or keep spares to trade later.'}</p>`);
 }
-function placePack() {
-  const wrap = document.querySelector('.album-wrap'), area = document.getElementById('pack').closest('.pack-area'), inB = view === 'album';
-  wrap.classList.toggle('binder-mode', inB);
-  if (inB) document.querySelector('#binderLeft .bl-top').appendChild(area);
-  else wrap.insertBefore(area, document.getElementById('albumBox'));
-}
+// (v6.9.3, Nutzer) Der Booster gehoert nur noch in den Binder - in Dupes/Trades gibt es
+// kein eigenes "Your Boosters"-Panel mehr, der Kasten nutzt die ganze Breite
+function placePack() { document.querySelector('.album-wrap').classList.add('binder-mode'); }
 function setView(v) {
   if (flipBusy) flipBusy();
   view = v; sellConfirm = null; dupeMsg = '';
