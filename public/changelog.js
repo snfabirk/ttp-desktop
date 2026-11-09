@@ -25,6 +25,18 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.9.2',
+      date: '2026-11-09',
+      notable: [
+        'The Album is now an open binder with two pages: your boosters on the left, the set on the right, the rings in the middle - and the pages turn like in a real book.',
+        'The binder opens with its cover animation now also on the first start and right after an update.',
+        'Collected stickers are shown as a progress bar; the sticker numbers per rarity are behind the "?".',
+        'Page turns and switching binders run a lot smoother.'
+      ],
+      refinements: 5,
+      bugfixes: 5
+    },
+    {
       version: '6.9.1',
       date: '2026-11-09',
       notable: [

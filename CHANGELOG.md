@@ -1,5 +1,16 @@
 # Internal Changelog
 
+## 6.9.2 — 2026-11-09
+
+- Album = open two-page binder (user): left page (#binderLeft, hangs outside #binder via right:100%, same width) holds the booster panel on top + a bottom grid; right page: progress + 5x4 grid (#1-20) + bottom grid. Bottom rows run across both pages (5 left + 5 right per row): regular 4 rows (60 slots = 50 + 10 FAs), special 2 rows (40). Rings in the middle (.spine-rings, 4 / 3). Spine corners square, outer corners round (also cover + ghost binder).
+- Cover opening: the cover's inner side is a clone of the left page (shell via --shell var); right ring half under the cover, full ring on top from 90 degrees (RINGS_OPEN, z-index 7 -> 9), rings stay horizontal. Cover waits for smooth frames before opening (cold caches after first start/update).
+- Page turn: the turning right page's back = new left page (pf-panel), old left page stays below until covered; backward mirrored. Carousel set pick: chosen pack dives toward the coming page, old pack stays in the slot (no floating pack).
+- Progress: centered "COLLECTED x / y" + gold bar (shine when complete), rarity number ranges behind "?" (popup above stickers only while open).
+- Dupes/Trades: booster panel moves back next to the album (placePack).
+- Performance: sticker CSS animations held during flip/cover/swap (holdStickerFx, resume at same time) ~12 -> ~50 fps; flip waits until the new page is painted; hover-only .slab layers inserted lazily on first hover (12.9k -> 4.4k nodes in the binder); animRecord/animApply path-based on the subtree; rects measured before clones are inserted. Click block ~450 -> ~290 ms.
+- Fixes: binder swap threw (copt used before definition) -> ghost binder stuck; safety net resetBinderFx() if a binder animation throws; master frame no longer cuts through the turning page (.binder z-index 3); left page without frame while opening; progress bar above the closed cover.
+- Lock In still gated to test instances (not in What's New).
+
 ## 6.9.1 — 2026-11-09
 
 - Album performance: floating pop figures animate on the layer divs (liftFloat -> class floaty, compositor-only) instead of inside every filtered slab; slab layers only shown on hover/tilt; animated-rare gold glow pulses via ::after opacity instead of box-shadow. Idle frame ~87 ms -> ~37 ms with everything unlocked.
