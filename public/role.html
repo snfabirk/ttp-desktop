@@ -470,6 +470,8 @@
       }
     }
     loadRoleStats();
+    // (v6.11.0) neues Spiel (Minutentakt im Hauptprozess) -> neu laden
+    if (window.ttpOnStatsChanged) window.ttpOnStatsChanged(loadRoleStats);
 
     const settingsGearBtn = document.getElementById('settingsGearBtn');
     settingsGearBtn.addEventListener('click', () => {

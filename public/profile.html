@@ -2011,6 +2011,9 @@
       }
     }
     loadProfile();
+    // (v6.11.0) neues Spiel (Minutentakt im Hauptprozess) -> Stats neu laden,
+    // aber nie mitten im Bearbeiten/Ziehen
+    if (!VISIT && window.ttpOnStatsChanged) window.ttpOnStatsChanged(() => { if (!editState && !drag) loadProfile(); });
 
     document.getElementById('settingsGearBtn').addEventListener('click', () => {
       if (window.ttpMain) window.ttpMain.openSettings();

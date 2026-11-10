@@ -1722,26 +1722,14 @@
     // periodischen Reload hier blieb der Trophy-Fortschritt beim Offenlassen
     // dieser Seite eingefroren und sprang erst bei einem manuellen Neuladen
     // auf den aktuellen Stand.
-    const QUARTER_HOUR_MS_PAGE = 15 * 60 * 1000;
-    let pageAutoRefreshTimeoutId = null;
-
+    // (v6.11.0) Statt Viertelstunden-Takt: neu laden, sobald der Hauptprozess
+    // (jede Minute) ein neues Spiel gefunden hat (nav.js).
     function scheduleNextPageAutoRefresh() {
-      if (pageAutoRefreshTimeoutId) clearTimeout(pageAutoRefreshTimeoutId);
-      const now = new Date();
-      const msIntoHour = (now.getMinutes() * 60 + now.getSeconds()) * 1000 + now.getMilliseconds();
-      const msIntoQuarter = msIntoHour % QUARTER_HOUR_MS_PAGE;
-      const BUFFER_MS = 15000;
-      const delay = (QUARTER_HOUR_MS_PAGE - msIntoQuarter) + BUFFER_MS;
-      pageAutoRefreshTimeoutId = setTimeout(async () => {
-        // Waehrend eine vergangene Challenge im Read-Only-Modus angezeigt
-        // wird, soll ein automatischer Refresh nicht ungefragt zurueck zur
-        // aktuellen Challenge springen - das passiert weiterhin nur ueber den
-        // expliziten "Back to current challenge"-Button/Reload.
-        if (activeHistoricalEntryId === null) {
-          await loadAchievementProgress();
-        }
-        scheduleNextPageAutoRefresh();
-      }, delay);
+      if (!window.ttpOnStatsChanged) return;
+      window.ttpOnStatsChanged(async () => {
+        // Vergangene Challenge im Read-Only-Modus nicht ungefragt verlassen
+        if (activeHistoricalEntryId === null && !achievementRefreshInProgress) await loadAchievementProgress();
+      });
     }
     scheduleNextPageAutoRefresh();
 

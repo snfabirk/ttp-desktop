@@ -5,6 +5,8 @@
 - Background refresh (user): every full minute instead of every quarter hour (electron-main.js STATS_REFRESH_MS). A run without a new game costs ~5 Riot calls (match lists + rank; cached matches cost nothing).
 - Riot ID (account-by-puuid) cached 1 h per puuid in server.js resolveRiotId - Account-V1 (1000/min) was the tightest limit at 3 calls per run.
 - After each run the main process sends 'stats-refreshed'; nav.js window.ttpOnStatsChanged compares a progression signature (XP, recent games, LP Bank, reset times) and only then reloads - Overview (runScan, replaces its own quarter-hour timer) and Challenge/Pass (loadProfile + loadProgression). Hidden window: reload deferred until visible.
+- Unified cadence (user): nav.js window.ttpEveryMinute = one central page tick with a fixed per-install random second (localStorage ttp_tick_offset); main process also uses a random per-start offset. Moved onto it: set-release check, cloud status, open friends panel (was 30 s, now only re-renders on change), Overview friend activity (was 5 min) + live-game check, Shop countdown render.
+- Champion + Trophies (old own quarter-hour timers), Role and Profile (not while editing/dragging) now reload via ttpOnStatsChanged. Unchanged on purpose: update check 4 h (GitHub unauthenticated limit 60/h), cloud connection health 5 min (server side).
 
 ## 6.10.1 — 2026-11-10
 

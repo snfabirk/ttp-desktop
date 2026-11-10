@@ -721,7 +721,8 @@
       } catch (e) {}
     }
     loadFriendActivity();
-    setInterval(loadFriendActivity, 5 * 60 * 1000);
+    // (v6.11.0) zentraler Minutentakt (war 5 min)
+    if (window.ttpEveryMinute) window.ttpEveryMinute(() => { if (!document.hidden) loadFriendActivity(); });
 
     function renderFeed(d) {
       lastProgression = d;
@@ -894,7 +895,7 @@
       loadProgression();
       await loadAccount();
       checkLive();
-      setInterval(checkLive, 60 * 1000);
+      if (window.ttpEveryMinute) window.ttpEveryMinute(checkLive);
       document.addEventListener('visibilitychange', () => { if (!document.hidden) checkLive(); });
       await runScan();
       scheduleQuarterRefresh();

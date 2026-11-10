@@ -3,6 +3,25 @@
 // wenn sich wirklich etwas getan hat (neues Spiel / XP / LP Bank) - sonst
 // wuerde jede Minute neu gerendert. Ist das Fenster versteckt (Tray), wird
 // das Nachladen aufgehoben, bis es wieder sichtbar ist.
+// Zentraler Minutentakt (v6.11.0, Nutzer: "alles im Minutentakt, einheitlich")
+// fuer alles, was eine Seite regelmaessig nachfragt (Freunde, Live-Game,
+// Set-Releases, Shop, Cloud-Status). Jede Installation hat eine eigene, feste
+// Sekunde in der Minute (Versatz), damit bei vielen Nutzern nicht alle
+// gleichzeitig fragen.
+(function () {
+  let offset = 0;
+  try {
+    const saved = localStorage.getItem('ttp_tick_offset');
+    offset = saved === null ? NaN : Number(saved);
+    if (!(offset >= 0 && offset < 60000)) { offset = Math.floor(Math.random() * 60000); localStorage.setItem('ttp_tick_offset', String(offset)); }
+  } catch (e) { offset = Math.floor(Math.random() * 60000); }
+  const subs = [];
+  const run = () => subs.forEach(cb => { try { cb(); } catch (e) {} });
+  const next = () => setTimeout(() => { run(); next(); }, 60000 - ((Date.now() - offset) % 60000));
+  next();
+  window.ttpEveryMinute = cb => { subs.push(cb); };
+})();
+
 (function () {
   const subs = [];
   let lastSig = null, pending = false, hooked = false;
@@ -159,7 +178,7 @@
         }).catch(() => {});
       };
       relCheck();
-      setInterval(relCheck, 60000);
+      window.ttpEveryMinute(relCheck);
       document.addEventListener('visibilitychange', relCheck);
       window.addEventListener('focus', relCheck);
 
@@ -504,9 +523,9 @@
       document.dispatchEvent(new CustomEvent('ttp-account', { detail: me }));
       window.ttpPublishProfile(false);
     } catch (e) {}
-    setInterval(async () => {
+    window.ttpEveryMinute(async () => {
       try { showConnBanner((await (await fetch('/api/cloud/status')).json()).status); } catch (e) {}
-    }, 60000);
+    });
   }
 
   // ===== Freunde (v6.1.0) =====
@@ -525,7 +544,7 @@
     // Suche leeren (x in der Leiste, und jedes Mal beim Ein-/Ausfahren)
     const clearSearch = () => { clearTimeout(timer); seq++; input.value = ''; results.innerHTML = ''; clearBtn.hidden = true; };
     clearBtn.addEventListener('click', () => { clearSearch(); input.focus(); });
-    let state = null, pollTimer = null;
+    let state = null;
 
     const row = (f, actions, clickable) => `<div class="fp-row${clickable ? ' link' : ''}"${clickable ? ` data-open="${f.userId}" title="Open ${esc(f.username)}'s profile"` : ''}>
         <img src="${avatarSrc(f.avatar)}" alt="" onerror="this.src='avatar-placeholder.svg'">
@@ -544,17 +563,24 @@
         `<button type="button" class="fp-btn" data-remove="${f.id}" title="Withdraw request">✕</button>`)).join('');
       body.innerHTML = html || '<div class="friends-empty"><span class="friends-empty-ic" aria-hidden="true">👥</span>No friends yet.<small>Add one with the + above.</small></div>';
     }
-    async function load() {
-      try { state = await friendsApi('/api/friends'); render(); }
+    let lastJson = '';
+    async function load(onlyIfChanged) {
+      try {
+        const next = await friendsApi('/api/friends');
+        const json = JSON.stringify(next);
+        if (onlyIfChanged && json === lastJson) return; // nichts neu -> nicht neu zeichnen
+        lastJson = json; state = next; render();
+      }
       catch (e) { if (!state) body.innerHTML = `<div class="friends-empty">${esc(e.message)}</div>`; }
     }
+    // (v6.11.0) Offenes Panel im zentralen Minutentakt, nur bei Aenderung neu zeichnen
+    window.ttpEveryMinute(() => { if (dock.classList.contains('open') && !document.hidden) load(true); });
     tab.addEventListener('click', () => {
       const open = dock.classList.toggle('open');
       tab.setAttribute('aria-expanded', open ? 'true' : 'false');
       clearSearch();
       search.hidden = true; // Suchleiste beim Ein-/Ausfahren wieder zuklappen (Nutzerwunsch)
-      clearInterval(pollTimer);
-      if (open) { load(); pollTimer = setInterval(load, 30000); }
+      if (open) load();
     });
     dock.querySelector('.fp-add').addEventListener('click', () => {
       search.hidden = !search.hidden;

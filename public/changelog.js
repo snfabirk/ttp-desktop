@@ -30,7 +30,8 @@
       version: '6.11.0',
       date: '2026-11-10',
       notable: [
-        'New games now show up within about a minute (was every 15 minutes) - Overview, Challenge and Pass update by themselves when one comes in.'
+        'New games now show up within about a minute (was every 15 minutes) - every open page updates by itself when something new comes in.',
+        'Friend activity and the friends list now update every minute too.'
       ],
       refinements: 1
     },

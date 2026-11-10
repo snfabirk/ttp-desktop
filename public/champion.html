@@ -1993,29 +1993,14 @@
     // wenn sie offen ist, jetzt selbst auf demselben Viertelstunden-Takt neu -
     // der eigentliche Match-Scan bleibt guenstig, weil der Hauptprozess-Job
     // den Cache meist schon gefuellt hat.
-    const QUARTER_HOUR_MS_PAGE = 15 * 60 * 1000;
-    let pageAutoRefreshTimeoutId = null;
-
+    // (v6.11.0) Statt eigenem Viertelstunden-Takt: neu laden, sobald der
+    // Hauptprozess (jede Minute) ein neues Spiel gefunden hat (nav.js).
     function scheduleNextPageAutoRefresh() {
-      if (pageAutoRefreshTimeoutId) clearTimeout(pageAutoRefreshTimeoutId);
-      const now = new Date();
-      const msIntoHour = (now.getMinutes() * 60 + now.getSeconds()) * 1000 + now.getMilliseconds();
-      const msIntoQuarter = msIntoHour % QUARTER_HOUR_MS_PAGE;
-      // Kleiner Puffer nach der vollen Viertelstunde, damit der zentrale
-      // Hintergrund-Job im Hauptprozess (der auf denselben Takt zielt) seinen
-      // Match-Scan/Cache-Fuellung ueblicherweise schon abgeschlossen hat,
-      // bevor diese Seite ihren eigenen (dann meist guenstigen) Reload startet.
-      const BUFFER_MS = 15000;
-      const delay = (QUARTER_HOUR_MS_PAGE - msIntoQuarter) + BUFFER_MS;
-      pageAutoRefreshTimeoutId = setTimeout(async () => {
-        // loadBtn.disabled deckt sowohl "laedt gerade" als auch die 30s-
-        // Abklingzeit nach einem Load ab - kein Grund, dann zusaetzlich
-        // draufzudruecken.
-        if (isAutoLoadEligible() && !loadBtn.disabled) {
-          await performLoad();
-        }
-        scheduleNextPageAutoRefresh();
-      }, delay);
+      if (!window.ttpOnStatsChanged) return;
+      window.ttpOnStatsChanged(async () => {
+        // loadBtn.disabled = laedt gerade oder 30s-Abklingzeit nach einem Load
+        if (isAutoLoadEligible() && !loadBtn.disabled) await performLoad();
+      });
     }
 
     // Profil-Level auf der kompakten Karte (Details auf profile.html) und

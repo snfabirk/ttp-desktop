@@ -997,7 +997,7 @@
     });
 
     load();
-    setInterval(() => { if (shop && !big) render(); }, 60000);
+    window.ttpEveryMinute(() => { if (shop && !big) render(); });
 
     document.getElementById('settingsGearBtn').addEventListener('click', () => {
       if (window.ttpMain) window.ttpMain.openSettings();

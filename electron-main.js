@@ -668,13 +668,16 @@ async function backgroundStatsRefresh() {
 // (v6.11.0) Jede volle Minute statt jede Viertelstunde - bereits geladene
 // Matches liegen im Cache, ein Lauf ohne neues Spiel kostet nur ~5 Abfragen.
 const STATS_REFRESH_MS = 60 * 1000;
+// Fester Zufalls-Versatz je App-Start (0-59 s), damit bei vielen Nutzern auf
+// einem Key nicht alle exakt zur vollen Minute gleichzeitig abfragen
+const STATS_REFRESH_OFFSET_MS = Math.floor(Math.random() * STATS_REFRESH_MS);
 let statsRefreshTimeoutId = null;
 
 // Zentral im Hauptprozess, unabhaengig von jeder einzelnen Seite; danach
 // bekommen die offenen Seiten Bescheid ('stats-refreshed') und laden neu.
 function scheduleNextBackgroundStatsRefresh() {
   if (statsRefreshTimeoutId) clearTimeout(statsRefreshTimeoutId);
-  const delay = STATS_REFRESH_MS - (Date.now() % STATS_REFRESH_MS);
+  const delay = STATS_REFRESH_MS - ((Date.now() - STATS_REFRESH_OFFSET_MS) % STATS_REFRESH_MS);
   statsRefreshTimeoutId = setTimeout(async () => {
     await backgroundStatsRefresh();
     if (mainWin && !mainWin.isDestroyed()) mainWin.webContents.send('stats-refreshed');
