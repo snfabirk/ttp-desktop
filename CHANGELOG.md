@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 6.10.1 — 2026-11-10
+
+- Safety: any launch with a custom --user-data-dir (test instances) never pushes progression/challenge runs to the cloud (TTP_TEST_NO_PUSH forced, read lazily in cloud.js). Reason: a test instance without the flag overwrote the real account's progression on 2026-11-10 (rebuilt by hand from the user's info).
+
 ## 6.10.0 — 2026-11-10
 
 - Set releases (user): upcoming regular sets (Lock In + 2 new) release on secret, randomly rolled dates (Wednesday 00:00 Europe/Berlin, >= 3 weeks apart, by end of Feb 2027). Schedule only stored obfuscated in server/lib/releases.js - never print/log/commit the dates.

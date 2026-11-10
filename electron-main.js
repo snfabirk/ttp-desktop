@@ -764,6 +764,12 @@ app.whenReady().then(() => {
   // (ausserhalb des Installationsordners, der bei jedem Auto-Update
   // komplett neu geschrieben wird - siehe server/lib/envStore.js).
   process.env.TTP_USER_DATA_DIR = app.getPath('userData');
+  // (v6.10.1) Sicherheitsnetz: Testinstanzen laufen immer mit eigenem --user-data-dir.
+  // Dann NIE in die Cloud schreiben - sonst ueberschreibt der freigeschaltete Test-Stand
+  // das echte Konto (passiert am 2026-11-10, als TTP_TEST_NO_PUSH beim Start fehlte)
+  if (app.commandLine.hasSwitch('user-data-dir') || process.argv.some(a => a.startsWith('--user-data-dir'))) {
+    process.env.TTP_TEST_NO_PUSH = '1';
+  }
 
   // Startet den Express-Server im selben Prozess (kein sichtbares Fenster,
   // keine .bat mehr noetig) und oeffnet das App-Fenster erst, wenn er bereit ist.
