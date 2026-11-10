@@ -1167,7 +1167,7 @@
       <div>
         <div class="prog-card pass-card">
           <div class="prog-card-head">
-            <h3><span id="passTitle">Monthly Pass</span> <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">A new pass starts every month. Tiers 5, 10, 15, 20, 25 and 30 unlock this month's exclusive cosmetics (yours forever), tiers 13 and 22 its profile pictures, 8 tiers give a voucher for a regular sticker booster (redeem it in the Shop), all other tiers give coins for the shop. After tier 30 you keep earning 200 coins per step - the first step takes 2,000 XP, every further one 300 XP more. Step 30+5 also gives a free voucher for 1 Refined or Fancy item in that day's daily shop - it expires when the daily shop changes. Every reward is given once per tier - resetting a challenge doesn't reset the pass.</span></span></h3>
+            <h3><span id="passTitle">Monthly Pass</span> <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">A new pass starts every month. Tiers 5, 10, 15, 20, 25 and 30 unlock this month's exclusive cosmetics (yours forever), tiers 13 and 22 its profile pictures, 8 tiers give a voucher for a regular sticker booster (redeem it in the Shop), all other tiers give coins for the shop. After tier 30 you keep earning: every step gives 100 coins, every 5th step (30+5, 30+10, ...) gives 4 booster vouchers instead - the first step takes 2,000 XP, every further one 300 XP more. Every reward is given once per tier - resetting a challenge doesn't reset the pass.</span></span></h3>
             <span class="reset-in" id="passEndsIn"></span>
           </div>
           <p class="pass-locked" id="passLocked" hidden>Your pass only levels during a challenge - <a href="challenge.html">start one</a>. Games outside a challenge still give account XP.</p>
@@ -1959,8 +1959,8 @@
       shownCoins = coins;
       const claimables = pass.rewards.filter(r => r.claimable);
       const pendingTotal = claimables.reduce((a, r) => a + (r.type === 'coins' ? r.amount || 0 : 0), 0) + (pass.overflow.pending || 0) * pass.overflow.coinsPerStep;
-      const pendingItems = claimables.filter(r => r.type === 'cosmetic' || r.type === 'boosterVoucher').length;
-      const pendingCount = claimables.length + (pass.overflow.pending ? 1 : 0);
+      const pendingItems = claimables.filter(r => r.type === 'cosmetic' || r.type === 'boosterVoucher').length + (pass.overflow.pendingVouchers || 0);
+      const pendingCount = claimables.length + (pass.overflow.pending || pass.overflow.pendingVouchers ? 1 : 0);
       const ca = document.getElementById('claimAll');
       ca.hidden = pendingCount < 2;
       ca.textContent = `Claim all${pendingTotal ? ` · 🪙 ${fmtNum(pendingTotal)}` : ''}${pendingItems ? ` · ${pendingItems} item${pendingItems === 1 ? '' : 's'}` : ''}`;
@@ -1999,20 +1999,22 @@
       const done = pass.tier >= pass.tiers;
       const el = document.getElementById('passOverflow');
       el.classList.toggle('locked', !done);
-      el.title = `After tier ${pass.tiers}: +${of.coinsPerStep} coins per step, as often as you like - the first step takes ${fmtNum(of.firstStepXp)} XP, every further step ${fmtNum(of.stepGrowthXp)} XP more.`;
+      el.title = `After tier ${pass.tiers}: +${of.coinsPerStep} coins per step and ${of.vouchersPerMilestone} booster vouchers every ${of.voucherEvery}th step, as often as you like - the first step takes ${fmtNum(of.firstStepXp)} XP, every further step ${fmtNum(of.stepGrowthXp)} XP more.`;
       const count = done ? of.count : 0;
+      // (v6.11.0) Immer der aktuelle 5er-Block: +1..+4 Coins, +5 = 4 Booster-Gutscheine
+      const every = of.voucherEvery || 5, base = Math.floor(count / every) * every;
       let steps = '';
-      for (let k = 1; k <= of.voucherAt; k++) {
-        const isV = k === of.voucherAt;
-        const got = isV ? of.voucherGranted : count >= k;
-        steps += `<span class="of-step${isV ? ' voucher' : ''}${got ? ' done' : ''}"${isV ? ` title="Free voucher for 1 Refined or Fancy item in today's daily shop"` : ''}>${isV ? '🎫 ' : ''}+${k}${got ? ' ✓' : ''}</span>`;
+      for (let k = base + 1; k <= base + every; k++) {
+        const isV = k % every === 0;
+        const got = count >= k;
+        steps += `<span class="of-step${isV ? ' voucher' : ''}${got ? ' done' : ''}"${isV ? ` title="${of.vouchersPerMilestone} booster vouchers (redeem them in the Shop)"` : ` title="${of.coinsPerStep} coins"`}>${isV ? `🎟×${of.vouchersPerMilestone} ` : ''}+${k}${got ? ' ✓' : ''}</span>`;
       }
-      const note = of.voucherGranted ? (pass.voucher ? 'Voucher ready - use it in the shop' : 'Voucher claimed this month') : 'Free Refined or Fancy item';
+      const note = `${of.vouchersPerMilestone} booster vouchers every ${every} steps`;
       // Immer "30+" - man levelt endlos weiter, die Stufen-Punkte darunter zeigen den Stand
       el.innerHTML = `<span class="of-label">30+</span>` +
         `<div class="of-mid"><div class="xp-bar"><div class="xp-bar-fill" style="width:${done ? (of.xpInto / of.xpPerStep) * 100 : 0}%"></div></div>` +
         `<div class="of-steps">${steps}<span class="of-step-note">${note}</span></div></div>` +
-        (of.pending ? `<button type="button" class="of-claim" data-claim-overflow title="Claim the coins of your 30+ steps">Claim 🪙 ${fmtNum(of.pending * of.coinsPerStep)}</button>` : '') +
+        (of.pending || of.pendingVouchers ? `<button type="button" class="of-claim" data-claim-overflow title="Claim the rewards of your 30+ steps">Claim ${[of.pending ? `🪙 ${fmtNum(of.pending * of.coinsPerStep)}` : '', of.pendingVouchers ? `🎟 ×${of.pendingVouchers}` : ''].filter(Boolean).join(' · ')}</button>` : '') +
         `<span class="of-info">${done ? `${fmtNum(of.xpInto)} / ${fmtNum(of.xpPerStep)} XP` : `🪙 +${of.coinsPerStep} per step from ${fmtNum(of.firstStepXp)} XP`}</span>`;
     }
 

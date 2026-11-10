@@ -31,7 +31,9 @@
       date: '2026-11-10',
       notable: [
         'New games now show up within about a minute (was every 15 minutes) - every open page updates by itself when something new comes in.',
-        'Friend activity and the friends list now update every minute too.'
+        'Friend activity and the friends list now update every minute too.',
+        'Pass after tier 30: every 5th step (30+5, 30+10, ...) now gives 4 booster vouchers, every other step 100 coins. The Refined/Fancy item voucher is gone.',
+        'New Lucky Wheel: all fields are equally likely - 100 coins, 2 booster vouchers, or 1 special booster voucher (works on special sets any day of the week).'
       ],
       refinements: 1
     },

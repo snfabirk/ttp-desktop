@@ -176,6 +176,12 @@
   .wheel-svg .lbl { font-family: 'Cinzel', Georgia, serif; font-size: 13px; text-anchor: middle; dominant-baseline: middle; }
   .wheel-svg .lbl.a { fill: var(--bg); }
   .wheel-svg .lbl.b { fill: var(--text); }
+  .wheel-svg .pk { fill: var(--bg); stroke: color-mix(in srgb, var(--bg) 60%, black); stroke-width: .8; }
+  .wheel-svg .pk.sp { fill: #6d34b8; stroke: #2a0f4f; }
+  .wheel-svg .pk-band { fill: var(--gold); opacity: .85; }
+  .wheel-svg .pk-star { fill: var(--gold); font-size: 7px; text-anchor: middle; dominant-baseline: middle; }
+  .wheel-svg.sep .pk { fill: #000; stroke: #000; }
+  .wheel-svg.sep .pk-band, .wheel-svg.sep .pk-star { fill: #ffeb00; }
   .wheel-svg .rim { fill: none; stroke: var(--gold); stroke-width: 4; }
   .wheel-svg .hub { fill: var(--bg); stroke: var(--gold); stroke-width: 3; }
   .wheel-svg .pointer { fill: var(--text); stroke: var(--bg); stroke-width: 1.5; }
@@ -512,6 +518,13 @@
       : `<div class="offers-empty">${list.length ? 'You already own everything on offer here.' : 'You already own everything that could show up here.'}</div>`;
 
     // ----- Gluecksrad (SVG) -----
+    // (v6.11.0) Gutschein-Felder zeigen kleine Booster: 2 normale bzw. 1 Special (lila, Stern)
+    function wheelPacks(x, y, s) {
+      const pack = (dx, ang, special) => `<g transform="translate(${(x + dx).toFixed(2)} ${(y + 2).toFixed(2)}) rotate(${ang})">` +
+        `<rect class="pk${special ? ' sp' : ''}" x="-6" y="-9" width="12" height="18" rx="1.6"/><rect class="pk-band" x="-6" y="-2.2" width="12" height="4.4"/>` +
+        `${special ? '<text class="pk-star" x="0" y="-5">★</text>' : ''}</g>`;
+      return s.specialVouchers ? pack(0, 0, true) : pack(-7, -12) + pack(7, 12);
+    }
     function wheelSvg(segments) {
       const n = segments.length, R = 100, cx = 110, cy = 110;
       const pt = (a, r) => [cx + Math.sin(a) * r, cy - Math.cos(a) * r];
@@ -520,8 +533,11 @@
         const a0 = i / n * Math.PI * 2, a1 = (i + 1) / n * Math.PI * 2, am = (a0 + a1) / 2;
         const [x0, y0] = pt(a0, R), [x1, y1] = pt(a1, R), [lx, ly] = pt(am, R * 0.68);
         const k = i % 2 ? 'b' : 'a';
+        const rot = `rotate(${(am * 180 / Math.PI).toFixed(1)} ${lx.toFixed(2)} ${ly.toFixed(2)})`;
         segs += `<path class="seg ${k}" d="M${cx} ${cy} L${x0.toFixed(2)} ${y0.toFixed(2)} A${R} ${R} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z"/>` +
-          `<text class="lbl ${k}" x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" transform="rotate(${(am * 180 / Math.PI).toFixed(1)} ${lx.toFixed(2)} ${ly.toFixed(2)})">${esc(s.label)}</text>`;
+          (s.vouchers || s.specialVouchers
+            ? `<g transform="${rot}">${wheelPacks(lx, ly, s)}</g>`
+            : `<text class="lbl ${k}" x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" transform="${rot}">${esc(s.label)}</text>`);
       });
       return `<svg class="wheel-svg${sepOn() ? ' sep' : ''}" viewBox="0 0 220 230">
         <g class="wheel-rot" style="transform-origin:110px 110px">${segs}<circle class="rim" cx="110" cy="110" r="${R}"/></g>
@@ -760,7 +776,7 @@
     const clockDelay = ms => `-${Date.now() % ms}ms`;
     function renderBoosters() {
       const list = shop.boosters || [];
-      const vouchers = shop.boosterVouchers || 0;
+      const vouchers = shop.boosterVouchers || 0, specialV = shop.specialVouchers || 0;
       const rt = shop.boosterRates || { animChance: .1, dupeRefund: { common: 3, uncommon: 8, holo: 50, anim: 300 } };
       const one = b => {
         const btn = (q) => {
@@ -776,8 +792,12 @@
           return `<button type="button" class="offer-buy bconfirm" data-booster="${b.id}" data-qty="${q}">Buy ${q > 1 ? `${q} ` : ''}for 🪙 <b>${fmtNum(cost)}</b>?</button>`;
         };
         const canBuy = b.released && b.available !== false;
+        // (v6.11.0) Special-Gutschein (Gluecksrad) gilt auch unter der Woche
+        const v = b.special ? specialV : vouchers;
+        const voucherHtml = (b.special ? b.released : canBuy) && v
+          ? `<button type="button" class="bvoucher" data-redeem="${b.id}" style="animation-delay:${clockDelay(3200)}" title="Redeem a ${b.special ? 'special booster voucher' : 'booster voucher'} for one ${esc(b.name)} booster"><span class="tk"><span>FREE</span>${v > 1 ? `<b>×${v}</b>` : ''}</span></button>` : '';
         return `<div class="booster${b.released ? '' : ' soon'}${b.special ? ' special' : ''}${b.special && !b.available ? ' closed' : ''}">
-          <span class="bwrap">${canBuy && !b.special && vouchers ? `<button type="button" class="bvoucher" data-redeem="${b.id}" style="animation-delay:${clockDelay(3200)}" title="Redeem a booster voucher for one ${esc(b.name)} booster"><span class="tk"><span>FREE</span>${vouchers > 1 ? `<b>×${vouchers}</b>` : ''}</span></button>` : ''}<span class="bpack set-${b.id}" style="background:${BOOSTER_GRAD[b.id] || '#333'}"><span class="bc t"></span><span class="bfan">${bfan(b.id)}</span><span class="bt">Three-Trick-Pony<br><small>${esc(b.name)}</small></span><span class="bb">${b.special ? 'SPECIAL BOOSTER' : 'BOOSTER PACK'}</span><i style="animation-delay:${clockDelay(5000)}"></i><span class="bc b"></span></span></span>
+          <span class="bwrap">${voucherHtml}<span class="bpack set-${b.id}" style="background:${BOOSTER_GRAD[b.id] || '#333'}"><span class="bc t"></span><span class="bfan">${bfan(b.id)}</span><span class="bt">Three-Trick-Pony<br><small>${esc(b.name)}</small></span><span class="bb">${b.special ? 'SPECIAL BOOSTER' : 'BOOSTER PACK'}</span><i style="animation-delay:${clockDelay(5000)}"></i><span class="bc b"></span></span></span>
           <span class="binfo">
             <span class="bname">${esc(b.name)}</span>
             <span class="bown">You own <b>${b.owned}</b> unopened · album ${b.collected} / ${b.total}</span>
@@ -968,9 +988,13 @@
       setTimeout(() => {
         shop.coins = result.totalCoins;
         shop.wheel.canSpin = false;
+        shop.boosterVouchers = (shop.boosterVouchers || 0) + (result.vouchers || 0);
+        shop.specialVouchers = (shop.specialVouchers || 0) + (result.specialVouchers || 0);
+        if (result.vouchers || result.specialVouchers) renderBoosters();
         document.getElementById('coinBalance').textContent = `🪙 ${fmtNum(shop.coins)}`;
         if (big) {
-          big.ui.querySelector('#spinResult').textContent = `+${fmtNum(result.coins)} coins`;
+          big.ui.querySelector('#spinResult').textContent = result.specialVouchers ? '+1 special booster voucher - redeem it in the Shop'
+            : result.vouchers ? `+${result.vouchers} booster vouchers - redeem them in the Shop` : `+${fmtNum(result.coins)} coins`;
           btn.textContent = 'Spun today';
           big.ui.querySelector('.spin-hint').textContent = `Next free spin in ${until(shop.wheel.nextSpinAt)}`;
         }

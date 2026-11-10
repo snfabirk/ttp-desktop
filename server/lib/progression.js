@@ -81,13 +81,19 @@ const FALLBACK_COSMETIC_COINS = 900; // Monat ohne angelegte Cosmetics
 // 30+5 kostet 13.000 XP
 const OVERFLOW_XP_FIRST = 2000;
 const OVERFLOW_XP_GROWTH = 300;
-const COINS_PER_OVERFLOW_STEP = 200;
+// v6.11.0 (Nutzer): jede 5. Stufe (30+5, 30+10, ...) 4 Booster-Gutscheine
+// statt einmal ein Cosmetic-Gutschein - Sticker braucht man immer (Grading),
+// Cosmetics sind endgueltig. Alle anderen Stufen 100 Coins (vorher 200).
+const COINS_PER_OVERFLOW_STEP = 100;
+const OVERFLOW_VOUCHER_EVERY = 5;
+const OVERFLOW_VOUCHERS = 4;
+const isOverflowVoucherStep = k => k % OVERFLOW_VOUCHER_EVERY === 0;
 // Gutschein (Nutzeridee 2026-10-10, v5.22.0): bei 30+5 gibt es einmal pro
 // Monat einen Gutschein fuer ein Gratis-Refined/Fancy aus dem HEUTIGEN Daily-
 // Shop. Er laeuft mit dem Daily-Wechsel ab (Nutzer: sonst wartet man einfach
 // auf den naechsten Tag - "wers verpasst selbst schuld"). Eigener Platz,
-// belegt keinen der 3 Buff-Slots.
-const VOUCHER_AT_OVERFLOW = 5;
+// belegt keinen der 3 Buff-Slots. Seit v6.11.0 nicht mehr vergeben (4 Booster-
+// Gutscheine stattdessen) - ein noch offener Gutschein laeuft normal ab.
 const VOUCHER_RARITIES = ['refined', 'fancy'];
 const overflowStepCost = n => OVERFLOW_XP_FIRST + OVERFLOW_XP_GROWTH * n; // n = schon erreichte Stufen
 
@@ -410,15 +416,14 @@ function claimPassRewards(state, month) {
     else pass.pendingTiers.push(t);
   }
   pass.claimedTier = Math.max(pass.claimedTier, prog.tier);
-  if (prog.overflowCount > pass.claimedOverflow) {
-    pass.pendingOverflow += prog.overflowCount - pass.claimedOverflow;
-    pass.claimedOverflow = prog.overflowCount;
+  // pendingOverflow = noch nicht abgeholte Coin-Stufen, pendingOverflowVouchers
+  // = noch nicht abgeholte Booster-Gutscheine (jede 5. Stufe)
+  pass.pendingOverflowVouchers = pass.pendingOverflowVouchers || 0;
+  for (let k = (pass.claimedOverflow || 0) + 1; k <= prog.overflowCount; k++) {
+    if (isOverflowVoucherStep(k)) pass.pendingOverflowVouchers += OVERFLOW_VOUCHERS;
+    else pass.pendingOverflow += 1;
   }
-  if (prog.overflowCount >= VOUCHER_AT_OVERFLOW && !pass.voucherGranted) {
-    pass.voucherGranted = true;
-    const now = new Date();
-    state.voucher = { month, grantedAt: now.toISOString(), expiresAt: nextDailyReset(now).toISOString() };
-  }
+  pass.claimedOverflow = Math.max(pass.claimedOverflow || 0, prog.overflowCount);
 }
 
 function markOwnedTier(pass, t) {
@@ -438,7 +443,8 @@ function settleOldPasses(state, now = new Date()) {
       else if (r.type === 'cosmetic') { if (!state.inventory.includes(r.id)) state.inventory.push(r.id); } else state.coins += r.amount || 0;
     });
     state.coins += (pass.pendingOverflow || 0) * COINS_PER_OVERFLOW_STEP;
-    pass.pendingTiers = []; pass.pendingOverflow = 0;
+    state.boosterVouchers = (state.boosterVouchers || 0) + (pass.pendingOverflowVouchers || 0);
+    pass.pendingTiers = []; pass.pendingOverflow = 0; pass.pendingOverflowVouchers = 0;
   });
 }
 
@@ -466,11 +472,20 @@ function claimPassCoins({ tier, overflow, all } = {}) {
     } else amount += r.amount || 0;
     return true;
   };
+  const takeOverflow = () => {
+    amount += (pass.pendingOverflow || 0) * COINS_PER_OVERFLOW_STEP; pass.pendingOverflow = 0;
+    const v = pass.pendingOverflowVouchers || 0;
+    if (v) {
+      state.boosterVouchers = (state.boosterVouchers || 0) + v;
+      for (let i = 0; i < v; i++) boosters.push({ overflow: true, voucher: true });
+      pass.pendingOverflowVouchers = 0;
+    }
+  };
   if (all) {
     [...pass.pendingTiers].forEach(takeTier);
-    amount += (pass.pendingOverflow || 0) * COINS_PER_OVERFLOW_STEP; pass.pendingOverflow = 0;
+    takeOverflow();
   } else if (overflow) {
-    amount += (pass.pendingOverflow || 0) * COINS_PER_OVERFLOW_STEP; pass.pendingOverflow = 0;
+    takeOverflow();
   } else if (!takeTier(Number(tier))) {
     return { ok: false, error: 'Nothing to claim on this tier.' };
   }
@@ -583,13 +598,15 @@ const boosterCost = (price, qty) => price * (qty - Math.floor(qty / BUNDLE_SIZE)
 function redeemBoosterVoucher(setId) {
   const st = STICKERS.getSet(setId);
   if (!st || !st.released) return { ok: false, error: 'This booster is not available.' };
-  if (st.special) return { ok: false, error: 'Vouchers only work on regular boosters.' };
   const state = readState();
-  if (!(state.boosterVouchers > 0)) return { ok: false, error: 'You have no booster voucher.' };
-  state.boosterVouchers -= 1;
+  // v6.11.0: Special-Booster-Gutschein (Gluecksrad) - gilt fuer Special Sets,
+  // auch unter der Woche (Kaufen bleibt Sa/So)
+  const key = st.special ? 'specialVouchers' : 'boosterVouchers';
+  if (!(state[key] > 0)) return { ok: false, error: st.special ? 'You have no special booster voucher.' : 'You have no booster voucher.' };
+  state[key] -= 1;
   gainBoosters(state, setId, 1);
   writeState(state);
-  return { ok: true, vouchers: state.boosterVouchers, owned: state.boosters[setId], newBoosters: state.newBoosters };
+  return { ok: true, vouchers: state.boosterVouchers || 0, specialVouchers: state.specialVouchers || 0, owned: state.boosters[setId], newBoosters: state.newBoosters };
 }
 function buyBooster(setId, qty = 1) {
   const st = STICKERS.getSet(setId);
@@ -843,8 +860,9 @@ function getPassOverview(state, now) {
       count: prog.overflowCount,
       xpInto: prog.overflowXpInto,
       pending: pass.pendingOverflow || 0,
-      voucherAt: VOUCHER_AT_OVERFLOW,
-      voucherGranted: !!(state.passes[month] && state.passes[month].voucherGranted)
+      pendingVouchers: pass.pendingOverflowVouchers || 0,
+      voucherEvery: OVERFLOW_VOUCHER_EVERY,
+      vouchersPerMilestone: OVERFLOW_VOUCHERS
     },
     voucher: voucherView(state)
   };
@@ -971,7 +989,7 @@ function emptyState() {
     // im Profil-Editor gewaehlt, unabhaengig vom Umschalter oben (null = aktiver)
     profileStatsPuuid: null,
     // Gutscheine aus der LP Bank: je 1 regulaerer Booster nach Wahl (v6.6.0)
-    boosterVouchers: 0,
+    boosterVouchers: 0, specialVouchers: 0,
     // Profil-Layout (Widget-Raster auf profile.html), null = Standard-Layout
     // des Clients. [{ id, type, x, y, w, h, config }]
     profileLayout: null,
@@ -1624,17 +1642,18 @@ function themeAccess() {
   return { themes: [...keys] };
 }
 
-// Gluecksrad - vom Nutzer so abgenommen (2026-10-09): Schnitt ~25 Coins pro
-// Tag. Die Chancen werden bewusst NICHT angezeigt (Ueberraschungsmoment).
+// Gluecksrad - v6.11.0 (Nutzer): alle Felder gleich wahrscheinlich. Die 4
+// dunklen Felder (ungerade Indizes) 100 Coins, von den 4 hellen geben 3 je
+// 2 Booster-Gutscheine und 1 einen Special-Booster-Gutschein.
 const WHEEL_SEGMENTS = [
-  { label: '30', coins: 30, weight: 30 },
-  { label: '75', coins: 75, weight: 24 },
-  { label: '45', coins: 45, weight: 26 },
-  { label: '150', coins: 150, weight: 10 },
-  { label: '60', coins: 60, weight: 25 },
-  { label: '300', coins: 300, weight: 4 },
-  { label: '90', coins: 90, weight: 16 },
-  { label: '750', coins: 750, weight: 1 }
+  { label: '2', coins: 0, vouchers: 2, weight: 1 },
+  { label: '100', coins: 100, weight: 1 },
+  { label: '2', coins: 0, vouchers: 2, weight: 1 },
+  { label: '100', coins: 100, weight: 1 },
+  { label: '1', coins: 0, specialVouchers: 1, weight: 1 },
+  { label: '100', coins: 100, weight: 1 },
+  { label: '2', coins: 0, vouchers: 2, weight: 1 },
+  { label: '100', coins: 100, weight: 1 }
 ];
 
 function weekKey(now) {
@@ -1669,13 +1688,14 @@ function getShopState() {
     boosterRates: { pack: STICKERS.PACK, animChance: STICKERS.ANIM_CHANCE, faChance: STICKERS.FA_CHANCE, dupeRefund: STICKERS.DUPE_REFUND },
     boosterBundle: BUNDLE_SIZE,
     boosterVouchers: state.boosterVouchers || 0,
+    specialVouchers: state.specialVouchers || 0,
     tryOn: lootableCosmetics(state).filter(c => !rentedIds(state).includes(c.id)).map(c => ({ id: c.id, name: c.name, type: c.type, rarity: c.rarity, themeKey: c.themeKey || null })),
     daily: state.shop.daily.map(id => offerView(id, owned)).filter(Boolean),
     weekly: state.shop.weekly.map(id => offerView(id, owned)).filter(Boolean),
     dailyResetAt: nextDailyReset(now).toISOString(),
     weeklyResetAt: nextWeeklyReset(now).toISOString(),
     wheel: {
-      segments: WHEEL_SEGMENTS.map(s => ({ label: s.label, coins: s.coins })),
+      segments: WHEEL_SEGMENTS.map(s => ({ label: s.label, coins: s.coins, vouchers: s.vouchers || 0, specialVouchers: s.specialVouchers || 0 })),
       canSpin: state.wheel.lastSpinDay !== today,
       todayIndex: state.wheel.lastSpinDay === today && Number.isInteger(state.wheel.lastIndex) ? state.wheel.lastIndex : null,
       nextSpinAt: nextDailyReset(now).toISOString()
@@ -1694,8 +1714,10 @@ function spinWheel() {
   const seg = WHEEL_SEGMENTS[index];
   state.wheel = { lastSpinDay: today, lastIndex: index, spins: (state.wheel.spins || 0) + 1 };
   state.coins += seg.coins;
+  state.boosterVouchers = (state.boosterVouchers || 0) + (seg.vouchers || 0);
+  state.specialVouchers = (state.specialVouchers || 0) + (seg.specialVouchers || 0);
   writeState(state);
-  return { ok: true, index, coins: seg.coins, totalCoins: state.coins };
+  return { ok: true, index, coins: seg.coins, vouchers: seg.vouchers || 0, specialVouchers: seg.specialVouchers || 0, totalCoins: state.coins };
 }
 
 function creditedMatchIds() {
