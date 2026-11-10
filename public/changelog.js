@@ -30,7 +30,7 @@
       version: '6.10.1',
       date: '2026-11-10',
       notable: [],
-      bugfixes: 1
+      bugfixes: 2
     },
     {
       version: '6.10.0',

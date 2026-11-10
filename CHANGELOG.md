@@ -3,6 +3,7 @@
 ## 6.10.1 — 2026-11-10
 
 - Safety: any launch with a custom --user-data-dir (test instances) never pushes progression/challenge runs to the cloud (TTP_TEST_NO_PUSH forced, read lazily in cloud.js). Reason: a test instance without the flag overwrote the real account's progression on 2026-11-10 (rebuilt by hand from the user's info).
+- Profile editor: picking a new profile picture now shows it right away (identity widget read the saved avatar from localStorage, only updated on Save); Cancel restores the old one.
 
 ## 6.10.0 — 2026-11-10
 

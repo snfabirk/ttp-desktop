@@ -810,7 +810,12 @@
     const VISIT = new URLSearchParams(location.search).get('u');
     let visit = null;
     const viewName = () => (VISIT ? (visit ? visit.username : '…') : (window.ttpUsername() || '…'));
-    const viewAvatar = () => (VISIT ? (visit && visit.avatar ? `avatars/${visit.avatar}.svg` : 'avatar-placeholder.svg') : window.ttpAvatar());
+    // (v6.10.1, Nutzer) im Bearbeiten-Modus sofort die gerade gewaehlte Auswahl zeigen, nicht erst nach "Save"
+    const viewAvatar = () => {
+      if (VISIT) return visit && visit.avatar ? `avatars/${visit.avatar}.svg` : 'avatar-placeholder.svg';
+      if (editState && S() && S().equipped && 'avatar' in S().equipped) return S().equipped.avatar ? `avatars/${S().equipped.avatar}.svg` : 'avatar-placeholder.svg';
+      return window.ttpAvatar();
+    };
 
     async function parseApiResponse(res) {
       const text = await res.text();
