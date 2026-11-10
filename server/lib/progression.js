@@ -80,7 +80,10 @@ const FALLBACK_COSMETIC_COINS = 900; // Monat ohne angelegte Cosmetics
 // v5.21.0: 2.000 / +300 (vorher 2.500 / +500) - passend zu 1.200 XP pro Stufe,
 // 30+5 kostet 13.000 XP
 const OVERFLOW_XP_FIRST = 2000;
-const OVERFLOW_XP_GROWTH = 300;
+// v6.11.1 (Nutzer): in 5er-Bloecken - Stufe 1-5 je 2.000 XP, 6-10 je 3.000,
+// 11-15 je 4.000 usw. (vorher +300 pro Stufe - der erste Gutschein-Block war
+// zu zaeh). Wird nur billiger, schon erreichte Stufen bleiben erhalten.
+const OVERFLOW_XP_GROWTH = 1000; // pro 5er-Block
 // v6.11.0 (Nutzer): jede 5. Stufe (30+5, 30+10, ...) 4 Booster-Gutscheine
 // statt einmal ein Cosmetic-Gutschein - Sticker braucht man immer (Grading),
 // Cosmetics sind endgueltig. Alle anderen Stufen 100 Coins (vorher 200).
@@ -95,7 +98,7 @@ const isOverflowVoucherStep = k => k % OVERFLOW_VOUCHER_EVERY === 0;
 // belegt keinen der 3 Buff-Slots. Seit v6.11.0 nicht mehr vergeben (4 Booster-
 // Gutscheine stattdessen) - ein noch offener Gutschein laeuft normal ab.
 const VOUCHER_RARITIES = ['refined', 'fancy'];
-const overflowStepCost = n => OVERFLOW_XP_FIRST + OVERFLOW_XP_GROWTH * n; // n = schon erreichte Stufen
+const overflowStepCost = n => OVERFLOW_XP_FIRST + OVERFLOW_XP_GROWTH * Math.floor(n / OVERFLOW_VOUCHER_EVERY); // n = schon erreichte Stufen
 
 // XP fuer Level n -> n+1: jedes Level 100 XP teurer, ab Level 21 fix 4.000
 // (Nutzerentscheidung 2026-10-09 - vorher +250 ohne Deckel, viel zu steil).

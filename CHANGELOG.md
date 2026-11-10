@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 6.11.1 — 2026-11-10
+
+- Pass 30+ cost (user): blocks of 5 steps - 2,000 XP each for steps 1-5, 3,000 for 6-10, 4,000 for 11-15 ... (OVERFLOW_XP_GROWTH now per block). Was 2,000 +300 per step (first 4-voucher block 13k XP ~11 games with quests, now 10k ~8). Only ever cheaper, so reached steps stay.
+
 ## 6.11.0 — 2026-11-10
 
 - Background refresh (user): every full minute instead of every quarter hour (electron-main.js STATS_REFRESH_MS). A run without a new game costs ~5 Riot calls (match lists + rank; cached matches cost nothing).

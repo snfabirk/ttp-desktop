@@ -27,6 +27,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.11.1',
+      date: '2026-11-10',
+      notable: [
+        'Pass after tier 30 is quicker to start: steps 1-5 take 2,000 XP each, steps 6-10 3,000, steps 11-15 4,000 and so on (was +300 XP every step).'
+      ]
+    },
+    {
       version: '6.11.0',
       date: '2026-11-10',
       notable: [

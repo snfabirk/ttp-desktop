@@ -1167,7 +1167,7 @@
       <div>
         <div class="prog-card pass-card">
           <div class="prog-card-head">
-            <h3><span id="passTitle">Monthly Pass</span> <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">A new pass starts every month. Tiers 5, 10, 15, 20, 25 and 30 unlock this month's exclusive cosmetics (yours forever), tiers 13 and 22 its profile pictures, 8 tiers give a voucher for a regular sticker booster (redeem it in the Shop), all other tiers give coins for the shop. After tier 30 you keep earning: every step gives 100 coins, every 5th step (30+5, 30+10, ...) gives 4 booster vouchers instead - the first step takes 2,000 XP, every further one 300 XP more. Every reward is given once per tier - resetting a challenge doesn't reset the pass.</span></span></h3>
+            <h3><span id="passTitle">Monthly Pass</span> <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">A new pass starts every month. Tiers 5, 10, 15, 20, 25 and 30 unlock this month's exclusive cosmetics (yours forever), tiers 13 and 22 its profile pictures, 8 tiers give a voucher for a regular sticker booster (redeem it in the Shop), all other tiers give coins for the shop. After tier 30 you keep earning: every step gives 100 coins, every 5th step (30+5, 30+10, ...) gives 4 booster vouchers instead - steps 1-5 take 2,000 XP each, steps 6-10 3,000, steps 11-15 4,000 and so on. Every reward is given once per tier - resetting a challenge doesn't reset the pass.</span></span></h3>
             <span class="reset-in" id="passEndsIn"></span>
           </div>
           <p class="pass-locked" id="passLocked" hidden>Your pass only levels during a challenge - <a href="challenge.html">start one</a>. Games outside a challenge still give account XP.</p>
@@ -1999,7 +1999,7 @@
       const done = pass.tier >= pass.tiers;
       const el = document.getElementById('passOverflow');
       el.classList.toggle('locked', !done);
-      el.title = `After tier ${pass.tiers}: +${of.coinsPerStep} coins per step and ${of.vouchersPerMilestone} booster vouchers every ${of.voucherEvery}th step, as often as you like - the first step takes ${fmtNum(of.firstStepXp)} XP, every further step ${fmtNum(of.stepGrowthXp)} XP more.`;
+      el.title = `After tier ${pass.tiers}: +${of.coinsPerStep} coins per step and ${of.vouchersPerMilestone} booster vouchers every ${of.voucherEvery}th step, as often as you like - steps 1-${of.voucherEvery} take ${fmtNum(of.firstStepXp)} XP each, every further block of ${of.voucherEvery} steps ${fmtNum(of.stepGrowthXp)} XP more per step.`;
       const count = done ? of.count : 0;
       // (v6.11.0) Immer der aktuelle 5er-Block: +1..+4 Coins, +5 = 4 Booster-Gutscheine
       const every = of.voucherEvery || 5, base = Math.floor(count / every) * every;
