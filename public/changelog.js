@@ -27,6 +27,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.11.2',
+      date: '2026-11-10',
+      notable: [
+        'Daily Goods: "Try It On" is gone. New: Booster Deal - your next booster purchase is 50% off (single or 5-pack, regular or special).'
+      ]
+    },
+    {
       version: '6.11.1',
       date: '2026-11-10',
       notable: [

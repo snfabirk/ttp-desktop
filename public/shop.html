@@ -774,21 +774,23 @@
     // Endlos-Animationen an der Uhr ausrichten: nach jedem Neuzeichnen geht es
     // an derselben Stelle weiter (v6.7.2, Nutzer: Foil soll nicht neu starten)
     const clockDelay = ms => `-${Date.now() % ms}ms`;
+    // (v6.11.2) Booster Deal aus den Daily Goods: naechster Kauf zum halben Preis
+    const dealPrice = cost => shop.boosterDealActive ? Math.round(cost * (shop.boosterDealFactor || 0.5)) : cost;
     function renderBoosters() {
       const list = shop.boosters || [];
       const vouchers = shop.boosterVouchers || 0, specialV = shop.specialVouchers || 0;
       const rt = shop.boosterRates || { animChance: .1, dupeRefund: { common: 3, uncommon: 8, holo: 50, anim: 300 } };
       const one = b => {
         const btn = (q) => {
-          const bundle = shop.boosterBundle || 5, full = b.price * q, cost = b.price * (q - Math.floor(q / bundle)), key = `${b.id}:${q}`, conf = boosterConfirm === key, short = shop.coins < cost;
-          return `<button type="button" class="offer-buy${short ? ' short' : ''}" data-booster="${b.id}" data-qty="${q}"${short ? ' disabled title="Not enough coins"' : ''}>${q > 1 ? `${q}× · ` : ''}🪙 <b>${fmtNum(cost)}</b>${cost < full ? `<span class="bdeal" title="Instead of ${fmtNum(full)}">-${Math.round((1 - cost / full) * 100)}%</span>` : ''}</button>`;
+          const bundle = shop.boosterBundle || 5, full = b.price * q, cost = dealPrice(b.price * (q - Math.floor(q / bundle))), key = `${b.id}:${q}`, conf = boosterConfirm === key, short = shop.coins < cost;
+          return `<button type="button" class="offer-buy${short ? ' short' : ''}" data-booster="${b.id}" data-qty="${q}"${short ? ' disabled title="Not enough coins"' : ''}>${q > 1 ? `${q}× · ` : ''}🪙 <b>${fmtNum(cost)}</b>${cost < full ? `<span class="bdeal" title="Instead of ${fmtNum(full)}${shop.boosterDealActive ? ' - Booster Deal active' : ''}">-${Math.round((1 - cost / full) * 100)}%</span>` : ''}</button>`;
         };
         // v6.7.2: Bestaetigung als Ebene ueber den Kauf-Knoepfen - der Kasten
         // aendert dabei seine Groesse nicht
         const confirmHtml = () => {
           const m = boosterConfirm && boosterConfirm.split(':');
           if (!m || m[0] !== b.id) return '';
-          const q = Number(m[1]), bundle = shop.boosterBundle || 5, cost = b.price * (q - Math.floor(q / bundle));
+          const q = Number(m[1]), bundle = shop.boosterBundle || 5, cost = dealPrice(b.price * (q - Math.floor(q / bundle)));
           return `<button type="button" class="offer-buy bconfirm" data-booster="${b.id}" data-qty="${q}">Buy ${q > 1 ? `${q} ` : ''}for 🪙 <b>${fmtNum(cost)}</b>?</button>`;
         };
         const canBuy = b.released && b.available !== false;

@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 6.11.2 — 2026-11-10
+
+- Daily Goods (user): Try It On removed, replaced by Booster Deal (booster_deal, 150 coins, same weight 12, buff boosterDeal 7 days): next buyBooster costs 50% (applied after the 5-pack discount, so 5x base 600 -> 300), buff consumed by that purchase. Shop buttons show the halved price + discount badge. A today-rolled try_on slot is swapped to booster_deal; running rentals expire normally.
+
 ## 6.11.1 — 2026-11-10
 
 - Pass 30+ cost (user): blocks of 5 steps - 2,000 XP each for steps 1-5, 3,000 for 6-10, 4,000 for 11-15 ... (OVERFLOW_XP_GROWTH now per block). Was 2,000 +300 per step (first 4-voucher block 13k XP ~11 games with quests, now 10k ~8). Only ever cheaper, so reached steps stay.

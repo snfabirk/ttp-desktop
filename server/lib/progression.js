@@ -617,12 +617,16 @@ function buyBooster(setId, qty = 1) {
   if (!STICKERS.availableNow(st)) return { ok: false, error: 'Special boosters can only be bought on Saturdays and Sundays.' };
   qty = Math.max(1, Math.min(10, Math.floor(Number(qty) || 1)));
   const state = readState();
-  const cost = boosterCost(st.price, qty);
+  pruneBuffs(state);
+  const deal = activeBuff(state, 'boosterDeal');
+  let cost = boosterCost(st.price, qty);
+  if (deal) cost = Math.round(cost * BOOSTER_DEAL_FACTOR);
   if (state.coins < cost) return { ok: false, error: 'Not enough coins.' };
   state.coins -= cost;
+  if (deal) state.buffs = state.buffs.filter(b => b !== deal);
   gainBoosters(state, setId, qty);
   writeState(state);
-  return { ok: true, coins: state.coins, owned: state.boosters[setId], newBoosters: state.newBoosters };
+  return { ok: true, coins: state.coins, cost, usedDeal: !!deal, owned: state.boosters[setId], newBoosters: state.newBoosters };
 }
 // Oeffnet count Booster: jeder Sticker ist "neu", wenn man ihn bis dahin noch
 // nicht hatte (auch innerhalb desselben Openings). Doppelte landen seit v6.6.0
@@ -1440,9 +1444,12 @@ const CONSUMABLES = {
   bonus_weekly: { name: 'Bonus Weekly', desc: 'One extra weekly quest for this week', price: 250, weight: 8, icon: '📜' },
   coupon: { name: '20% Coupon', desc: '20% off the next shop item you buy', price: 150, weight: 8, icon: '🏷️', buff: { kind: 'coupon', days: 7 } },
   mystery: { name: 'Mystery Cosmetic', desc: 'A random cosmetic you do not own yet', price: 700, weight: 7, icon: '🎁' },
-  try_on: { name: 'Try It On', desc: 'Use any cosmetic you do not own for 24 hours', price: 150, weight: 12, icon: '👗', buff: { kind: 'rental', hours: 24 } }
+  // v6.11.2 (Nutzer): ersetzt "Try It On" - naechster Booster-Kauf (1er oder
+  // 5er, regulaer oder Special) zum halben Preis. Laufende Leihen laufen normal ab.
+  booster_deal: { name: 'Booster Deal', desc: 'Your next booster purchase is 50% off - single or 5-pack, regular or special', price: 150, weight: 12, icon: '📦', buff: { kind: 'boosterDeal', days: 7 } }
 };
-const BUFF_LABEL = { xpLevel: 'Double XP', lpBank: 'LP Bank Booster', coupon: '20% Coupon', rental: 'Try It On' };
+const BUFF_LABEL = { xpLevel: 'Double XP', lpBank: 'LP Bank Booster', coupon: '20% Coupon', rental: 'Try It On', boosterDeal: 'Booster Deal' };
+const BOOSTER_DEAL_FACTOR = 0.5;
 const MYSTERY_WEIGHTS = { refined: 75, fancy: 22, animated: 3 };
 const BONUS_WEEKLY_POOL = [
   { id: 'bw_win5', title: 'Winning Week', desc: 'Win 5 ranked games this week', target: 5, xp: 1500 },
@@ -1487,7 +1494,12 @@ function consumableUnavailable(state, id) {
 function refreshConsumables(state, now) {
   const today = dayKey(now);
   const cs = { ...emptyState().consumables, ...(state.consumables || {}) };
-  if (cs.dayKey === today) { state.consumables = cs; return false; }
+  if (cs.dayKey === today) {
+    // v6.11.2: heute schon gewuerfeltes "Try It On" (entfernt) -> Booster Deal
+    let swapped = false;
+    cs.slots = cs.slots.map(id => { if (id && !CONSUMABLES[id]) { swapped = true; return 'booster_deal'; } return id; });
+    state.consumables = cs; return swapped;
+  }
   // nur anbieten, was gerade ueberhaupt sinnvoll ist (z.B. Mystery nur, wenn es etwas gibt)
   const pool = Object.keys(CONSUMABLES).filter(id => !((id === 'mystery' || id === 'try_on') && !lootableCosmetics(state).length));
   const slots = [];
@@ -1505,7 +1517,7 @@ function refreshConsumables(state, now) {
 
 function consumablesView(state) {
   return state.consumables.slots.map((id, i) => {
-    if (!id) return null;
+    if (!id || !CONSUMABLES[id]) return null;
     const c = CONSUMABLES[id];
     return { id, slot: i, name: c.name, desc: c.desc, price: c.price, icon: c.icon, sold: !!state.consumables.sold[i], unavailable: state.consumables.sold[i] ? null : consumableUnavailable(state, id) };
   });
@@ -1536,7 +1548,7 @@ function buffsView(state) {
       kind: b.kind, label: BUFF_LABEL[b.kind] || b.kind, expiresAt: b.expiresAt,
       detail: b.kind === 'xpLevel' ? `${b.gamesLeft} game${b.gamesLeft === 1 ? '' : 's'} left`
         : b.kind === 'rental' && cos ? cos.name
-        : b.kind === 'lpBank' ? 'next full bank' : b.kind === 'coupon' ? 'next shop item' : ''
+        : b.kind === 'lpBank' ? 'next full bank' : b.kind === 'coupon' ? 'next shop item' : b.kind === 'boosterDeal' ? 'next booster buy' : ''
     };
   });
 }
@@ -1680,6 +1692,8 @@ function getShopState() {
     prices: PRICES,
     odds: { daily: SHOP_DAILY_WEIGHTS, weekly: SHOP_WEEKLY_WEIGHTS, pastPass: PAST_PASS_CHANCE },
     couponActive: !!activeBuff(state, 'coupon'),
+    boosterDealActive: !!activeBuff(state, 'boosterDeal'),
+    boosterDealFactor: BOOSTER_DEAL_FACTOR,
     consumables: consumablesView(state),
     maxBuffs: MAX_BUFFS,
     discardAvailableAt: (t => t && t > Date.now() ? new Date(t).toISOString() : null)(discardAvailableAt(state)),
