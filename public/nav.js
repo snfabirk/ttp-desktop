@@ -113,20 +113,33 @@
 
       // Neues Set erschienen (v6.9.0): grosse Ankuendigung + Gratis-Booster
       // abholen - das Skript wird nur nachgeladen, wenn wirklich etwas wartet
-      fetch('/api/sets/release').then(r => r.json()).then(d => {
-        if (!d || !d.pending || !d.pending.length) return;
-        const sc = document.createElement('script');
-        sc.src = 'set-release.js';
-        sc.onload = () => window.TTPSetRelease && window.TTPSetRelease.check();
-        document.head.appendChild(sc);
-      }).catch(() => {});
+      // (v6.10.0) + Ankuendigung 1 Woche vorher. Die App laeuft oft tagelang (Tray,
+      // Standby) - deshalb jede Minute und beim Zurueckkommen erneut nachsehen
+      let relLoading = null;
+      const relCheck = () => {
+        if (document.hidden) return;
+        fetch('/api/sets/release').then(r => r.json()).then(d => {
+          const want = d && ((d.pending && d.pending.length) || (d.teaser && !d.teaser.seen));
+          if (!want) return;
+          if (window.TTPSetRelease) return window.TTPSetRelease.check(d);
+          if (relLoading) return;
+          relLoading = document.createElement('script');
+          relLoading.src = 'set-release.js';
+          relLoading.onload = () => window.TTPSetRelease && window.TTPSetRelease.check();
+          document.head.appendChild(relLoading);
+        }).catch(() => {});
+      };
+      relCheck();
+      setInterval(relCheck, 60000);
+      document.addEventListener('visibilitychange', relCheck);
+      window.addEventListener('focus', relCheck);
 
       // Geschenkte Booster (v6.6.0): beim Laden/Fokus abholen (hoechstens alle
       // 30 s), dann ein Hinweisfenster je Absender; zaehlen fuer den Zaehler mit.
       let lastClaim = 0;
       const giftEsc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
       const showGifts = gifts => {
-        const names = { base: 'Base Set', neon: 'Neon District' };
+        const names = { base: 'Base Set', lockin: 'Lock In', worlds: 'Worlds Stage', ranked: 'Ranked Climb', neon: 'Neon District' };
         const byFrom = {};
         gifts.forEach(g => { (byFrom[g.from] = byFrom[g.from] || []).push(g); });
         const lines = Object.entries(byFrom).map(([from, list]) => `<div class="gift-in-line"><b>${giftEsc(from)}</b> sent you ${list.map(g => `${g.qty}× ${giftEsc(g.setName || names[g.set] || g.set)}`).join(', ')} booster${list.reduce((a, g) => a + g.qty, 0) > 1 ? 's' : ''}${list.filter(g => g.message).map(g => `<q>${giftEsc(g.message)}</q>`).join('')}</div>`).join('');

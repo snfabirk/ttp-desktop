@@ -1,5 +1,24 @@
 # Internal Changelog
 
+## 6.10.0 — 2026-11-10
+
+- Set releases (user): upcoming regular sets (Lock In + 2 new) release on secret, randomly rolled dates (Wednesday 00:00 Europe/Berlin, >= 3 weeks apart, by end of Feb 2027). Schedule only stored obfuscated in server/lib/releases.js - never print/log/commit the dates.
+- Time comes from the Supabase server (HTTP Date header, resync every 30 min / after clock jumps); offline = highest server time seen so far (persisted), so changing the PC clock does nothing.
+- SETS is refreshed before every API request (app can run for weeks in tray/standby); nav.js checks /api/sets/release every minute + on visibility/focus.
+- Teaser 1 week before: popup (pack with its 3 animated stickers, date, countdown) with "Sign me up for 3 free boosters"; Shop shows a "SOON" card with countdown + sign-up. Release popup: signed up -> claim 3 boosters (fly into the binder slot / Album tab, "Later" keeps it for 30 days); not signed up -> news only + "To the shop".
+- Teaser/release popups say "50+ new stickers" (Full Arts); after signing up the teaser has no close button and fades out after 2 s (unsigned: "Not now"). Teaser date shown as a big plaque. Shop: newest regular set always first (left).
+- Shop: Daily + Weekly show the same "you already own everything" note when nothing unowned is on offer (weekly used to show "Owned" cards).
+- New sets: Worlds Stage (public/stickers-worlds.js, #1 Unkillable Demon King = Faker homage) + Ranked Climb (public/stickers-ranked.js, own tier emblems), 50 stickers each; Full Arts (user picks 2026-11-10): Worlds 1,7,11,19,20,23,33,34,44,48 / Ranked 1,3,9,17,18,22,27,38,48,49. Worlds card fronts + packs graphite/champagne (blue looked like Base), Demon King reworked (real glasses, mantle, eclipse throne), World Champion: cape + medal instead of laurel.
+- Album booster picker: drag with the mouse held down anywhere (snaps to the nearest pack on release, a drag never picks), mouse wheel also scrolls - packs no longer get stuck off-screen with many sets.
+- Ranked Season End FA: fireworks moved into the 3D mid layer (glows stay in the scene).
+- Test env: TTP_TEST_TEASER=<id> (+ TTP_TEST_TEASER_SECS) simulates teaser -> release.
+- Album fixes below were part of this version.
+
+
+- Album: set/album switches are locked while the binder opens, closes or turns a page (and while the switch is still loading) - fast clicking during the animation caused visual glitches (user). Safety net: a lock older than 5 s is ignored.
+- Album: cover open 900 -> 1000 ms, page turn 760 -> 840 ms, binder swap close/slide/in slightly longer (user: "einen Tick langsamer").
+- Album/Dupes/Trades: sticker inspect flies from the clicked slot into the middle (lift + shadow, like the booster carousel) and back to the slot on close; the small card is hidden while it is "out".
+
 ## 6.9.3 — 2026-11-09
 
 - Booster panel only inside the binder (user): Dupes/Trades no longer show the old "Your Boosters" card, the album box is full width there (dupe grid 10 columns so cards keep their size).

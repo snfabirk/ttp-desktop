@@ -15,6 +15,8 @@
 <script src="stickers.js"></script>
 <script src="stickers-neon.js"></script>
 <script src="stickers-lockin.js"></script>
+<script src="stickers-worlds.js"></script>
+<script src="stickers-ranked.js"></script>
 <script src="cos-preview.js"></script>
 <style>
   /* Shop (v5.13.0, provisorisch): rotierende Angebote (taeglich 3, woechentlich
@@ -305,6 +307,11 @@
   .boosters { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
   .booster { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: color-mix(in srgb, var(--input-bg) 55%, transparent); }
   .booster.soon { opacity: .5; }
+  .booster.upcoming { border-color: color-mix(in srgb, var(--gold) 55%, var(--border)); background: linear-gradient(135deg, color-mix(in srgb, var(--gold) 9%, transparent), color-mix(in srgb, var(--input-bg) 55%, transparent)); }
+  .booster .bsoon-tag { position: absolute; top: -8px; right: -10px; z-index: 5; padding: 0 6px; border-radius: 8px; background: var(--gold); color: var(--bg); font: bold .6rem/15px 'Cinzel', Georgia, serif; letter-spacing: 1px; box-shadow: 0 1px 4px rgba(0,0,0,.45); }
+  .booster .bwhen b.bdate { color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-weight: 700; font-size: .86rem; }
+  .booster .bsigned { color: #7fe08a !important; font-style: normal; }
+  .booster .bsign { border-color: var(--gold); color: var(--gold); }
   .booster .bwrap { flex-shrink: 0; filter: drop-shadow(0 8px 10px rgba(0,0,0,.5)); }
   .booster .bpack { display: block; width: 74px; height: 109px; border-radius: 2px; position: relative; overflow: hidden; font-size: 4.8px;
     box-shadow: inset 1.2em 0 1.6em -1.1em rgba(255,255,255,.38), inset -1.4em 0 1.8em -1.1em rgba(0,0,0,.55);
@@ -500,7 +507,9 @@
         <span class="offer-msg">${buyMsg[o.id] ? esc(buyMsg[o.id]) : ''}</span>
       </div>`;
     }
-    const offersHtml = list => list.length ? list.map(offerHtml).join('') : '<div class="offers-empty">You already own everything that could show up here.</div>';
+    // (Nutzer) einheitlich: ist nichts (mehr) Neues im Angebot, steht in Daily + Weekly derselbe Hinweis statt "Owned"-Karten
+    const offersHtml = list => list.length && list.some(o => !o.owned) ? list.map(offerHtml).join('')
+      : `<div class="offers-empty">${list.length ? 'You already own everything on offer here.' : 'You already own everything that could show up here.'}</div>`;
 
     // ----- Gluecksrad (SVG) -----
     function wheelSvg(segments) {
@@ -723,7 +732,7 @@
     }
 
     // ----- Booster: Kauf mit Zwei-Klick-Bestaetigung; Pull Rates nur hinter "?" -----
-    const BOOSTER_GRAD = { base: 'linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%)', neon: 'linear-gradient(160deg, #07080c 0%, #14161e 38%, #2a0a14 72%, #5a0a1e 100%)', lockin: 'linear-gradient(150deg, #1c0306 0%, #4a0c14 38%, #7a1620 70%, #c8a96e 100%)' };
+    const BOOSTER_GRAD = { base: 'linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%)', neon: 'linear-gradient(160deg, #07080c 0%, #14161e 38%, #2a0a14 72%, #5a0a1e 100%)', lockin: 'linear-gradient(150deg, #1c0306 0%, #4a0c14 38%, #7a1620 70%, #c8a96e 100%)', worlds: 'linear-gradient(150deg, #0c0c10 0%, #24242c 40%, #4a4a56 70%, #d8c48a 100%)', ranked: 'linear-gradient(150deg, #061214 0%, #0d3436 40%, #17605a 72%, #e0c070 100%)' };
     const STK = id => (window.STICKER_SETS && window.STICKER_SETS[id]) || window.STICKERS;
     const bfan = id => { const L = STK(id); if (!L) return ''; const an = L.SET.filter(x => x.r === 'anim'), cls = an.length === 2 ? ['f0', 'f2'] : ['f0', 'f1', 'f2']; return an.map((x, i) => `<div class="${cls[i] || ''}">${L.square(x)}</div>`).join(''); };
     // "2d 14h 32m 10s" bis zum Zeitpunkt
@@ -732,6 +741,20 @@
       ? `<span class="dot"></span>On sale this weekend<br>ends in <b data-cd="${b.closesAt}">${countdown(b.closesAt)}</b>`
       : `<span class="dot"></span>Only on weekends<br>available in <b data-cd="${b.opensAt}">${countdown(b.opensAt)}</b>`;
     let boosterConfirm = null, boosterMsg = '', boosterMsgSpecial = false;
+    // (v6.10.0, Nutzer) Angekuendigtes Set: "Coming soon" mit Countdown + Anmeldung fuer Gratis-Booster
+    const relDay = at => new Date(at).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    function upcomingHtml() {
+      const u = shop.upcomingSet;
+      if (!u) return '';
+      return `<div class="booster upcoming">
+          <span class="bwrap"><span class="bpack set-${u.id}" style="background:${BOOSTER_GRAD[u.id] || '#333'}"><span class="bc t"></span><span class="bfan">${bfan(u.id)}</span><span class="bt">Three-Trick-Pony<br><small>${esc(u.name)}</small></span><span class="bb">BOOSTER PACK</span><i style="animation-delay:${clockDelay(5000)}"></i><span class="bc b"></span></span><span class="bsoon-tag">SOON</span></span>
+          <span class="binfo">
+            <span class="bname">${esc(u.name)}</span>
+            <span class="bwhen"><span class="dot"></span>Coming <b class="bdate">${esc(relDay(u.at))}</b><br>releases in <b data-cd="${u.at}">${countdown(u.at)}</b></span>
+            <span class="bbuy">${u.signedUp ? `<em class="bsigned">✓ Signed up for ${u.qty} free boosters</em>` : `<button type="button" class="offer-buy bsign" data-signup="${u.id}">Sign up · ${u.qty} free boosters</button>`}</span>
+          </span>
+        </div>`;
+    }
     // Endlos-Animationen an der Uhr ausrichten: nach jedem Neuzeichnen geht es
     // an derselben Stelle weiter (v6.7.2, Nutzer: Foil soll nicht neu starten)
     const clockDelay = ms => `-${Date.now() % ms}ms`;
@@ -765,7 +788,7 @@
         </div>`;
       };
       const msg = sp => `<div class="booster-msg">${sp === boosterMsgSpecial ? esc(boosterMsg) : ''}</div>`;
-      patchBoosters(document.getElementById('boosterOffers'), list.filter(b => !b.special).map(one).join('') + msg(false));
+      patchBoosters(document.getElementById('boosterOffers'), upcomingHtml() + list.filter(b => !b.special).reverse().map(one).join('')   /* (Nutzer) neuestes Set immer links - da stand auch die Ankuendigung */ + msg(false));
       const sp = list.filter(b => b.special);
       patchBoosters(document.getElementById('specialOffers'), (sp.length ? sp.map(one).join('') : '<p class="muted">No special sets yet.</p>') + msg(true));
     }
@@ -796,6 +819,16 @@
       if (flip) load();
     }, 1000);
     const onBoosterClick = async e => {
+      const su = e.target.closest('[data-signup]');
+      if (su) {
+        su.disabled = true;
+        let r;
+        try { r = await (await fetch('/api/sets/release/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ set: su.dataset.signup }) })).json(); } catch (err) { r = { ok: false, error: 'Could not reach the app server.' }; }
+        boosterMsgSpecial = false;
+        boosterMsg = r.ok ? 'You are signed up - claim your free boosters on release day!' : (r.error || 'Something went wrong.');
+        await load();
+        return;
+      }
       const rd = e.target.closest('[data-redeem]');
       if (rd) {
         let r;
@@ -827,6 +860,7 @@
       if (boosterConfirm && !e.target.closest('[data-booster]')) { boosterConfirm = null; renderBoosters(); }
     });
     document.getElementById('specialOffers').addEventListener('click', onBoosterClick);
+    window.addEventListener('ttp:release-signup', () => load());
 
     // shop-scenes-2.js laedt evtl. erst nach dem Shop - kurz nachfassen
     function warmThemes(keys, tries = 0) {

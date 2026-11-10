@@ -114,6 +114,8 @@
   .car-item.dim { filter: brightness(.55) saturate(.75); }
   .car-item.dim:hover { filter: brightness(.8) saturate(.9); }
   .car-item.soon { cursor: default; }
+  .car-ov.dragging, .car-ov.dragging .car-item { cursor: grabbing; }
+  .car-ov { user-select: none; touch-action: none; }
   .car-item .pack:not(.big):hover { transform: none; }
   .car-item .pack:not(.big)::after { content: 'Take booster'; }
   .car-item.dim .pack:not(.big)::after, .car-ov.closing .pack:not(.big)::after { display: none; }
@@ -193,6 +195,9 @@
   .ov.set-neon .back svg circle { stroke: #e8d43a; } .ov.set-neon .back svg path { fill: #e8d43a; }
   .ov.set-lockin .back { background: radial-gradient(circle at 50% 40%, #5e1622, #1a0306 72%); border-color: #8a2a34; }
   .ov.set-lockin .back svg { opacity: .7; }
+  .ov.set-worlds .back { background: radial-gradient(circle at 50% 40%, #3a3a46, #0c0c10 72%); border-color: #8a7a52; }
+  .ov.set-ranked .back { background: radial-gradient(circle at 50% 40%, #145450, #04100f 72%); border-color: #2a6a64; }
+  .ov.set-worlds .back svg, .ov.set-ranked .back svg { opacity: .7; }
   .back.shake { animation: suspense .12s linear infinite; }
   @keyframes suspense { 0% { transform: translate(0, 0); } 25% { transform: translate(-1.5px, .5px); } 50% { transform: translate(1px, -1px); } 75% { transform: translate(1.5px, .5px); } }
   .back.glow-holo { box-shadow: 0 0 26px 6px color-mix(in srgb, var(--c-holo) 75%, transparent), inset 0 0 30px rgba(255,255,255,.25); border-color: #e0d0ff; animation: holoBack 2.2s linear infinite; }
@@ -551,6 +556,9 @@
   .insp.on { opacity: 1; }
   .insp .stk-card { position: relative; width: min(340px, 70vw); aspect-ratio: 190 / 266; font-size: 24px; transition: transform .12s ease-out; transform-style: preserve-3d; }
   .insp .stk-card.resting { transition: transform .5s cubic-bezier(.3,.7,.3,1); }
+  .insp-fly { position: relative; will-change: transform; }
+  .insp.back { background: transparent; backdrop-filter: none; transition: opacity .38s, background .3s, backdrop-filter .3s; opacity: 1 !important; pointer-events: none; }
+  .insp.back .insp-cap { opacity: 0; }
   .insp-cap { position: absolute; bottom: 6vh; left: 0; right: 0; text-align: center; color: var(--text-dim); font-size: .85rem; }
 
 </style>
@@ -620,6 +628,8 @@
 <script src="stickers.js"></script>
 <script src="stickers-neon.js"></script>
 <script src="stickers-lockin.js"></script>
+<script src="stickers-worlds.js"></script>
+<script src="stickers-ranked.js"></script>
 <script src="stickers-fa.js"></script>
 <script>
 // ===================== Sticker-Kunst (detailliert, ohne Die-Cut-Rand) =====================
@@ -641,6 +651,8 @@ let owned = {};                        // { n: Anzahl } fuer das gewaehlte Set
 const SET_STYLE = {
   base: { name: 'BASE SET', band: 'BOOSTER PACK · 7 STICKERS', grad: 'linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%)' },
   lockin: { name: 'LOCK IN', band: 'BOOSTER PACK · 7 STICKERS', grad: 'linear-gradient(150deg, #1c0306 0%, #4a0c14 38%, #7a1620 70%, #c8a96e 100%)' },
+  worlds: { name: 'WORLDS STAGE', band: 'BOOSTER PACK · 7 STICKERS', grad: 'linear-gradient(150deg, #0c0c10 0%, #24242c 40%, #4a4a56 70%, #d8c48a 100%)' },
+  ranked: { name: 'RANKED CLIMB', band: 'BOOSTER PACK · 7 STICKERS', grad: 'linear-gradient(150deg, #061214 0%, #0d3436 40%, #17605a 72%, #e0c070 100%)' },
   neon: { name: 'NEON DISTRICT', band: 'SPECIAL BOOSTER · 7 STICKERS', grad: 'linear-gradient(160deg, #07080c 0%, #14161e 38%, #2a0a14 72%, #5a0a1e 100%)' }
 };
 const setCards = () => lib().SET;
@@ -779,7 +791,7 @@ function openCover(binder, kind, delay = 0, ready = null) {
   if (rings) rings.style.opacity = '';
   const release = holdStickerFx(binder);   // Sticker-Effekte stehen waehrend des Aufklappens kurz still (fluessiger)
   const show = () => { if (left) binder.classList.remove('closed'); release(); };
-  const opt = { duration: 900, delay, easing: COVER_EASE, fill: 'backwards' };
+  const opt = { duration: 1000, delay, easing: COVER_EASE, fill: 'backwards' };   // (v6.9.4, Nutzer) einen Tick langsamer
   const a = c.animate([{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(-180deg)' }], opt);
   const all = [a];
   // (Nutzer) Ringe sind fest am Ruecken und bleiben waagerecht: erste Haelfte nur die rechte
@@ -822,16 +834,16 @@ function swapBinder(snap, toSpecial) {
   const gRings = gl ? g.querySelector(':scope > .spine-rings') : null;
   const oc = makeCover(toSpecial ? 'regular' : 'special', gl); g.appendChild(oc);
   if (gl) g.classList.add('closed');                      // klappt jetzt als Deckel-Innenseite zu
-  const copt = { duration: 480, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'both' };
+  const copt = { duration: 540, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'both' };
   if (gRings) gRings.animate([{ clipPath: 'inset(0 0 0 0px)', zIndex: 9 }, { clipPath: 'inset(0 0 0 0px)', zIndex: 9, offset: .5 }, { clipPath: 'inset(0 0 0 46px)', zIndex: 7, offset: .5 }, { clipPath: 'inset(0 0 0 46px)', zIndex: 7 }], copt);   // Zuklappen: umgekehrt (nach copt!)
   anims.push(oc.animate([{ transform: 'rotateY(-180deg)' }, { transform: 'rotateY(0deg)' }], copt));
   if (!gl) oc.querySelector('.bc-face.back').animate([{ opacity: 0 }, { opacity: 1, offset: .3 }, { opacity: 1 }], copt);
   oc.querySelectorAll('.bc-shade').forEach(s => s.animate([{ opacity: 0 }, { opacity: .85, offset: .5 }, { opacity: 0 }], copt));
   // 2) geschlossen hinausgleiten
-  anims.push(g.animate([{ transform: 'none', opacity: 1 }, { transform: `translateX(${dir * 160}px) rotate(${dir * -1.5}deg) scale(.94)`, opacity: 0 }], { duration: 300, delay: 480, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'both' }));
+  anims.push(g.animate([{ transform: 'none', opacity: 1 }, { transform: `translateX(${dir * 160}px) rotate(${dir * -1.5}deg) scale(.94)`, opacity: 0 }], { duration: 320, delay: 540, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'both' }));
   // 3) neuer Ordner kommt geschlossen herein ...
   const nc = makeCover(toSpecial ? 'special' : 'regular'); binder.appendChild(nc);
-  const inn = binder.animate([{ transform: `translateX(${-dir * 160}px) rotate(${dir * 1.5}deg) scale(.94)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 420, delay: 700, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'backwards' });
+  const inn = binder.animate([{ transform: `translateX(${-dir * 160}px) rotate(${dir * 1.5}deg) scale(.94)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 460, delay: 780, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'backwards' });
   anims.push(inn);
   let op = null;
   // groesser -> kleiner (Nutzer: frueher): sobald der alte Ordner draussen ist,
@@ -841,7 +853,7 @@ function swapBinder(snap, toSpecial) {
     const want = binder.offsetTop + binder.offsetHeight, have = parseFloat(wrap.style.minHeight) || 0;
     if (have > want + 2) shrinkAnim = wrap.animate([{ minHeight: `${have}px` }, { minHeight: `${want}px` }], { duration: 420, easing: 'cubic-bezier(.3,.7,.3,1)' });
     wrap.style.minHeight = '';
-  }, 760);
+  }, 850);
   const done = () => { clearTimeout(shrink); g.remove(); nc.remove(); releaseFx(); wrap.style.overflow = ''; wrap.style.minHeight = ''; if (left && !op) { binder.classList.remove('closed'); if (nRings) nRings.style.opacity = ''; } flipBusy = null; };
   wrap.style.overflow = 'hidden';
   inn.onfinish = () => {
@@ -939,6 +951,22 @@ async function loadAlbum() {
 // Seite umblaettern (v6.9.0, Nutzer): vorwaerts klappt die alte Seite nach links
 // ueber die Ringe weg, rueckwaerts klappt die neue Seite von links herein.
 let flipBusy = null;
+// (v6.9.4, Nutzer) Waehrend der Ordner auf-/zuklappt oder umblaettert (und solange der
+// Wechsel noch laedt), nimmt das Album keinen weiteren Set-/Album-Wechsel an
+let switchLoading = false;
+// Sicherheitsnetz: haengt eine Animation (z. B. Fenster im Tray, nichts wird gezeichnet),
+// gibt die Sperre nach 5 s frei - der naechste Wechsel bricht die alte Animation dann sauber ab
+let lockSeen = null, lockSince = 0;
+const switchLocked = () => {
+  if (flipBusy !== lockSeen) { lockSeen = flipBusy; lockSince = performance.now(); }
+  return (!!flipBusy && performance.now() - lockSince < 5000) || switchLoading || binderPending;
+};
+async function switchTo(i) {
+  if (switchLocked()) return;
+  switchLoading = true;
+  sel = i;
+  try { await loadAlbum(); } finally { switchLoading = false; }
+}
 function turnPage(snap, forward) {
   const binder = document.getElementById('binder'), page = document.getElementById('binderPage');
   if (flipBusy) flipBusy();
@@ -1008,7 +1036,7 @@ function turnPage(snap, forward) {
     const pg = p.querySelector('.binder-page');
     if (pg) animApply(isNew ? newAnims : snap.anims, pg);
   });
-  const opt = { duration: 760, easing: 'cubic-bezier(.45,.05,.25,1)' };
+  const opt = { duration: 840, easing: 'cubic-bezier(.45,.05,.25,1)' };   // (v6.9.4, Nutzer) einen Tick langsamer
   // Leistung (v6.9.2, Nutzer: "fluessiger"): waehrend der Drehung stehen die Sticker-Effekte
   // kurz still (gemessen ~12 -> ~45 Bilder/s) und laufen danach an derselben Stelle weiter
   const release = holdStickerFx(binder);
@@ -1108,7 +1136,7 @@ const updCount = () => {
 // mittlere = nehmen (wandert in den Slot, die anderen verschwinden seitlich).
 // Klick daneben / Esc = das alte Pack wird wieder zurueckgelegt.
 function openPicker() {
-  if (!DATA || !DATA.sets || opening || document.querySelector('.car-ov')) return;
+  if (!DATA || !DATA.sets || opening || switchLocked() || document.querySelector('.car-ov')) return;
   const slot = document.querySelector('.pack-area .pack-shadow');
   const src = document.getElementById('pack');
   const r0 = src.getBoundingClientRect();
@@ -1143,14 +1171,57 @@ function openPicker() {
   const place = (el, x, y, sc, op = 1) => { el.style.transform = `translate(${x}px, ${y}px) scale(${sc})`; el.style.opacity = op; };
   const atSlot = el => { const { L, T } = center(); place(el, r0.left - L, r0.top - T, 1); };
   const offside = (k, from, el) => { const dir = k < from ? -1 : 1; place(el, dir * (innerWidth / 2 + PW + Math.abs(k - from) * GAP * .6), 0, .8, 1); };
-  function layout() {
+  // p = Mitte (auch Zwischenwerte beim Ziehen)
+  function layout(p = focus) {
     els.forEach((el, k) => {
-      const d = k - focus;
-      place(el, d * GAP, 0, d ? .8 : SCALE, Math.abs(d) > 3 ? 0 : 1);
-      el.classList.toggle('dim', !!d);
-      el.classList.toggle('focus', !d);
+      const d = k - p, ad = Math.abs(d);
+      place(el, d * GAP, 0, SCALE - (SCALE - .8) * Math.min(1, ad), Math.max(0, Math.min(1, 4 - ad)));
+      el.classList.toggle('dim', ad > .5);
+      el.classList.toggle('focus', ad <= .5);
     });
   }
+  // (v6.10.0, Nutzer) Bei vielen Sets rutschen Packs aus dem Bild: mit gedrueckter Maustaste
+  // (ueberall) zur Seite ziehen; beim Loslassen rastet das naechste Pack in der Mitte ein.
+  // Mausrad blaettert ebenfalls.
+  const maxK = DATA.sets.length - 1;
+  let drag = null, dragPos = focus, swallowClick = false;
+  ov.addEventListener('pointerdown', e => {
+    if (busy || e.button !== 0) return;
+    drag = { x: e.clientX, f: focus, id: e.pointerId, moved: false };
+  });
+  ov.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x;
+    if (!drag.moved) {
+      if (Math.abs(dx) < 6) return;
+      drag.moved = true;
+      try { ov.setPointerCapture(e.pointerId); } catch (err) { /* egal */ }
+      ov.classList.add('dragging');
+      els.forEach(el => { el.style.transition = 'none'; });
+    }
+    dragPos = Math.max(-.35, Math.min(maxK + .35, drag.f - dx / GAP));
+    layout(dragPos);
+  });
+  const endDrag = e => {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    const was = drag; drag = null;
+    if (!was.moved) return;
+    swallowClick = true; setTimeout(() => { swallowClick = false; }, 0);
+    ov.classList.remove('dragging');
+    els.forEach(el => { el.style.transition = fxOff ? 'none' : ''; });
+    focus = Math.max(0, Math.min(maxK, Math.round(dragPos)));
+    layout();
+  };
+  ov.addEventListener('pointerup', endDrag);
+  ov.addEventListener('pointercancel', endDrag);
+  let wheelAt = 0;
+  ov.addEventListener('wheel', e => {
+    e.preventDefault();
+    if (busy || drag || performance.now() - wheelAt < 180) return;
+    const dir = Math.sign(Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY);
+    const nf = Math.max(0, Math.min(maxK, focus + dir));
+    if (nf !== focus) { wheelAt = performance.now(); focus = nf; layout(); }
+  }, { passive: false });
   // Start: alle ohne Uebergang an den Startpunkt, dann animiert ins Karussell
   const { L, T } = center();
   els.forEach((el, k) => { el.style.left = `${L}px`; el.style.top = `${T}px`; el.style.transition = 'none'; if (k === sel) atSlot(el); else offside(k, sel, el); });
@@ -1187,10 +1258,10 @@ function openPicker() {
     await new Promise(r => setTimeout(r, fxOff ? 0 : 480));
     slot.style.visibility = '';
     ov.remove();
-    if (k !== sel) { sel = k; packQuiet = true; await loadAlbum(); }
+    if (k !== sel) { packQuiet = true; await switchTo(k); }
   }
   ov.addEventListener('click', e => {
-    if (busy) return;
+    if (busy || swallowClick) return;
     const el = e.target.closest('.car-item');
     if (!el) return close(sel);
     const k = Number(el.dataset.k);
@@ -1439,7 +1510,7 @@ async function openPacks(n) {
 }
 // Klick auf den Pack OEFFNET nicht, sondern zeigt die Set-Auswahl (Nutzer)
 document.getElementById('pack').addEventListener('click', openPicker);
-document.getElementById('packOthers').addEventListener('click', e => { const b = e.target.closest('[data-switch]'); if (b && !opening) { sel = Number(b.dataset.switch); loadAlbum(); } });
+document.getElementById('packOthers').addEventListener('click', e => { const b = e.target.closest('[data-switch]'); if (b && !opening) switchTo(Number(b.dataset.switch)); });
 document.getElementById('openBtn').addEventListener('click', () => openPacks(1));
 document.getElementById('openAllBtn').addEventListener('click', () => openPacks(unopened));
 
@@ -1537,7 +1608,7 @@ function smoothScrollTo(y) {
 }
 document.getElementById('binderPick').addEventListener('click', e => {
   const b = e.target.closest('[data-binder]');
-  if (!b || b.classList.contains('on') || opening || binderPending) return;
+  if (!b || b.classList.contains('on') || opening || switchLocked()) return;
   const kk = b.dataset.binder, sets = DATA.sets || [];
   // aufgeklappter Ordner beginnt immer beim 1. Set (Nutzer)
   const i = sets.findIndex(st => (st.special ? 'special' : 'regular') === kk);
@@ -1552,23 +1623,42 @@ document.getElementById('binderPick').addEventListener('click', e => {
   const maxAfter = document.documentElement.scrollHeight - shrink - innerHeight;
   const target = Math.max(0, Math.min(scrollY, box.getBoundingClientRect().top + scrollY - 16, maxAfter));
   binderPending = true;   // Doppelklick: nur ein Wechsel
-  smoothScrollTo(target).then(() => { sel = i; return loadAlbum(); }).finally(() => { binderPending = false; });
+  smoothScrollTo(target).then(() => { binderPending = false; return switchTo(i); }).finally(() => { binderPending = false; });
 });
 document.getElementById('albumTabs').addEventListener('click', e => {
   const t = e.target.closest('[data-set]');
   if (!t || Number(t.dataset.set) === sel || opening) return;
-  sel = Number(t.dataset.set); loadAlbum();
+  switchTo(Number(t.dataset.set));
 });
 document.getElementById('binder').addEventListener('click', e => {
   const slot = e.target.closest('.album-slot.have'); if (!slot || !slot.closest('.album-grid')) return;
   const s0 = setCards().find(x => x.n === Number(slot.dataset.n));
-  inspect(lib(), slot.dataset.fa ? asFa(s0) : s0);
+  inspect(lib(), slot.dataset.fa ? asFa(s0) : s0, '', slot);
 });
-function inspect(L, s, extra = '') {
+// (v6.9.4, Nutzer) from = angeklickte Karte: die grosse Karte wird von dort angehoben und in die
+// Mitte gezogen (wie die Booster im Karussell) und legt sich beim Schliessen wieder zurueck
+function inspect(L, s, extra = '', from = null) {
   const ov = document.createElement('div'); ov.className = 'insp';
-  ov.innerHTML = `<div class="stk-card">${s.fa ? window.STICKER_FA.front(L, s) : L.frontHtml(s)}</div><div class="insp-cap">${s.name} · ${RL[s.r]} · #${String(s.n).padStart(3, '0')}${s.fa ? 'FA' : ''}${extra} - hover the sticker to tilt it, click to close</div>`;
-  document.body.appendChild(ov); requestAnimationFrame(() => ov.classList.add('on'));
-  const c = ov.querySelector('.stk-card');
+  ov.innerHTML = `<div class="insp-fly"><div class="stk-card">${s.fa ? window.STICKER_FA.front(L, s) : L.frontHtml(s)}</div></div><div class="insp-cap">${s.name} · ${RL[s.r]} · #${String(s.n).padStart(3, '0')}${s.fa ? 'FA' : ''}${extra} - hover the sticker to tilt it, click to close</div>`;
+  document.body.appendChild(ov);
+  const c = ov.querySelector('.stk-card'), fly = ov.querySelector('.insp-fly');
+  const fxOff = document.documentElement.classList.contains('fx-off') || !fly.animate;
+  const src = from && (from.querySelector('.stk-card') || from);
+  // Startlage = Lage der kleinen Karte (gleiche Mitte, gleiche Breite)
+  const fromXf = () => {
+    if (!src || !src.isConnected) return null;
+    const a = src.getBoundingClientRect(), b = fly.getBoundingClientRect();
+    if (!a.width || !b.width) return null;
+    return `translate(${a.left + a.width / 2 - (b.left + b.width / 2)}px, ${a.top + a.height / 2 - (b.top + b.height / 2)}px) scale(${a.width / b.width})`;
+  };
+  const FLY = { duration: 480, easing: 'cubic-bezier(.3,.7,.3,1)' };
+  const x0 = fxOff ? null : fromXf();
+  if (x0) {
+    if (src) src.style.visibility = 'hidden';
+    // angehoben: in der Mitte des Wegs etwas groesser + Schatten, dann legt sie sich hin
+    fly.animate([{ transform: x0, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.4))' }, { transform: 'translateY(-14px) scale(1.04)', filter: 'drop-shadow(0 30px 40px rgba(0,0,0,.6))', offset: .7 }, { transform: 'none', filter: 'drop-shadow(0 18px 30px rgba(0,0,0,.5))' }], FLY);
+  }
+  requestAnimationFrame(() => ov.classList.add('on'));
   // 3D-Neigung: startet erst, wenn der Cursor ueber die Karte faehrt, folgt ihm
   // dann auch darueber hinaus; verlaesst er das Fenster, kippt die Karte sanft
   // zurueck und wartet auf den naechsten Hover
@@ -1583,7 +1673,20 @@ function inspect(L, s, extra = '') {
     const py = Math.max(-1, Math.min(1, (ev.clientY - (r.top + r.height / 2)) / (r.height / 2)));
     window.STICKERS.tiltTo(c, px / 2, py / 2, 18); // relativ zur Karte: am Rand volle Neigung
   });
-  ov.addEventListener('click', () => { document.removeEventListener('mouseleave', rest); ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); });
+  let closing = false;
+  ov.addEventListener('click', () => {
+    if (closing) return; closing = true;
+    document.removeEventListener('mouseleave', rest);
+    fly.getAnimations().forEach(a => a.finish());
+    const x1 = fxOff ? null : fromXf();
+    ov.classList.remove('on');
+    const end = () => { if (src) src.style.visibility = ''; ov.remove(); };
+    if (!x1) { if (src) src.style.visibility = ''; setTimeout(() => ov.remove(), 250); return; }
+    // zurueck an ihren Platz: Hintergrund blendet aus, die Karte bleibt sichtbar, bis sie liegt
+    window.STICKERS.untilt(c);
+    ov.classList.add('back');
+    fly.animate([{ transform: 'none' }, { transform: x1 }], { duration: 380, easing: 'cubic-bezier(.4,0,.3,1)', fill: 'forwards' }).onfinish = end;
+  });
 }
 window.STICKERS.enableTilt(document.getElementById('binder'));
 
@@ -1655,7 +1758,7 @@ document.getElementById('dupesView').addEventListener('click', async e => {
   const f = e.target.closest('[data-dfilter]'), k = e.target.closest('[data-keep]'), sb = e.target.closest('[data-sell]'), slot = e.target.closest('.album-slot[data-dset]');
   if (f) { dupeSet = f.dataset.dfilter; sellConfirm = null; dupeMsg = ''; renderDupes(); return; }
   if (k) { keepN = Math.max(0, Math.min(9, keepN + Number(k.dataset.keep))); try { localStorage.setItem('ttp_dupe_keep', keepN); } catch (err) {} sellConfirm = null; renderDupes(); return; }
-  if (slot) { const L = LIB(slot.dataset.dset), b = L.SET.find(x => x.n === Number(slot.dataset.n)), s = slot.dataset.fa ? asFa(b) : b, d = dupesOf(slot.dataset.dset, s.n, s.fa); inspect(L, s, ` · ${d} dupe${d > 1 ? 's' : ''}`); return; }
+  if (slot) { const L = LIB(slot.dataset.dset), b = L.SET.find(x => x.n === Number(slot.dataset.n)), s = slot.dataset.fa ? asFa(b) : b, d = dupesOf(slot.dataset.dset, s.n, s.fa); inspect(L, s, ` · ${d} dupe${d > 1 ? 's' : ''}`, slot); return; }
   if (!sb || sb.disabled) return;
   const key = sb.dataset.sell;
   if (sellConfirm !== key) { sellConfirm = key; dupeMsg = ''; renderDupes(); return; }
@@ -1755,7 +1858,7 @@ function renderTrades() {
 document.getElementById('tradesView').addEventListener('click', async e => {
   const nt = e.target.closest('[data-newtrade]'), dc = e.target.closest('[data-decide]'), mi = e.target.closest('.tmini');
   if (nt) { openTradeBuilder(null); return; }
-  if (mi) { const s = stkOf(mi.dataset.iset, mi.dataset.in); if (s) inspect(LIB(mi.dataset.iset), mi.dataset.ifa ? asFa(s) : s); return; }
+  if (mi) { const s = stkOf(mi.dataset.iset, mi.dataset.in); if (s) inspect(LIB(mi.dataset.iset), mi.dataset.ifa ? asFa(s) : s, '', mi); return; }
   if (!dc || dc.disabled) return;
   const id = dc.dataset.id, decision = dc.dataset.decide;
   const key = id + (decision === 'accepted' ? 'a' : decision === 'cancelled' ? 'c' : 'd');

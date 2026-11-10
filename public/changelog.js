@@ -15,6 +15,8 @@
 //     Button verschoben/anders gestylt, Texte, Panel-Details, kleine
 //     Komfort-Aenderungen.
 //   - "bugfixes" (Label "Bug Fixes"): echte Fehlerbehebungen.
+//   - "upcoming" (Label "Upcoming Content", v6.10.0 Nutzer): Vorbereitungen fuer
+//     kommende Inhalte (neue Sets, Release-System) - nie explizit ankuendigen.
 // Das genaue "was" steht in CHANGELOG.md (Repo-Root) - ein privates, nicht
 // in der App angezeigtes Log fuer Fabian/Claude selbst.
 //
@@ -24,6 +26,17 @@
 // Aenderung, ab jetzt einfach das Datum des jeweiligen Releases.
 (function () {
   const CHANGELOG = [
+    {
+      version: '6.10.0',
+      date: '2026-11-10',
+      notable: [
+        'Clicking a sticker in the Album now lifts it from its slot into the middle - and it goes back to its place when you close it.',
+        'Choosing a booster: hold the mouse button and drag the packs to the side (or use the mouse wheel) to reach every set.'
+      ],
+      upcoming: 1,
+      refinements: 1,
+      bugfixes: 1
+    },
     {
       version: '6.9.3',
       date: '2026-11-09',
@@ -1220,9 +1233,11 @@
       return groups;
     }
 
-    function minorLabelsHtml(refinements, bugfixes) {
-      if (!refinements && !bugfixes) return '';
-      return `<div class="changelog-minor-labels">${refinements ? '<span class="changelog-bugfixes-label">Refinements</span>' : ''}${bugfixes ? '<span class="changelog-bugfixes-label">Bug Fixes</span>' : ''}</div>`;
+    // (v6.10.0, Nutzer) "upcoming": Vorbereitungen fuer kommende Inhalte (z. B. neue Sets) -
+    // nur als Label, damit nichts explizit angekuendigt wird
+    function minorLabelsHtml(refinements, bugfixes, upcoming) {
+      if (!refinements && !bugfixes && !upcoming) return '';
+      return `<div class="changelog-minor-labels">${upcoming ? '<span class="changelog-bugfixes-label">Upcoming Content</span>' : ''}${refinements ? '<span class="changelog-bugfixes-label">Refinements</span>' : ''}${bugfixes ? '<span class="changelog-bugfixes-label">Bug Fixes</span>' : ''}</div>`;
     }
 
     function renderGroupHtml(group) {
@@ -1234,10 +1249,11 @@
       const dateText = newestDate === oldestDate ? newestDate : `${oldestDate} – ${newestDate}`;
       const refinements = group.entries.some(e => e.refinements);
       const bugfixes = group.entries.some(e => e.bugfixes);
+      const upcoming = group.entries.some(e => e.upcoming);
       return `
         <div class="changelog-version">
           <div class="changelog-version-title">v${oldest.version} – v${newest.version} ${dateText ? `<span class="changelog-date">${dateText}</span>` : ''}</div>
-          ${minorLabelsHtml(refinements, bugfixes)}
+          ${minorLabelsHtml(refinements, bugfixes, upcoming)}
         </div>
       `;
     }
@@ -1248,7 +1264,7 @@
         <div class="changelog-version">
           <div class="changelog-version-title">v${v.version} ${dateHtml}</div>
           ${v.notable.length ? `<ul class="changelog-notable">${v.notable.map(n => `<li>${n}</li>`).join('')}</ul>` : ''}
-          ${minorLabelsHtml(v.refinements, v.bugfixes)}
+          ${minorLabelsHtml(v.refinements, v.bugfixes, v.upcoming)}
         </div>
       `;
     }

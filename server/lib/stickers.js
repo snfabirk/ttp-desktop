@@ -45,9 +45,37 @@ const LOCKIN_LIST = [
   'skill-point', 'starter-item', 'shop-run', 'rune-page', 'lane-swap', 'on-my-way', 'missing', 'back-off', 'top-lane', 'mid-lane',
   'bot-lane', 'jungle-path', 'support-item', 'duo-queue', 'champ-select', 'instalock', 'loading-screen', 'respawn', 'dodge-roll', 'victory-pose'
 ];
-if (process.env.TTP_TEST_SET2 === '1') {
-  SETS.splice(1, 0, { id: 'lockin', name: 'Lock In', price: 150, released: true, fullArts: [2, 5, 10, 14, 20, 28, 37, 38, 44, 48], stickers: LOCKIN_LIST.map((id, i) => ({ n: i + 1, id, r: rarityOf(i + 1) })) });
+// Set 3 "Worlds Stage" + Set 4 "Ranked Climb" (v6.10.0, Nutzer 2026-11-10). Kunst:
+// public/stickers-worlds.js / stickers-ranked.js. #1 Worlds = Faker-Hommage (Nutzer).
+// Full Arts (Nutzerwahl 2026-11-10) - GEHEIM, nie an die Oberflaeche geben.
+const WORLDS_LIST = ['unkillable-demon-king','summoners-cup','grand-final','world-champion','finals-mvp','the-outplay','base-race','reverse-sweep','caster-hype','anthem','opening-ceremony','draft-phase','first-pick','counter-pick','tech-pause','shotcaller','head-coach','analyst-desk','swiss-stage','quarterfinals','semifinals','upset','fan-sign','cosplayer','confetti','stage-lights','headset','gaming-chair','team-jersey','team-banner','scoreboard','game-five','blue-side','red-side','gg-handshake','press-room','post-game-interview','scrims','bootcamp','jet-lag','finals-ticket','merch-stand','pickem','lightstick','crowd-roar','camera-cut','energy-drink','stream-chat','instant-replay','trophy-case'];
+const RANKED_LIST = ['challenger','promoted','season-end','grandmaster','master','diamond','emerald','platinum','win-streak','victorious','gold','silver','bronze','iron','tier-up','demotion-shield','lp-gain','lp-loss','placements','hidden-mmr','decay','dodge-penalty','loss-streak','hardstuck','the-ladder','ranked-queue','solo-queue','flex-queue','lp-bar','division-four','division-one','one-trick','mastery-badge','match-history','profile-stalking','alt-account','night-grind','remake','lp-saved','autofill','role-select','break-time','vod-review','new-goal','rank-border','split-reset','leaderboard','coinflip-game','carry-me','next-game'];
+
+// (v6.10.0) Kommende regulaere Sets: erscheinen zu geheimen Terminen (releases.js).
+// SETS wird bei jeder API-Anfrage aufgefrischt (refreshSets) - die App kann ja
+// wochenlang laufen; das Array bleibt dasselbe Objekt (andere Module halten es).
+const RELEASES = require('./releases');
+const UPCOMING = [
+  { id: 'lockin', name: 'Lock In', price: 150, released: true, fullArts: [2, 5, 10, 14, 20, 28, 37, 38, 44, 48], stickers: LOCKIN_LIST.map((id, i) => ({ n: i + 1, id, r: rarityOf(i + 1) })) },
+  { id: 'worlds', name: 'Worlds Stage', price: 150, released: true, fullArts: [1, 7, 11, 19, 20, 23, 33, 34, 44, 48], stickers: WORLDS_LIST.map((id, i) => ({ n: i + 1, id, r: rarityOf(i + 1) })) },
+  { id: 'ranked', name: 'Ranked Climb', price: 150, released: true, fullArts: [1, 3, 9, 17, 18, 22, 27, 38, 48, 49], stickers: RANKED_LIST.map((id, i) => ({ n: i + 1, id, r: rarityOf(i + 1) })) }
+];
+function refreshSets() {
+  const want = [SETS.find(s => s.id === 'base'),
+    ...UPCOMING.filter(st => RELEASES.isReleased(st.id)).sort((a, b) => (RELEASES.releaseAt(a.id) || 0) - (RELEASES.releaseAt(b.id) || 0)),
+    ...SETS.filter(s => s.special)];
+  if (want.length === SETS.length && want.every((st, i) => st === SETS[i])) return false;
+  SETS.splice(0, SETS.length, ...want);
+  return true;
 }
+refreshSets();
+// Set, das gerade angekuendigt wird (1 Woche vor Release), sonst null
+function teaserSet() {
+  const t = RELEASES.teaser(UPCOMING.map(st => st.id));
+  const st = t && UPCOMING.find(x => x.id === t.id);
+  return st ? { set: st, at: t.at } : null;
+}
+const upcomingSet = id => UPCOMING.find(st => st.id === id) || null;
 
 // Special-Booster nur Samstag + Sonntag (Ortszeit des Rechners, Nutzer 2026-11-06).
 // Liefert, ob gerade offen ist, und wann es oeffnet/schliesst (ms).
@@ -90,17 +118,14 @@ function setStatus(set, col = {}, faCol = {}) {
 }
 // Neues Set (v6.9.0, Nutzer): zum Release gibt es RELEASE_GIFT Booster gratis -
 // grosse Ankuendigung beim Start, einmal abholbar pro Konto, RELEASE_DAYS lang
-// ab set.releasedAt ('YYYY-MM-DD', Ortszeit). Alte Sets ohne releasedAt: nichts.
-// Testinstanz: TTP_TEST_RELEASE=<setId> tut so, als waere das Set heute erschienen.
+// ab dem Release-Termin (releases.js). Alte Sets (Base, Specials): nichts.
 const RELEASE_GIFT = 3;
 const RELEASE_DAYS = 30;
 function releaseWindowOpen(set, now = new Date()) {
-  if (!set || !set.released) return false;
-  if (process.env.TTP_TEST_RELEASE && process.env.TTP_TEST_RELEASE === set.id) return true;
-  if (!set.releasedAt) return false;
-  const [y, m, d] = set.releasedAt.split('-').map(Number);
-  const start = new Date(y, m - 1, d).getTime();
-  return now.getTime() >= start && now.getTime() < start + RELEASE_DAYS * 86400000;
+  if (!set || !set.released || !RELEASES.isUpcomingId(set.id) || !RELEASES.isReleased(set.id)) return false;
+  if (process.env.TTP_TEST_RELEASE === set.id || process.env.TTP_TEST_TEASER === set.id) return true;
+  const start = RELEASES.releaseAt(set.id), t = RELEASES.now();
+  return start != null && t >= start && t < start + RELEASE_DAYS * 86400000;
 }
 
-module.exports = { SETS, getSet, rollPack, setStatus, DUPE_REFUND, ANIM_CHANCE, FA_CHANCE, PACK, migrateBaseN, weekendWindow, availableNow, RELEASE_GIFT, releaseWindowOpen };
+module.exports = { SETS, refreshSets, teaserSet, upcomingSet, getSet, rollPack, setStatus, DUPE_REFUND, ANIM_CHANCE, FA_CHANCE, PACK, migrateBaseN, weekendWindow, availableNow, RELEASE_GIFT, releaseWindowOpen };

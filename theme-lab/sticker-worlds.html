@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Worlds Stage</title>
+<style>
+  :root { --bg: #050a1c; --gold: #c8a96e; --text: #e6dcc6; --dim: #8a8270; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: radial-gradient(1400px 800px at 50% 0%, #142450, var(--bg)); color: var(--text); font-family: Georgia, serif; min-height: 100vh; }
+  header { text-align: center; padding: 22px 0 4px; }
+  h1 { margin: 0; color: var(--gold); letter-spacing: 2px; font-size: 2rem; }
+  .sub { color: var(--dim); font-style: italic; letter-spacing: 3px; font-size: .8rem; margin-top: 4px; }
+  main { max-width: 1320px; margin: 0 auto; padding: 6px 24px 40px; }
+  h2 { font-weight: normal; margin: 18px 0 10px; display: flex; align-items: baseline; gap: 12px; }
+  h2 small { color: var(--dim); font-size: .8rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+  .grid.big { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+  .sc { position: relative; aspect-ratio: 190 / 266; border-radius: 12px; cursor: zoom-in; font-size: 15px; }
+  .grid.big .sc { font-size: 19px; }
+  .insp { position: fixed; inset: 0; z-index: 200; background: rgba(4,8,16,.88); display: grid; place-items: center; cursor: zoom-out; }
+  .grid.fa { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 26px; }
+  .grid.fa .sc { font-size: 22px; cursor: default; }
+  .sc > .stk-card { position: absolute; inset: 0; }
+  body.fa-only .grid.fa { grid-template-columns: repeat(5, 1fr); }
+  .insp .sc { width: min(360px, 70vw); font-size: 26px; cursor: default; transform-style: preserve-3d; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Worlds Stage</h1>
+  <div class="sub">SET 3 · ALL 50 STICKERS · DRAFT</div>
+</header>
+<main id="main"></main>
+<script src="../public/stickers.js"></script>
+<script src="../public/stickers-worlds.js"></script>
+<script src="../public/stickers-fa.js"></script>
+<script>
+  const W = window.STICKERS_WORLDS, { SET, RL, RC, frontHtml } = W;
+  const groups = [['anim', 'Animated Rare', '3 · rarest'], ['holo', 'Holo Rare', '7'], ['uncommon', 'Uncommon', '15'], ['common', 'Common', '25']];
+  // Full Arts ueber denselben Weg wie das Album (STICKER_FA.front), leicht geneigt, damit die 3D-Ebenen sichtbar sind
+  const faList = SET.filter(s => W.faArt(s.id));
+  const faHtml = `<h2 style="color:#ffd1ea">Full Art <small>${faList.length}</small></h2><div class="grid fa">${faList.map(s => `<div class="sc fa-sc"><div class="stk-card">${window.STICKER_FA.front(W, s)}</div></div>`).join('')}</div>`;
+  const faOnly = location.hash === '#fa';
+  if (faOnly) document.body.classList.add('fa-only');
+  document.getElementById('main').innerHTML = faHtml + (faOnly ? '' : groups.map(([r, label, cnt]) => `
+    <h2 style="color:${RC[r]}">${label} <small>${cnt}</small></h2>
+    <div class="grid${r === 'anim' || r === 'holo' ? ' big' : ''}">${SET.filter(s => s.r === r).map(s => `<div class="sc" data-n="${s.n}">${frontHtml(s)}</div>`).join('')}</div>`).join(''));
+  requestAnimationFrame(() => document.querySelectorAll('.fa-sc > .stk-card').forEach((c, i) => window.STICKERS.tiltTo(c, i % 2 ? -.14 : .14, -.1, 16)));
+  window.STICKERS.enableTilt(document.getElementById('main'));
+  document.getElementById('main').addEventListener('click', e => {
+    const el = e.target.closest('.sc'); if (!el) return;
+    const s = SET.find(x => x.n === Number(el.dataset.n));
+    const ov = document.createElement('div'); ov.className = 'insp';
+    ov.innerHTML = `<div class="sc">${frontHtml(s)}</div>`;
+    document.body.appendChild(ov);
+    const c = ov.querySelector('.sc');
+    ov.addEventListener('mousemove', ev => {
+      const r = c.getBoundingClientRect();
+      const px = Math.max(-1, Math.min(1, (ev.clientX - (r.left + r.width / 2)) / (r.width / 2)));
+      const py = Math.max(-1, Math.min(1, (ev.clientY - (r.top + r.height / 2)) / (r.height / 2)));
+      window.STICKERS.tiltTo(c, px / 2, py / 2, 18);
+    });
+    ov.addEventListener('click', () => ov.remove());
+  });
+</script>
+</body>
+</html>

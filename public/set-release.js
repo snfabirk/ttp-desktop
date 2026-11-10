@@ -9,6 +9,8 @@
   const STYLE = {
     base: { name: 'BASE SET', band: 'BOOSTER PACK · 7 STICKERS', grad: 'linear-gradient(135deg, #3a1f6e 0%, #1c2f6b 40%, #0f5d6b 70%, #c8a96e 100%)', lib: 'stickers.js' },
     lockin: { name: 'LOCK IN', band: 'BOOSTER PACK · 7 STICKERS', grad: 'linear-gradient(150deg, #1c0306 0%, #4a0c14 38%, #7a1620 70%, #c8a96e 100%)', lib: 'stickers-lockin.js' },
+    worlds: { name: 'WORLDS STAGE', band: 'BOOSTER PACK · 7 STICKERS', grad: 'linear-gradient(150deg, #0c0c10 0%, #24242c 40%, #4a4a56 70%, #d8c48a 100%)', lib: 'stickers-worlds.js' },
+    ranked: { name: 'RANKED CLIMB', band: 'BOOSTER PACK · 7 STICKERS', grad: 'linear-gradient(150deg, #061214 0%, #0d3436 40%, #17605a 72%, #e0c070 100%)', lib: 'stickers-ranked.js' },
     neon: { name: 'NEON DISTRICT', band: 'SPECIAL BOOSTER · 7 STICKERS', grad: 'linear-gradient(160deg, #07080c 0%, #14161e 38%, #2a0a14 72%, #5a0a1e 100%)', lib: 'stickers-neon.js' }
   };
   const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -27,7 +29,7 @@
 
   const css = document.createElement('style');
   css.textContent = `
-  .srl { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; overflow: hidden; opacity: 0; transition: opacity .45s; font-family: Georgia, serif; }
+  .srl { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; overflow: hidden; opacity: 0; transition: opacity .6s; font-family: Georgia, serif; }
   .srl.on { opacity: 1; }
   .srl-bg { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 46%, rgba(40,28,70,.92), rgba(4,6,14,.97) 70%); backdrop-filter: blur(6px); }
   .srl-rays { position: absolute; left: 50%; top: 52%; width: 170vmax; height: 170vmax; margin: -85vmax 0 0 -85vmax; opacity: .22; pointer-events: none;
@@ -62,6 +64,21 @@
   .srl-claim:hover:not(:disabled) { transform: translateY(-2px) scale(1.03); }
   .srl-claim:disabled { cursor: default; animation: none; opacity: .6; }
   @keyframes srlGlow { 0%, 100% { box-shadow: 0 6px 22px rgba(232,184,74,.45), inset 0 1px 0 rgba(255,255,255,.6); } 50% { box-shadow: 0 6px 34px rgba(255,214,120,.8), inset 0 1px 0 rgba(255,255,255,.6); } }
+  .srl-packs.one { width: 220px; }
+  /* (Nutzer) Release-Datum gross hervorgehoben */
+  .srl-date { display: flex; flex-direction: column; align-items: center; margin: 12px 0 10px; padding: 10px 34px 9px; border-radius: 14px; border: 1px solid rgba(242,212,136,.55);
+    background: linear-gradient(180deg, rgba(242,196,90,.16), rgba(242,196,90,.04)); box-shadow: 0 0 28px rgba(242,196,90,.22), inset 0 1px 0 rgba(255,255,255,.12); opacity: 0; animation: srlUp .6s .5s ease-out forwards; }
+  .srl-date .sd-day { font: 600 .8rem 'Cinzel', Georgia, serif; letter-spacing: .32em; color: #f2d488; text-transform: uppercase; }
+  .srl-date .sd-date { font: 700 2rem/1.15 'Cinzel', Georgia, serif; color: #fff4d0; text-shadow: 0 2px 14px rgba(242,196,90,.5); }
+  .srl-date .sd-cd { font-size: .85rem; color: #cfc6b4; }
+  .srl-date .sd-cd b { color: #f2d488; font-weight: normal; font-variant-numeric: tabular-nums; }
+  .srl-packs.one .srl-pk { --tx: 0px; --rot: -4deg; --d: .75s; }
+  .srl-gift small { display: block; margin-top: 6px; color: #a99f8c; font-size: .82rem; }
+  .srl-sub b { color: #f2d488; font-weight: normal; font-variant-numeric: tabular-nums; }
+  a.srl-claim { text-decoration: none; display: inline-block; }
+  .srl-claim.signed { background: linear-gradient(180deg, #b8f0b0, #5cc46a 60%, #2f8f42); color: #072a10; opacity: 1; }
+  .srl-later { margin-top: 10px; background: none; border: 0; color: #a99f8c; font: .9rem Georgia, serif; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; opacity: 0; animation: srlUp .6s 1.7s ease-out forwards; }
+  .srl-later:hover { color: #e8dfcc; }
   .srl-err { min-height: 1.2em; margin-top: 8px; color: #ff8a8a; font-size: .85rem; }
   .srl-fly { position: fixed; z-index: 9001; pointer-events: none; }
   /* Mini-Pack (wie album.html .pack) */
@@ -88,7 +105,7 @@
   html.fx-off .srl *, html.fx-paused .srl .srl-rays, html.fx-paused .srl .float, html.fx-paused .srl .bp::before { animation-play-state: paused; }`;
   document.head.appendChild(css);
 
-  function packHtml(id, name, L) {
+  function packHtml(id, name, L, free = true) {
     const st = STYLE[id] || { grad: 'linear-gradient(135deg, #5a3a10, #c8a96e)', band: 'BOOSTER PACK · 7 STICKERS' };
     let fan = '';
     if (L) {
@@ -96,36 +113,103 @@
       fan = `<div class="pack-fan">${an.map((s, i) => `<div class="fan-card ${cls[i] || ''}">${L.square(s)}</div>`).join('')}</div>`;
     }
     return `<div class="bp set-${esc(id)}" style="background:${st.grad}"><div class="crimp top"></div><div class="title"><b>Three-Trick-Pony</b><small>${esc(st.name || String(name).toUpperCase())}</small></div>
-      <div class="logo">${fan}</div><div class="band">${esc(st.band)}</div><span class="free">FREE</span><div class="crimp bot"></div></div>`;
+      <div class="logo">${fan}</div><div class="band">${esc(st.band)}</div>${free ? '<span class="free">FREE</span>' : ''}<div class="crimp bot"></div></div>`;
+  }
+
+  const post = async (url, body) => {
+    try { return await (await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json(); }
+    catch (e) { return { ok: false, error: 'Could not reach the app server.' }; }
+  };
+  // Release-Zeitpunkt (Mittwoch 00:00 deutscher Zeit) in der Ortszeit des Nutzers
+  const dayName = at => new Date(at).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  const countdown = at => { let t = Math.max(0, Math.floor((at - Date.now()) / 1000)); const d = Math.floor(t / 86400); t %= 86400; const h = Math.floor(t / 3600); t %= 3600; const m = Math.floor(t / 60); return `${d ? `${d}d ` : ''}${h}h ${m}m`; };
+  function overlay(cls, inner) {
+    const ov = document.createElement('div');
+    ov.className = `srl ${cls}`;
+    ov.innerHTML = `<div class="srl-bg"></div><div class="srl-rays"></div><div class="srl-box" role="dialog">${inner}</div>`;
+    document.body.appendChild(ov);
+    requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add('on', 'in')));
+    return ov;
+  }
+  const closeOv = (ov, done) => { ov.classList.remove('on'); setTimeout(() => { ov.remove(); done(); }, 650); };
+
+  // (v6.10.0, Nutzer) Ankuendigung 1 Woche vorher: so sieht der Booster aus, Termin,
+  // und man kann sich fuer die Gratis-Booster "anmelden"
+  async function showTeaser(t) {
+    const L = await loadLib(t.id);
+    const ov = overlay('teaser', `
+        <div class="srl-kicker">NEW SET · COMING ${new Date(t.at).getDay() === 3 ? 'WEDNESDAY' : 'SOON'}</div>
+        <div class="srl-nw"><span class="srl-name">${esc(t.name)}</span></div>
+        <div class="srl-date"><span class="sd-day">${esc(new Date(t.at).toLocaleDateString('en-GB', { weekday: 'long' }))}</span><span class="sd-date">${esc(new Date(t.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }))}</span><span class="sd-cd">in <b class="srl-cd">${countdown(t.at)}</b></span></div>
+        <div class="srl-sub">${t.total}+ new stickers to collect</div>
+        <div class="srl-packs one"><div class="srl-pk"><div class="float">${packHtml(t.id, t.name, L, false)}</div></div></div>
+        <div class="srl-gift">${t.signedUp ? `You are on the list - come back on ${esc(dayName(t.at))} to claim your <b>${t.qty} free boosters</b>` : `Sign up now and get <b>${t.qty} boosters</b> for free on release day`}</div>
+        <button type="button" class="srl-claim srl-sign${t.signedUp ? ' signed' : ''}"${t.signedUp ? ' disabled' : ''}>${t.signedUp ? '✓ You are signed up' : `Sign me up for ${t.qty} free boosters`}</button>
+        <button type="button" class="srl-later"${t.signedUp ? ' hidden' : ''}>Not now</button>
+        <div class="srl-err"></div>`);
+    const tick = setInterval(() => { const c = ov.querySelector('.srl-cd'); if (c) c.textContent = countdown(t.at); }, 30000);
+    return new Promise(done => {
+      const sign = ov.querySelector('.srl-sign');
+      sign.addEventListener('click', async () => {
+        sign.disabled = true;
+        const r = await post('/api/sets/release/signup', { set: t.id });
+        if (!r.ok) { ov.querySelector('.srl-err').textContent = r.error || 'Something went wrong.'; sign.disabled = false; return; }
+        sign.textContent = '✓ You are signed up';
+        sign.classList.add('signed');
+        ov.querySelector('.srl-gift').innerHTML = `Done! Come back on ${esc(dayName(t.at))} to claim your <b>${t.qty} free boosters</b>`;
+        window.dispatchEvent(new CustomEvent('ttp:release-signup', { detail: { set: t.id } }));
+        fadeAway();
+      });
+      // (Nutzer) kein Close-Knopf nach der Anmeldung: kurz lesen lassen, dann blendet es aus
+      let gone = false;
+      const finish = async () => { if (gone) return; gone = true; clearInterval(tick); await post('/api/sets/release/seen', { set: t.id, kind: 'teaser' }); closeOv(ov, done); };
+      const fadeAway = () => { ov.querySelector('.srl-later').hidden = true; setTimeout(finish, 2000); };
+      ov.querySelector('.srl-later').addEventListener('click', finish);
+      if (t.signedUp) fadeAway();
+    });
   }
 
   async function show(set) {
     const L = await loadLib(set.id);
-    const ov = document.createElement('div');
-    ov.className = `srl${set.special ? ' special' : ''}`;
-    ov.innerHTML = `<div class="srl-bg"></div><div class="srl-rays"></div>
-      <div class="srl-box" role="dialog" aria-label="New set released">
+    // nicht angemeldet: nur die Neuigkeit, Booster gibt es im Shop
+    if (!set.signedUp) {
+      const ov = overlay(set.special ? 'special' : '', `
         <div class="srl-kicker">${set.special ? 'NEW SPECIAL SET' : 'NEW SET RELEASED'}</div>
         <div class="srl-nw"><span class="srl-name">${esc(set.name)}</span></div>
-        <div class="srl-sub">${set.total} new stickers to collect${set.special ? ' · in your Special Album' : ' · in your Album'}</div>
+        <div class="srl-sub">${set.total}+ new stickers to collect · in your Album</div>
+        <div class="srl-packs one"><div class="srl-pk"><div class="float">${packHtml(set.id, set.name, L, false)}</div></div></div>
+        <div class="srl-gift">Boosters are in the shop now.<small>You missed the sign-up for free boosters this time - watch out for the next announcement!</small></div>
+        <a class="srl-claim" href="shop.html">To the shop</a>
+        <button type="button" class="srl-later">Close</button>`);
+      return new Promise(done => {
+        const seen = () => post('/api/sets/release/seen', { set: set.id, kind: 'release' });
+        ov.querySelector('a.srl-claim').addEventListener('click', e => { e.preventDefault(); seen().then(() => { location.href = 'shop.html'; }); });
+        ov.querySelector('.srl-later').addEventListener('click', async () => { await seen(); closeOv(ov, done); });
+      });
+    }
+    const ov = overlay(set.special ? 'special' : '', `
+        <div class="srl-kicker">${set.special ? 'NEW SPECIAL SET' : 'NEW SET RELEASED'}</div>
+        <div class="srl-nw"><span class="srl-name">${esc(set.name)}</span></div>
+        <div class="srl-sub">${set.total}+ new stickers to collect${set.special ? ' · in your Special Album' : ' · in your Album'}</div>
         <div class="srl-packs">${[0, 1, 2].slice(0, set.qty).map(() => `<div class="srl-pk"><div class="float">${packHtml(set.id, set.name, L)}</div></div>`).join('')}</div>
-        <div class="srl-gift">To celebrate the release you get <b>${set.qty} boosters</b> for free</div>
+        <div class="srl-gift">You signed up - here are your <b>${set.qty} free boosters</b></div>
         <button type="button" class="srl-claim">Claim ${set.qty} boosters</button>
-        <div class="srl-err"></div>
-      </div>`;
-    document.body.appendChild(ov);
-    requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add('on', 'in')));
+        <button type="button" class="srl-later">Later</button>
+        <div class="srl-err"></div>`);
     return new Promise(done => {
-      const btn = ov.querySelector('.srl-claim');
+      const btn = ov.querySelector('.srl-claim'), laterBtn = ov.querySelector('.srl-later');
+      // "Later": nur fuer diese Sitzung weg - abholen geht bis 30 Tage nach Release
+      laterBtn.addEventListener('click', () => { later.add(set.id); closeOv(ov, done); });
       btn.addEventListener('click', async () => {
         btn.disabled = true;
-        let r;
-        try { r = await (await fetch('/api/sets/release/claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ set: set.id }) })).json(); }
-        catch (e) { r = { ok: false, error: 'Could not reach the app server.' }; }
-        if (!r.ok) { ov.querySelector('.srl-err').textContent = r.error || 'Something went wrong.'; btn.disabled = false; return; }
-        btn.textContent = 'Added to your Album!';
-        // Packs fliegen nacheinander in den Album-Reiter
-        const tab = document.querySelector('a[href="album.html"]');
+        laterBtn.style.visibility = 'hidden';
+        const r = await post('/api/sets/release/claim', { set: set.id });
+        if (!r.ok) { ov.querySelector('.srl-err').textContent = r.error || 'Something went wrong.'; btn.disabled = false; laterBtn.style.visibility = ''; return; }
+        btn.textContent = 'Added to your binder!';
+        // Packs fliegen in den Binder (Booster-Slot im Album) bzw. auf den Album-Reiter
+        const slot = document.getElementById('pack');
+        const toSlot = !!(slot && slot.offsetParent);
+        const tab = toSlot ? slot : document.querySelector('a[href="album.html"]');
         const to = tab ? tab.getBoundingClientRect() : { left: innerWidth / 2, top: 0, width: 0, height: 0 };
         const packs = [...ov.querySelectorAll('.srl-pk')];
         await Promise.all(packs.map((pk, i) => new Promise(res => {
@@ -137,30 +221,37 @@
           ov.appendChild(fly);
           pk.style.visibility = 'hidden';
           const dx = to.left + to.width / 2 - (r0.left + r0.width / 2), dy = to.top + to.height / 2 - (r0.top + r0.height / 2);
+          const end = toSlot ? Math.max(.2, to.width / r0.width) : .08;
           const a = fly.animate([
             { transform: 'none', opacity: 1 },
             { transform: `translate(${dx * .3}px, ${dy * .3 - 60}px) rotate(${(i - 1) * 20}deg) scale(.75)`, opacity: 1, offset: .35 },
-            { transform: `translate(${dx}px, ${dy}px) rotate(${(i - 1) * 40}deg) scale(.08)`, opacity: .3 }
+            { transform: `translate(${dx}px, ${dy}px) rotate(${(i - 1) * (toSlot ? 6 : 40)}deg) scale(${end})`, opacity: toSlot ? .9 : .3 }
           ], { duration: 820, delay: i * 160, easing: 'cubic-bezier(.5,0,.6,1)', fill: 'forwards' });
           a.onfinish = () => {
             fly.remove();
-            if (tab) tab.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 300 });
+            if (tab) tab.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' }], { duration: 300 });
             res();
           };
         })));
         if (window.TTPNav && window.TTPNav.refreshBoosters) window.TTPNav.refreshBoosters();
         window.dispatchEvent(new CustomEvent('ttp:boosters'));
-        ov.classList.remove('on');
-        setTimeout(() => { ov.remove(); done(); }, 450);
+        closeOv(ov, done);
       });
     });
   }
 
+  const later = new Set();
+  let busy = false;
   window.TTPSetRelease = {
-    async check() {
-      let d;
-      try { d = await (await fetch('/api/sets/release')).json(); } catch (e) { return; }
-      for (const set of (d && d.pending) || []) await show(set);
+    // nav.js ruft das beim Laden, jede Minute und beim Zurueckkommen (Standby/Tray) auf
+    async check(d) {
+      if (busy || document.hidden) return;
+      busy = true;
+      try {
+        if (!d) { try { d = await (await fetch('/api/sets/release')).json(); } catch (e) { return; } }
+        for (const set of ((d && d.pending) || []).filter(x => !later.has(x.id))) await show(set);
+        if (d && d.teaser && !d.teaser.seen) await showTeaser(d.teaser);
+      } finally { busy = false; }
     }
   };
 })();

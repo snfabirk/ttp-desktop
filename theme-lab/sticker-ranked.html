@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ranked Climb Preview</title>
+<style>
+  :root { --bg: #0a1424; --gold: #c8a96e; --text: #e6dcc6; --dim: #8a8270; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: radial-gradient(1400px 800px at 50% 0%, #0e3038, #04121a); color: var(--text); font-family: Georgia, serif; min-height: 100vh; }
+  header { text-align: center; padding: 20px 0 4px; }
+  h1 { margin: 0; color: var(--gold); font-family: 'Cinzel', Georgia, serif; letter-spacing: 2px; font-size: 2rem; }
+  .sub { color: var(--dim); font-style: italic; letter-spacing: 3px; font-size: .85rem; margin-top: 4px; }
+  main { max-width: 1400px; margin: 0 auto; padding: 4px 20px 30px; }
+  h2 { font-family: 'Cinzel', Georgia, serif; letter-spacing: 1px; font-weight: normal; margin: 16px 0 10px; display: flex; align-items: baseline; gap: 12px; }
+  h2 small { color: var(--dim); font-size: .8rem; }
+  .grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 14px; }
+  .grid.big { grid-template-columns: repeat(7, 1fr); }
+  .grid.fa { grid-template-columns: repeat(5, 1fr); gap: 28px; }
+  .grid.fa .sc { font-size: 22px; }
+  .sc { position: relative; aspect-ratio: 190 / 266; border-radius: 12px; font-size: 15px; }
+  .grid.big .sc { font-size: 19px; }
+</style>
+</head>
+<body>
+<header><h1>Ranked Climb</h1><div class="sub">SET 3 · ALL 50 STICKERS · DRAFT</div></header>
+<main id="main"></main>
+<script src="../public/stickers.js"></script>
+<script src="../public/stickers-ranked.js"></script>
+<script src="../public/stickers-fa.js"></script>
+<script>
+  const { SET, RL, RC, frontHtml } = window.STICKERS_RANKED;
+  const groups = [['anim', 'Animated Rare', '3'], ['holo', 'Holo Rare', '7'], ['uncommon', 'Uncommon', '15'], ['common', 'Common', '25']];
+  document.getElementById('main').innerHTML = groups.map(([r, label, cnt]) => `
+    <h2 style="color:${RC[r]}">${label} <small>${cnt}</small></h2>
+    <div class="grid${r === 'anim' || r === 'holo' ? ' big' : ''}">${SET.filter(s => s.r === r).map(s => `<div class="sc" data-n="${s.n}">${frontHtml(s)}</div>`).join('')}</div>`).join('');
+  // Full Arts (gleicher Weg wie das Album: STICKER_FA.front)
+  const L = window.STICKERS_RANKED, FA = SET.filter(s => L.faArt(s.id));
+  document.getElementById('main').insertAdjacentHTML('afterbegin', `<h2 style="color:#ffd1ea">Full Arts <small>${FA.length}</small></h2>
+    <div class="grid big fa">${FA.map(s => `<div class="sc stk-card" data-n="${s.n}">${window.STICKER_FA.front(L, s)}</div>`).join('')}</div>`);
+  window.STICKERS.enableTilt(document.getElementById('main'));
+  // ?tilt: Full Arts leicht geneigt (zeigt die 3D-Ebenen im Standbild)
+  const q0 = new URLSearchParams(location.search);
+  if (q0.has('tilt')) requestAnimationFrame(() => document.querySelectorAll('.grid.fa .stk-card').forEach((c, i) => window.STICKERS.tiltTo(c, i % 2 ? -.3 : .3, -.2)));
+  if (q0.has('fa')) document.querySelectorAll('main > h2:not(:first-child), main > .grid:not(.fa)').forEach(e => e.remove());
+  // ?from=1&to=10: einzelne Sticker gross (nur Quadrat) zum Pruefen
+  const q = new URLSearchParams(location.search);
+  if (q.has('from')) {
+    const a = +q.get('from'), b = +q.get('to');
+    document.querySelector('header').remove();
+    document.getElementById('main').innerHTML = '<div style="display:grid;grid-template-columns:repeat(5,240px);gap:14px">' + SET.filter(s => s.n >= a && s.n <= b).map(s => '<div><div style="width:240px;height:240px">' + window.STICKERS_RANKED.square(s) + '</div><div style="text-align:center;font-size:13px">#' + s.n + ' ' + s.name + '</div></div>').join('') + '</div>';
+  }
+</script>
+</body>
+</html>

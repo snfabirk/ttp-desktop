@@ -513,18 +513,47 @@ function receiveGiftBoosters(gifts) {
   writeState(state);
 }
 function newBoostersCount() { return readState().newBoosters || 0; }
-// Release-Geschenk (v6.9.0): offene Gratis-Booster neuer Sets
+// Set-Releases (v6.10.0, Nutzer): 1 Woche vorher Ankuendigung (Popup + Shop-Countdown),
+// dort kann man sich fuer RELEASE_GIFT Gratis-Booster "anmelden". Am Release-Tag
+// Popup "neues Set" - wer angemeldet war, holt dort die Booster ab.
+// state.releaseSignups[id] = Zeitpunkt, state.releaseSeen[id] = { teaser, release }
+function teaserView(state) {
+  const t = STICKERS.teaserSet();
+  if (!t) return null;
+  const seen = (state.releaseSeen || {})[t.set.id] || {};
+  return { id: t.set.id, name: t.set.name, total: t.set.stickers.length, at: t.at, qty: STICKERS.RELEASE_GIFT,
+    signedUp: !!(state.releaseSignups || {})[t.set.id], seen: !!seen.teaser };
+}
 function releaseGiftsPending() {
-  const state = readState(), got = state.releaseGifts || {};
+  const state = readState(), got = state.releaseGifts || {}, signed = state.releaseSignups || {}, seen = state.releaseSeen || {};
   return {
-    pending: STICKERS.SETS.filter(st => STICKERS.releaseWindowOpen(st) && !got[st.id])
-      .map(st => ({ id: st.id, name: st.name, special: !!st.special, total: st.stickers.length, qty: STICKERS.RELEASE_GIFT }))
+    teaser: teaserView(state),
+    // Release-Popup: angemeldet -> bis abgeholt; nicht angemeldet -> einmal
+    pending: STICKERS.SETS.filter(st => STICKERS.releaseWindowOpen(st) && !got[st.id] && (signed[st.id] || !(seen[st.id] || {}).release))
+      .map(st => ({ id: st.id, name: st.name, special: !!st.special, total: st.stickers.length, qty: STICKERS.RELEASE_GIFT, signedUp: !!signed[st.id] }))
   };
+}
+function signUpRelease(setId) {
+  const t = STICKERS.teaserSet();
+  if (!t || t.set.id !== setId) return { ok: false, error: 'Sign-ups for this set are closed.' };
+  const state = readState();
+  state.releaseSignups = state.releaseSignups || {};
+  if (!state.releaseSignups[setId]) { state.releaseSignups[setId] = new Date().toISOString(); writeState(state); }
+  return { ok: true, signedUp: true };
+}
+function markReleaseSeen(setId, kind) {
+  if (!['teaser', 'release'].includes(kind) || !(STICKERS.upcomingSet(setId))) return { ok: false, error: 'Unknown set.' };
+  const state = readState();
+  state.releaseSeen = state.releaseSeen || {};
+  state.releaseSeen[setId] = { ...(state.releaseSeen[setId] || {}), [kind]: new Date().toISOString() };
+  writeState(state);
+  return { ok: true };
 }
 function claimReleaseGift(setId) {
   const st = STICKERS.getSet(setId);
   if (!st || !STICKERS.releaseWindowOpen(st)) return { ok: false, error: 'There is nothing to claim for this set.' };
   const state = readState();
+  if (!(state.releaseSignups || {})[setId]) return { ok: false, error: 'You did not sign up for this release.' };
   state.releaseGifts = state.releaseGifts || {};
   if (state.releaseGifts[setId]) return { ok: false, error: 'You already claimed these boosters.' };
   state.releaseGifts[setId] = new Date().toISOString();
@@ -1636,6 +1665,7 @@ function getShopState() {
     buffs: buffsView(state),
     voucher: voucherView(state),
     boosters: boosterSetsView(state),
+    upcomingSet: teaserView(state),
     boosterRates: { pack: STICKERS.PACK, animChance: STICKERS.ANIM_CHANCE, faChance: STICKERS.FA_CHANCE, dupeRefund: STICKERS.DUPE_REFUND },
     boosterBundle: BUNDLE_SIZE,
     boosterVouchers: state.boosterVouchers || 0,
@@ -1742,6 +1772,8 @@ module.exports = {
   tradeReserve, tradeUnreserve, tradeAcceptTake, tradeAcceptRollback, tradeReceive, tradeSettle, tradeInfo,
   newBoostersCount,
   releaseGiftsPending,
+  signUpRelease,
+  markReleaseSeen,
   claimReleaseGift,
   takeBoostersForGift,
   returnGiftBoosters,

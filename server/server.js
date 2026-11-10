@@ -48,6 +48,10 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 // (siehe public/update-window.html) - keine Server-Logik, nur Dateien.
 app.use('/build', express.static(path.join(__dirname, '..', 'build')));
 app.use(express.json());
+// (v6.10.0) kommende Sets erscheinen zu festen Terminen, auch waehrend die App laeuft:
+// vor jeder API-Anfrage die Set-Liste auffrischen (billig, nur bei Aenderung)
+const { refreshSets: refreshStickerSets } = require('./lib/stickers');
+app.use('/api', (req, res, next) => { try { refreshStickerSets(); } catch (e) { /* nie blockieren */ } next(); });
 
 function requireApiKey(req, res, next) {
   if (!config.apiKey) {
@@ -918,6 +922,14 @@ app.post('/api/boosters/redeem', (req, res) => {
 });
 // Neues Set: Gratis-Booster zum Release (v6.9.0)
 app.get('/api/sets/release', (req, res) => res.json(progression.releaseGiftsPending()));
+app.post('/api/sets/release/signup', (req, res) => {
+  const result = progression.signUpRelease((req.body || {}).set);
+  res.status(result.ok ? 200 : 400).json(result);
+});
+app.post('/api/sets/release/seen', (req, res) => {
+  const result = progression.markReleaseSeen((req.body || {}).set, (req.body || {}).kind);
+  res.status(result.ok ? 200 : 400).json(result);
+});
 app.post('/api/sets/release/claim', (req, res) => {
   const result = progression.claimReleaseGift((req.body || {}).set);
   res.status(result.ok ? 200 : 400).json(result);
