@@ -665,20 +665,19 @@ async function backgroundStatsRefresh() {
   }
 }
 
-const QUARTER_HOUR_MS = 15 * 60 * 1000;
+// (v6.11.0) Jede volle Minute statt jede Viertelstunde - bereits geladene
+// Matches liegen im Cache, ein Lauf ohne neues Spiel kostet nur ~5 Abfragen.
+const STATS_REFRESH_MS = 60 * 1000;
 let statsRefreshTimeoutId = null;
 
-// Exakt auf die naechste volle Viertelstunde (:00/:15/:30/:45) ausgerichtet,
-// genau wie zuvor in overview.html - jetzt aber zentral im Hauptprozess,
-// unabhaengig von jeder einzelnen Seite.
+// Zentral im Hauptprozess, unabhaengig von jeder einzelnen Seite; danach
+// bekommen die offenen Seiten Bescheid ('stats-refreshed') und laden neu.
 function scheduleNextBackgroundStatsRefresh() {
   if (statsRefreshTimeoutId) clearTimeout(statsRefreshTimeoutId);
-  const now = new Date();
-  const msIntoHour = (now.getMinutes() * 60 + now.getSeconds()) * 1000 + now.getMilliseconds();
-  const msIntoQuarter = msIntoHour % QUARTER_HOUR_MS;
-  const delay = QUARTER_HOUR_MS - msIntoQuarter;
+  const delay = STATS_REFRESH_MS - (Date.now() % STATS_REFRESH_MS);
   statsRefreshTimeoutId = setTimeout(async () => {
     await backgroundStatsRefresh();
+    if (mainWin && !mainWin.isDestroyed()) mainWin.webContents.send('stats-refreshed');
     scheduleNextBackgroundStatsRefresh();
   }, delay);
 }

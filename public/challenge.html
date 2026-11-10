@@ -1862,6 +1862,13 @@
       }
     }
     loadProfile();
+    // (v6.11.0) Neues Spiel im Minuten-Takt gefunden -> Challenge und Pass neu laden
+    let refreshBusy = false;
+    if (window.ttpOnStatsChanged) window.ttpOnStatsChanged(async () => {
+      if (refreshBusy) return;
+      refreshBusy = true;
+      try { await loadProfile(); loadProgression(); } finally { refreshBusy = false; }
+    });
     // v6.0: Account-XP fuer Spiele ausserhalb einer Challenge
     fetch('/api/account-xp/scan', { method: 'POST' }).then(() => { if (!ls('ttp_challenge_start')) loadProgression(); }).catch(() => {});
 

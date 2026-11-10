@@ -1,5 +1,11 @@
 # Internal Changelog
 
+## 6.11.0 — 2026-11-10
+
+- Background refresh (user): every full minute instead of every quarter hour (electron-main.js STATS_REFRESH_MS). A run without a new game costs ~5 Riot calls (match lists + rank; cached matches cost nothing).
+- Riot ID (account-by-puuid) cached 1 h per puuid in server.js resolveRiotId - Account-V1 (1000/min) was the tightest limit at 3 calls per run.
+- After each run the main process sends 'stats-refreshed'; nav.js window.ttpOnStatsChanged compares a progression signature (XP, recent games, LP Bank, reset times) and only then reloads - Overview (runScan, replaces its own quarter-hour timer) and Challenge/Pass (loadProfile + loadProgression). Hidden window: reload deferred until visible.
+
 ## 6.10.1 — 2026-11-10
 
 - Safety: any launch with a custom --user-data-dir (test instances) never pushes progression/challenge runs to the cloud (TTP_TEST_NO_PUSH forced, read lazily in cloud.js). Reason: a test instance without the flag overwrote the real account's progression on 2026-11-10 (rebuilt by hand from the user's info).

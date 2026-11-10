@@ -876,10 +876,16 @@
     renderIdentity();
     document.addEventListener('ttp-account', renderIdentity);
 
-    // Wie bisher: Stats zu jeder vollen Viertelstunde (:00/:15/:30/:45).
+    // (v6.11.0) Statt eigenem Viertelstunden-Takt: neu laden, sobald der
+    // Hauptprozess (jede Minute) ein neues Spiel gefunden hat (nav.js).
+    let scanBusy = false;
     function scheduleQuarterRefresh() {
-      const q = 15 * 60 * 1000;
-      setTimeout(async () => { await runScan(); scheduleQuarterRefresh(); }, q - (Date.now() % q) + 2000);
+      if (!window.ttpOnStatsChanged) return;
+      window.ttpOnStatsChanged(async () => {
+        if (scanBusy) return;
+        scanBusy = true;
+        try { await runScan(); } finally { scanBusy = false; }
+      });
     }
 
     (async function init() {

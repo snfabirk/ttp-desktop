@@ -222,10 +222,19 @@ function findMeAndOpponent(match, puuid, riotId) {
 // kein API-Key, oder die puuid selbst ist inzwischen ungueltig), wird einfach
 // ohne Fallback weitergemacht statt den ganzen Job scheitern zu lassen - der
 // reine puuid-Vergleich deckt ja weiterhin den Normalfall ab.
+// (v6.11.0) Riot-ID aendert sich so gut wie nie - seit dem Minuten-Takt nur
+// noch 1x pro Stunde je puuid nachschlagen statt 3x pro Lauf (Account-V1 ist
+// mit 1000/min das engste Limit). Fehler werden nicht gecacht.
+const RIOT_ID_TTL_MS = 60 * 60 * 1000;
+const riotIdCache = new Map(); // puuid -> { value, at }
 async function resolveRiotId(puuid, apiKey) {
+  const hit = riotIdCache.get(puuid);
+  if (hit && Date.now() - hit.at < RIOT_ID_TTL_MS) return hit.value;
   try {
     const account = await getAccountByPuuid(puuid, apiKey, REGION);
-    return { gameName: account.gameName, tagLine: account.tagLine };
+    const value = { gameName: account.gameName, tagLine: account.tagLine };
+    riotIdCache.set(puuid, { value, at: Date.now() });
+    return value;
   } catch (e) {
     return null;
   }

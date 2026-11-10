@@ -1,3 +1,32 @@
+// (v6.11.0) Der Hauptprozess fragt jede Minute neue Spiele ab und meldet sich
+// danach ('stats-refreshed'). Seiten melden sich hier an und laden nur neu,
+// wenn sich wirklich etwas getan hat (neues Spiel / XP / LP Bank) - sonst
+// wuerde jede Minute neu gerendert. Ist das Fenster versteckt (Tray), wird
+// das Nachladen aufgehoben, bis es wieder sichtbar ist.
+(function () {
+  const subs = [];
+  let lastSig = null, pending = false, hooked = false;
+  const sig = d => JSON.stringify([d.totalXp, (d.recentGames || []).map(g => g.matchId), d.lpBank && d.lpBank.progress, d.lpBank && d.lpBank.fills, d.dailyResetAt, d.weeklyResetAt]);
+  const fire = () => { pending = false; subs.forEach(cb => { try { cb(); } catch (e) {} }); };
+  async function check() {
+    try {
+      const s = sig(await (await fetch('/api/progression')).json());
+      const changed = lastSig !== null && s !== lastSig;
+      lastSig = s;
+      if (!changed) return;
+      if (document.hidden) pending = true; else fire();
+    } catch (e) {}
+  }
+  window.ttpOnStatsChanged = cb => {
+    subs.push(cb);
+    if (hooked || !window.ttpMain || !window.ttpMain.onStatsRefreshed) return;
+    hooked = true;
+    check(); // Ausgangsstand merken
+    window.ttpMain.onStatsRefreshed(check);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && pending) fire(); });
+  };
+})();
+
 // Immer aktuelle Riot-Bilder (v5.32.0, Nutzer: neues Profilbild war blank,
 // weil die Data-Dragon-Version fest auf 16.17.1 stand): neueste Version aus
 // versions.json, einmal pro Tag geholt und gemerkt. Profilbilder kommen von
