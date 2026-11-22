@@ -30,7 +30,8 @@
       version: '6.12.0',
       date: '2026-11-22',
       notable: [
-        'Godpacks: every booster has a 0.5% chance to contain 7 Full Arts.'
+        'Godpacks: every booster has a 0.5% chance to contain 7 Full Arts.',
+        'Full Art duplicates now sell for 400 coins (was 600).'
       ],
       upcoming: 1,
       bugfixes: 2

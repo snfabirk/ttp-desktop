@@ -93,7 +93,7 @@ const PACK = { common: 4, uncommon: 2 };      // + 1 Rare-Slot
 const ANIM_CHANCE = 0.10;                      // Rare-Slot: 83 % Holo, 10 % Animated, 7 % Full Art
 const FA_CHANCE = 0.07;                        // (v6.6.0, Nutzer; ohne FAs im Set: 90/10)
 const GOD_CHANCE = 0.005;                      // (v6.12.0, Nutzer) Godpack: alle 7 Karten sind Full Arts
-const DUPE_REFUND = { common: 3, uncommon: 8, holo: 50, anim: 300, fullart: 600 };
+const DUPE_REFUND = { common: 3, uncommon: 8, holo: 50, anim: 300, fullart: 400 };
 
 const getSet = id => SETS.find(s => s.id === id) || null;
 const pick = list => list[Math.floor(Math.random() * list.length)];

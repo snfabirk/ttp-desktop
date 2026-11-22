@@ -608,7 +608,7 @@
             <div><span class="dot" style="background:var(--c-holo)"></span><b>1×</b> <span style="color:var(--c-holo)">Holo Rare</span> 83% · <span style="color:var(--c-anim)">Animated Rare</span> 10% · <span style="color:var(--c-fa)">Full Art</span> 7%</div>
             <div><span class="dot" style="background:var(--c-fa)"></span><b>7×</b> <span style="color:var(--c-fa)">Full Art</span> in a Godpack (0.5% of boosters)</div>
             <div style="margin-top:6px" id="ratesSet"></div>
-            <div style="margin-top:4px">Duplicates go to your Dupes - sell them for 3 / 8 / 50 / 300 / 600 coins or keep them</div></span>
+            <div style="margin-top:4px">Duplicates go to your Dupes - sell them for 3 / 8 / 50 / 300 / 400 coins or keep them</div></span>
           </span>
         </section>
         </div>
@@ -1700,7 +1700,7 @@ window.STICKERS.enableTilt(document.getElementById('binder'));
 let view = 'album', dupeSet = 'all', sellConfirm = null, dupeMsg = '';
 let keepN = (() => { try { return Math.max(0, Math.min(9, Number(localStorage.getItem('ttp_dupe_keep')) || 0)); } catch (e) { return 0; } })();
 const RORDER = ['fullart', 'anim', 'holo', 'uncommon', 'common'];
-const REFUND = { common: 3, uncommon: 8, holo: 50, anim: 300, fullart: 600 };
+const REFUND = { common: 3, uncommon: 8, holo: 50, anim: 300, fullart: 400 };
 const dupesOf = (id, n, fa) => Math.max(0, (((DATA && (fa ? DATA.fullArts : DATA.stickers)) || {})[id] || {})[n] - 1 || 0);
 const sellable = (id, s) => Math.max(0, dupesOf(id, s.n, s.fa) - keepN);
 // Eintraege einer Seltenheit: Full Arts sind FA-Versionen bestehender Karten

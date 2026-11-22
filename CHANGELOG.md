@@ -5,6 +5,7 @@
 - Godpack (user): 0.5% per booster (GOD_CHANCE, own roll before the rare slot) = 7 different random Full Arts of that set, all sets incl. specials. Shown in both "Pull rates" hovers.
 - Set releases (user): the rolled schedule from 6.10.0 is replaced. Releases are announced by hand (server/lib/releases.js ANNOUNCED: id, announced, release); the announcement shows from its 'announced' day, however far ahead the release is.
 - Fallback only: 12 weeks without a release -> a random set from POOL releases (Wednesday 00:00 Berlin, announced 7 days before). Same draw on every install (seeded). An announcement by hand before that takes its place; past draws stay stable when entries are added. Never print/log the draw.
+- Full Art dupes 600 -> 400 coins (user): keeps the value of an all-dupe pack at the old level (141.5 -> 140.9) despite godpacks. Applies to dupes already owned, too.
 - Fixed: Pull rates hover was cut off by the right shop column and album slot numbers showed through it.
 
 ## 6.11.2 — 2026-11-10
