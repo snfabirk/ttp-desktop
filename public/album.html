@@ -540,6 +540,8 @@
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.03), 0 8px 18px rgba(0,0,0,.3); }
   .binder.special .bl-page { background: linear-gradient(270deg, rgba(0,0,0,.34), rgba(0,0,0,0) 60px), color-mix(in srgb, var(--input-bg) 80%, #000 12%); }
   .bl-top { display: flex; align-items: center; justify-content: center; }
+  /* offener Hover liegt ueber den Slot-Nummern des Rasters (z-index 3) */
+  .pack-area:has(.rates-hint:hover, .rates-hint:focus) { z-index: 6; }
   .bl-top > .pack-area { background: none; border: 0; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; padding: 0; transform: none !important; }
   .binder-cover .bc-face.back.with-left { background: none !important; border: 0; }
   .bc-left { position: absolute; inset: 0; }
@@ -604,6 +606,7 @@
             <span class="rates-pop"><div><span class="dot" style="background:var(--c-common)"></span><b>4×</b> Common</div>
             <div><span class="dot" style="background:var(--c-uncommon)"></span><b>2×</b> Uncommon</div>
             <div><span class="dot" style="background:var(--c-holo)"></span><b>1×</b> <span style="color:var(--c-holo)">Holo Rare</span> 83% · <span style="color:var(--c-anim)">Animated Rare</span> 10% · <span style="color:var(--c-fa)">Full Art</span> 7%</div>
+            <div><span class="dot" style="background:var(--c-fa)"></span><b>7×</b> <span style="color:var(--c-fa)">Full Art</span> in a Godpack (0.5% of boosters)</div>
             <div style="margin-top:6px" id="ratesSet"></div>
             <div style="margin-top:4px">Duplicates go to your Dupes - sell them for 3 / 8 / 50 / 300 / 600 coins or keep them</div></span>
           </span>

@@ -27,6 +27,15 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.12.0',
+      date: '2026-11-22',
+      notable: [
+        'Godpacks: every booster has a 0.5% chance to contain 7 Full Arts.'
+      ],
+      upcoming: 1,
+      bugfixes: 2
+    },
+    {
       version: '6.11.2',
       date: '2026-11-10',
       notable: [

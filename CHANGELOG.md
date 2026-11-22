@@ -1,5 +1,12 @@
 # Internal Changelog
 
+## 6.12.0 — 2026-11-22
+
+- Godpack (user): 0.5% per booster (GOD_CHANCE, own roll before the rare slot) = 7 different random Full Arts of that set, all sets incl. specials. Shown in both "Pull rates" hovers.
+- Set releases (user): the rolled schedule from 6.10.0 is replaced. Releases are announced by hand (server/lib/releases.js ANNOUNCED: id, announced, release); the announcement shows from its 'announced' day, however far ahead the release is.
+- Fallback only: 12 weeks without a release -> a random set from POOL releases (Wednesday 00:00 Berlin, announced 7 days before). Same draw on every install (seeded). An announcement by hand before that takes its place; past draws stay stable when entries are added. Never print/log the draw.
+- Fixed: Pull rates hover was cut off by the right shop column and album slot numbers showed through it.
+
 ## 6.11.2 — 2026-11-10
 
 - Daily Goods (user): Try It On removed, replaced by Booster Deal (booster_deal, 150 coins, same weight 12, buff boosterDeal 7 days): next buyBooster costs 50% (applied after the 5-pack discount, so 5x base 600 -> 300), buff consumed by that purchase. Shop buttons show the halved price + discount badge. A today-rolled try_on slot is swapped to booster_deal; running rentals expire normally.

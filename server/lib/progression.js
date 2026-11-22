@@ -531,7 +531,7 @@ function receiveGiftBoosters(gifts) {
   writeState(state);
 }
 function newBoostersCount() { return readState().newBoosters || 0; }
-// Set-Releases (v6.10.0, Nutzer): 1 Woche vorher Ankuendigung (Popup + Shop-Countdown),
+// Set-Releases (v6.10.0, Nutzer): vorher Ankuendigung (Popup + Shop-Countdown),
 // dort kann man sich fuer RELEASE_GIFT Gratis-Booster "anmelden". Am Release-Tag
 // Popup "neues Set" - wer angemeldet war, holt dort die Booster ab.
 // state.releaseSignups[id] = Zeitpunkt, state.releaseSeen[id] = { teaser, release }
@@ -1702,7 +1702,7 @@ function getShopState() {
     voucher: voucherView(state),
     boosters: boosterSetsView(state),
     upcomingSet: teaserView(state),
-    boosterRates: { pack: STICKERS.PACK, animChance: STICKERS.ANIM_CHANCE, faChance: STICKERS.FA_CHANCE, dupeRefund: STICKERS.DUPE_REFUND },
+    boosterRates: { pack: STICKERS.PACK, animChance: STICKERS.ANIM_CHANCE, faChance: STICKERS.FA_CHANCE, godChance: STICKERS.GOD_CHANCE, dupeRefund: STICKERS.DUPE_REFUND },
     boosterBundle: BUNDLE_SIZE,
     boosterVouchers: state.boosterVouchers || 0,
     specialVouchers: state.specialVouchers || 0,

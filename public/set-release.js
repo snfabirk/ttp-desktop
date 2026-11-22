@@ -133,7 +133,7 @@
   }
   const closeOv = (ov, done) => { ov.classList.remove('on'); setTimeout(() => { ov.remove(); done(); }, 650); };
 
-  // (v6.10.0, Nutzer) Ankuendigung 1 Woche vorher: so sieht der Booster aus, Termin,
+  // (v6.10.0, Nutzer) Ankuendigung vor dem Release: so sieht der Booster aus, Termin,
   // und man kann sich fuer die Gratis-Booster "anmelden"
   async function showTeaser(t) {
     const L = await loadLib(t.id);

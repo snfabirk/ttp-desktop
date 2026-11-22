@@ -1,8 +1,8 @@
-// Set-Releases (v6.10.0, Nutzer 2026-11-10): die naechsten regulaeren Sets
-// erscheinen zu zufaellig ausgewuerfelten Terminen (Mittwoch 00:00 deutsche
-// Zeit, mind. 3 Wochen Abstand, bis Ende Februar 2027). Termine + Reihenfolge
-// sind GEHEIM - auch der Nutzer/Entwickler soll sie nicht kennen. Deshalb nur
-// verschleiert hier abgelegt; nie im Klartext ausgeben, loggen oder committen.
+// Set-Releases (Nutzer 2026-11-22): neue Sets werden von Hand angekuendigt
+// (ANNOUNCED). Automatik nur als Notnagel: AUTO_WEEKS ohne Release -> ein
+// zufaelliges Set aus dem POOL erscheint, TEASER_DAYS vorher angekuendigt.
+// Welches das ist, bleibt GEHEIM (auch fuer den Nutzer): buildSchedule fuer
+// kuenftige Automatik-Releases nie ausgeben, loggen oder committen.
 //
 // Zeit: kommt vom Supabase-Server (HTTP-Date-Header), damit das Vorstellen der
 // PC-Uhr nichts bringt. Ohne Verbindung zaehlt der hoechste bisher gesehene
@@ -10,21 +10,84 @@
 // kommen erst, wenn wieder eine echte Uhrzeit da ist.
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { DATA_DIR } = require('./dataPaths');
 
-// Slot -> Set-Id (Slot 0 = Lock In, 1 = Worlds Stage, 2 = Ranked Climb) - Reihenfolge NIE aendern
-const SLOT_IDS = ['lockin', 'worlds', 'ranked'];
-const BLOB = 'LwoKbtXhiU08ByfP6bBFfk1eh5ChVTIbJ8KL+kpgCi7xhr9/bjM4+4n4UmoKybOBpUlvDseRvg==';
-const TEASER_MS = 7 * 86400000;           // Ankuendigung 1 Woche vorher
+// Fertige regulaere Sets. since = ab wann die Automatik es nehmen darf (Tag der
+// App-Version, die es mitbringt). Eintraege nie entfernen, auch nicht nach Release.
+// Jedes Set braucht auch einen Eintrag in stickers.js UPCOMING.
+const POOL = [
+  { id: 'lockin', since: '2026-11-10' },
+  { id: 'worlds', since: '2026-11-10' },
+  { id: 'ranked', since: '2026-11-10' }
+];
 
-const SCHEDULE = (() => {
-  try {
-    const KEY = 'ttp-pony-release-v1';
-    const b = Buffer.from(BLOB, 'base64');
-    const raw = Buffer.from(b.map((x, i) => x ^ KEY.charCodeAt(i % KEY.length) ^ ((i * 37) & 255)));
-    return JSON.parse(raw.toString()).map(([slot, at]) => ({ id: SLOT_IDS[slot], at }));
-  } catch (e) { return []; }
-})();
+// SET ANKUENDIGEN: Zeile anhaengen + App-Update veroeffentlichen.
+//   announced = Tag des Updates (ab dann Popup, Shop-Karte, Anmeldung); NIE rueckdatieren
+//   release   = Erscheinungstag, 00:00 deutscher Zeit
+// Alte Zeilen nie loeschen oder aendern, die 12 Wochen zaehlen ab dem letzten Release.
+// Hat die Automatik ein Set schon angekuendigt, bleibt es dabei.
+const ANNOUNCED = [
+  { id: 'worlds', announced: '2026-11-22', release: '2026-11-25' }    // Hommage an die Worlds
+];
+
+const AUTO_WEEKS = 12;
+const TEASER_DAYS = 7;                    // Vorlauf der automatischen Ankuendigung
+const WEDNESDAY = 3;
+// Zufall, der bei allen Installationen gleich ausfaellt. NIE aendern.
+const SEED = '9c418fe0c5d0439f40c9f6058914a46c';
+
+// ---------- Zeitplan (gerechnet wird mit Kalendertagen 'YYYY-MM-DD') ----------
+const addDays = (day, n) => new Date(Date.parse(day) + n * 86400000).toISOString().slice(0, 10);
+const onOrAfterWednesday = day => addDays(day, (WEDNESDAY - new Date(day).getUTCDay() + 7) % 7);
+const berlinHour = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hour: '2-digit', hourCycle: 'h23' });
+// 00:00 in Berlin ist 22:00 (Sommer) oder 23:00 UTC (Winter) am Vortag
+function berlinMidnight(day) {
+  const summer = Date.parse(day) - 2 * 3600000;
+  return Number(berlinHour.format(summer)) === 0 ? summer : summer + 3600000;
+}
+const drawKey = (seed, day, id) => crypto.createHash('sha256').update(`${seed}|${day}|${id}`).digest('hex');
+
+// Reine Funktion ohne Uhr: derselbe Input ergibt bei allen denselben Plan.
+function buildSchedule(pool, announced, seed) {
+  const plan = [];
+  function nextAuto() {
+    const left = pool.filter(s => !plan.some(e => e.id === s.id));
+    if (!plan.length || !left.length) return null;
+    const last = plan.map(e => e.release).sort().pop();
+    // ein spaet fertig gewordenes Set bekommt trotzdem seine volle Ankuendigungswoche
+    const ready = addDays(left.map(s => s.since).sort()[0], TEASER_DAYS);
+    const release = onOrAfterWednesday([addDays(last, AUTO_WEEKS * 7), ready].sort().pop());
+    const teaserDay = addDays(release, -TEASER_DAYS);
+    // nur Sets, die es da schon gab: ein neues Set im Pool aendert keine alte Ziehung
+    const pick = left.filter(s => s.since <= teaserDay)
+      .map(s => ({ id: s.id, key: drawKey(seed, release, s.id) }))
+      .sort((a, b) => a.key.localeCompare(b.key))[0];
+    return { id: pick.id, announced: teaserDay, release };
+  }
+  for (const m of [...announced].sort((a, b) => a.announced.localeCompare(b.announced))) {
+    // was die Automatik vor dieser Ankuendigung schon angekuendigt hat, bleibt stehen
+    for (let a; (a = nextAuto()) && a.announced <= m.announced;) plan.push(a);
+    const known = plan.find(e => e.id === m.id);
+    if (!known) plan.push({ ...m });
+    else if (m.announced < known.release) known.release = m.release;    // Termin von Hand geht vor
+  }
+  for (let a; (a = nextAuto());) plan.push(a);
+  return plan
+    .map(e => ({ id: e.id, announcedAt: berlinMidnight(e.announced), at: berlinMidnight(e.release) }))
+    .sort((a, b) => a.at - b.at);
+}
+
+// Ein Tippfehler kostet nur seine Zeile, nicht die App oder die schon erschienenen Sets
+const isDay = d => /^\d{4}-\d\d-\d\d$/.test(d) && !isNaN(Date.parse(d)) && addDays(d, 0) === d;
+function validAnnouncements(pool, rows) {
+  return rows.filter(m => {
+    const ok = pool.some(s => s.id === m.id) && isDay(m.announced) && isDay(m.release) && m.announced <= m.release;
+    if (!ok) console.error('Invalid set announcement ignored:', JSON.stringify(m));
+    return ok;
+  });
+}
+const SCHEDULE = buildSchedule(POOL, validAnnouncements(POOL, ANNOUNCED), SEED);
 
 // ---------- vertrauenswuerdige Uhr ----------
 const SUPABASE_URL = 'https://qrpfbnnapsvsfxvpwjfu.supabase.co';
@@ -80,7 +143,7 @@ function scheduleFor(id) {
   const e = SCHEDULE.find(s => s.id === id);
   return e ? e.at : null;
 }
-const isUpcomingId = id => SLOT_IDS.includes(id);
+const isUpcomingId = id => POOL.some(s => s.id === id);
 function isReleased(id) {
   if (!isUpcomingId(id)) return true;
   if (process.env.TTP_TEST_SET2 === '1' && process.env.TTP_TEST_TEASER !== id) return true;
@@ -88,17 +151,21 @@ function isReleased(id) {
   const t = process.env.TTP_TEST_TEASER === id || process.env.TTP_TEST_RELEASE === id ? Date.now() : now();
   return at != null && t >= at;
 }
-function releaseAt(id) { return scheduleFor(id); }
-// laufende Ankuendigung (hoechstens eine - die Termine liegen >= 3 Wochen auseinander)
+// Erst ab Release: sonst verraet die Album-Reihenfolge mit TTP_TEST_SET2 die Ziehung
+function releaseAt(id) {
+  const at = scheduleFor(id);
+  return at != null && now() >= at ? at : null;
+}
+// laufende Ankuendigung (die mit dem naechsten Termin)
 function teaser(knownIds) {
-  for (const id of SLOT_IDS) {
-    if (knownIds && !knownIds.includes(id)) continue;
-    const at = scheduleFor(id);
-    if (at == null || isReleased(id)) continue;
-    const t = process.env.TTP_TEST_TEASER === id ? Date.now() : now();
-    if (t >= at - TEASER_MS) return { id, at };
+  const known = id => !knownIds || knownIds.includes(id);
+  const tz = process.env.TTP_TEST_TEASER;
+  if (tz && known(tz) && isUpcomingId(tz) && !isReleased(tz)) return { id: tz, at: scheduleFor(tz) };
+  const t = now();
+  for (const e of SCHEDULE) {
+    if (known(e.id) && t >= e.announcedAt && !isReleased(e.id)) return { id: e.id, at: e.at };
   }
   return null;
 }
 
-module.exports = { isReleased, releaseAt, teaser, now, syncClock, isUpcomingId, TEASER_MS };
+module.exports = { isReleased, releaseAt, teaser, now, syncClock, isUpcomingId, buildSchedule, validAnnouncements };

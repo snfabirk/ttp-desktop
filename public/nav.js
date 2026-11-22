@@ -161,7 +161,7 @@
 
       // Neues Set erschienen (v6.9.0): grosse Ankuendigung + Gratis-Booster
       // abholen - das Skript wird nur nachgeladen, wenn wirklich etwas wartet
-      // (v6.10.0) + Ankuendigung 1 Woche vorher. Die App laeuft oft tagelang (Tray,
+      // (v6.10.0) + Ankuendigung vor dem Release. Die App laeuft oft tagelang (Tray,
       // Standby) - deshalb jede Minute und beim Zurueckkommen erneut nachsehen
       let relLoading = null;
       const relCheck = () => {

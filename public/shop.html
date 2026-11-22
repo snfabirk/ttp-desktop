@@ -234,7 +234,7 @@
     opacity: 0; visibility: hidden; transition: opacity 0.12s ease;
   }
   .hint:hover .hint-pop, .hint:focus-within .hint-pop { opacity: 1; visibility: visible; }
-  .shop-card:has(.hint:hover, .hint:focus-within) { position: relative; z-index: 40; }
+  .shop-card:has(.hint:hover, .hint:focus-within, .rates:hover, .rates:focus) { position: relative; z-index: 40; }
   .hint-pop h4 { margin: 10px 0 6px; color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-size: 0.78rem; letter-spacing: 1px; }
   .hint-pop h4:first-child { margin-top: 0; }
   .hint-pop table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
@@ -805,7 +805,7 @@
             <span class="bown">You own <b>${b.owned}</b> unopened · album ${b.collected} / ${b.total}</span>
             ${b.special ? `<span class="bwhen${b.available ? ' open' : ''}">${whenHtml(b)}</span>` : ''}
             <span class="bbuy">${canBuy ? btn(1) + btn(5) + confirmHtml() : b.released ? '<em>Sat &amp; Sun only</em>' : '<em>coming later</em>'}</span>
-            <span class="rates" tabindex="0">Pull rates ?<span class="rates-pop">${b.total} stickers in this set. 7 stickers per booster: 4 common, 2 uncommon and 1 rare slot (Holo Rare ${Math.round((1 - rt.animChance - (rt.faChance || 0)) * 100)}% · Animated Rare ${Math.round(rt.animChance * 100)}%${rt.faChance ? ` · Full Art ${Math.round(rt.faChance * 100)}%` : ''}).<br>Duplicates go to your Dupes in the Album - sell them for ${rt.dupeRefund.common} / ${rt.dupeRefund.uncommon} / ${rt.dupeRefund.holo} / ${rt.dupeRefund.anim}${rt.dupeRefund.fullart ? ` / ${rt.dupeRefund.fullart}` : ''}.${b.special ? '<br>Special boosters can only be bought on Saturdays and Sundays - you can open them any time.' : ''}</span></span>
+            <span class="rates" tabindex="0">Pull rates ?<span class="rates-pop">${b.total} stickers in this set. 7 stickers per booster: 4 common, 2 uncommon and 1 rare slot (Holo Rare ${Math.round((1 - rt.animChance - (rt.faChance || 0)) * 100)}% · Animated Rare ${Math.round(rt.animChance * 100)}%${rt.faChance ? ` · Full Art ${Math.round(rt.faChance * 100)}%` : ''}).${rt.godChance ? `<br>Godpack ${+(rt.godChance * 100).toFixed(2)}% per booster: all 7 stickers are Full Arts.` : ''}<br>Duplicates go to your Dupes in the Album - sell them for ${rt.dupeRefund.common} / ${rt.dupeRefund.uncommon} / ${rt.dupeRefund.holo} / ${rt.dupeRefund.anim}${rt.dupeRefund.fullart ? ` / ${rt.dupeRefund.fullart}` : ''}.${b.special ? '<br>Special boosters can only be bought on Saturdays and Sundays - you can open them any time.' : ''}</span></span>
           </span>
         </div>`;
       };

@@ -51,7 +51,7 @@ const LOCKIN_LIST = [
 const WORLDS_LIST = ['unkillable-demon-king','summoners-cup','grand-final','world-champion','finals-mvp','the-outplay','base-race','reverse-sweep','caster-hype','anthem','opening-ceremony','draft-phase','first-pick','counter-pick','tech-pause','shotcaller','head-coach','analyst-desk','swiss-stage','quarterfinals','semifinals','upset','fan-sign','cosplayer','confetti','stage-lights','headset','gaming-chair','team-jersey','team-banner','scoreboard','game-five','blue-side','red-side','gg-handshake','press-room','post-game-interview','scrims','bootcamp','jet-lag','finals-ticket','merch-stand','pickem','lightstick','crowd-roar','camera-cut','energy-drink','stream-chat','instant-replay','trophy-case'];
 const RANKED_LIST = ['challenger','promoted','season-end','grandmaster','master','diamond','emerald','platinum','win-streak','victorious','gold','silver','bronze','iron','tier-up','demotion-shield','lp-gain','lp-loss','placements','hidden-mmr','decay','dodge-penalty','loss-streak','hardstuck','the-ladder','ranked-queue','solo-queue','flex-queue','lp-bar','division-four','division-one','one-trick','mastery-badge','match-history','profile-stalking','alt-account','night-grind','remake','lp-saved','autofill','role-select','break-time','vod-review','new-goal','rank-border','split-reset','leaderboard','coinflip-game','carry-me','next-game'];
 
-// (v6.10.0) Kommende regulaere Sets: erscheinen zu geheimen Terminen (releases.js).
+// (v6.10.0) Kommende regulaere Sets: von Hand angekuendigt, sonst Automatik (releases.js).
 // SETS wird bei jeder API-Anfrage aufgefrischt (refreshSets) - die App kann ja
 // wochenlang laufen; das Array bleibt dasselbe Objekt (andere Module halten es).
 const RELEASES = require('./releases');
@@ -62,14 +62,14 @@ const UPCOMING = [
 ];
 function refreshSets() {
   const want = [SETS.find(s => s.id === 'base'),
-    ...UPCOMING.filter(st => RELEASES.isReleased(st.id)).sort((a, b) => (RELEASES.releaseAt(a.id) || 0) - (RELEASES.releaseAt(b.id) || 0)),
+    ...UPCOMING.filter(st => RELEASES.isReleased(st.id)).sort((a, b) => (RELEASES.releaseAt(a.id) || Number.MAX_SAFE_INTEGER) - (RELEASES.releaseAt(b.id) || Number.MAX_SAFE_INTEGER)),
     ...SETS.filter(s => s.special)];
   if (want.length === SETS.length && want.every((st, i) => st === SETS[i])) return false;
   SETS.splice(0, SETS.length, ...want);
   return true;
 }
 refreshSets();
-// Set, das gerade angekuendigt wird (1 Woche vor Release), sonst null
+// Set, das gerade angekuendigt ist, sonst null
 function teaserSet() {
   const t = RELEASES.teaser(UPCOMING.map(st => st.id));
   const st = t && UPCOMING.find(x => x.id === t.id);
@@ -92,20 +92,33 @@ const availableNow = (set, now) => !!set && set.released && (!set.special || wee
 const PACK = { common: 4, uncommon: 2 };      // + 1 Rare-Slot
 const ANIM_CHANCE = 0.10;                      // Rare-Slot: 83 % Holo, 10 % Animated, 7 % Full Art
 const FA_CHANCE = 0.07;                        // (v6.6.0, Nutzer; ohne FAs im Set: 90/10)
+const GOD_CHANCE = 0.005;                      // (v6.12.0, Nutzer) Godpack: alle 7 Karten sind Full Arts
 const DUPE_REFUND = { common: 3, uncommon: 8, holo: 50, anim: 300, fullart: 600 };
 
 const getSet = id => SETS.find(s => s.id === id) || null;
 const pick = list => list[Math.floor(Math.random() * list.length)];
 
+const asFullArt = (set, n) => ({ n, id: set.stickers.find(s => s.n === n).id, r: 'fullart', fa: true });
+// 7 verschiedene Full Arts (hat ein Set weniger, erst jedes einmal, dann von vorn)
+function rollGodpack(set) {
+  const size = PACK.common + PACK.uncommon + 1, out = [];
+  let left = [];
+  while (out.length < size) {
+    if (!left.length) left = [...set.fullArts];
+    out.push(asFullArt(set, left.splice(Math.floor(Math.random() * left.length), 1)[0]));
+  }
+  return out;
+}
 function rollPack(set) {
+  // eigener Wurf vorweg, unabhaengig vom Rare-Slot
+  if ((set.fullArts || []).length && Math.random() < GOD_CHANCE) return rollGodpack(set);
   const by = r => set.stickers.filter(s => s.r === r);
   const out = [];
   for (let i = 0; i < PACK.common; i++) out.push(pick(by('common')));
   for (let i = 0; i < PACK.uncommon; i++) out.push(pick(by('uncommon')));
   const roll = Math.random(), fas = set.fullArts || [];
   if (fas.length && roll < FA_CHANCE) {
-    const faN = pick(fas), base = set.stickers.find(s => s.n === faN);
-    out.push({ n: base.n, id: base.id, r: 'fullart', fa: true });
+    out.push(asFullArt(set, pick(fas)));
   } else out.push(roll < (fas.length ? FA_CHANCE : 0) + ANIM_CHANCE ? pick(by('anim')) : pick(by('holo')));
   return out;
 }
@@ -128,4 +141,4 @@ function releaseWindowOpen(set, now = new Date()) {
   return start != null && t >= start && t < start + RELEASE_DAYS * 86400000;
 }
 
-module.exports = { SETS, refreshSets, teaserSet, upcomingSet, getSet, rollPack, setStatus, DUPE_REFUND, ANIM_CHANCE, FA_CHANCE, PACK, migrateBaseN, weekendWindow, availableNow, RELEASE_GIFT, releaseWindowOpen };
+module.exports = { SETS, refreshSets, teaserSet, upcomingSet, getSet, rollPack, setStatus, DUPE_REFUND, ANIM_CHANCE, FA_CHANCE, GOD_CHANCE, PACK, migrateBaseN, weekendWindow, availableNow, RELEASE_GIFT, releaseWindowOpen };
