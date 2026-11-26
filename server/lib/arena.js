@@ -28,7 +28,9 @@ const crypto = require('crypto');
 const { DATA_DIR } = require('./dataPaths');
 const lcu = require('./lcu');
 
-const ARENA_QUEUES = [1700, 1710];
+// 1740/1750 = Arena seit Ende 2026 (vorher 1700/1710). Zusaetzlich merkt sich
+// availability() die CHERRY-Queues, die der Client meldet (arenaQueues()).
+const ARENA_QUEUES = [1700, 1704, 1710, 1740, 1750];
 const VARIANTS = {
   riot: { id: 'riot', name: 'Riot God', target: 60 },
   elder: { id: 'elder', name: 'Elder God', target: 100 },
@@ -80,12 +82,19 @@ async function availability({ force = false } = {}) {
     if (queues) {
       const arena = queues.filter(q => ARENA_QUEUES.includes(q.id) || q.gameMode === 'CHERRY');
       const available = arena.some(q => q.queueAvailability !== 'PlatformDisabled' && q.isVisible !== false);
-      state.arena = { available, checkedAt: new Date().toISOString(), source: 'client' };
+      const queueIds = arena.map(q => q.id).filter(id => Number.isInteger(id));
+      state.arena = { available, checkedAt: new Date().toISOString(), source: 'client', queueIds };
       writeAvail(state);
     }
   }
   const a = state.arena;
   return { arena: { available: a ? a.available !== false : true, known: Boolean(a), checkedAt: a ? a.checkedAt : null } };
+}
+
+// Alle bekannten Arena-Queues: feste Liste + zuletzt vom Client gemeldete
+function arenaQueues() {
+  const a = readAvail().arena;
+  return [...new Set([...ARENA_QUEUES, ...((a && Array.isArray(a.queueIds)) ? a.queueIds : [])])];
 }
 
 // ----- Lauf-Logik -----
@@ -181,6 +190,35 @@ function reroll(run, champions, today, now = Date.now()) {
   return true;
 }
 
+// Champ Select (v6.14.0, Nutzerwunsch): ein gerollter Champion wurde gebannt
+// oder von jemand anderem gepickt -> nur diesen gratis ersetzen (kein
+// Tages-Reroll). unavailable: { key: 'banned' | 'picked' }. Nichts tun, wenn
+// man selbst schon einen der beiden gelockt hat (dann zaehlt das Spiel ja).
+// Liefert [{ from, to, reason }] oder null.
+function replaceUnavailable(run, champions, unavailable, myPick, avoid = [], blocked = [], now = Date.now()) {
+  if (!hasActivePair(run)) return null;
+  if (myPick && run.roll.champs.includes(String(myPick))) return null;
+  const hit = run.roll.champs.filter(k => unavailable[k]);
+  if (!hit.length) return null;
+  const taken = new Set([...run.roll.champs, ...Object.keys(unavailable), ...blocked]);
+  const open = remainingKeys(run, champions).filter(k => !taken.has(k));
+  const free = open.filter(k => !avoid.includes(k));
+  const pool = shuffled(free.length ? free : open);
+  const replaced = [];
+  run.roll.champs = run.roll.champs.map(k => {
+    if (!unavailable[k]) return k;
+    const to = pool.shift();
+    if (!to) return k; // nichts mehr uebrig - bleibt stehen
+    replaced.push({ from: k, to, reason: unavailable[k] });
+    return to;
+  });
+  if (!replaced.length) return null;
+  run.roll.seq = (run.roll.seq || 0) + 1;
+  run.roll.at = now;
+  run.roll.replaced = replaced;
+  return replaced;
+}
+
 // Ansicht fuer den Client. Verdeckte Champions werden NICHT mitgeschickt -
 // nur als null-Platzhalter an ihrer alphabetischen Stelle.
 function view(run, champions, games, today) {
@@ -204,7 +242,7 @@ function view(run, champions, games, today) {
     variant: run.variant, variantName: (VARIANTS[run.variant] || VARIANTS.riot).name,
     since: run.since, target, count, completed: target > 0 && count >= target,
     hidden, slots,
-    roll: run.roll ? { seq: run.roll.seq, at: run.roll.at, spent: run.roll.spent, champs: run.roll.champs.map(k => byKey.get(k) || { key: k, id: '', name: '' }) } : null,
+    roll: run.roll ? { seq: run.roll.seq, at: run.roll.at, spent: run.roll.spent, replaced: (run.roll.replaced || []).map(r => ({ from: (byKey.get(r.from) || {}).name || '', to: (byKey.get(r.to) || {}).name || '', reason: r.reason })), champs: run.roll.champs.map(k => byKey.get(k) || { key: k, id: '', name: '' }) } : null,
     needsRoll: needsRoll(run, champions),
     canReroll: canReroll(run, today),
     totalGames: games.length,
@@ -214,4 +252,4 @@ function view(run, champions, games, today) {
   };
 }
 
-module.exports = { ARENA_QUEUES, VARIANTS, MIN_GAME_SECONDS, allChampions, availability, newRun, advanceRun, roll, reroll, view, targetFor };
+module.exports = { ARENA_QUEUES, arenaQueues, VARIANTS, MIN_GAME_SECONDS, allChampions, availability, newRun, advanceRun, roll, reroll, replaceUnavailable, hasActivePair, view, targetFor };

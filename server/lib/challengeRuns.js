@@ -59,7 +59,9 @@ function cleanRun(run) {
       roll: run.roll && Array.isArray(run.roll.champs) ? {
         champs: run.roll.champs.map(String).slice(0, 2), at: Number(run.roll.at) || 0, seq: Number(run.roll.seq) || 0,
         // gesetzt, sobald ein Spiel mit einem der beiden gewertet wurde -> neu rollen
-        spent: run.roll.spent ? { matchId: String(run.roll.spent.matchId || ''), key: String(run.roll.spent.key || ''), placement: Number(run.roll.spent.placement) || 0, won: Boolean(run.roll.spent.won) } : null
+        spent: run.roll.spent ? { matchId: String(run.roll.spent.matchId || ''), key: String(run.roll.spent.key || ''), placement: Number(run.roll.spent.placement) || 0, won: Boolean(run.roll.spent.won) } : null,
+        // v6.14.0: im Champ Select automatisch ersetzt (gebannt/gepickt)
+        replaced: Array.isArray(run.roll.replaced) ? run.roll.replaced.slice(0, 2).map(r => ({ from: String(r.from || ''), to: String(r.to || ''), reason: r.reason === 'picked' ? 'picked' : 'banned' })) : []
       } : null,
       processed: Array.isArray(run.processed) ? run.processed.map(String) : [],
       rerollDay: run.rerollDay || null

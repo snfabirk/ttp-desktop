@@ -6,6 +6,7 @@ const express = require('express');
 const { getAccountByRiotId, getAccountByPuuid, getAllMatchIds, getMatch, getMatchTimeline, getLeagueEntriesByPuuid, getSummonerByPuuid, getActiveGame, getPlayerChallenges } = require('./lib/riot');
 const arena = require('./lib/arena');
 const arenaStats = require('./lib/arenaStats');
+const lcu = require('./lib/lcu');
 const { loadPersistedApiKey, savePersistedApiKey } = require('./lib/envStore');
 const { createBucket, addMatchToBucket, finalizeBucket, isRemake, computeStreaks } = require('./lib/stats');
 const { createJob, updateProgress, completeJob, failJob, getJob } = require('./lib/jobs');
@@ -1390,7 +1391,7 @@ function processArena(puuid) {
     if (!run) return { run: null, champs, games: [] };
     const startTime = Math.floor(new Date(run.since).getTime() / 1000);
     const ids = new Set();
-    for (const queueId of arena.ARENA_QUEUES) {
+    for (const queueId of arena.arenaQueues()) {
       (await getAllMatchIds(puuid, { queueId, startTime }, config.apiKey, REGION)).forEach(id => ids.add(id));
     }
     const riotId = await resolveRiotId(puuid, config.apiKey);
@@ -1450,7 +1451,7 @@ async function arenaPayload(puuid, { process = true } = {}) {
 app.get('/api/arena/progress', requireApiKey, cloudRoute(async req => {
   const puuid = String(req.query.puuid || '');
   if (!puuid) throw httpError(400, 'puuid is required.');
-  return arenaPayload(puuid);
+  return arenaPayload(puuid, { process: req.query.quick !== '1' });
 }));
 
 // Roll-Knopf: neues Paar, wenn keins aktiv ist (Start / nach einem Spiel mit dem Paar)
@@ -1480,6 +1481,69 @@ app.post('/api/arena/reroll', requireApiKey, cloudRoute(async req => {
   challengeRuns.setRun(key, run);
   return arenaPayload(puuid);
 }));
+
+// ----- Champ-Select-Waechter (v6.14.0, Nutzerwunsch) -----
+// Waehrend einer Arena-Challenge liest die App alle 3 s den lokalen League-
+// Client: wird ein gerollter Champion gebannt oder von jemand anderem
+// gepickt, wird genau dieser gratis ersetzt (kein Tages-Reroll) + Windows-
+// Hinweis. Nur fuer den im Client eingeloggten Summoner, nur in Arena-Queues.
+const arenaLive = new Map(); // puuid -> { champSelect, seq }
+let liveTicking = false;
+function notifyDesktop(title, body) {
+  try {
+    const { Notification } = require('electron');
+    if (Notification && Notification.isSupported()) new Notification({ title, body, silent: false }).show();
+  } catch (e) { /* kein Electron (npm start) */ }
+}
+async function arenaChampSelectTick() {
+  if (liveTicking) return;
+  liveTicking = true;
+  try {
+    const candidates = cloud.linkedRiotAccounts().filter(a => {
+      const run = challengeRuns.getRun(arenaKey(a.puuid));
+      return run && arena.hasActivePair(run);
+    });
+    if (!candidates.length) { arenaLive.clear(); return; }
+    // Queue-Liste aus dem Client frisch halten (intern max. alle 10 min) -
+    // Riot vergibt pro Arena-Version neue IDs (1740 -> 1750 am 2026-11-26)
+    try { await arena.availability(); } catch (e) {}
+    const cs = await lcu.champSelect();
+    const acc = cs && cs.summoner && candidates.find(a => lcu.sameRiotId(cs.summoner, a.game_name, a.tag_line));
+    const isArena = cs && (arena.arenaQueues().includes(cs.queueId) || cs.gameMode === 'CHERRY');
+    arenaLive.clear();
+    if (!acc || !isArena) return;
+    const key = arenaKey(acc.puuid);
+    const champs = await arena.allChampions();
+    if (arenaBusy.has(acc.puuid)) { arenaLive.set(acc.puuid, { champSelect: true }); return; } // naechster Takt
+    const run = challengeRuns.getRun(key);
+    if (!run) return;
+    const unavailable = {};
+    cs.banned.forEach(k => { unavailable[k] = 'banned'; });
+    cs.pickedByOthers.forEach(k => { unavailable[k] = 'picked'; });
+    // Eigene Bans: kein Ersatz-Ausloeser (sonst Gratis-Reroll per Selbst-Ban),
+    // aber auch nie als neuer Champion
+    const replaced = arena.replaceUnavailable(run, champs.list, unavailable, cs.myPick, cs.hovered, cs.ownBans);
+    if (replaced) {
+      challengeRuns.setRun(key, run);
+      const name = k => (champs.list.find(c => c.key === k) || {}).name || k;
+      notifyDesktop('Arena challenge - champion replaced', replaced.map(r =>
+        `${name(r.from)} was ${r.reason === 'picked' ? 'picked by someone else' : 'banned'} - your new champion: ${name(r.to)}`).join('\n'));
+    }
+    arenaLive.set(acc.puuid, { champSelect: true });
+  } catch (e) {
+    console.error('arena champ select watcher:', e.message);
+  } finally {
+    liveTicking = false;
+  }
+}
+setInterval(arenaChampSelectTick, 3000);
+// Fuer arena.html: laeuft gerade Champ Select + aktuelle Roll-Nummer (billig,
+// ohne Riot-Abruf) - die Seite laedt neu, sobald sich seq aendert.
+app.get('/api/arena/live', (req, res) => {
+  const puuid = String(req.query.puuid || '');
+  const run = puuid ? challengeRuns.getRun(arenaKey(puuid)) : null;
+  res.json({ champSelect: Boolean((arenaLive.get(puuid) || {}).champSelect), seq: run && run.roll ? run.roll.seq : null });
+});
 
 app.get('/api/riot-accounts', cloudRoute(async () => ({ accounts: await cloud.listRiotAccounts() })));
 app.post('/api/riot-accounts/verify/start', cloudRoute(async req => cloud.startVerification({ ...(req.body || {}), riot: riotForCloud })));

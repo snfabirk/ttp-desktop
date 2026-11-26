@@ -133,6 +133,7 @@
     .btn.big { padding: 10px 46px; font-size: 1.05rem; letter-spacing: 2px; }
     .btn.big[hidden] { display: none; }
     .reroll-note { color: var(--text-faint); font-family: Georgia, serif; font-size: 0.75rem; min-height: 1em; }
+    .replace-note { color: var(--accent); font-size: 0.78rem; text-align: center; min-height: 1em; }
 
     /* 3 Spalten nebeneinander (Nutzer): Champions | Quests | Pass + letzte Spiele.
        Unter 1180px rutscht die 3. Spalte unter die Quests, unter 900px alles untereinander. */
@@ -266,7 +267,7 @@
         </div>
       </div>
       <p class="muted pick-note">Get 1st place with each champion of your challenge
-        <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Two champions are always rolled for you. Only your next Arena game with one of them counts - 1st place completes that champion. After a game with one of the two, a new pair is rolled. Games with other champions don't count (and give level XP only, no pass XP). You can reroll the pair once a day.</span></span>
+        <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Two champions are always rolled for you. Only your next Arena game with one of them counts - 1st place completes that champion. After a game with one of the two, a new pair is rolled. Banned or picked by someone else in champ select? It gets replaced for free automatically. Games with other champions don't count (and give level XP only, no pass XP). You can reroll the pair once a day.</span></span>
       </p>
     </div>
 
@@ -296,7 +297,7 @@
       <div class="card" id="rollCard">
         <div class="roll-head">
           <h3 id="rollTitle">Your next champions</h3>
-          <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Only your next Arena game with one of these two counts - 1st place completes that champion. After a game with one of them, roll a new pair. Two, so a ban doesn't block you. Games with other champions don't count and give level XP only. You can reroll a pair once a day.</span></span>
+          <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Only your next Arena game with one of these two counts - 1st place completes that champion. After a game with one of them, roll a new pair. If one of them gets banned or picked by someone else in champ select, the app replaces it for free (needs the League client open on this PC; your own bans don't count). Games with other champions don't count and give level XP only. You can reroll a pair once a day.</span></span>
         </div>
         <div class="reels" id="reels">
           <div class="reel-wrap"><div class="reel"><div class="strip"></div><span class="reel-check" hidden>✓</span></div><div class="reel-name"></div></div>
@@ -306,6 +307,7 @@
         <div class="roll-actions">
           <button type="button" class="btn big" id="rollBtn">Roll</button>
           <span class="reroll-note" id="rerollNote"></span>
+          <span class="replace-note" id="replaceNote"></span>
         </div>
       </div>
 
@@ -472,6 +474,10 @@
       btn.textContent = needs ? 'Roll' : 'Reroll';
       btn.title = needs ? 'Roll your next two champions' : 'One reroll per day';
       $('rerollNote').textContent = !needs && p && roll && !p.canReroll ? 'Reroll used today' : '';
+      // v6.14.0: im Champ Select automatisch ersetzt (gratis, kein Tages-Reroll)
+      const rep = roll && !spent ? (roll.replaced || []) : [];
+      $('replaceNote').textContent = state.champSelect ? 'Champ select - watching bans and picks…' : '';
+      if (rep.length) $('replaceNote').textContent = rep.map(r => `${r.from} was ${r.reason === 'picked' ? 'picked' : 'banned'} - replaced by ${r.to} (free)`).join(' · ');
       wraps().forEach((wrap, i) => {
         const check = wrap.querySelector('.reel-check');
         const champ = roll && roll.champs[i];
@@ -656,11 +662,13 @@
       }
     }));
 
+    let rolling = false; // Roll-Klick oder Live-Ersatz laeuft gerade
     // Grosser Knopf: Roll (kein aktives Paar) bzw. Reroll (1x pro Tag)
     $('rollBtn').addEventListener('click', async () => {
       const needs = Boolean(state.progress && state.progress.needsRoll);
       $('rollBtn').disabled = true;
       statusEl.textContent = needs ? 'Rolling…' : 'Rerolling…';
+      rolling = true;
       try {
         applyPayload(await post(needs ? '/api/arena/roll' : '/api/arena/reroll', { puuid }));
         statusEl.textContent = '';
@@ -670,6 +678,7 @@
       } catch (e) {
         statusEl.textContent = e.message;
       } finally {
+        rolling = false;
         setRollChrome(); // setzt auch disabled passend (Reroll verbraucht = unverfuegbar)
       }
     });
@@ -707,6 +716,30 @@
     });
 
     init();
+
+    // Champ-Select-Waechter (v6.14.0): Server ersetzt gebannte/gepickte
+    // Roll-Champions selbst - hier nur nachladen + Animation, wenn sich die
+    // Roll-Nummer aendert. Billiger Abruf ohne Riot-API.
+    setInterval(async () => {
+      if (!puuid || !state.run || document.hidden || rolling) return;
+      rolling = true;
+      try {
+        const live = await api(`/api/arena/live?puuid=${encodeURIComponent(puuid)}`);
+        const cur = state.progress && state.progress.roll ? state.progress.roll.seq : null;
+        const csChanged = Boolean(live.champSelect) !== Boolean(state.champSelect);
+        state.champSelect = Boolean(live.champSelect);
+        if (live.seq != null && cur != null && live.seq !== cur) {
+          // quick = ohne Spiele-Liste -> nur Paar/Raster uebernehmen, Statistik bleibt
+          const q = await api(`/api/arena/progress?puuid=${encodeURIComponent(puuid)}&quick=1`);
+          if (!q.progress) return;
+          const { roll, slots, needsRoll, canReroll } = q.progress;
+          state.progress = { ...state.progress, roll, slots, needsRoll, canReroll };
+          renderActive(true);
+          await animateRoll();
+          renderGrid();
+        } else if (csChanged) setRollChrome();
+      } catch (e) { /* naechster Takt */ } finally { rolling = false; }
+    }, 3000);
 
     $('settingsGearBtn').addEventListener('click', () => { if (window.ttpMain) window.ttpMain.openSettings(); });
     $('quitBtn').addEventListener('click', () => {

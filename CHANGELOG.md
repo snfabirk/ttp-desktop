@@ -1,5 +1,10 @@
 # Internal Changelog
 
+## 6.14.0 — 2026-11-26
+
+- Arena champ select watcher (user): server polls the LCU every 3 s (arenaChampSelectTick) while a linked summoner has an arena run with an active pair. lcu.champSelect (gameflow phase ChampSelect + /lol-champ-select/v1/session + disabled-champion-ids + current-summoner, creds cached, re-lookup max every 15 s) -> parseChampSelect: banned (completed bans of others + bans arrays + disabled ids), pickedByOthers (completed pick actions of other cells + theirTeam), myPick, hovered (teammates' in-progress picks/intents), ownBans. Only for the summoner logged into the client (sameRiotId vs game_name/tag_line) and arena queues/CHERRY. arena.replaceUnavailable swaps only the hit champ(s) for a random open one (never the current pair, unavailable or own bans; avoids hovered), seq+1, roll.at=now, roll.replaced [{from,to,reason}] (kept by cleanRun), rerollDay untouched. Nothing happens if the own locked pick is one of the pair or the pair is spent. Own bans never trigger (would be a free reroll). Electron Notification. arena.html polls /api/arena/live (champSelect + seq) every 3 s, on seq change loads /api/arena/progress?quick=1 (no Riot calls, keeps stats) and plays the reel animation; replace-note under the button. Skips a tick while processArena runs (no overwrite race). The tick also calls arena.availability() (self-throttled to 10 min) so the client-reported CHERRY queue ids stay fresh. Not live-tested in a real champ select yet.
+- Arena games were never found: Riot moved Arena to queues 1740/1750 (CHERRY), the app only queried 1700/1710. ARENA_QUEUES now [1700, 1704, 1710, 1740, 1750] (client lists 1750 as the live one on 2026-11-26) + arena.arenaQueues() also uses the CHERRY queue ids the client reports (stored as queueIds in mode-availability.json), so the next queue change fixes itself once the client is open.
+
 ## 6.13.0 — 2026-11-26
 
 - Difficulties (user): 4 levels easy/normal/hard/majestic. Old very_hard = new majestic (same numbers), old majestic dropped; stored very_hard values map to majestic (TIER_INDEX, labels, localStorage). RATES arrays trimmed to 4.

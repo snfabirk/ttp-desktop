@@ -20,6 +20,17 @@ function clientCredentials() {
   });
 }
 
+// Zugangsdaten zwischenspeichern (v6.14.0): der Champ-Select-Waechter fragt
+// alle paar Sekunden - nicht jedes Mal PowerShell starten. Ohne Client
+// hoechstens alle 15 s neu suchen; bei Verbindungsfehler verwerfen.
+let credCache = { creds: null, at: 0 };
+async function cachedCredentials() {
+  if (credCache.creds) return credCache.creds;
+  if (Date.now() - credCache.at < 15000) return null;
+  credCache = { creds: await clientCredentials(), at: Date.now() };
+  return credCache.creds;
+}
+
 function lcuGet(creds, path) {
   return new Promise(resolve => {
     const req = https.get({
@@ -32,7 +43,7 @@ function lcuGet(creds, path) {
       res.on('data', c => { body += c; });
       res.on('end', () => { try { resolve(res.statusCode === 200 ? JSON.parse(body) : null); } catch (e) { resolve(null); } });
     });
-    req.on('error', () => resolve(null));
+    req.on('error', () => { if (credCache.creds === creds) credCache = { creds: null, at: 0 }; resolve(null); });
     req.on('timeout', () => { req.destroy(); resolve(null); });
   });
 }
@@ -61,4 +72,63 @@ async function gameQueues() {
   return Array.isArray(q) ? q : null;
 }
 
-module.exports = { currentSummoner, sameRiotId, gameQueues };
+// Champ Select (v6.14.0): wer hat was gebannt / gepickt? null = gerade kein
+// Champ Select (oder Client zu). Champion-IDs als Strings (= Data-Dragon-key).
+//   queueId/gameMode  - aus der Gameflow-Session
+//   banned            - gebannt von ANDEREN (eigene Bans bewusst nicht: sonst
+//                       koennte man sich per Selbst-Ban gratis umwuerfeln)
+//   pickedByOthers    - von Mitspielern/Gegnern gewaehlt (gelockt)
+//   myPick            - eigener gelockter Champion (oder null)
+//   hovered           - von Mitspielern gerade gehovert (als Ersatz meiden)
+//   summoner          - eingeloggter Account { gameName, tagLine }
+async function champSelect() {
+  const creds = await cachedCredentials();
+  if (!creds) return null;
+  const flow = await lcuGet(creds, '/lol-gameflow/v1/session');
+  if (!flow || flow.phase !== 'ChampSelect') return null;
+  const session = await lcuGet(creds, '/lol-champ-select/v1/session');
+  if (!session) return null;
+  const disabled = await lcuGet(creds, '/lol-champ-select/v1/disabled-champion-ids');
+  const me = await lcuGet(creds, '/lol-summoner/v1/current-summoner');
+  return parseChampSelect(flow, session, disabled, me);
+}
+function parseChampSelect(flow, session, disabled, me) {
+  const queue = (flow.gameData && flow.gameData.queue) || {};
+  const local = session.localPlayerCellId;
+  const id = v => (Number(v) > 0 ? String(v) : null);
+  const ownBans = new Set(), banned = new Set(), picked = new Set(), hovered = new Set();
+  let myPick = null;
+  for (const a of (session.actions || []).flat()) {
+    const c = id(a && a.championId);
+    if (!c) continue;
+    if (!a.completed) { if (a.type === 'pick' && a.actorCellId !== local) hovered.add(c); continue; }
+    if (a.type === 'ban') (a.actorCellId === local ? ownBans : banned).add(c);
+    else if (a.type === 'pick') { if (a.actorCellId === local) myPick = c; else picked.add(c); }
+  }
+  const b = session.bans || {};
+  [...(b.myTeamBans || []), ...(b.theirTeamBans || [])].map(id).filter(Boolean).forEach(c => banned.add(c));
+  // Eigenes Team: championId ist waehrend des Zugs schon der Hover -> nur
+  // abgeschlossene Aktionen (oben) zaehlen. Gegner sieht man erst gelockt.
+  for (const p of session.myTeam || []) {
+    if (p.cellId === local) continue;
+    [p.championId, p.championPickIntent].map(id).filter(Boolean).forEach(c => hovered.add(c));
+  }
+  for (const p of session.theirTeam || []) {
+    const c = id(p && p.championId);
+    if (c) picked.add(c);
+  }
+  // Vom Client gesperrte Champions (Bans/Picks, auch wenn die Session sie
+  // nicht einzeln zeigt, z.B. andere Arena-Teams) - ohne eigene Bans
+  if (Array.isArray(disabled)) disabled.map(id).filter(Boolean).forEach(c => { if (!picked.has(c)) banned.add(c); });
+  ownBans.forEach(c => { if (!picked.has(c)) banned.delete(c); });
+  if (myPick) { banned.delete(myPick); picked.delete(myPick); }
+  return {
+    queueId: Number(queue.id) || null, gameMode: queue.gameMode || (flow.gameData && flow.gameData.gameMode) || '',
+    banned: [...banned], pickedByOthers: [...picked], myPick,
+    hovered: [...hovered].filter(c => !picked.has(c)), // nur als Ersatz meiden
+    ownBans: [...ownBans], // loest nichts aus, darf aber nie Ersatz sein
+    summoner: me && me.gameName ? { gameName: me.gameName, tagLine: me.tagLine } : null
+  };
+}
+
+module.exports = { currentSummoner, sameRiotId, gameQueues, champSelect, parseChampSelect };

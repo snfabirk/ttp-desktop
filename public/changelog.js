@@ -27,6 +27,14 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.14.0',
+      date: '2026-11-26',
+      notable: [
+        'Arena challenge: if one of your rolled champions gets banned or picked by someone else in champ select, the app replaces it for free (no daily reroll used) and shows a Windows notification. Your own bans do not count. Needs the League client running on this PC.'
+      ],
+      bugfixes: 1
+    },
+    {
       version: '6.13.0',
       date: '2026-11-26',
       notable: [
