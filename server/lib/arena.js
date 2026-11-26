@@ -148,6 +148,8 @@ const livePair = run => hasActivePair(run) && !run.roll.played;
 function needsRoll(run, champions) {
   return !livePair(run) && remainingKeys(run, champions).length > 0;
 }
+// Spiel mit dem Paar ist laut Client vorbei, Riot-Ergebnis steht aus (v6.16.0)
+const awaitingResult = run => Boolean(run.roll && run.roll.played && !run.roll.spent);
 // Client meldet: Spiel mit diesem Champion hat begonnen (v6.15.0)
 function markPlayed(run, key, now = Date.now()) {
   if (!livePair(run) || !run.roll.champs.includes(String(key))) return false;
@@ -274,6 +276,14 @@ function view(run, champions, games, today) {
     });
   const count = keys.filter(k => run.won[k]).length;
   const sortedGames = [...games].sort((a, b) => b.at - a.at);
+  // v6.16.0: laut Client gespielte Spiele, die Riot noch nicht liefert -
+  // Platzhalter oben in "Recent Arena Games"
+  const waitingRaw = [...(run.pending || []).map(p => p.played),
+    run.roll && run.roll.played && !run.roll.spent ? run.roll.played : null].filter(p => p && p.key);
+  const waiting = waitingRaw.map(p => {
+    const c = byKey.get(p.key) || { id: '', name: '' };
+    return { key: p.key, champId: c.id, name: c.name, at: p.at };
+  }).sort((a, b) => b.at - a.at);
   return {
     variant: run.variant, variantName: (VARIANTS[run.variant] || VARIANTS.riot).name,
     since: run.since, target, count, completed: target > 0 && count >= target,
@@ -284,8 +294,9 @@ function view(run, champions, games, today) {
     totalGames: games.length,
     firstPlaces: games.filter(g => g.placement === 1).length,
     avgPlacement: games.length ? Math.round((games.reduce((s, g) => s + g.placement, 0) / games.length) * 10) / 10 : null,
-    recent: sortedGames.slice(0, 12)
+    recent: sortedGames.slice(0, 12),
+    waiting
   };
 }
 
-module.exports = { ARENA_QUEUES, arenaQueues, VARIANTS, MIN_GAME_SECONDS, allChampions, availability, newRun, advanceRun, roll, reroll, replaceUnavailable, hasActivePair, livePair, needsRoll, markPlayed, view, targetFor };
+module.exports = { ARENA_QUEUES, arenaQueues, VARIANTS, MIN_GAME_SECONDS, allChampions, availability, newRun, advanceRun, roll, reroll, replaceUnavailable, hasActivePair, livePair, needsRoll, markPlayed, awaitingResult, view, targetFor };

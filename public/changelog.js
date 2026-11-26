@@ -27,6 +27,14 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.16.0',
+      date: '2026-11-26',
+      notable: [
+        'Arena challenge: your next pair is rolled as soon as your game ends (result screen or back in the lobby), no longer only in the next champ select.',
+        'Recent Arena Games shows your game right away with "result pending" until Riot delivers the result (usually a few minutes) - it then updates by itself.'
+      ]
+    },
+    {
       version: '6.15.0',
       date: '2026-11-26',
       notable: [

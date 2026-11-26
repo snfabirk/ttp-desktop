@@ -200,6 +200,9 @@
     .recent { display: flex; flex-direction: column; gap: 6px; }
     .game { display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center; padding: 5px 8px; border: 1px solid color-mix(in srgb, var(--border) 60%, transparent); border-radius: 7px; }
     .game.counted { border-color: color-mix(in srgb, var(--gold) 55%, transparent); }
+    .game.pending { border-style: dashed; border-color: color-mix(in srgb, var(--gold) 45%, transparent); }
+    .game.pending img { opacity: 0.75; }
+    .game.pending .place { font-size: 0.72rem; color: var(--text-faint); font-family: Georgia, serif; }
     .game img { width: 32px; height: 32px; border-radius: 6px; display: block; }
     .game .g-main { display: flex; flex-direction: column; min-width: 0; }
     .game .g-main b { color: var(--text); font-weight: normal; font-family: 'Cinzel', Georgia, serif; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -479,7 +482,7 @@
       // v6.14.0: im Champ Select automatisch ersetzt (gratis, kein Tages-Reroll)
       const rep = roll && !spent ? (roll.replaced || []) : [];
       $('replaceNote').textContent = state.champSelect ? 'Champ select - watching bans and picks…' : '';
-      if (played) $('replaceNote').textContent = 'Played - your next pair is rolled automatically in your next champ select.';
+      if (played) $('replaceNote').textContent = 'In game - your next pair is rolled automatically when the game ends.';
       if (rep.length) $('replaceNote').textContent = rep.map(r => `${r.from} was ${r.reason === 'picked' ? 'picked' : 'banned'} - replaced by ${r.to} (free)`).join(' · ');
       wraps().forEach((wrap, i) => {
         const check = wrap.querySelector('.reel-check');
@@ -594,13 +597,19 @@
       $('stGames').textContent = p.totalGames;
       $('stFirsts').textContent = p.firstPlaces;
       $('stAvg').textContent = p.avgPlacement == null ? '–' : p.avgPlacement;
-      $('recent').innerHTML = p.recent.length
+      // v6.16.0: Platzhalter fuer Spiele, die Riot noch nicht liefert
+      const waiting = (p.waiting || []).map(w => `<div class="game pending" title="Riot usually needs a few minutes after the game - the result appears here automatically">
+            <img src="${icon(w.champId)}" alt="">
+            <span class="g-main"><b>${esc(w.name || w.champId)}</b><small>${fmtDate(w.at)} · rolled champion</small></span>
+            <span class="place">result pending…</span>
+          </div>`).join('');
+      $('recent').innerHTML = waiting + (p.recent.length
         ? p.recent.map(g => `<div class="game${g.counted ? ' counted' : ''}" title="${esc(`${g.kills}/${g.deaths}/${g.assists}${g.counted ? ' · rolled champion, counted' : ' · not rolled, did not count'}`)}">
             <img src="${icon(g.champId)}" alt="">
             <span class="g-main"><b>${esc(g.champId)}</b><small>${fmtDate(g.at)}${g.partner ? ` · with ${esc(g.partner.champId)}` : ''}${g.counted ? ' · counted' : ''}</small></span>
             <span class="place ${g.placement === 1 ? 'p1' : g.placement <= 4 ? 'top4' : ''}">#${g.placement}</span>
           </div>`).join('')
-        : '<p class="muted">No Arena games since the start yet.</p>';
+        : (waiting ? '' : '<p class="muted">No Arena games since the start yet.</p>'));
       fitRecent();
       if (skipRoll) return;
       renderGrid();
@@ -617,8 +626,9 @@
       $('riotNote').textContent = rg ? `Riot's own Arena God title (all-time): ${Math.min(rg.value, 60)} / 60` : '';
     }
 
-    async function loadProgress() {
-      statusEl.textContent = 'Loading your Arena games…';
+    // silent: Hintergrund-Nachladen ohne "Loading…"-Text (v6.16.0)
+    async function loadProgress(silent = false) {
+      if (!silent) statusEl.textContent = 'Loading your Arena games…';
       $('refreshBtn').disabled = true;
       try {
         applyPayload(await api(`/api/arena/progress?puuid=${encodeURIComponent(puuid)}`));
@@ -741,12 +751,19 @@
           // quick = ohne Spiele-Liste -> nur Paar/Raster uebernehmen, Statistik bleibt
           const q = await api(`/api/arena/progress?puuid=${encodeURIComponent(puuid)}&quick=1`);
           if (!q.progress) return;
-          const { roll, slots, needsRoll, canReroll } = q.progress;
-          state.progress = { ...state.progress, roll, slots, needsRoll, canReroll };
+          const { roll, slots, needsRoll, canReroll, waiting } = q.progress;
+          state.progress = { ...state.progress, roll, slots, needsRoll, canReroll, waiting };
           if (seqChanged) { renderActive(true); await animateRoll(); renderGrid(); } else renderActive();
         } else if (csChanged) setRollChrome();
       } catch (e) { /* naechster Takt */ } finally { rolling = false; }
     }, 3000);
+
+    // Solange ein Ergebnis aussteht: jede Minute bei Riot nachsehen (v6.16.0)
+    setInterval(() => {
+      const p = state.progress;
+      if (!puuid || !state.run || document.hidden || rolling || !p || !(p.waiting || []).length) return;
+      loadProgress(true);
+    }, 60000);
 
     $('settingsGearBtn').addEventListener('click', () => { if (window.ttpMain) window.ttpMain.openSettings(); });
     $('quitBtn').addEventListener('click', () => {

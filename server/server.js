@@ -1500,6 +1500,8 @@ function notifyDesktop(title, body) {
   } catch (e) { /* kein Electron (npm start) */ }
 }
 const GAME_PHASES = ['GameStart', 'InProgress', 'Reconnect'];
+// Spiel laeuft noch (auch bei Startproblemen) - alles andere = Spiel vorbei
+const STILL_IN_GAME = [...GAME_PHASES, 'FailedToLaunch'];
 async function arenaChampSelectTick() {
   if (liveTicking) return;
   liveTicking = true;
@@ -1513,7 +1515,7 @@ async function arenaChampSelectTick() {
     const acc = st && st.summoner && candidates.find(a => lcu.sameRiotId(st.summoner, a.game_name, a.tag_line));
     const isArena = st && (arena.arenaQueues().includes(st.queueId) || st.gameMode === 'CHERRY');
     arenaLive.clear();
-    if (!acc || !isArena) { if (!st || st.phase !== 'ChampSelect') arenaLastPick.clear(); return; }
+    if (!acc) { arenaLastPick.clear(); return; }
     const key = arenaKey(acc.puuid);
     const champs = await arena.allChampions();
     // Ab hier kein await mehr bis zum Speichern - sonst koennte processArena
@@ -1523,6 +1525,19 @@ async function arenaChampSelectTick() {
     if (!run) return;
     const name = k => (champs.list.find(c => c.key === k) || {}).name || k;
     const cs = st.champSelect;
+
+    // 0) Spiel mit dem Paar ist vorbei (Ergebnis-Bildschirm / Lobby / Client-
+    // Hauptmenue) -> sofort neues Paar (v6.16.0). Ohne Queue-Pruefung: nach
+    // dem Spiel hat die Gameflow-Session oft keine Queue mehr.
+    if (arena.awaitingResult(run) && st.phase !== 'ChampSelect' && !STILL_IN_GAME.includes(st.phase)) {
+      if (arena.roll(run, champs.list)) {
+        challengeRuns.setRun(key, run);
+        if (run.roll) notifyDesktop('Arena challenge - game over', `Your next champions: ${run.roll.champs.map(name).join(' & ')}`);
+      }
+      arenaLastPick.delete(acc.puuid);
+      return;
+    }
+    if (!isArena) { if (st.phase !== 'ChampSelect') arenaLastPick.delete(acc.puuid); return; }
 
     if (st.phase === 'ChampSelect' && cs) {
       arenaLive.set(acc.puuid, { champSelect: true });

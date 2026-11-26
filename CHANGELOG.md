@@ -1,5 +1,10 @@
 # Internal Changelog
 
+## 6.16.0 — 2026-11-26
+
+- Roll at game end (user): watcher step 0 - arena.awaitingResult(run) (roll.played && !spent) and the client phase is neither ChampSelect nor STILL_IN_GAME (GameStart/InProgress/Reconnect/FailedToLaunch) -> arena.roll (archives the played pair into pending) + notification 'game over - your next champions'. Runs before the arena-queue check (gameflow session often has no queue after the game). Champ select auto-roll stays as fallback (e.g. app was closed at game end).
+- Pending placeholder (user): arena.view returns waiting [{key, champId, name, at}] from run.pending + current roll.played; arena.html renders them on top of Recent Arena Games (dashed row, 'result pending…'), quick reload keeps waiting, and while waiting is non-empty the page does a silent full loadProgress every 60 s (loadProgress(silent) skips the 'Loading…' text). Played note now 'In game - your next pair is rolled automatically when the game ends.'
+
 ## 6.15.0 — 2026-11-26
 
 - Arena auto-roll in champ select (user): arenaChampSelectTick now runs for every linked summoner with an arena run (not only with an active pair) and uses lcu.clientState (gameflow phase + queue + cached current-summoner, champSelect details only in ChampSelect). In an arena champ select: needsRoll -> arena.roll + immediate replaceUnavailable against current bans/picks (replaced note cleared) + notification 'Your champions: A & B'; otherwise the v6.14.0 replace logic.
