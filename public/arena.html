@@ -748,15 +748,24 @@
         const playedChanged = Boolean(curRoll) && Boolean(live.played) !== Boolean(curRoll.played && !curRoll.spent);
         const seqChanged = live.seq != null && live.seq !== cur;
         if (seqChanged || playedChanged) {
-          // quick = ohne Spiele-Liste -> nur Paar/Raster uebernehmen, Statistik bleibt
+          // quick = ohne Riot-Abruf, Spiele aus dem lokalen Cache (v6.16.1: komplett)
           const q = await api(`/api/arena/progress?puuid=${encodeURIComponent(puuid)}&quick=1`);
           if (!q.progress) return;
-          const { roll, slots, needsRoll, canReroll, waiting } = q.progress;
-          state.progress = { ...state.progress, roll, slots, needsRoll, canReroll, waiting };
+          state.progress = q.progress;
           if (seqChanged) { renderActive(true); await animateRoll(); renderGrid(); } else renderActive();
         } else if (csChanged) setRollChrome();
       } catch (e) { /* naechster Takt */ } finally { rolling = false; }
     }, 3000);
+
+    // Zurueck im Fenster (v6.16.1): im Hintergrund gewertete Spiele sofort
+    // zeigen - die Seite pausiert, solange sie verdeckt ist
+    document.addEventListener('visibilitychange', async () => {
+      if (document.hidden || !puuid || !state.run || rolling) return;
+      try {
+        const q = await api(`/api/arena/progress?puuid=${encodeURIComponent(puuid)}&quick=1`);
+        if (q.progress && !rolling) { state.progress = q.progress; renderActive(); }
+      } catch (e) {}
+    });
 
     // Solange ein Ergebnis aussteht: jede Minute bei Riot nachsehen (v6.16.0)
     setInterval(() => {

@@ -1416,8 +1416,16 @@ function processArena(puuid) {
     // Geschafft? -> Titel beim Summoner (Profil-Widget "Arena Titles")
     const doneView = arena.view(run, champs.list, [], progression.berlinDayKey());
     if (doneView.completed) arenaStats.recordTitle(puuid, run.variant);
+    return { run, champs, games: arenaGames(matches, findMe) };
+  })().finally(() => arenaBusy.delete(puuid));
+  arenaBusy.set(puuid, job);
+  return job;
+}
+
+// Zeilen fuer "Recent Arena Games" aus Match-V5-Daten
+function arenaGames(matches, findMe) {
     const rolledIds = progression.arenaRolledMatchIds();
-    const games = matches.map(m => {
+    return matches.map(m => {
       const me = findMe(m);
       if (!me || (m.info.gameDuration || 0) < arena.MIN_GAME_SECONDS) return null;
       const partner = (m.info.participants || []).find(p => p !== me && p.playerSubteamId && p.playerSubteamId === me.playerSubteamId);
@@ -1429,18 +1437,28 @@ function processArena(puuid) {
         partner: partner ? { champId: partner.championName } : null
       };
     }).filter(Boolean);
-    return { run, champs, games };
-  })().finally(() => arenaBusy.delete(puuid));
-  arenaBusy.set(puuid, job);
-  return job;
+}
+
+// Schnell-Ansicht (v6.16.1): Spiele nur aus dem lokalen Match-Cache (schon
+// gewertete Spiele), kein Riot-Abruf - sonst fehlten im Hintergrund
+// abgeholte Spiele, bis die Seite wieder komplett laedt.
+function arenaGamesFromCache(puuid, run) {
+  const hit = riotIdCache.get(puuid);
+  const findMe = m => findMeAndOpponent(m, puuid, hit ? hit.value : null).me;
+  const matches = [];
+  for (const id of run.processed || []) {
+    try { matches.push(JSON.parse(fs.readFileSync(path.join(CACHE_DIR, `${id}.json`), 'utf-8'))); } catch (e) { /* nicht im Cache */ }
+  }
+  return arenaGames(matches, findMe);
 }
 
 async function arenaPayload(puuid, { process = true } = {}) {
-  const { run, champs, games } = process ? await processArena(puuid) : { run: await cloud.getChallengeRun(arenaKey(puuid)), champs: await arena.allChampions(), games: [] };
+  let { run, champs, games } = process ? await processArena(puuid) : { run: await cloud.getChallengeRun(arenaKey(puuid)), champs: await arena.allChampions(), games: [] };
+  if (!process && run) games = arenaGamesFromCache(puuid, run);
   const base = { champions: champs.list, ddragonVersion: champs.version, quests: progression.arenaQuests() };
   if (!run) return { ...base, run: null };
   let riotGod = null;
-  try {
+  if (process) try {
     const pd = await getPlayerChallenges(puuid, config.apiKey, PLATFORM);
     const c = (pd.challenges || []).find(x => x.challengeId === 602002);
     if (c) riotGod = { value: c.value, level: c.level, target: 60 };

@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 6.16.1 — 2026-11-26
+
+- Fix (user: 'a 2nd pending replaces the first instead of pushing it down'): the earlier pending game (Kalista) had already been resolved by the 15-min background scan while arena.html was hidden; the page's quick reload (seq/played change) only merged roll/slots/waiting and kept the stale recent list, so the resolved game vanished. Now quick mode (/api/arena/progress?quick=1) builds the full games list from the local match cache via arenaGamesFromCache (run.processed ids, no Riot call; arenaGames() extracted from processArena) and skips the riotGod Riot call; the page takes the whole quick progress, and also quick-reloads on visibilitychange (back to the window).
+
 ## 6.16.0 — 2026-11-26
 
 - Roll at game end (user): watcher step 0 - arena.awaitingResult(run) (roll.played && !spent) and the client phase is neither ChampSelect nor STILL_IN_GAME (GameStart/InProgress/Reconnect/FailedToLaunch) -> arena.roll (archives the played pair into pending) + notification 'game over - your next champions'. Runs before the arena-queue check (gameflow session often has no queue after the game). Champ select auto-roll stays as fallback (e.g. app was closed at game end).
