@@ -688,8 +688,8 @@
     }
     .hint:hover .hint-pop, .hint:focus-within .hint-pop { opacity: 1; visibility: visible; }
     /* Besuchsmodus (v6.1.0): Freundesprofil */
-    .visit-banner { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 6px auto 12px; padding: 7px 16px; width: fit-content; max-width: 100%; box-sizing: border-box; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 18px; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.85rem; }
-    .visit-banner[hidden] { display: none; }
+    .visit-error { text-align: center; color: var(--red); font-family: Georgia, serif; font-size: 0.85rem; margin: 6px 0 12px; }
+    .visit-error[hidden] { display: none; }
     /* Stats-Summoner im Editor (v6.7.1) */
     .stats-src { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; padding: 10px 12px; border: 1px solid var(--gold); border-radius: 10px; background: color-mix(in srgb, var(--gold) 6%, transparent); }
     .stats-src span { font-family: 'Cinzel', Georgia, serif; color: var(--gold); font-size: .85rem; display: flex; flex-direction: column; gap: 2px; }
@@ -714,50 +714,16 @@
     .ms-row.ms.done .ms-state { background: linear-gradient(90deg, #ffd1ea, #fff1b8, #c8ffd4, #c6ecff); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: bold; }
     .ms-row.ms.done .ms-name { color: #f6e27a; }
     /* Booster verschenken (v6.6.0) */
-    .gift-btn { text-decoration: none; font: inherit; font-size: .8rem; color: var(--gold); background: transparent; border: 1px solid var(--gold); border-radius: 14px; padding: 3px 12px; cursor: pointer; transition: background .15s; }
-    .gift-btn:hover { background: color-mix(in srgb, var(--gold) 15%, transparent); }
-    .gift-ov { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; background: rgba(4,8,16,.7); backdrop-filter: blur(4px); opacity: 0; transition: opacity .2s; }
-    .gift-ov.on { opacity: 1; }
-    .gift-box { position: relative; width: min(380px, 92vw); box-sizing: border-box; padding: 22px 24px; border-radius: 16px; border: 1px solid var(--border); background: var(--panel-bg, #111827); box-shadow: 0 20px 50px rgba(0,0,0,.6); font-family: Georgia, serif; text-align: center; }
-    .gift-box h3 { margin: 0; font-family: 'Cinzel', Georgia, serif; color: var(--gold); font-weight: normal; }
-    .gift-to { margin: 4px 0 14px; color: var(--text-dim); font-size: .85rem; }
-    .gift-to b { color: var(--text); font-weight: normal; }
-    .gift-x { position: absolute; top: 10px; right: 12px; background: none; border: none; color: var(--text-dim); font-size: 1rem; cursor: pointer; }
-    .gift-sets { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-    .gift-set { display: flex; justify-content: space-between; align-items: center; font: inherit; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); cursor: pointer; }
-    .gift-set b { font-family: 'Cinzel', Georgia, serif; font-weight: normal; color: var(--text); font-size: .85rem; }
-    .gift-set.special b::before { content: '\2605  '; color: #e8d43a; }
-    .gift-set span { font-size: .75rem; }
-    .gift-set.on { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 10%, transparent); }
-    .gift-qty { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: var(--text-dim); font-size: .85rem; }
-    .gift-qty .dk-ctrl { display: flex; align-items: center; gap: 10px; }
-    .gift-qty .dk-ctrl button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; font: inherit; font-size: 1.1rem; line-height: 1; padding: 0; }
-    .gift-qty .dk-ctrl button:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
-    .gift-qty .dk-ctrl button:disabled { opacity: .35; cursor: default; }
-    .gift-qty .dk-ctrl b { min-width: 24px; color: var(--text); font-weight: normal; font-size: 1.3rem; font-family: 'Cinzel', Georgia, serif; }
-    .gift-msg { width: 100%; box-sizing: border-box; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font: inherit; font-size: .85rem; }
-    .gift-err { min-height: 1.1em; margin: 8px 0; color: var(--red); font-size: .8rem; line-height: 1.5; }
-    .gift-done { margin: 6px 0 16px; color: var(--text-dim); font-size: .88rem; line-height: 1.6; }
-    .gift-done b { color: var(--gold); font-weight: normal; }
-    .gift-send { font: inherit; font-size: .9rem; padding: 8px 22px; border-radius: 18px; border: 1px solid var(--gold); background: var(--gold); color: var(--bg); cursor: pointer; }
-    .gift-send:disabled { opacity: .6; cursor: default; }
-    .visit-banner b { color: var(--gold); font-weight: normal; }
-    .visit-banner a { color: var(--gold); text-decoration: none; }
-    .visit-banner a:hover { text-decoration: underline; }
     .edit-toggle[hidden] { display: none; }
-    .visit-challenge { width: 100%; max-width: 980px; margin: 0 auto 14px; box-sizing: border-box; padding: 10px 16px; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 12px; font-family: Georgia, serif; color: var(--text-dim); font-size: 0.82rem; }
-    .visit-challenge[hidden] { display: none; }
-    .vc-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
-    .vc-head b { color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-weight: normal; letter-spacing: 1px; }
-    .vc-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
-    .vc-champs { display: flex; gap: 10px; }
-    .vc-champ { display: inline-flex; align-items: center; gap: 6px; color: var(--text); }
-    .vc-champ img { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); }
-    .vc-rank { flex: 1; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; color: var(--text); }
-    .vc-rank small { color: var(--text-faint); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
-    .vc-rank i { color: var(--gold); font-style: normal; margin: 0 4px; }
-    .vc-trophies { color: var(--gold); font-family: 'Cinzel', Georgia, serif; }
-    .vc-none { font-style: italic; color: var(--text-faint); }
+    /* Arena-Titel-Widget (v6.13.0): drei Abzeichen, nicht erreichte grau mit Schloss */
+    .at-row { display: flex; gap: 8px; justify-content: space-around; align-items: stretch; flex: 1; }
+    .at-badge { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px 2px; border-radius: 8px; border: 1px solid var(--border); text-align: center; }
+    .at-badge .at-ic { font-size: 1.35rem; line-height: 1; }
+    .at-badge .at-n { font-family: 'Cinzel', Georgia, serif; font-size: 0.72rem; color: var(--text); white-space: nowrap; }
+    .at-badge .at-d { font-family: Georgia, serif; font-size: 0.62rem; color: var(--text-faint); }
+    .at-badge.on { border-color: var(--gold); box-shadow: 0 0 8px color-mix(in srgb, var(--gold) 35%, transparent); }
+    .at-badge.on .at-n { color: var(--gold); }
+    .at-badge.off { opacity: 0.38; filter: grayscale(1); }
   </style>
 </head>
 <body>
@@ -769,8 +735,11 @@
   </header>
 
   <div class="content">
-    <div class="visit-banner" id="visitBanner" hidden></div>
-    <div class="visit-challenge" id="visitChallenge" hidden></div>
+    <!-- Freundesprofil (v6.13.0, Nutzer): sieht genau so aus, wie der Freund es
+         eingerichtet hat - Gift/Trade/Challenge stehen in der Freundesliste.
+         Zurueck nur ueber den Reiter am linken Rand. -->
+    <a class="my-profile-tab" id="myProfileTab" href="profile.html" hidden title="Back to my profile"><span>My profile</span></a>
+    <p class="visit-error" id="visitError" hidden></p>
     <div class="canvas-wrap"><div class="canvas" id="canvas"></div></div>
     <button type="button" class="edit-toggle" id="editToggle">✎ Edit profile</button>
     <p class="status" id="status"></p>
@@ -1162,6 +1131,52 @@
         }
       },
 
+      // ----- Arena (v6.13.0): nur Spiele aus Arena-Challenges (Nutzervorgabe) -----
+      arenaWins: {
+        group: 'Arena', name: 'Arena Wins', desc: '1st places in Arena challenges', sizes: [[1, 1], [2, 1], [3, 1]],
+        render(w) {
+          const a = S() && S().arena;
+          if (w.w === 1) return big(a ? a.wins : '–', 'Arena wins');
+          return `<div class="w-body">${title('Arena Wins')}<div class="w-stats">${stat(a ? a.wins : '–', '1st places')}${stat(a ? a.top4 : '–', 'Top 4')}${w.w >= 3 ? stat(a ? a.games : '–', 'Games') : ''}</div></div>`;
+        }
+      },
+      arenaChamps: {
+        group: 'Arena', name: 'Arena Champions', desc: 'Different champions in Arena challenges', sizes: [[1, 1], [2, 1]],
+        render(w) {
+          const a = S() && S().arena;
+          if (w.w === 1) return big(a ? a.champsWon : '–', 'Champs won');
+          return `<div class="w-body">${title('Arena Champions')}<div class="w-stats">${stat(a ? a.champsWon : '–', 'With 1st place')}${stat(a ? a.champsPlayed : '–', 'Played')}</div></div>`;
+        }
+      },
+      arenaAvg: {
+        group: 'Arena', name: 'Arena Placement', desc: 'Average placement', sizes: [[1, 1], [2, 1]],
+        render(w) {
+          const a = S() && S().arena;
+          const v = a && a.avgPlacement != null ? `#${a.avgPlacement}` : '–';
+          if (w.w === 1) return big(v, 'Avg. place');
+          return `<div class="w-body w-center"><div class="w-big">${v}</div><div class="w-label">Avg. Arena placement${a && a.games ? ` · ${a.games} games` : ''}</div></div>`;
+        }
+      },
+      arenaTitles: {
+        group: 'Arena', name: 'Arena Titles', desc: 'Riot God, Elder God, Ultimate God', sizes: [[3, 1], [1, 1], [2, 1]],
+        render(w) {
+          const META = { riot: ['⚡', 'Riot God'], elder: ['🔱', 'Elder God'], ultimate: ['👑', 'Ultimate God'] };
+          const list = (S() && S().arena && S().arena.titles) || [];
+          const got = list.filter(t => t.at);
+          if (w.w === 1) {
+            const top = got[got.length - 1];
+            return top ? big(META[top.id][0], META[top.id][1]) : big('🔒', 'No title yet');
+          }
+          const shown = w.w === 2 ? (got.length ? got : list.slice(0, 1)).slice(-2) : list;
+          const badge = t => {
+            const m = META[t.id];
+            const tip = t.at ? `${m[1]} since ${fmtDate(t.at)}` : `${m[1]} - not earned yet`;
+            return `<div class="at-badge ${t.at ? 'on' : 'off'}" title="${tip}"><span class="at-ic">${t.at ? m[0] : '🔒'}</span><span class="at-n">${m[1]}</span>${w.w >= 3 ? `<span class="at-d">${t.at ? fmtDate(t.at) : 'locked'}</span>` : ''}</div>`;
+          };
+          return `<div class="w-body">${w.w >= 3 ? title('Arena Titles') : ''}<div class="at-row">${shown.map(badge).join('')}</div></div>`;
+        }
+      },
+
       // ----- Personal -----
       bio: {
         group: 'Personal', name: 'About me', desc: 'A short text', sizes: [[3, 1], [1, 1], [2, 1], [6, 1], [2, 2], [3, 2]],
@@ -1174,7 +1189,7 @@
         }
       }
     };
-    const GROUPS = ['Basics', 'Stats', 'Champions', 'Progress', 'Collectables', 'Personal'];
+    const GROUPS = ['Basics', 'Stats', 'Champions', 'Progress', 'Arena', 'Collectables', 'Personal'];
 
     const DEFAULT_LAYOUT = [
       { id: 'identity', type: 'identity', x: 0, y: 0, w: 6, h: 1 },
@@ -1878,80 +1893,12 @@
     });
 
     // ===== Laden =====
-    // Laufende Challenge des Freundes (v6.3.0): Pool, Rollen, Rang-Weg, Trophies
-    function renderVisitChallenge(snap) {
-      const el = document.getElementById('visitChallenge');
-      const c = snap.challenge;
-      const RN = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'Bot', UTILITY: 'Support' };
-      const LV = { easy: 'Easy', normal: 'Normal', hard: 'Hard', very_hard: 'Very Hard', majestic: 'Majestic' };
-      const rk = r => (r && r.tier ? `${r.tier.charAt(0) + r.tier.slice(1).toLowerCase()}${['MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(r.tier) ? '' : ` ${r.rank || r.division || ''}`}${r.leaguePoints !== undefined || r.lp !== undefined ? ` · ${r.leaguePoints !== undefined ? r.leaguePoints : r.lp} LP` : ''}` : '–');
-      el.hidden = false;
-      if (!c) { el.innerHTML = '<span class="vc-none">No challenge running right now.</span>'; return; }
-      const days = Math.max(1, Math.ceil((Date.now() - new Date(c.since).getTime()) / 86400000));
-      el.innerHTML = `<div class="vc-head"><b>Current challenge</b><span>${RN[c.mainRole] || '–'} / ${RN[c.secondRole] || '–'} · ${LV[c.level] || '–'} · day ${days}</span></div>
-        <div class="vc-row">
-          <div class="vc-champs">${c.champions.map(ch => `<span class="vc-champ" title="${esc(ch.name)}"><img src="${champIcon(ch.id)}" alt="">${esc(ch.name)}</span>`).join('')}</div>
-          <div class="vc-rank"><small>Start</small>${rk(c.startRank)}<i>→</i><small>Now</small>${rk(snap.rank)}<i>→</i><small>Goal</small>${rk(c.lpGoal)}</div>
-          <div class="vc-trophies">🏆 ${c.trophies ? `${c.trophies.unlocked} / ${c.trophies.total}` : '–'}</div>
-        </div>`;
-    }
-
-    // Booster verschenken (v6.6.0): aus den eigenen ungeoeffneten Boostern,
-    // optional mit kurzer Nachricht. Der Freund bekommt sie beim naechsten Oeffnen der App.
-    async function openGiftDialog(toId, toName) {
-      if (document.querySelector('.gift-ov')) return;
-      let album = null;
-      try { album = await (await fetch('/api/album')).json(); } catch (e) {}
-      const sets = ((album && album.sets) || []).filter(s => s.owned > 0);
-      let pick = sets[0] ? sets[0].id : null, qty = 1, busy = false;
-      const ov = document.createElement('div'); ov.className = 'gift-ov';
-      const draw = (msg = '', ok = false) => {
-        const cur = sets.find(s => s.id === pick);
-        const max = cur ? Math.min(10, cur.owned) : 1;
-        qty = Math.min(qty, max);
-        const keepText = ov.querySelector('#giftMsg') ? ov.querySelector('#giftMsg').value : '';
-        ov.innerHTML = `<div class="gift-box" role="dialog" aria-label="Gift a booster">
-          <button type="button" class="gift-x" aria-label="Close">✕</button>
-          <h3>🎁 Gift a booster</h3>
-          <p class="gift-to">to <b>${esc(toName)}</b></p>
-          ${ok ? `<p class="gift-done">${msg}</p><button type="button" class="gift-send" data-close>Done</button>` : sets.length ? `
-          <div class="gift-sets">${sets.map(s => `<button type="button" class="gift-set${s.id === pick ? ' on' : ''}${s.special ? ' special' : ''}" data-pick="${s.id}"><b>${esc(s.name)}</b><span>${s.owned} unopened</span></button>`).join('')}</div>
-          <div class="gift-qty"><span>Boosters</span><span class="dk-ctrl"><button type="button" data-q="-1"${qty <= 1 ? ' disabled' : ''}>−</button><b>${qty}</b><button type="button" data-q="1"${qty >= max ? ' disabled' : ''}>+</button></span></div>
-          <input id="giftMsg" class="gift-msg" maxlength="80" placeholder="Add a message (optional)" value="${esc(keepText)}">
-          <p class="gift-err">${msg}</p>
-          <button type="button" class="gift-send" data-send${busy ? ' disabled' : ''}>Send ${qty} booster${qty > 1 ? 's' : ''}</button>` : `<p class="gift-err" style="color:var(--text-dim)">You have no unopened boosters to give.<br>Get some in the <a href="shop.html">Shop</a> first.</p>`}
-        </div>`;
-      };
-      draw();
-      document.body.appendChild(ov);
-      requestAnimationFrame(() => ov.classList.add('on'));
-      const close = () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 200); };
-      ov.addEventListener('click', async e => {
-        if (e.target === ov || e.target.closest('.gift-x') || e.target.closest('[data-close]')) { close(); return; }
-        const p = e.target.closest('[data-pick]'), q = e.target.closest('[data-q]'), send = e.target.closest('[data-send]');
-        if (p) { pick = p.dataset.pick; draw(); return; }
-        if (q) { qty += Number(q.dataset.q); draw(); return; }
-        if (!send || busy) return;
-        busy = true;
-        const message = ov.querySelector('#giftMsg').value;
-        send.disabled = true; send.textContent = 'Sending …';
-        let r;
-        try {
-          const res = await fetch('/api/gifts/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: toId, set: pick, qty, message }) });
-          r = await res.json(); if (!res.ok) r.ok = false;
-        } catch (err) { r = { ok: false, error: 'Could not reach the app server.' }; }
-        busy = false;
-        if (r.ok) { const s = sets.find(x => x.id === pick); draw(`Sent ${qty} ${esc(s.name)} booster${qty > 1 ? 's' : ''} to <b>${esc(toName)}</b>.<br>They get ${qty > 1 ? 'them' : 'it'} the next time they open the app.`, true); }
-        else draw(esc(r.error || 'Something went wrong.'));
-      });
-    }
-
     async function loadVisit() {
       document.getElementById('editToggle').hidden = true;
       document.documentElement.setAttribute('data-visiting', '1');
-      const banner = document.getElementById('visitBanner');
-      banner.hidden = false;
-      banner.innerHTML = '<a href="profile.html">← My profile</a><span>Loading profile …</span>';
+      const myTab = document.getElementById('myProfileTab');
+      document.body.appendChild(myTab); // direkt am Body, sonst haelt ein Eltern-Element (Filter/Transform) position:fixed fest
+      myTab.hidden = false;
       try {
         const res = await fetch(`/api/friends/profile?${new URLSearchParams({ id: VISIT })}`);
         const snap = await parseApiResponse(res);
@@ -1967,14 +1914,10 @@
         // Die ganze Seite im Theme des Besitzers (nur fuer diesen Besuch)
         if (snap.theme && snap.theme !== 'classic') document.documentElement.setAttribute('data-theme', snap.theme);
         else document.documentElement.removeAttribute('data-theme');
-        const when = snap.updatedAt ? new Date(snap.updatedAt).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
-        banner.innerHTML = `<a href="profile.html">← My profile</a><span>Visiting <b>${esc(snap.username || '')}</b>${snap.summoner ? ` · stats of ${esc(snap.summoner)}` : ''}${when ? ` · updated ${when}` : ''}</span><button type="button" class="gift-btn" id="giftBtn">🎁 Gift a booster</button><a class="gift-btn" href="album.html?trade=${encodeURIComponent(VISIT)}">⇄ Trade stickers</a>`;
-        document.getElementById('giftBtn').addEventListener('click', () => openGiftDialog(VISIT, snap.username || 'your friend'));
         document.title = `${snap.username || 'Profile'} – Three-Trick-Pony`;
-        renderVisitChallenge(snap);
         if (layout.some(w => w.type === 'favChamp')) await loadChampionList();
       } catch (e) {
-        banner.innerHTML = `<a href="profile.html">← My profile</a><span>${esc(e.message)}</span>`;
+        const err = document.getElementById('visitError'); err.hidden = false; err.textContent = e.message;
       }
       render();
     }

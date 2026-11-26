@@ -660,8 +660,9 @@
         <option value="easy">Easy</option>
         <option value="normal">Normal</option>
         <option value="hard">Hard</option>
-        <option value="very_hard">Very Hard</option>
-        <option value="majestic">Majestic</option>
+        <!-- v6.13.0: nur noch 4 Stufen, Majestic erst nach Easy+Normal+Hard
+             geschafft (siehe applyMajesticLock) -->
+        <option value="majestic" id="majesticOption" disabled title="Clear a challenge on Easy, Normal and Hard to unlock">🔒 Majestic</option>
       </select>
     </div>
 
@@ -954,7 +955,37 @@
     }
 
     function loadChallengeLevel() {
-      try { return localStorage.getItem(STORAGE_KEY_CHALLENGE_LEVEL) || ''; } catch (e) { return ''; }
+      try {
+        const v = localStorage.getItem(STORAGE_KEY_CHALLENGE_LEVEL) || '';
+        // v6.13.0: das alte Very Hard ist jetzt Majestic
+        if (v === 'very_hard') { localStorage.setItem(STORAGE_KEY_CHALLENGE_LEVEL, 'majestic'); return 'majestic'; }
+        return v;
+      } catch (e) { return ''; }
+    }
+
+    // Majestic ist ausgegraut, bis je eine Challenge auf Easy, Normal und Hard
+    // geschafft ist (LP-Ziel erreicht) - Stand kommt vom Server (Account).
+    async function applyMajesticLock() {
+      const opt = document.getElementById('majesticOption');
+      let view = null;
+      try {
+        const res = await fetch('/api/challenge/difficulty-unlocks?mode=ttp');
+        if (res.ok) view = await res.json();
+      } catch (e) {}
+      if (!view) return;
+      const unlocked = Boolean(view.majesticUnlocked);
+      opt.disabled = !unlocked;
+      opt.textContent = unlocked ? 'Majestic' : '🔒 Majestic';
+      const c = view.clears || {};
+      const missing = ['easy', 'normal', 'hard'].filter(l => !c[l]).map(l => l[0].toUpperCase() + l.slice(1));
+      opt.title = unlocked ? 'The hardest difficulty' : `Clear a challenge on ${missing.join(', ')} to unlock`;
+      challengeLevelSelect.title = unlocked ? '' : `Majestic unlocks after clearing a challenge on Easy, Normal and Hard (missing: ${missing.join(', ')})`;
+      // Gespeichertes Majestic ohne Freischaltung und ohne laufende Challenge -> leeren
+      if (!unlocked && challengeLevelSelect.value === 'majestic' && !isChallengeLocked()) {
+        challengeLevelSelect.value = '';
+        saveChallengeLevel();
+        updateChecklist();
+      }
     }
 
     function saveLpGoal() {
@@ -1669,6 +1700,7 @@
     saveSummonerName();
 
     challengeLevelSelect.value = loadChallengeLevel();
+    applyMajesticLock();
     const savedLpGoal = loadLpGoal();
     lpGoalTierSelect.value = savedLpGoal.tier;
     lpGoalDivisionSelect.value = savedLpGoal.division;

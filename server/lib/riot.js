@@ -221,7 +221,15 @@ async function getMatchTimeline(matchId, apiKey, regionalHost) {
   return data;
 }
 
+// Offizielle LoL-Challenges eines Spielers (Challenges-V1), z.B. Riots
+// "Angepasst an alle Situationen" (602002) = Arena-God-Titel.
+async function getPlayerChallenges(puuid, apiKey, platformHost) {
+  const url = `https://${platformHost}.api.riotgames.com/lol/challenges/v1/player-data/${puuid}`;
+  return riotFetch(url, apiKey);
+}
+
 module.exports = {
+  getPlayerChallenges,
   getAccountByRiotId,
   getAccountByPuuid,
   getAllMatchIds,

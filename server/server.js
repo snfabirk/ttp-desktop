@@ -3,7 +3,9 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const fs = require('fs');
 const { CACHE_DIR } = require('./lib/dataPaths');
 const express = require('express');
-const { getAccountByRiotId, getAccountByPuuid, getAllMatchIds, getMatch, getMatchTimeline, getLeagueEntriesByPuuid, getSummonerByPuuid, getActiveGame } = require('./lib/riot');
+const { getAccountByRiotId, getAccountByPuuid, getAllMatchIds, getMatch, getMatchTimeline, getLeagueEntriesByPuuid, getSummonerByPuuid, getActiveGame, getPlayerChallenges } = require('./lib/riot');
+const arena = require('./lib/arena');
+const arenaStats = require('./lib/arenaStats');
 const { loadPersistedApiKey, savePersistedApiKey } = require('./lib/envStore');
 const { createBucket, addMatchToBucket, finalizeBucket, isRemake, computeStreaks } = require('./lib/stats');
 const { createJob, updateProgress, completeJob, failJob, getJob } = require('./lib/jobs');
@@ -21,7 +23,7 @@ const progression = require('./lib/progression');
 const cloud = require('./lib/cloud');
 const challengeRuns = require('./lib/challengeRuns');
 const trophyEvents = require('./lib/trophyEvents');
-const { startEntry: startHistoryEntry, updateEntry: updateHistoryEntry, listEntries: listHistoryEntries, deleteEntry: deleteHistoryEntry } = require('./lib/challengeHistory');
+const { startEntry: startHistoryEntry, updateEntry: updateHistoryEntry, listEntries: listHistoryEntries, deleteEntry: deleteHistoryEntry, entryGoalReached, clearedLevelsAllSummoners } = require('./lib/challengeHistory');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -742,7 +744,9 @@ function progressionContext(src) {
   return {
     role: src.role || '', challengeLevel: src.challengeLevel || '', champions: Array.isArray(champions) ? champions : [],
     // v6.0: Quests + Pass nur mit laufender Challenge des aktiven Summoners
-    challengeActive: !!activeChallenge().run
+    challengeActive: !!activeChallenge().run,
+    // v6.13.0: Arena-Challenge des aktiven Summoners haelt den Pass ebenfalls aktiv
+    arenaActive: (() => { const { acc } = activeChallenge(); return !!(acc && challengeRuns.getRun(challengeRuns.runKey(acc.puuid, 'arena'))); })()
   };
 }
 
@@ -795,7 +799,9 @@ function buildProfileStats(puuid) {
       platinum: entries.filter(e => e.platinumUnlocked).length,
       bestTrophies: best ? best.unlockedCount || 0 : 0,
       firstStarted: entries.length ? entries[entries.length - 1].since : null // listEntries: neueste zuerst
-    }
+    },
+    // v6.13.0: Arena-Widgets - nur Spiele aus Arena-Challenges + Titel
+    arena: puuid ? { ...progression.arenaLifetime(puuid), titles: arenaStats.titles(puuid) } : null
   };
 }
 // Welcher Summoner die Profil-Stats liefert (v6.7.1, Nutzer): die Wahl im
@@ -837,6 +843,16 @@ function challengeSummary(puuid, run) {
     trophies: tr && tr.unlockedCount !== null ? { unlocked: tr.unlockedCount, total: tr.totalCount } : (entry ? { unlocked: entry.unlockedCount || 0, total: entry.totalCount || 21 } : null)
   };
 }
+// Laufende Arena-Challenge fuers Freundesprofil (v6.13.0) - ohne Riot-Abruf,
+// nur aus dem gespeicherten Lauf. Verdeckte Champions werden nicht verraten.
+function arenaSummary(puuid) {
+  const run = challengeRuns.getRun(challengeRuns.runKey(puuid, 'arena'));
+  if (!run) return null;
+  const done = Object.keys(run.won || {});
+  const count = run.variant === 'ultimate' ? done.length : done.filter(k => (run.pool || []).includes(k)).length;
+  const target = (arena.VARIANTS[run.variant] || {}).target || null; // null = alle (Ultimate)
+  return { variant: run.variant, since: run.since, count, target };
+}
 // Aktiver Summoner + laufende Challenge (v6.3.0) - fuer den Hintergrund-
 // Refresh im Hauptprozess, der vorher den localStorage des Fensters las.
 app.get('/api/challenge/active', (req, res) => {
@@ -868,6 +884,8 @@ app.post('/api/public-profile/publish', cloudRoute(async req => {
     pool: run ? { champions: run.champions.map(c => ({ id: c.id, name: c.name })), mainRole: run.mainRole } : null,
     activity: myActivity(puuid, run),
     challenge: run ? challengeSummary(puuid, run) : null,
+    // v6.13.0: laufende Arena-Challenge des aktiven Summoners
+    arenaChallenge: puuid ? arenaSummary(puuid) : null,
     theme: typeof body.theme === 'string' ? body.theme.slice(0, 40) : 'classic',
     // fuer wen die Spiel-Statistiken gelten (Freunde sehen den gewaehlten Summoner)
     summoner: sAcc ? `${sAcc.game_name}#${sAcc.tag_line}` : null
@@ -1077,6 +1095,7 @@ app.post('/api/challenge-history/update', (req, res) => {
     champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp,
     startRankTier, startRankDivision, startRankLp
   });
+  noteDifficultyClear(entry);
   res.json({ entry });
 });
 
@@ -1112,7 +1131,7 @@ app.post('/api/challenge-history/close', async (req, res) => {
         unlockedCount: progress.unlockedCount,
         totalCount: progress.totalCount,
         platinumUnlocked: progress.platinumUnlocked,
-        trophies: progress.trophies.map(({ id, name, current, target, percent, unlocked }) => ({ id, name, current, target, percent, unlocked }))
+        trophies: progress.trophies.map(({ id, name, current, target, percent, unlocked, locked, lockedFrom, maxDeaths }) => ({ id, name, current, target, percent, unlocked, locked, lockedFrom, maxDeaths }))
       };
       recomputed = true;
     } catch (e) {
@@ -1128,8 +1147,27 @@ app.post('/api/challenge-history/close', async (req, res) => {
     ended: true,
     champions, role, challengeLevel, lpGoalTier, lpGoalDivision, lpGoalLp
   });
+  noteDifficultyClear(entry);
   clearFinalizedState(puuid);
   res.json({ entry, recomputed });
+});
+
+// Majestic-Freischaltung (v6.13.0): sobald eine Challenge ihr LP-Ziel
+// erreicht, zaehlt ihr Level als "geschafft" (am Account, siehe
+// progression.recordDifficultyClears).
+function noteDifficultyClear(entry) {
+  try {
+    if (entryGoalReached(entry) && entry.challengeLevel) progression.recordDifficultyClears('ttp', [entry.challengeLevel]);
+  } catch (e) { /* nicht kritisch */ }
+}
+
+app.get('/api/challenge/difficulty-unlocks', (req, res) => {
+  const mode = String(req.query.mode || 'ttp');
+  // Backfill aus der lokalen History (Challenges vor v6.13.0) - schreibt nur bei Aenderung
+  const view = mode === 'ttp'
+    ? progression.recordDifficultyClears('ttp', clearedLevelsAllSummoners())
+    : progression.getDifficultyUnlocks(mode);
+  res.json(view);
 });
 
 app.get('/api/challenge-history/list', (req, res) => {
@@ -1237,6 +1275,10 @@ async function runAccountScan() {
     });
   }
   const added = xpGames.length ? progression.creditMatches(xpGames) : [];
+  // v6.13.0: laufende Arena-Challenge im selben Takt mit abarbeiten
+  if (challengeRuns.getRun(challengeRuns.runKey(acc.puuid, 'arena'))) {
+    try { await processArena(acc.puuid); } catch (e) { /* naechster Takt */ }
+  }
   return { credited: added.length };
 }
 app.post('/api/account-xp/scan', async (req, res) => {
@@ -1301,6 +1343,144 @@ app.post('/api/challenge/run/import', cloudRoute(async req => {
   if (existing || challengeRuns.getRecord(puuid)) return { run: existing, imported: false };
   return { run: challengeRuns.setRun(puuid, run).run, imported: true };
 }));
+// ----- Arena-Challenges (v6.13.0, lib/arena.js) - eigener Lauf pro Summoner
+// neben der Ranked-Challenge (Schluessel "puuid:arena", siehe challengeRuns.runKey)
+const arenaKey = puuid => challengeRuns.runKey(puuid, 'arena');
+function httpError(status, message) { const e = new Error(message); e.status = status; return e; }
+
+app.get('/api/arena/availability', cloudRoute(async req => arena.availability({ force: req.query.force === '1' })));
+
+app.get('/api/arena/run', cloudRoute(async req => {
+  const puuid = String(req.query.puuid || '');
+  if (!puuid) throw httpError(400, 'puuid is required.');
+  const run = await cloud.getChallengeRun(arenaKey(puuid));
+  return { run: run ? { variant: run.variant, since: run.since } : null };
+}));
+
+app.post('/api/arena/start', cloudRoute(async req => {
+  const { puuid, variant } = req.body || {};
+  if (!puuid) throw httpError(400, 'puuid is required.');
+  if (!arena.VARIANTS[variant]) throw httpError(400, 'Unknown arena challenge.');
+  const avail = await arena.availability();
+  if (!avail.arena.available) throw httpError(409, 'Arena is currently not in the game.');
+  if (await cloud.getChallengeRun(arenaKey(puuid))) throw httpError(409, 'This summoner already has an Arena challenge running.');
+  const champs = await arena.allChampions();
+  if (!champs.list || champs.list.length < 100) throw httpError(503, 'Champion list not available - try again in a moment.');
+  challengeRuns.setRun(arenaKey(puuid), arena.newRun(variant, champs.list));
+  return { ok: true };
+}));
+
+app.post('/api/arena/reset', cloudRoute(async req => {
+  const { puuid } = req.body || {};
+  if (!puuid) throw httpError(400, 'puuid is required.');
+  challengeRuns.clearRun(arenaKey(puuid));
+  return { ok: true };
+}));
+
+// Neue Arena-Spiele abarbeiten (Rollen, Platz 1, XP, Arena-Quests). Ein
+// Durchlauf pro Summoner gleichzeitig - aufgerufen von /progress und dem
+// Hintergrund-Scan (runAccountScan).
+const arenaBusy = new Map();
+function processArena(puuid) {
+  if (arenaBusy.has(puuid)) return arenaBusy.get(puuid);
+  const job = (async () => {
+    const key = arenaKey(puuid);
+    const run = await cloud.getChallengeRun(key);
+    const champs = await arena.allChampions();
+    if (!run) return { run: null, champs, games: [] };
+    const startTime = Math.floor(new Date(run.since).getTime() / 1000);
+    const ids = new Set();
+    for (const queueId of arena.ARENA_QUEUES) {
+      (await getAllMatchIds(puuid, { queueId, startTime }, config.apiKey, REGION)).forEach(id => ids.add(id));
+    }
+    const riotId = await resolveRiotId(puuid, config.apiKey);
+    const findMe = m => findMeAndOpponent(m, puuid, riotId).me;
+    const matches = [];
+    for (const id of ids) {
+      try { matches.push(await getMatch(id, config.apiKey, REGION)); } catch (e) { /* naechster Durchlauf */ }
+    }
+    const before = JSON.stringify(run);
+    const fresh = arena.advanceRun(run, matches, findMe, champs.list);
+    if (JSON.stringify(run) !== before) challengeRuns.setRun(key, run);
+    if (fresh.length) {
+      progression.creditMatches(fresh.map(({ match, me, rolled, placement }) => ({
+        matchId: match.metadata.matchId, puuid, gameCreation: match.info.gameCreation,
+        mode: 'arena', category: rolled ? 'arenaRolled' : 'arenaOther', pass: rolled,
+        win: placement > 0 && placement <= 4, kills: me.kills, deaths: me.deaths, assists: me.assists,
+        champId: me.championName || '', champName: me.championName || '',
+        stats: { placement, duration: match.info.gameDuration || 0 }
+      })));
+    }
+    progression.arenaQuests({ credit: true });
+    // Geschafft? -> Titel beim Summoner (Profil-Widget "Arena Titles")
+    const doneView = arena.view(run, champs.list, [], progression.berlinDayKey());
+    if (doneView.completed) arenaStats.recordTitle(puuid, run.variant);
+    const rolledIds = progression.arenaRolledMatchIds();
+    const games = matches.map(m => {
+      const me = findMe(m);
+      if (!me || (m.info.gameDuration || 0) < arena.MIN_GAME_SECONDS) return null;
+      const partner = (m.info.participants || []).find(p => p !== me && p.playerSubteamId && p.playerSubteamId === me.playerSubteamId);
+      return {
+        matchId: m.metadata.matchId, at: m.info.gameEndTimestamp || m.info.gameCreation,
+        champId: me.championName, placement: me.placement || me.subteamPlacement || 0,
+        kills: me.kills, deaths: me.deaths, assists: me.assists,
+        counted: rolledIds.has(m.metadata.matchId),
+        partner: partner ? { champId: partner.championName } : null
+      };
+    }).filter(Boolean);
+    return { run, champs, games };
+  })().finally(() => arenaBusy.delete(puuid));
+  arenaBusy.set(puuid, job);
+  return job;
+}
+
+async function arenaPayload(puuid, { process = true } = {}) {
+  const { run, champs, games } = process ? await processArena(puuid) : { run: await cloud.getChallengeRun(arenaKey(puuid)), champs: await arena.allChampions(), games: [] };
+  const base = { champions: champs.list, ddragonVersion: champs.version, quests: progression.arenaQuests() };
+  if (!run) return { ...base, run: null };
+  let riotGod = null;
+  try {
+    const pd = await getPlayerChallenges(puuid, config.apiKey, PLATFORM);
+    const c = (pd.challenges || []).find(x => x.challengeId === 602002);
+    if (c) riotGod = { value: c.value, level: c.level, target: 60 };
+  } catch (e) {}
+  return { ...base, run: { variant: run.variant, since: run.since }, progress: arena.view(run, champs.list, games, progression.berlinDayKey()), riotGod };
+}
+
+app.get('/api/arena/progress', requireApiKey, cloudRoute(async req => {
+  const puuid = String(req.query.puuid || '');
+  if (!puuid) throw httpError(400, 'puuid is required.');
+  return arenaPayload(puuid);
+}));
+
+// Roll-Knopf: neues Paar, wenn keins aktiv ist (Start / nach einem Spiel mit dem Paar)
+app.post('/api/arena/roll', requireApiKey, cloudRoute(async req => {
+  const { puuid } = req.body || {};
+  if (!puuid) throw httpError(400, 'puuid is required.');
+  await processArena(puuid); // erst alle gespielten Spiele werten
+  const key = arenaKey(puuid);
+  const run = challengeRuns.getRun(key);
+  if (!run) throw httpError(404, 'No Arena challenge running.');
+  const champs = await arena.allChampions();
+  if (!arena.roll(run, champs.list)) throw httpError(409, 'Play one of your rolled champions first.');
+  challengeRuns.setRun(key, run);
+  return arenaPayload(puuid);
+}));
+
+// 1 Reroll pro Tag (Berliner Tageswechsel wie die Quests)
+app.post('/api/arena/reroll', requireApiKey, cloudRoute(async req => {
+  const { puuid } = req.body || {};
+  if (!puuid) throw httpError(400, 'puuid is required.');
+  await processArena(puuid); // erst alle gespielten Spiele werten
+  const key = arenaKey(puuid);
+  const run = challengeRuns.getRun(key);
+  if (!run) throw httpError(404, 'No Arena challenge running.');
+  const champs = await arena.allChampions();
+  if (!arena.reroll(run, champs.list, progression.berlinDayKey())) throw httpError(409, 'Reroll already used today.');
+  challengeRuns.setRun(key, run);
+  return arenaPayload(puuid);
+}));
+
 app.get('/api/riot-accounts', cloudRoute(async () => ({ accounts: await cloud.listRiotAccounts() })));
 app.post('/api/riot-accounts/verify/start', cloudRoute(async req => cloud.startVerification({ ...(req.body || {}), riot: riotForCloud })));
 app.post('/api/riot-accounts/verify/check', cloudRoute(async req => cloud.checkVerification({ ...(req.body || {}), riot: riotForCloud })));

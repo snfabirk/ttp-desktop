@@ -105,7 +105,7 @@
     { href: 'album.html', label: 'Album' },
     // Trophies sind challenge-gebunden (v5.32.0) - kein eigener Eintrag mehr,
     // nur ueber die Challenge-Seite erreichbar.
-    { href: 'challenge.html', label: 'Challenge', also: ['role.html', 'champion.html', 'trophies.html'] },
+    { href: 'challenge.html', label: 'Challenge', also: ['role.html', 'champion.html', 'trophies.html', 'arena.html'] },
     { href: 'challenge.html?view=pass', label: 'Pass' },
     { href: 'shop.html', label: 'Shop' }
   ];
@@ -536,6 +536,85 @@
     if (!res.ok) throw new Error(data.error || 'Something went wrong.');
     return data;
   }
+  // Booster verschenken (v6.6.0; seit v6.13.0 hier, aus der Freundesliste geoeffnet):
+  // aus den eigenen ungeoeffneten Boostern, optional mit kurzer Nachricht.
+  async function openGiftDialog(toId, toName) {
+    if (document.querySelector('.gift-ov')) return;
+    let album = null;
+    try { album = await (await fetch('/api/album')).json(); } catch (e) {}
+    const sets = ((album && album.sets) || []).filter(s => s.owned > 0);
+    let pick = sets[0] ? sets[0].id : null, qty = 1, busy = false;
+    const ov = document.createElement('div'); ov.className = 'gift-ov';
+    const draw = (msg = '', ok = false) => {
+      const cur = sets.find(s => s.id === pick);
+      const max = cur ? Math.min(10, cur.owned) : 1;
+      qty = Math.min(qty, max);
+      const keepText = ov.querySelector('#giftMsg') ? ov.querySelector('#giftMsg').value : '';
+      ov.innerHTML = `<div class="gift-box" role="dialog" aria-label="Gift a booster">
+        <button type="button" class="gift-x" aria-label="Close">✕</button>
+        <h3>🎁 Gift a booster</h3>
+        <p class="gift-to">to <b>${esc(toName)}</b></p>
+        ${ok ? `<p class="gift-done">${msg}</p><button type="button" class="gift-send" data-close>Done</button>` : sets.length ? `
+        <div class="gift-sets">${sets.map(s => `<button type="button" class="gift-set${s.id === pick ? ' on' : ''}${s.special ? ' special' : ''}" data-pick="${s.id}"><b>${esc(s.name)}</b><span>${s.owned} unopened</span></button>`).join('')}</div>
+        <div class="gift-qty"><span>Boosters</span><span class="dk-ctrl"><button type="button" data-q="-1"${qty <= 1 ? ' disabled' : ''}>−</button><b>${qty}</b><button type="button" data-q="1"${qty >= max ? ' disabled' : ''}>+</button></span></div>
+        <input id="giftMsg" class="gift-msg" maxlength="80" placeholder="Add a message (optional)" value="${esc(keepText)}">
+        <p class="gift-err">${msg}</p>
+        <button type="button" class="gift-send" data-send${busy ? ' disabled' : ''}>Send ${qty} booster${qty > 1 ? 's' : ''}</button>` : `<p class="gift-err" style="color:var(--text-dim)">You have no unopened boosters to give.<br>Get some in the <a href="shop.html">Shop</a> first.</p>`}
+      </div>`;
+    };
+    draw();
+    document.body.appendChild(ov);
+    requestAnimationFrame(() => ov.classList.add('on'));
+    const close = () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 200); };
+    ov.addEventListener('click', async e => {
+      if (e.target === ov || e.target.closest('.gift-x') || e.target.closest('[data-close]')) { close(); return; }
+      const p = e.target.closest('[data-pick]'), q = e.target.closest('[data-q]'), send = e.target.closest('[data-send]');
+      if (p) { pick = p.dataset.pick; draw(); return; }
+      if (q) { qty += Number(q.dataset.q); draw(); return; }
+      if (!send || busy) return;
+      busy = true;
+      const message = ov.querySelector('#giftMsg').value;
+      send.disabled = true; send.textContent = 'Sending …';
+      let r;
+      try {
+        const res = await fetch('/api/gifts/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: toId, set: pick, qty, message }) });
+        r = await res.json(); if (!res.ok) r.ok = false;
+      } catch (err) { r = { ok: false, error: 'Could not reach the app server.' }; }
+      busy = false;
+      if (r.ok) { const s = sets.find(x => x.id === pick); draw(`Sent ${qty} ${esc(s.name)} booster${qty > 1 ? 's' : ''} to <b>${esc(toName)}</b>.<br>They get ${qty > 1 ? 'them' : 'it'} the next time they open the app.`, true); }
+      else draw(esc(r.error || 'Something went wrong.'));
+    });
+  }
+
+  window.ttpOpenGiftDialog = openGiftDialog;
+
+  // Laufende Challenges eines Freundes fuer die Detail-Ansicht (v6.13.0, vorher
+  // als Kasten ueber dem Freundesprofil)
+  const champIconUrl = id => `https://ddragon.leagueoflegends.com/cdn/${window.TTP_DDRAGON_VERSION || '16.22.1'}/img/champion/${id}.png`;
+  function friendChallengesHtml(snap) {
+    const RN = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'Bot', UTILITY: 'Support' };
+    const LV = { easy: 'Easy', normal: 'Normal', hard: 'Hard', majestic: 'Majestic', very_hard: 'Majestic' };
+    const rk = r => (r && r.tier ? `${r.tier.charAt(0) + r.tier.slice(1).toLowerCase()}${['MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(r.tier) ? '' : ` ${r.rank || r.division || ''}`}${r.leaguePoints !== undefined || r.lp !== undefined ? ` · ${r.leaguePoints !== undefined ? r.leaguePoints : r.lp} LP` : ''}` : '–');
+    const day = since => Math.max(1, Math.ceil((Date.now() - new Date(since).getTime()) / 86400000));
+    const c = snap.challenge, a = snap.arenaChallenge;
+    let html = '';
+    html += c ? `<div class="fd-card"><h4>Ranked challenge</h4>
+        <div class="fd-meta">${RN[c.mainRole] || '–'} / ${RN[c.secondRole] || '–'} · ${LV[c.level] || '–'} · day ${day(c.since)}</div>
+        <div class="fd-champs">${(c.champions || []).map(ch => `<img src="${champIconUrl(ch.id)}" alt="" title="${esc(ch.name)}">`).join('')}</div>
+        <div class="fd-rank"><small>Start</small><span>${rk(c.startRank)}</span><small>Now</small><span>${rk(snap.rank)}</span><small>Goal</small><span>${rk(c.lpGoal)}</span></div>
+        <div class="fd-trophies">🏆 ${c.trophies ? `${c.trophies.unlocked} / ${c.trophies.total}` : '–'}</div></div>`
+      : '<div class="fd-card"><h4>Ranked challenge</h4><span class="fd-none">None running</span></div>';
+    if (a) {
+      const META = { riot: ['⚡', 'Riot God'], elder: ['🔱', 'Elder God'], ultimate: ['👑', 'Ultimate God'] };
+      const m = META[a.variant] || META.riot;
+      const pct = a.target ? Math.min(100, Math.round((a.count / a.target) * 100)) : 0;
+      html += `<div class="fd-card"><h4>${m[0]} Arena · ${m[1]}</h4><div>${a.count} / ${a.target || 'all'} champions · day ${day(a.since)}</div>${a.target ? `<div class="fd-bar"><span style="width:${pct}%"></span></div>` : ''}</div>`;
+    } else {
+      html += '<div class="fd-card"><h4>Arena challenge</h4><span class="fd-none">None running</span></div>';
+    }
+    return html;
+  }
+
   function initFriends(dock) {
     const tab = dock.querySelector('.friends-tab'), badge = dock.querySelector('.fr-badge');
     const body = dock.querySelector('.fp-body'), search = dock.querySelector('.fp-search');
@@ -546,11 +625,37 @@
     clearBtn.addEventListener('click', () => { clearSearch(); input.focus(); });
     let state = null;
 
-    const row = (f, actions, clickable) => `<div class="fp-row${clickable ? ' link' : ''}"${clickable ? ` data-open="${f.userId}" title="Open ${esc(f.username)}'s profile"` : ''}>
+    const row = (f, actions, clickable) => `<div class="fp-row${clickable ? ' link' : ''}"${clickable ? ` data-open="${f.userId}" title="Show ${esc(f.username)}"` : ''}>
         <img src="${avatarSrc(f.avatar)}" alt="" onerror="this.src='avatar-placeholder.svg'">
         <span class="fp-name">${esc(f.username)}${f.level ? `<small>Lv ${f.level}</small>` : ''}</span>${actions}</div>`;
+    // Detail-Ansicht eines Freundes (v6.13.0): Profil besuchen, Geschenk,
+    // Tausch und seine laufenden Challenges - alles hier statt auf dem Profil.
+    let detail = null; // userId der offenen Detail-Ansicht
+    async function openDetail(userId) {
+      const f = state && state.friends.find(x => x.userId === userId);
+      if (!f) return;
+      detail = userId;
+      const head = `<button type="button" class="fd-back" data-back="1">← Friends</button>
+        <div class="fd-head"><img src="${avatarSrc(f.avatar)}" alt="" onerror="this.src='avatar-placeholder.svg'"><div><b>${esc(f.username)}</b>${f.level ? `<small>Level ${f.level}</small>` : ''}</div></div>
+        <div class="fd-actions">
+          <a class="fd-btn main" href="profile.html?u=${encodeURIComponent(userId)}">Visit profile</a>
+          <button type="button" class="fd-btn" data-gift="1">🎁 Gift a booster</button>
+          <a class="fd-btn" href="album.html?trade=${encodeURIComponent(userId)}">⇄ Trade stickers</a>
+        </div>`;
+      body.innerHTML = head + '<div class="fd-card"><span class="fd-none">Loading …</span></div>';
+      try {
+        const snap = await friendsApi(`/api/friends/profile?${new URLSearchParams({ id: userId })}`);
+        if (detail !== userId) return;
+        const when = snap.updatedAt ? new Date(snap.updatedAt).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+        body.innerHTML = head + friendChallengesHtml(snap) + (when ? `<div class="fd-updated">updated ${when}</div>` : '');
+      } catch (e) {
+        if (detail === userId) body.innerHTML = head + `<div class="fp-hint err">${esc(e.message)}</div>`;
+      }
+    }
+
     function render() {
       if (!state) return;
+      if (detail) return; // Detail-Ansicht offen - Liste nicht drueberzeichnen
       const n = state.incoming.length;
       badge.hidden = !n;
       badge.textContent = n;
@@ -580,7 +685,8 @@
       tab.setAttribute('aria-expanded', open ? 'true' : 'false');
       clearSearch();
       search.hidden = true; // Suchleiste beim Ein-/Ausfahren wieder zuklappen (Nutzerwunsch)
-      if (open) load();
+      detail = null;
+      if (open) load(); else render();
     });
     dock.querySelector('.fp-add').addEventListener('click', () => {
       search.hidden = !search.hidden;
@@ -609,6 +715,12 @@
     dock.addEventListener('click', async e => {
       const add = e.target.closest('[data-add]'), acc = e.target.closest('[data-accept]'), rm = e.target.closest('[data-remove]');
       const open = !add && !acc && !rm && e.target.closest('[data-open]');
+      if (e.target.closest('[data-back]')) { detail = null; render(); return; }
+      if (e.target.closest('[data-gift]')) {
+        const f = state && state.friends.find(x => x.userId === detail);
+        if (f) openGiftDialog(f.userId, f.username);
+        return;
+      }
       try {
         if (add) { add.disabled = true; state = await friendsApi('/api/friends/request', { userId: add.dataset.add }); add.outerHTML = '<small class="fp-known">sent</small>'; render(); }
         else if (acc) { acc.disabled = true; state = await friendsApi('/api/friends/accept', { id: acc.dataset.accept }); render(); }
@@ -619,7 +731,7 @@
             return;
           }
           rm.disabled = true; state = await friendsApi('/api/friends/remove', { id: rm.dataset.remove }); render();
-        } else if (open) location.href = `profile.html?u=${encodeURIComponent(open.dataset.open)}`;
+        } else if (open) openDetail(open.dataset.open);
       } catch (err) { body.insertAdjacentHTML('afterbegin', `<div class="fp-hint err">${esc(err.message)}</div>`); }
     });
     // Offene Anfragen als Zahl am Reiter, auch wenn die Liste zu ist

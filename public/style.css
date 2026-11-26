@@ -1361,3 +1361,97 @@ html[data-theme="light"] .booster .bwhen.open .dot { background: var(--green); b
 .xmas-calm[data-calm="still"] b { color: var(--gold); }
 /* im Profil-Editor liegt dort die Seitenleiste */
 body.editing .xmas-calm { display: none; }
+
+/* Modus-Umschalter Ranked | Arena (v6.13.0) - challenge.html + arena.html.
+   Pro Summoner laeuft je Modus eine eigene Challenge. */
+.mode-switch {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  width: max-content;
+  margin: 0 auto 10px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--panel-bg);
+}
+.mode-switch a {
+  padding: 4px 16px;
+  border-radius: 14px;
+  color: var(--text-dim);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.mode-switch a:hover { color: var(--gold); }
+.mode-switch a.on { background: color-mix(in srgb, var(--gold) 22%, transparent); color: var(--gold); }
+
+/* Geschenk-Dialog (v6.6.0, seit v6.13.0 global - wird aus der Freundesliste geoeffnet) */
+.gift-ov { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; background: rgba(4,8,16,.7); backdrop-filter: blur(4px); opacity: 0; transition: opacity .2s; }
+.gift-ov.on { opacity: 1; }
+.gift-box { position: relative; width: min(380px, 92vw); box-sizing: border-box; padding: 22px 24px; border-radius: 16px; border: 1px solid var(--border); background: var(--panel-bg, #111827); box-shadow: 0 20px 50px rgba(0,0,0,.6); font-family: Georgia, serif; text-align: center; }
+.gift-box h3 { margin: 0; font-family: 'Cinzel', Georgia, serif; color: var(--gold); font-weight: normal; }
+.gift-to { margin: 4px 0 14px; color: var(--text-dim); font-size: .85rem; }
+.gift-to b { color: var(--text); font-weight: normal; }
+.gift-x { position: absolute; top: 10px; right: 12px; background: none; border: none; color: var(--text-dim); font-size: 1rem; cursor: pointer; }
+.gift-sets { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.gift-set { display: flex; justify-content: space-between; align-items: center; font: inherit; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); cursor: pointer; }
+.gift-set b { font-family: 'Cinzel', Georgia, serif; font-weight: normal; color: var(--text); font-size: .85rem; }
+.gift-set.special b::before { content: '\2605  '; color: #e8d43a; }
+.gift-set span { font-size: .75rem; }
+.gift-set.on { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 10%, transparent); }
+.gift-qty { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: var(--text-dim); font-size: .85rem; }
+.gift-qty .dk-ctrl { display: flex; align-items: center; gap: 10px; }
+.gift-qty .dk-ctrl button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; font: inherit; font-size: 1.1rem; line-height: 1; padding: 0; }
+.gift-qty .dk-ctrl button:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+.gift-qty .dk-ctrl button:disabled { opacity: .35; cursor: default; }
+.gift-qty .dk-ctrl b { min-width: 24px; color: var(--text); font-weight: normal; font-size: 1.3rem; font-family: 'Cinzel', Georgia, serif; }
+.gift-msg { width: 100%; box-sizing: border-box; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font: inherit; font-size: .85rem; }
+.gift-err { min-height: 1.1em; margin: 8px 0; color: var(--red); font-size: .8rem; line-height: 1.5; }
+.gift-done { margin: 6px 0 16px; color: var(--text-dim); font-size: .88rem; line-height: 1.6; }
+.gift-done b { color: var(--gold); font-weight: normal; }
+.gift-send { font: inherit; font-size: .9rem; padding: 8px 22px; border-radius: 18px; border: 1px solid var(--gold); background: var(--gold); color: var(--bg); cursor: pointer; }
+.gift-send:disabled { opacity: .6; cursor: default; }
+
+/* Freund-Detail in der Freundesliste (v6.13.0): Aktionen + laufende Challenges */
+.fd-back { align-self: flex-start; background: none; border: none; padding: 2px 0; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.78rem; cursor: pointer; }
+.fd-back:hover { color: var(--gold); }
+.fd-head { display: flex; align-items: center; gap: 10px; margin: 6px 0 10px; }
+.fd-head img { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); }
+.fd-head b { display: block; color: var(--text); font-family: 'Cinzel', Georgia, serif; font-weight: normal; font-size: 0.95rem; }
+.fd-head small { color: var(--gold); font-family: Georgia, serif; font-size: 0.72rem; }
+.fd-actions { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.fd-actions .fd-btn { display: block; text-align: center; padding: 6px 10px; border-radius: 16px; border: 1px solid var(--border); background: none; color: var(--text); font-family: Georgia, serif; font-size: 0.8rem; text-decoration: none; cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease; }
+.fd-actions .fd-btn:hover { border-color: var(--gold); color: var(--gold); }
+.fd-actions .fd-btn.main { border-color: var(--gold); color: var(--gold); font-family: 'Cinzel', Georgia, serif; letter-spacing: 1px; }
+.fd-actions .fd-btn.main:hover { background: var(--gold); color: var(--bg); }
+.fd-card { padding: 8px 10px; margin-bottom: 8px; border: 1px solid color-mix(in srgb, var(--border) 70%, transparent); border-radius: 9px; font-family: Georgia, serif; font-size: 0.76rem; color: var(--text-dim); }
+.fd-card h4 { margin: 0 0 4px; color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-weight: normal; font-size: 0.76rem; letter-spacing: 1px; }
+.fd-card .fd-meta { margin-bottom: 6px; }
+.fd-champs { display: flex; gap: 5px; margin-bottom: 6px; }
+.fd-champs img { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); }
+.fd-rank { display: grid; grid-template-columns: auto 1fr; gap: 1px 8px; color: var(--text); }
+.fd-rank small { color: var(--text-faint); text-transform: uppercase; letter-spacing: 1px; font-size: 0.62rem; align-self: center; }
+.fd-trophies { margin-top: 6px; color: var(--gold); font-family: 'Cinzel', Georgia, serif; }
+.fd-bar { height: 5px; margin-top: 6px; border-radius: 4px; background: color-mix(in srgb, var(--border) 60%, transparent); overflow: hidden; }
+.fd-bar span { display: block; height: 100%; background: var(--gold); }
+.fd-none { font-style: italic; color: var(--text-faint); }
+.fd-updated { color: var(--text-faint); font-family: Georgia, serif; font-size: 0.68rem; font-style: italic; text-align: center; margin-top: 2px; }
+
+/* "My profile"-Reiter am linken Rand beim Besuch eines Freundesprofils (v6.13.0) -
+   Gegenstueck zum Friends-Reiter rechts */
+.my-profile-tab {
+  position: fixed; left: 0; top: 50%; transform: translateY(-50%); z-index: 90;
+  /* gleiche Groesse wie der Friends-Reiter (40x156, siehe .friends-tab), waechst nur, falls der Text laenger ist */
+  width: 40px; min-height: 156px; padding: 16px 0; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-left: none; border-radius: 0 10px 10px 0;
+  background: var(--panel-bg); backdrop-filter: blur(10px) saturate(1.15); -webkit-backdrop-filter: blur(10px) saturate(1.15);
+  color: var(--text-dim); text-decoration: none; box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+.my-profile-tab[hidden] { display: none; }
+.my-profile-tab span { writing-mode: vertical-rl; transform: rotate(180deg); font-family: 'Cinzel', Georgia, serif; font-size: 0.95rem; letter-spacing: 2.5px; }
+.my-profile-tab:hover { background: var(--gold); border-color: var(--gold); color: var(--bg); }

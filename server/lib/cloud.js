@@ -178,13 +178,15 @@ async function syncRuns() {
   try {
     const accounts = await listRiotAccounts();
     if (!accounts.length) return;
-    const { data, error } = await supabase.from('challenge_runs').select('puuid, data, updated_at').in('puuid', accounts.map(a => a.puuid));
+    // v6.13.0: ein Lauf pro Summoner UND Modus (Schluessel siehe challengeRuns.runKey)
+    const keys = accounts.flatMap(a => challengeRuns.MODES.map(m => challengeRuns.runKey(a.puuid, m)));
+    const { data, error } = await supabase.from('challenge_runs').select('puuid, data, updated_at').in('puuid', keys);
     if (error) throw error;
     const byPuuid = new Map((data || []).map(r => [r.puuid, r]));
-    for (const a of accounts) {
-      const local = challengeRuns.getRecord(a.puuid), remote = byPuuid.get(a.puuid);
-      if (local && (!remote || new Date(local.updatedAt) > new Date(remote.updated_at))) await pushRun(a.puuid);
-      else if (remote && (!local || new Date(remote.updated_at) > new Date(local.updatedAt))) challengeRuns.importRecord(a.puuid, { run: remote.data, updatedAt: remote.updated_at });
+    for (const key of keys) {
+      const local = challengeRuns.getRecord(key), remote = byPuuid.get(key);
+      if (local && (!remote || new Date(local.updatedAt) > new Date(remote.updated_at))) await pushRun(key);
+      else if (remote && (!local || new Date(remote.updated_at) > new Date(local.updatedAt))) challengeRuns.importRecord(key, { run: remote.data, updatedAt: remote.updated_at });
     }
   } catch (e) { noteNetworkError(e); }
 }

@@ -27,6 +27,20 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.13.0',
+      date: '2026-11-26',
+      notable: [
+        'Only 4 difficulties now: Easy, Normal, Hard and Majestic (the old Very Hard). Majestic unlocks once you have reached your goal on Easy, Normal and Hard.',
+        'Multikill trophies depend on the difficulty: Easy only needs double kills, Normal adds triple kills, Hard adds 1 quadra kill, Majestic adds 1 pentakill. Trophies that are not part of your level are greyed out and do not count.',
+        'Flawless Victory: Easy allows up to 2 deaths, Normal 1, Hard 0, Majestic 0 deaths with 8+ kills.',
+        'First Strike needs far fewer first bloods when you play Jungle.',
+        'Arena challenges: Riot God (60 hidden random champions), Elder God (100) and Ultimate God (every champion). Two champions are rolled for you - get 1st place with one of them in your next Arena game. One reroll per day. Switch with Ranked | Arena on the Challenge page.',
+        'Arena games give XP and pass progress during an Arena challenge (games with champions you did not roll give level XP only), plus their own daily and weekly quests.',
+        'New profile widgets: Arena Wins, Arena Champions, Arena Placement and Arena Titles (Riot God, Elder God, Ultimate God) - counting only games from your Arena challenges.',
+        'Friend profiles now look exactly like their owner set them up. Click a friend in your friend list to visit their profile, gift a booster, trade stickers or see their running Ranked and Arena challenges.'
+      ]
+    },
+    {
       version: '6.12.0',
       date: '2026-11-22',
       notable: [

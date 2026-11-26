@@ -172,4 +172,23 @@ function deleteEntry(puuid, id) {
   return filtered.length !== entries.length;
 }
 
-module.exports = { startEntry, updateEntry, listEntries, deleteEntry };
+// Hat dieser Eintrag sein LP-Ziel erreicht? (Goal-Reached-Trophy im Snapshot)
+function entryGoalReached(entry) {
+  return Boolean(entry && (entry.trophies || []).some(t => t.id === 'goal-reached' && t.unlocked));
+}
+
+// Alle Level, auf denen irgendein Summoner auf diesem PC je eine Challenge
+// geschafft hat - Backfill fuer die Majestic-Freischaltung (v6.13.0).
+function clearedLevelsAllSummoners() {
+  const levels = new Set();
+  let files = [];
+  try { files = fs.readdirSync(HISTORY_DIR).filter(f => f.endsWith('.json')); } catch (e) {}
+  for (const f of files) {
+    for (const e of readEntries(f.slice(0, -5))) {
+      if (entryGoalReached(e) && e.challengeLevel) levels.add(e.challengeLevel);
+    }
+  }
+  return [...levels];
+}
+
+module.exports = { startEntry, updateEntry, listEntries, deleteEntry, entryGoalReached, clearedLevelsAllSummoners };

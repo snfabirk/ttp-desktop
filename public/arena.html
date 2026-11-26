@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Arena – Three-Trick-Pony</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="cosmetics.css">
+  <script src="theme.js"></script>
+  <script src="nav.js"></script>
+  <script src="update-indicator.js"></script>
+  <script src="changelog.js"></script>
+  <!-- Arena-Challenges (v6.13.0): eigener Lauf pro Summoner neben der Ranked-
+       Challenge. Riot God = 60 / Elder God = 100 zufaellige, verdeckte
+       Champions, Ultimate God = alle. Es sind immer 2 Champions ausgerollt -
+       nur das naechste Spiel mit einem davon zaehlt (Platz 1 = geschafft).
+       Server: server/lib/arena.js. -->
+  <style>
+    body { display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
+    .site-header { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .content { width: 100%; max-width: 1320px; box-sizing: border-box; padding: 0 30px 70px; margin: 12px 0 0; /* Luft nach unten (Nutzer) - Padding statt Margin, Margin ausserhalb des Body zaehlt beim Scrollen nicht */ flex: 1; display: flex; flex-direction: column; }
+    .panel-heading { color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-size: 1.3rem; letter-spacing: 1px; margin: 0 0 8px; text-align: center; }
+
+    .card {
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px) saturate(1.1);
+      -webkit-backdrop-filter: blur(12px) saturate(1.1);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+      margin-bottom: 14px;
+    }
+    .card h3 { margin: 0 0 10px; color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-size: 1rem; letter-spacing: 1px; }
+    .muted { color: var(--text-dim); font-family: Georgia, serif; font-size: 0.85rem; }
+    .status-line { min-height: 18px; text-align: center; margin: 0 0 8px; color: var(--text-faint); font-family: Georgia, serif; font-size: 0.8rem; }
+
+    .hint { position: relative; display: inline-flex; vertical-align: middle; cursor: help; }
+    .hint .info-icon { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border: 1px solid var(--border); border-radius: 50%; font-size: 0.65rem; color: var(--text-dim); font-family: Georgia, serif; letter-spacing: 0; }
+    .hint-pop {
+      display: none; position: absolute; z-index: 20; top: 22px; left: 50%; transform: translateX(-50%);
+      width: 270px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg); color: var(--text-dim); font-family: Georgia, serif; font-size: 0.76rem; font-weight: normal;
+      letter-spacing: 0; text-transform: none; line-height: 1.4; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    }
+    .hint:hover .hint-pop, .hint:focus .hint-pop { display: block; }
+
+    .btn {
+      display: inline-block; padding: 7px 18px; border: 1px solid var(--gold); border-radius: 18px;
+      background: none; color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-size: 0.85rem; cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .btn:hover:not(:disabled) { background: var(--gold); color: var(--bg); }
+    .btn:disabled { opacity: 0.45; cursor: default; }
+    .btn.small { padding: 3px 12px; font-size: 0.75rem; font-family: Georgia, serif; border-color: var(--border); color: var(--text-dim); }
+    .btn.small:hover:not(:disabled) { background: none; border-color: var(--gold); color: var(--gold); }
+    .btn.small.armed { border-color: var(--loss, #e0565b); color: var(--loss, #e0565b); }
+
+    /* ----- Auswahl ----- */
+    .variant-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .variant {
+      display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center;
+      padding: 20px 14px 16px; margin: 0;
+      transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+    .variant:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+    .variant .v-step { color: var(--text-faint); font-family: Georgia, serif; font-size: 0.72rem; letter-spacing: 1px; text-transform: uppercase; }
+    .variant .v-icon { font-size: 2rem; line-height: 1; }
+    .variant .v-name { color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-size: 1.1rem; letter-spacing: 1px; }
+    .variant .v-target { color: var(--text); font-family: 'Cinzel', Georgia, serif; font-size: 2rem; line-height: 1; }
+    .variant .v-sub { color: var(--text-dim); font-family: Georgia, serif; font-size: 0.8rem; min-height: 2.4em; }
+    .pick-note { text-align: center; margin-top: 12px; }
+
+    .unavailable { text-align: center; padding: 26px 18px; }
+    .unavailable h3 { margin-bottom: 6px; }
+
+    /* ----- Laufende Challenge ----- */
+    .run-head { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; }
+    .run-title { display: flex; flex-direction: column; gap: 2px; }
+    .run-title .r-name { color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-size: 1.25rem; letter-spacing: 1px; }
+    .run-title .r-since { color: var(--text-faint); font-family: Georgia, serif; font-size: 0.78rem; }
+    .run-count { text-align: right; color: var(--text); font-family: 'Cinzel', Georgia, serif; font-size: 2rem; line-height: 1; white-space: nowrap; }
+    .run-count small { color: var(--text-dim); font-size: 1rem; }
+    .bar { height: 8px; border-radius: 5px; background: color-mix(in srgb, var(--border) 60%, transparent); overflow: hidden; }
+    .bar > div { height: 100%; width: 0%; background: var(--gold); border-radius: 5px; transition: width 0.4s ease; }
+    .run-done .bar > div { background: var(--win, #4fbf7f); }
+    .stat-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; margin-top: 12px; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.8rem; }
+    .stat-row strong { color: var(--text); font-weight: normal; font-family: 'Cinzel', Georgia, serif; }
+    .stat-row .grow { margin-left: auto; display: flex; gap: 6px; }
+    .done-banner { display: none; margin-top: 10px; color: var(--win, #4fbf7f); font-family: 'Cinzel', Georgia, serif; letter-spacing: 1px; }
+    .run-done .done-banner { display: block; }
+
+    /* ----- Roll (Case-Opening von rechts nach links, 2 Streifen leicht versetzt) ----- */
+    .roll-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .roll-head h3 { margin: 0; }
+    .roll-head .grow { margin-left: auto; }
+    .reels { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .reel-wrap { display: flex; flex-direction: column; gap: 6px; }
+    .reel {
+      --tile: 76px;
+      position: relative; height: calc(var(--tile) + 16px); overflow: hidden;
+      border: 1px solid var(--border); border-radius: 9px;
+      background: color-mix(in srgb, var(--bg) 70%, transparent);
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+      mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+    }
+    .reel::after {
+      content: ''; position: absolute; top: 4px; bottom: 4px; left: 50%; width: 2px; transform: translateX(-1px);
+      background: var(--gold); box-shadow: 0 0 8px var(--gold); z-index: 2;
+    }
+    .strip { position: absolute; top: 8px; left: 0; display: flex; gap: 6px; will-change: transform; }
+    .tile { flex: 0 0 var(--tile); height: var(--tile); border-radius: 7px; overflow: hidden; border: 1px solid var(--border); background: var(--panel-bg); }
+    .tile img { width: 100%; height: 100%; display: block; transform: scale(1.08); }
+    .tile.hit { border-color: var(--gold); box-shadow: 0 0 12px color-mix(in srgb, var(--gold) 70%, transparent); }
+    .reel-name { text-align: center; color: var(--text); font-family: 'Cinzel', Georgia, serif; font-size: 0.95rem; min-height: 1.3em; opacity: 0; transition: opacity 0.3s ease; }
+    .reel-name.show { opacity: 1; }
+    .roll-empty { text-align: center; padding: 14px 0; }
+    .tile.unknown { display: flex; align-items: center; justify-content: center; color: var(--text-faint); font-family: 'Cinzel', Georgia, serif; font-size: 1.6rem; }
+    /* Gespieltes Paar (spent): beide Seiten grau, gespielter Champ mit gruenem Haken */
+    .reels.spent .strip { filter: grayscale(1); opacity: 0.45; }
+    .reels.spent .reel-name { color: var(--text-dim); }
+    .reel-check {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3;
+      width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      background: var(--win, #4fbf7f); color: #fff; font-size: 1.5rem; font-weight: bold;
+      box-shadow: 0 0 14px color-mix(in srgb, var(--win, #4fbf7f) 70%, transparent);
+    }
+    .reel-check[hidden] { display: none; }
+    .reels.spent .reel-wrap.played .strip { opacity: 0.7; }
+    .roll-actions { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 14px; }
+    .btn.big { padding: 10px 46px; font-size: 1.05rem; letter-spacing: 2px; }
+    .btn.big[hidden] { display: none; }
+    .reroll-note { color: var(--text-faint); font-family: Georgia, serif; font-size: 0.75rem; min-height: 1em; }
+
+    /* 3 Spalten nebeneinander (Nutzer): Champions | Quests | Pass + letzte Spiele.
+       Unter 1180px rutscht die 3. Spalte unter die Quests, unter 900px alles untereinander. */
+    .main-grid { display: grid; grid-template-columns: minmax(0, 1fr) 270px 270px; gap: 14px; align-items: start; }
+    @media (max-width: 1180px) {
+      .main-grid { grid-template-columns: minmax(0, 1fr) 280px; }
+      .side-games { grid-column: 2; }
+    }
+    .grid-tools { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .grid-tools h3 { margin: 0 auto 0 0; }
+    .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .seg button { background: none; border: none; padding: 3px 11px; color: var(--text-dim); font-family: Georgia, serif; font-size: 0.75rem; cursor: pointer; }
+    .seg button.on { background: color-mix(in srgb, var(--gold) 22%, transparent); color: var(--gold); }
+    .search { background: none; border: 1px solid var(--border); border-radius: 14px; padding: 3px 10px; color: var(--text); font-family: Georgia, serif; font-size: 0.75rem; width: 120px; }
+    .champ-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 6px; }
+    /* Hoehe der Zeile geben die Quests vor (Nutzer): die Champion-Karte traegt
+       selbst nichts zur Hoehe bei, das Raster scrollt innerhalb. Etwas Innen-
+       abstand, damit Rahmen/Leuchten am Rand nicht abgeschnitten werden. */
+    .champ-card { display: flex; flex-direction: column; min-height: 0; }
+    .champ-scroll { flex: 1 1 0; min-height: 0; overflow-y: auto; padding: 3px 6px 3px 3px; margin: -3px -6px -3px -3px; }
+    .champ {
+      position: relative; aspect-ratio: 1; border-radius: 7px; overflow: hidden;
+      border: 1px solid var(--border); filter: grayscale(1); opacity: 0.38;
+      transition: opacity 0.15s ease, filter 0.15s ease;
+    }
+    .champ img { width: 100%; height: 100%; display: block; transform: scale(1.08); }
+    .champ.won { filter: none; opacity: 1; border-color: var(--gold); box-shadow: 0 0 6px color-mix(in srgb, var(--gold) 45%, transparent); }
+    .champ.rolled { filter: none; opacity: 1; border: 2px solid var(--gold); animation: rolledPulse 1.6s ease-in-out infinite; }
+    @keyframes rolledPulse { 50% { box-shadow: 0 0 10px var(--gold); } }
+    .champ.hidden-slot {
+      filter: none; opacity: 0.55; display: flex; align-items: center; justify-content: center;
+      background: color-mix(in srgb, var(--panel-bg) 80%, var(--border));
+      color: var(--text-faint); font-family: 'Cinzel', Georgia, serif; font-size: 1.2rem;
+    }
+    .champ:not(.hidden-slot):hover { opacity: 1; filter: none; }
+    .grid-empty { grid-column: 1 / -1; text-align: center; padding: 20px 0; }
+
+    /* Unten buendig (Nutzer): alle Spalten so hoch wie die hoechste. Die rechte
+       Spalte gibt selbst keine Hoehe vor - die Liste der letzten Spiele nimmt
+       nur den Rest und zeigt so viele Spiele, wie ganz hineinpassen. */
+    .main-grid { align-items: stretch; }
+    .main-grid > .card { margin-bottom: 14px; }
+    .side { display: flex; flex-direction: column; }
+    .side > .card:last-child { flex: 1 1 auto; }
+    .side-games > .card:last-child { display: flex; flex-direction: column; min-height: 0; }
+    .recent-wrap { flex: 1 1 0; min-height: 0; overflow: hidden; }
+    .game[hidden] { display: none; }
+    .q-sub { display: flex; justify-content: space-between; margin: 4px 0 6px; color: var(--text-dim); font-family: 'Cinzel', Georgia, serif; font-size: 0.75rem; letter-spacing: 1px; }
+    .q-sub .reset-in { color: var(--text-faint); font-family: Georgia, serif; font-style: italic; letter-spacing: 0; }
+    .quest { padding: 6px 8px; margin-bottom: 6px; border: 1px solid color-mix(in srgb, var(--border) 60%, transparent); border-radius: 7px; }
+    .quest .q-top { display: flex; justify-content: space-between; gap: 8px; }
+    .quest b { color: var(--text); font-weight: normal; font-family: 'Cinzel', Georgia, serif; font-size: 0.78rem; }
+    .quest .q-xp { color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-size: 0.75rem; white-space: nowrap; }
+    .quest small { display: block; color: var(--text-faint); font-family: Georgia, serif; font-size: 0.7rem; margin: 1px 0 4px; }
+    .quest .bar { height: 5px; }
+    .quest.done { opacity: 0.6; }
+    .quest.done .q-xp::before { content: '✓ '; color: var(--win, #4fbf7f); }
+    .pass-tile { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; text-decoration: none; transition: border-color 0.15s ease; }
+    .pass-tile:hover { border-color: var(--gold); }
+    .pass-tile b { color: var(--gold); font-family: 'Cinzel', Georgia, serif; font-weight: normal; font-size: 0.82rem; letter-spacing: 1px; white-space: nowrap; }
+    .pass-tile .pt-val { color: var(--text); font-family: 'Cinzel', Georgia, serif; font-size: 1.2rem; }
+    .pass-tile .bar { height: 5px; margin-top: 4px; }
+
+    .recent { display: flex; flex-direction: column; gap: 6px; }
+    .game { display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center; padding: 5px 8px; border: 1px solid color-mix(in srgb, var(--border) 60%, transparent); border-radius: 7px; }
+    .game.counted { border-color: color-mix(in srgb, var(--gold) 55%, transparent); }
+    .game img { width: 32px; height: 32px; border-radius: 6px; display: block; }
+    .game .g-main { display: flex; flex-direction: column; min-width: 0; }
+    .game .g-main b { color: var(--text); font-weight: normal; font-family: 'Cinzel', Georgia, serif; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .game .g-main small { color: var(--text-faint); font-family: Georgia, serif; font-size: 0.7rem; }
+    .place { font-family: 'Cinzel', Georgia, serif; font-size: 1rem; color: var(--text-dim); }
+    .place.p1 { color: var(--gold); }
+    .place.top4 { color: var(--text); }
+    .riot-note { margin: 10px 0 0; color: var(--text-faint); font-family: Georgia, serif; font-size: 0.72rem; }
+
+    @media (max-width: 900px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .variant-grid { grid-template-columns: 1fr; }
+      .reels { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <button type="button" class="settings-gear-btn" id="settingsGearBtn" title="Settings" aria-label="Settings">⚙</button>
+  <button type="button" class="quit-btn" id="quitBtn" title="Quit completely" aria-label="Quit completely">⏻</button>
+  <header class="site-header">
+    <h1>League of Legends</h1>
+    <p class="subtitle">Three-Trick-Pony</p>
+  </header>
+
+  <div class="content">
+    <h2 class="panel-heading">Challenge</h2>
+    <nav class="mode-switch" aria-label="Game mode">
+      <a href="challenge.html">Ranked</a>
+      <a href="arena.html" class="on">Arena</a>
+    </nav>
+    <p class="status-line" id="status"></p>
+
+    <!-- Arena gerade nicht im Spiel und keine laufende Challenge -->
+    <div class="card unavailable" id="unavailable" hidden>
+      <h3>Arena is not in the game right now</h3>
+      <p class="muted">Arena challenges come back as soon as the mode does.</p>
+    </div>
+
+    <!-- Auswahl -->
+    <div id="pick" hidden>
+      <div class="variant-grid">
+        <div class="card variant">
+          <span class="v-step">I</span>
+          <span class="v-icon" aria-hidden="true">⚡</span>
+          <span class="v-name">Riot God</span>
+          <span class="v-target">60</span>
+          <span class="v-sub">random champions - you only find out which ones as you go</span>
+          <button type="button" class="btn" data-start="riot">Start</button>
+        </div>
+        <div class="card variant">
+          <span class="v-step">II</span>
+          <span class="v-icon" aria-hidden="true">🔱</span>
+          <span class="v-name">Elder God</span>
+          <span class="v-target">100</span>
+          <span class="v-sub">random champions - you only find out which ones as you go</span>
+          <button type="button" class="btn" data-start="elder">Start</button>
+        </div>
+        <div class="card variant">
+          <span class="v-step">III</span>
+          <span class="v-icon" aria-hidden="true">👑</span>
+          <span class="v-name">Ultimate God</span>
+          <span class="v-target" id="allCount">All</span>
+          <span class="v-sub">every champion - new champions are added as they release</span>
+          <button type="button" class="btn" data-start="ultimate">Start</button>
+        </div>
+      </div>
+      <p class="muted pick-note">Get 1st place with each champion of your challenge
+        <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Two champions are always rolled for you. Only your next Arena game with one of them counts - 1st place completes that champion. After a game with one of the two, a new pair is rolled. Games with other champions don't count (and give level XP only, no pass XP). You can reroll the pair once a day.</span></span>
+      </p>
+    </div>
+
+    <!-- Laufende Challenge -->
+    <div id="active" hidden>
+      <div class="card" id="runCard">
+        <div class="run-head">
+          <span id="runIcon" style="font-size:2rem" aria-hidden="true"></span>
+          <div class="run-title">
+            <span class="r-name" id="runName"></span>
+            <span class="r-since" id="runSince"></span>
+          </div>
+          <div class="run-count" id="runCount">– <small>/ –</small></div>
+        </div>
+        <div class="bar" style="margin-top:12px"><div id="runBar"></div></div>
+        <div class="done-banner">✓ Challenge complete</div>
+        <div class="stat-row">
+          <span>Games <strong id="stGames">–</strong></span>
+          <span>1st places <strong id="stFirsts">–</strong></span>
+          <span>Avg. placement <strong id="stAvg">–</strong></span>
+          <span id="stPaused" hidden>⏸ Arena is not in the game right now</span>
+          <span class="grow"><button type="button" class="btn small" id="refreshBtn">Refresh</button>
+          <button type="button" class="btn small" id="resetBtn" title="Ends this Arena challenge">Reset</button></span>
+        </div>
+      </div>
+
+      <div class="card" id="rollCard">
+        <div class="roll-head">
+          <h3 id="rollTitle">Your next champions</h3>
+          <span class="hint" tabindex="0"><span class="info-icon">?</span><span class="hint-pop">Only your next Arena game with one of these two counts - 1st place completes that champion. After a game with one of them, roll a new pair. Two, so a ban doesn't block you. Games with other champions don't count and give level XP only. You can reroll a pair once a day.</span></span>
+        </div>
+        <div class="reels" id="reels">
+          <div class="reel-wrap"><div class="reel"><div class="strip"></div><span class="reel-check" hidden>✓</span></div><div class="reel-name"></div></div>
+          <div class="reel-wrap"><div class="reel"><div class="strip"></div><span class="reel-check" hidden>✓</span></div><div class="reel-name"></div></div>
+        </div>
+        <p class="muted roll-empty" id="rollEmpty" hidden>Nothing left to roll - every champion is done!</p>
+        <div class="roll-actions">
+          <button type="button" class="btn big" id="rollBtn">Roll</button>
+          <span class="reroll-note" id="rerollNote"></span>
+        </div>
+      </div>
+
+      <div class="main-grid">
+        <div class="card champ-card">
+          <div class="grid-tools">
+            <h3>Champions</h3>
+            <input type="search" class="search" id="champSearch" placeholder="Search…">
+            <div class="seg" id="filterSeg">
+              <button type="button" data-f="all" class="on">All</button>
+              <button type="button" data-f="missing">Missing</button>
+              <button type="button" data-f="won">Done</button>
+            </div>
+          </div>
+          <div class="champ-scroll"><div class="champ-grid" id="champGrid"></div></div>
+        </div>
+        <div class="side side-quests">
+          <div class="card">
+            <h3>Quests</h3>
+            <div class="q-sub"><span>Daily</span><span class="reset-in" id="dailyReset"></span></div>
+            <div id="dailyQuests"></div>
+            <div class="q-sub"><span>Weekly</span><span class="reset-in" id="weeklyReset"></span></div>
+            <div id="weeklyQuests"></div>
+          </div>
+        </div>
+        <div class="side side-games">
+          <a class="card pass-tile" href="challenge.html?view=pass" title="Open the monthly pass">
+            <span aria-hidden="true" style="font-size:1.4rem">🎖️</span>
+            <span><b id="passLabel">Pass</b><div class="bar"><div id="passBar"></div></div></span>
+            <span class="pt-val" id="passTier">–</span>
+          </a>
+          <div class="card">
+            <h3>Recent Arena games</h3>
+            <div class="recent-wrap" id="recentWrap"><div class="recent" id="recent"><p class="muted">Loading…</p></div></div>
+            <p class="riot-note" id="riotNote"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const VARIANT_META = {
+      riot: { name: 'Riot God', icon: '⚡' },
+      elder: { name: 'Elder God', icon: '🔱' },
+      ultimate: { name: 'Ultimate God', icon: '👑' }
+    };
+    const ls = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
+    const puuid = ls('ttp_active_puuid');
+    const $ = id => document.getElementById(id);
+    const statusEl = $('status');
+    let ddVersion = window.TTP_DDRAGON_VERSION || '16.22.1';
+    const icon = id => `https://ddragon.leagueoflegends.com/cdn/${ddVersion}/img/champion/${id}.png`;
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const fmtNum = n => Number(n).toLocaleString('en-US');
+
+    async function api(url, opts) {
+      const res = await fetch(url, opts);
+      let data = {};
+      try { data = await res.json(); } catch (e) {}
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      return data;
+    }
+    const post = (url, body) => api(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+
+    function fmtDate(t) {
+      const d = new Date(t), p = n => String(n).padStart(2, '0');
+      return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`;
+    }
+    function since(iso) {
+      const ms = Date.now() - new Date(iso).getTime();
+      const d = Math.floor(ms / 86400000), h = Math.floor((ms % 86400000) / 3600000);
+      return d > 0 ? `${d}d ${h}h` : `${h}h ${Math.floor((ms % 3600000) / 60000)}m`;
+    }
+    function until(iso) {
+      const ms = Math.max(0, new Date(iso).getTime() - Date.now());
+      const d = Math.floor(ms / 86400000), h = Math.floor((ms % 86400000) / 3600000), m = Math.floor((ms % 3600000) / 60000);
+      return d > 0 ? `${d}d ${h}h` : `${h}h ${m}m`;
+    }
+
+    let state = { available: true, run: null, progress: null, champions: [], quests: null, filter: 'all', query: '' };
+
+    function show(view) {
+      $('unavailable').hidden = view !== 'unavailable';
+      $('pick').hidden = view !== 'pick';
+      $('active').hidden = view !== 'active';
+    }
+
+    // ----- Champion-Raster: verdeckte Slots als "?" an ihrer alphabetischen Stelle -----
+    function renderGrid() {
+      const p = state.progress;
+      if (!p) { $('champGrid').innerHTML = ''; return; }
+      const q = state.query.trim().toLowerCase();
+      const list = p.slots.filter(s => {
+        const won = Boolean(s.won);
+        if (state.filter === 'won' && !won) return false;
+        if (state.filter === 'missing' && won) return false;
+        if (!q) return true;
+        return Boolean(s.key) && s.name.toLowerCase().includes(q);
+      });
+      $('champGrid').innerHTML = list.length
+        ? list.map(s => {
+          if (!s.key) return '<div class="champ hidden-slot" title="Hidden champion - roll it to find out">?</div>';
+          const title = s.won ? `${s.name} - 1st place on ${fmtDate(s.won)}` : s.rolled ? `${s.name} - rolled, play it next!` : `${s.name} - no 1st place yet`;
+          return `<div class="champ${s.won ? ' won' : ''}${s.rolled && !s.won ? ' rolled' : ''}" title="${esc(title)}"><img src="${icon(s.id)}" alt="" loading="lazy"></div>`;
+        }).join('')
+        : `<p class="muted grid-empty">${state.filter === 'won' ? 'No champions done yet - go win one!' : 'Nothing here.'}</p>`;
+    }
+
+    // ----- Roll-Animation (Nutzervorgaben 2026-11-26): Streifen faehrt von
+    // rechts nach links, beide gleich schnell (gleiche Strecke + Dauer), der
+    // zweite startet und stoppt etwas spaeter. Landet irgendwo auf dem
+    // Ziel-Feld (auch am Rand) und zieht dann sanft in die Mitte. Die Felder
+    // daneben sind pro Roll fest (geseedet) - Refresh/Neuladen rollt nichts neu.
+    // Ease-out-Cubic statt sehr langem Auslauf: der Stopp ist klar erkennbar, so
+    // wirkt der Versatz am Ende genauso gross wie am Start (Nutzer 2026-11-26).
+    const TILE_COUNT = 46, TARGET_INDEX = 38, ROLL_MS = 4600, SECOND_DELAY_MS = 380;
+    const ROLL_EASE = 'cubic-bezier(0.33, 1, 0.68, 1)';
+    function seededRng(seed) {
+      let h = 2166136261;
+      for (const ch of String(seed)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+      return () => {
+        h += 0x6D2B79F5;
+        let t = h;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function buildStrip(strip, target, seed) {
+      const rnd = seededRng(seed);
+      const pool = state.champions;
+      const tiles = [];
+      for (let i = 0; i < TILE_COUNT; i++) {
+        const c = i === TARGET_INDEX ? target : pool[Math.floor(rnd() * pool.length)];
+        tiles.push(i === TARGET_INDEX && !c
+          ? '<div class="tile target unknown">?</div>'
+          : `<div class="tile${i === TARGET_INDEX ? ' target' : ''}"><img src="${icon(c.id)}" alt=""></div>`);
+      }
+      strip.innerHTML = tiles.join('');
+      strip.dataset.seed = seed;
+    }
+    // offset: Abweichung von der Feldmitte in Feldbreiten (-0.5 .. 0.5)
+    function stripX(reel, strip, offset = 0) {
+      const w = strip.querySelector('.tile').getBoundingClientRect().width;
+      return -(TARGET_INDEX * (w + 6)) + reel.clientWidth / 2 - w / 2 - offset * w;
+    }
+    const wraps = () => [...$('reels').querySelectorAll('.reel-wrap')];
+
+    function setRollChrome() {
+      const p = state.progress;
+      const roll = p && p.roll;
+      const spent = Boolean(roll && roll.spent);
+      const needs = Boolean(p && p.needsRoll);
+      $('rollTitle').textContent = needs ? 'Roll your next champions' : 'Your next champions';
+      $('reels').classList.toggle('spent', spent);
+      $('rollEmpty').hidden = !(p && !roll && !needs);
+      $('reels').hidden = Boolean(p && !roll && !needs);
+      const btn = $('rollBtn');
+      // Nie ausblenden (Nutzer): ohne freien Reroll nur unverfuegbar - nach dem
+      // naechsten Spiel mit dem Paar wird er ohnehin wieder zum Roll-Knopf.
+      btn.hidden = !needs && !(p && roll);
+      btn.disabled = !needs && !(p && p.canReroll);
+      btn.textContent = needs ? 'Roll' : 'Reroll';
+      btn.title = needs ? 'Roll your next two champions' : 'One reroll per day';
+      $('rerollNote').textContent = !needs && p && roll && !p.canReroll ? 'Reroll used today' : '';
+      wraps().forEach((wrap, i) => {
+        const check = wrap.querySelector('.reel-check');
+        const champ = roll && roll.champs[i];
+        const played = spent && champ && roll.spent.key === champ.key;
+        check.hidden = !played;
+        wrap.classList.toggle('played', Boolean(played));
+        const name = wrap.querySelector('.reel-name');
+        if (champ) name.textContent = played ? `${champ.name} · #${roll.spent.placement}${roll.spent.won ? ' - done!' : ''}` : champ.name;
+      });
+    }
+
+    // Statischer Stand: Ziel steht mittig, nichts wird neu gewuerfelt, solange
+    // es dasselbe Paar ist (Seed = Roll-Nummer).
+    function renderRoll() {
+      const p = state.progress;
+      const roll = p && p.roll;
+      setRollChrome();
+      wraps().forEach((wrap, i) => {
+        const reel = wrap.querySelector('.reel'), strip = wrap.querySelector('.strip'), name = wrap.querySelector('.reel-name');
+        const champ = roll ? roll.champs[i] : null;
+        wrap.hidden = Boolean(roll && !champ);
+        const seed = roll ? `${state.run.since}:${roll.seq}:${i}` : `none:${i}`;
+        if (strip.dataset.seed !== seed) buildStrip(strip, champ, seed);
+        strip.style.transition = 'none';
+        strip.style.transform = `translateX(${stripX(reel, strip)}px)`;
+        const target = strip.querySelector('.tile.target');
+        target.classList.toggle('hit', Boolean(champ));
+        name.classList.toggle('show', Boolean(champ));
+      });
+    }
+
+    // Neues Paar ausrollen (nach Klick auf Roll/Reroll)
+    function animateRoll() {
+      const roll = state.progress && state.progress.roll;
+      if (!roll) { renderRoll(); return Promise.resolve(); }
+      setRollChrome();
+      $('rollBtn').disabled = true;
+      const jobs = wraps().map((wrap, i) => new Promise(resolve => {
+        const champ = roll.champs[i];
+        wrap.hidden = !champ;
+        if (!champ) { resolve(); return; }
+        const reel = wrap.querySelector('.reel'), strip = wrap.querySelector('.strip'), name = wrap.querySelector('.reel-name');
+        name.classList.remove('show');
+        buildStrip(strip, champ, `${state.run.since}:${roll.seq}:${i}`);
+        // Landepunkt irgendwo auf dem Feld, auch knapp am Rand
+        const offset = (Math.random() - 0.5) * 0.9;
+        strip.style.transition = 'none';
+        strip.style.transform = `translateX(${reel.clientWidth}px)`;
+        void strip.offsetWidth; // Startposition festschreiben
+        setTimeout(() => {
+          strip.style.transition = `transform ${ROLL_MS}ms ${ROLL_EASE}`;
+          strip.style.transform = `translateX(${stripX(reel, strip, offset)}px)`;
+          setTimeout(() => {
+            // gelandet -> Ziel sanft in die Mitte ziehen
+            strip.style.transition = 'transform 0.45s ease-in-out';
+            strip.style.transform = `translateX(${stripX(reel, strip)}px)`;
+            strip.querySelector('.tile.target').classList.add('hit');
+            name.classList.add('show');
+            setTimeout(resolve, 450);
+          }, ROLL_MS + 120);
+        }, 40 + i * SECOND_DELAY_MS);
+      }));
+      return Promise.all(jobs).then(() => { setRollChrome(); });
+    }
+
+    function renderQuests() {
+      const q = state.quests;
+      if (!q) return;
+      const one = x => `<div class="quest${x.done ? ' done' : ''}">
+          <div class="q-top"><b>${esc(x.title)}</b><span class="q-xp">+${fmtNum(x.xp)} XP</span></div>
+          <small>${esc(x.desc)} · ${x.progress} / ${x.target}</small>
+          <div class="bar"><div style="width:${Math.round((x.progress / x.target) * 100)}%"></div></div>
+        </div>`;
+      $('dailyQuests').innerHTML = q.dailies.map(one).join('');
+      $('weeklyQuests').innerHTML = q.weeklies.map(one).join('');
+      $('dailyReset').textContent = `resets in ${until(q.dailyResetAt)}`;
+      $('weeklyReset').textContent = `resets in ${until(q.weeklyResetAt)}`;
+      if (q.pass) {
+        $('passLabel').textContent = q.pass.label || 'Pass';
+        $('passTier').textContent = `${q.pass.tier}/${q.pass.tiers}`;
+        $('passBar').style.width = `${q.pass.tier >= q.pass.tiers ? 100 : Math.round((q.pass.xpIntoTier / q.pass.xpPerTier) * 100)}%`;
+      }
+    }
+
+    // skipRoll: Roll/Reroll-Klick - Paar + Raster erst nach der Animation zeigen
+    // Nur ganze Spiele-Zeilen zeigen, die bis zur Unterkante passen
+    function fitRecent() {
+      const wrap = $('recentWrap');
+      const rows = [...$('recent').children];
+      rows.forEach(r => { r.hidden = false; });
+      const bottom = wrap.getBoundingClientRect().bottom + 0.5;
+      rows.forEach(r => { if (r.getBoundingClientRect().bottom > bottom) r.hidden = true; });
+    }
+    if (window.ResizeObserver) new ResizeObserver(() => fitRecent()).observe(document.getElementById('recentWrap'));
+
+    function renderActive(skipRoll = false) {
+      const run = state.run, p = state.progress;
+      const meta = VARIANT_META[run.variant] || VARIANT_META.riot;
+      $('runIcon').textContent = meta.icon;
+      $('runName').textContent = `${meta.name} Challenge`;
+      $('runSince').textContent = `Started ${fmtDate(run.since)} · running ${since(run.since)}`;
+      $('stPaused').hidden = state.available;
+      renderQuests();
+      if (!p) return;
+      $('runCount').innerHTML = `${p.count} <small>/ ${p.target}</small>`;
+      $('runBar').style.width = `${p.target ? Math.min(100, (p.count / p.target) * 100) : 0}%`;
+      $('runCard').classList.toggle('run-done', Boolean(p.completed));
+      $('stGames').textContent = p.totalGames;
+      $('stFirsts').textContent = p.firstPlaces;
+      $('stAvg').textContent = p.avgPlacement == null ? '–' : p.avgPlacement;
+      $('recent').innerHTML = p.recent.length
+        ? p.recent.map(g => `<div class="game${g.counted ? ' counted' : ''}" title="${esc(`${g.kills}/${g.deaths}/${g.assists}${g.counted ? ' · rolled champion, counted' : ' · not rolled, did not count'}`)}">
+            <img src="${icon(g.champId)}" alt="">
+            <span class="g-main"><b>${esc(g.champId)}</b><small>${fmtDate(g.at)}${g.partner ? ` · with ${esc(g.partner.champId)}` : ''}${g.counted ? ' · counted' : ''}</small></span>
+            <span class="place ${g.placement === 1 ? 'p1' : g.placement <= 4 ? 'top4' : ''}">#${g.placement}</span>
+          </div>`).join('')
+        : '<p class="muted">No Arena games since the start yet.</p>';
+      fitRecent();
+      if (skipRoll) return;
+      renderGrid();
+      renderRoll();
+    }
+
+    function applyPayload(data) {
+      if (data.ddragonVersion) ddVersion = data.ddragonVersion;
+      state.champions = data.champions || state.champions;
+      state.run = data.run;
+      state.progress = data.progress || null;
+      state.quests = data.quests || state.quests;
+      const rg = data.riotGod;
+      $('riotNote').textContent = rg ? `Riot's own Arena God title (all-time): ${Math.min(rg.value, 60)} / 60` : '';
+    }
+
+    async function loadProgress() {
+      statusEl.textContent = 'Loading your Arena games…';
+      $('refreshBtn').disabled = true;
+      try {
+        applyPayload(await api(`/api/arena/progress?puuid=${encodeURIComponent(puuid)}`));
+        statusEl.textContent = '';
+        if (!state.run) { render(); return; }
+        show('active');
+        renderActive();
+      } catch (e) {
+        statusEl.textContent = `Couldn't load Arena games: ${e.message}`;
+      } finally {
+        $('refreshBtn').disabled = false;
+      }
+    }
+
+    function render() {
+      if (state.run) { show('active'); renderActive(); return; }
+      show(state.available ? 'pick' : 'unavailable');
+      if (state.champions.length) $('allCount').textContent = state.champions.length;
+    }
+
+    async function init() {
+      if (!puuid) { statusEl.textContent = 'Link a summoner first (top right).'; return; }
+      try {
+        const [avail, runData] = await Promise.all([
+          api('/api/arena/availability'),
+          api(`/api/arena/run?puuid=${encodeURIComponent(puuid)}`)
+        ]);
+        state.available = avail.arena.available;
+        state.run = runData.run;
+      } catch (e) {
+        statusEl.textContent = `Couldn't load: ${e.message}`;
+        return;
+      }
+      if (!state.run) render();
+      loadProgress();
+    }
+
+    document.querySelectorAll('[data-start]').forEach(btn => btn.addEventListener('click', async () => {
+      document.querySelectorAll('[data-start]').forEach(b => { b.disabled = true; });
+      try {
+        await post('/api/arena/start', { puuid, variant: btn.dataset.start });
+        await loadProgress(); // erstes Paar wird gleich ausgerollt
+      } catch (e) {
+        statusEl.textContent = e.message;
+      } finally {
+        document.querySelectorAll('[data-start]').forEach(b => { b.disabled = false; });
+      }
+    }));
+
+    // Grosser Knopf: Roll (kein aktives Paar) bzw. Reroll (1x pro Tag)
+    $('rollBtn').addEventListener('click', async () => {
+      const needs = Boolean(state.progress && state.progress.needsRoll);
+      $('rollBtn').disabled = true;
+      statusEl.textContent = needs ? 'Rolling…' : 'Rerolling…';
+      try {
+        applyPayload(await post(needs ? '/api/arena/roll' : '/api/arena/reroll', { puuid }));
+        statusEl.textContent = '';
+        renderActive(true);
+        await animateRoll();
+        renderGrid();
+      } catch (e) {
+        statusEl.textContent = e.message;
+      } finally {
+        setRollChrome(); // setzt auch disabled passend (Reroll verbraucht = unverfuegbar)
+      }
+    });
+
+    // Zweistufig statt confirm()-Dialog: 1. Klick schaerft, 2. Klick beendet
+    let resetTimer = null;
+    $('resetBtn').addEventListener('click', async () => {
+      const btn = $('resetBtn');
+      if (!btn.classList.contains('armed')) {
+        btn.classList.add('armed');
+        btn.textContent = 'Really end it?';
+        clearTimeout(resetTimer);
+        resetTimer = setTimeout(() => { btn.classList.remove('armed'); btn.textContent = 'Reset'; }, 4000);
+        return;
+      }
+      clearTimeout(resetTimer);
+      btn.classList.remove('armed');
+      btn.textContent = 'Reset';
+      try {
+        await post('/api/arena/reset', { puuid });
+        state.run = null;
+        state.progress = null;
+        render();
+      } catch (e) { statusEl.textContent = e.message; }
+    });
+
+    $('refreshBtn').addEventListener('click', loadProgress);
+    $('champSearch').addEventListener('input', e => { state.query = e.target.value; renderGrid(); });
+    $('filterSeg').addEventListener('click', e => {
+      const b = e.target.closest('button[data-f]');
+      if (!b) return;
+      state.filter = b.dataset.f;
+      $('filterSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+      renderGrid();
+    });
+
+    init();
+
+    $('settingsGearBtn').addEventListener('click', () => { if (window.ttpMain) window.ttpMain.openSettings(); });
+    $('quitBtn').addEventListener('click', () => {
+      const ok = confirm('Quit Three-Trick-Pony completely? It will no longer run in the background (no more update checks or LP tracking until you start it again).');
+      if (window.ttpMain) window.ttpMain.restoreFocus();
+      if (!ok) return;
+      if (window.ttpMain) window.ttpMain.quitApp();
+    });
+  </script>
+</body>
+</html>

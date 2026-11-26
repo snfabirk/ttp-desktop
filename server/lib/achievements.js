@@ -5,11 +5,25 @@
 
 const { toComparableLP } = require('./rankHistory');
 
-const TIER_INDEX = { easy: 0, normal: 1, hard: 2, very_hard: 3, majestic: 4 };
+// Seit v6.13.0 nur noch 4 Schwierigkeiten (Nutzervorgabe 2026-11-26): das
+// alte "Very Hard" IST jetzt Majestic, das alte Majestic faellt weg. Alte
+// Runs/History-Eintraege mit very_hard laufen deshalb als Majestic weiter.
+const TIER_INDEX = { easy: 0, normal: 1, hard: 2, majestic: 3, very_hard: 3 };
+
+// Welche Kill-Trophies es pro Schwierigkeit ueberhaupt gibt (Nutzervorgabe
+// 2026-11-26): Easy nur Doubles, Normal +Triples, Hard +1 Quadra, Majestic
+// +1 Penta. Gesperrte Slots werden grau angezeigt und zaehlen NICHT zur
+// Gesamtzahl/Platinum. Support (Guardian I-IV) folgt denselben Slots.
+const KILL_SLOT_MIN_TIER = { 'double-kill': 0, 'triple-kill': 1, 'quadra-kill': 2, 'penta-kill': 3 };
+const TIER_LABELS = ['Easy', 'Normal', 'Hard', 'Majestic'];
+
+function tierIndex(level) {
+  const i = TIER_INDEX[level];
+  return i === undefined ? 1 : i;
+}
 
 function tierVal(arr, level) {
-  const i = TIER_INDEX[level];
-  return arr[i === undefined ? 1 : i];
+  return arr[tierIndex(level)];
 }
 
 // "Erwartete Spiele" - Kernformel fuer alle skalierenden Achievements.
@@ -74,7 +88,7 @@ function createAchievementAccumulator() {
       soloTowerKills: 0 // via Timeline-API befuellt, siehe addSoloTowerKills()
     },
     max: {
-      flawlessKills: 0, rampageKills: 0, rampageAssists: 0, towerDmg: 0,
+      flawlessKills: 0, flawlessKills1: 0, flawlessKills2: 0, rampageKills: 0, rampageAssists: 0, towerDmg: 0,
       damageTaken: 0, epicTakedowns: 0, killParticipation: 0, soloKills: 0,
       dpm: 0, teamDamagePct: 0, earlyCs: 0, visionScore: 0, ccTime: 0,
       soloTowerKillsPeak: 0
@@ -96,7 +110,11 @@ function addMatchToAchievementAccumulator(acc, me, match) {
     if (g[key] !== undefined) acc.sum[key] += g[key];
   }
 
+  // Flawless: bester Kill-Wert in einem Sieg mit hoechstens 0/1/2 Toden
+  // (Easy erlaubt 2, Normal 1, Hard/Majestic 0 - siehe FLAWLESS_MAX_DEATHS)
   if (g.win && g.deaths === 0) acc.max.flawlessKills = Math.max(acc.max.flawlessKills, g.kills);
+  if (g.win && g.deaths <= 1) acc.max.flawlessKills1 = Math.max(acc.max.flawlessKills1 || 0, g.kills);
+  if (g.win && g.deaths <= 2) acc.max.flawlessKills2 = Math.max(acc.max.flawlessKills2 || 0, g.kills);
   acc.max.rampageKills = Math.max(acc.max.rampageKills, g.kills);
   acc.max.rampageAssists = Math.max(acc.max.rampageAssists, g.assists);
   acc.max.towerDmg = Math.max(acc.max.towerDmg, g.damageDealtToTurrets);
@@ -142,6 +160,12 @@ function progressEntry(id, name, current, target, extra) {
   const safeTarget = target > 0 ? target : 0;
   const percent = safeTarget > 0 ? Math.min(100, Math.round((current / safeTarget) * 100)) : (current > 0 ? 100 : 0);
   return { id, name, current: round(current), target: round(safeTarget), percent, unlocked: current >= safeTarget && safeTarget > 0, ...extra };
+}
+
+// Kill-Trophy-Slot, den es auf dieser Schwierigkeit nicht gibt: grau, zaehlt
+// weder als freigeschaltet noch zur Gesamtzahl (siehe computeAllTrophyProgress).
+function lockedEntry(id, name, minTierLabel) {
+  return { id, name, current: 0, target: 0, percent: 0, unlocked: false, locked: true, lockedFrom: minTierLabel };
 }
 
 // "Sustained across the challenge" (Ø-Wert) Trophies sind die einzige nicht
@@ -208,9 +232,13 @@ function applyAverageTrophyFinalization(trophies, { goalReached, finalizedState 
 // unter welcher Version sie finalisiert wurde, damit die Trophies-Seite
 // anzeigen kann, ob der Stand noch zu den aktuell geltenden Regeln passt -
 // siehe achievementState.js/server.js "rulesUpToDate".
+// v6.13.0 (4 Schwierigkeiten, Kill-Slots je Stufe, Jungle-FB, Flawless-Tode)
+// bewusst NICHT hochgezaehlt: die Ø-Trophy-Ziele auf Easy/Normal/Hard sind
+// unveraendert, ein Hochzaehlen haette laufende Challenges grundlos mit
+// "Regeln geaendert, bitte resetten" markiert.
 const RULES_VERSION = 3;
 
-// ----- Rate-Tabellen (Easy/Normal/Hard/VeryHard/Majestic), 1:1 aus der
+// ----- Rate-Tabellen (Easy/Normal/Hard/Majestic - Majestic = altes Very Hard), 1:1 aus der
 // finalen Design-Runde (siehe achievements-trophies-design.md Memory) -----
 const RATES = {
   // Neu kalibriert (2026-09-26) anhand echter Ø-Werte aus 733 realen Ranked-
@@ -219,64 +247,74 @@ const RATES = {
   // vorgabe: Double war schon fast passend kalibriert, Triple/Quadra waren
   // 3x/5x zu hoch). Die anderen 4 Tiers behalten das gleiche relative
   // Verhaeltnis zu Normal wie zuvor (5/9, 1, 13/9, 17/9, 21/9).
-  doubleKill: [0.481, 0.866, 1.251, 1.636, 2.021],
-  tripleKill: [0.032, 0.058, 0.084, 0.110, 0.135],
-  quadraKill: [0.003, 0.0054, 0.0078, 0.0102, 0.0126],
-  pentaKill: [1, 1, 1, 2, 3],
-  firstBlood: [0.1, 0.2, 0.4, 0.6, 0.8],
-  flawless: [2, 5, 7, 10, 14],
-  rampageKills: [10, 13, 17, 20, 25],
-  rampageAssistsSupport: [15, 20, 23, 27, 30],
-  killsInsgesamt: [5, 7, 9, 11, 13],
-  killsInsgesamtSupport: [2.5, 3.5, 4.5, 5.5, 6.5],
-  csInsgesamt: [100, 140, 180, 220, 240],
-  csInsgesamtSupport: [19, 27, 35, 43, 46],
-  goldInsgesamt: [10000, 13000, 16000, 19000, 22000],
-  goldInsgesamtSupport: [6500, 8500, 10400, 12350, 14300],
-  winStreak: [2, 3, 4, 5, 6],
-  assistsInsgesamt: [4, 5, 6, 8, 10],
-  assistsInsgesamtSupport: [8, 10, 12, 16, 20],
-  damageInsgesamt: [12000, 18000, 24000, 32000, 42000],
-  damageInsgesamtSupport: [7000, 10000, 13000, 18000, 23000],
-  winrate: [0.51, 0.52, 0.53, 0.54, 0.55],
-  guardianI: [0.5, 0.9, 1.3, 1.7, 2.1],
-  guardianII: [0.25, 0.45, 0.65, 0.85, 1.05],
-  guardianIII: [1.5, 2.0, 2.5, 3.0, 3.5],
-  guardianAngel: [1, 1, 1, 2, 3],
+  doubleKill: [0.481, 0.866, 1.251, 1.636],
+  tripleKill: [0.032, 0.058, 0.084, 0.110],
+  // Quadra: Easy/Normal gesperrt, Hard fix 1 (siehe computeUniversalProgress),
+  // nur Majestic skaliert noch mit den Spielen.
+  quadraKill: [0.003, 0.0054, 0.0078, 0.0102],
+  pentaKill: [1, 1, 1, 1], // nur auf Majestic aktiv
+  firstBlood: [0.1, 0.2, 0.4, 0.6],
+  // Jungle (2026-11-26): ohne Invade kaum First Blood moeglich - echte Rate
+  // aus 125 Ranked-Spielen im Cache: Jungle 0.048/Spiel (Top 0.13, Mid 0.11,
+  // ADC 0.15). Normal liegt knapp unter diesem Schnitt.
+  firstBloodJungle: [0.025, 0.04, 0.06, 0.08],
+  // Kills in einem Sieg; Tode erlaubt siehe FLAWLESS_MAX_DEATHS (Nutzervorgabe
+  // 2026-11-26: Easy <=2, Normal <=1, Hard 0, Majestic 0 aber 8+ Kills)
+  flawless: [2, 5, 7, 8],
+  rampageKills: [10, 13, 17, 20],
+  rampageAssistsSupport: [15, 20, 23, 27],
+  killsInsgesamt: [5, 7, 9, 11],
+  killsInsgesamtSupport: [2.5, 3.5, 4.5, 5.5],
+  csInsgesamt: [100, 140, 180, 220],
+  csInsgesamtSupport: [19, 27, 35, 43],
+  goldInsgesamt: [10000, 13000, 16000, 19000],
+  goldInsgesamtSupport: [6500, 8500, 10400, 12350],
+  winStreak: [2, 3, 4, 5],
+  assistsInsgesamt: [4, 5, 6, 8],
+  assistsInsgesamtSupport: [8, 10, 12, 16],
+  damageInsgesamt: [12000, 18000, 24000, 32000],
+  damageInsgesamtSupport: [7000, 10000, 13000, 18000],
+  winrate: [0.51, 0.52, 0.53, 0.54],
+  guardianI: [0.5, 0.9, 1.3, 1.7],
+  guardianII: [0.25, 0.45, 0.65, 0.85],
+  guardianIII: [1.5, 2.0, 2.5, 3.0],
+  guardianAngel: [1, 1, 1, 2],
   // Top
-  demolitionCrew: [0.7, 0.9, 1.1, 1.4, 1.8],
-  wreckingBall: [1, 2, 4, 5, 7],
-  splitPusher: [5000, 7000, 9000, 12000, 16000],
-  ironWall: [35000, 45000, 55000, 65000, 78000],
-  colossus: [20000, 28000, 35000, 45000, 58000],
+  demolitionCrew: [0.7, 0.9, 1.1, 1.4],
+  wreckingBall: [1, 2, 4, 5],
+  splitPusher: [5000, 7000, 9000, 12000],
+  ironWall: [35000, 45000, 55000, 65000],
+  colossus: [20000, 28000, 35000, 45000],
   // Jungle
-  epicHunter: [1.5, 2.0, 2.5, 3.2, 4.0],
-  monsterSlayer: [3, 4, 5, 6, 8],
-  thief: [0.01, 0.03, 0.05, 0.07, 0.1],
-  ganker: [0.40, 0.50, 0.60, 0.70, 0.80],
-  jungleBoss: [0.40, 0.45, 0.50, 0.55, 0.60],
+  epicHunter: [1.5, 2.0, 2.5, 3.2],
+  monsterSlayer: [3, 4, 5, 6],
+  thief: [0.01, 0.03, 0.05, 0.07],
+  ganker: [0.40, 0.50, 0.60, 0.70],
+  jungleBoss: [0.40, 0.45, 0.50, 0.55],
   // Mid
   // +50% auf allen 5 Stufen (explizite Nutzeranfrage, 2026-09-30) - vorher
   // [1.5, 2.0, 2.6, 3.3, 4.2] / [3, 4, 6, 8, 11].
-  duelist: [2.25, 3.0, 3.9, 4.95, 6.3],
-  assassin: [4.5, 6, 9, 12, 16.5],
-  globalThreat: [0.017, 0.033, 0.05, 0.066, 0.083],
-  burstKing: [900, 1100, 1350, 1550, 1900],
-  midDiff: [750, 850, 950, 1100, 1300],
+  duelist: [2.25, 3.0, 3.9, 4.95],
+  assassin: [4.5, 6, 9, 12],
+  globalThreat: [0.017, 0.033, 0.05, 0.066],
+  burstKing: [900, 1100, 1350, 1550],
+  midDiff: [750, 850, 950, 1100],
   // ADC
-  hyperCarry: [0.28, 0.33, 0.38, 0.45, 0.55],
-  deathDealer: [0.20, 0.23, 0.26, 0.29, 0.33],
-  legendary: [0.04, 0.06, 0.08, 0.1, 0.14],
-  farmMachine: [60, 70, 80, 90, 95],
-  marksman: [6.5, 7.0, 7.5, 8.0, 8.7],
+  hyperCarry: [0.28, 0.33, 0.38, 0.45],
+  deathDealer: [0.20, 0.23, 0.26, 0.29],
+  legendary: [0.04, 0.06, 0.08, 0.1],
+  farmMachine: [60, 70, 80, 90],
+  marksman: [6.5, 7.0, 7.5, 8.0],
   // Support
-  visionMaster: [75, 90, 110, 125, 150],
-  allSeeingEye: [60, 68, 78, 90, 105],
-  crowdController: [45, 60, 80, 95, 130],
-  puppetMaster: [35, 42, 50, 60, 75],
-  lifelineHeal: [1200, 2500, 5000, 9000, 16000],
-  lifelineDamageTaken: [18000, 23000, 29000, 36000, 44000]
+  visionMaster: [75, 90, 110, 125],
+  allSeeingEye: [60, 68, 78, 90],
+  crowdController: [45, 60, 80, 95],
+  puppetMaster: [35, 42, 50, 60],
+  lifelineHeal: [1200, 2500, 5000, 9000],
+  lifelineDamageTaken: [18000, 23000, 29000, 36000]
 };
+
+const FLAWLESS_MAX_DEATHS = [2, 1, 0, 0];
 
 function rate(key, tier) {
   return tierVal(RATES[key], tier);
@@ -291,20 +329,29 @@ function computeUniversalProgress(acc, { tier, erwarteteSpiele, role }) {
   const isSupport = role === 'UTILITY';
   const list = [];
 
+  const ti = tierIndex(tier);
+  const killSlot = (id, name, current, target) => (ti >= KILL_SLOT_MIN_TIER[id]
+    ? progressEntry(id, name, current, target)
+    : lockedEntry(id, name, TIER_LABELS[KILL_SLOT_MIN_TIER[id]]));
   if (isSupport) {
-    list.push(progressEntry('double-kill', 'Guardian I', acc.countGuardianI, ceilAtLeast1(rate('guardianI', tier) * erwarteteSpiele)));
-    list.push(progressEntry('triple-kill', 'Guardian II', acc.countGuardianII, ceilAtLeast1(rate('guardianII', tier) * erwarteteSpiele)));
-    list.push(progressEntry('quadra-kill', 'Guardian III', acc.sum.saveAllyFromDeath, ceilAtLeast1(rate('guardianIII', tier) * erwarteteSpiele)));
-    list.push(progressEntry('penta-kill', 'Guardian Angel', acc.countGuardianAngel, rate('guardianAngel', tier)));
+    list.push(killSlot('double-kill', 'Guardian I', acc.countGuardianI, ceilAtLeast1(rate('guardianI', tier) * erwarteteSpiele)));
+    list.push(killSlot('triple-kill', 'Guardian II', acc.countGuardianII, ceilAtLeast1(rate('guardianII', tier) * erwarteteSpiele)));
+    list.push(killSlot('quadra-kill', 'Guardian III', acc.sum.saveAllyFromDeath, ceilAtLeast1(rate('guardianIII', tier) * erwarteteSpiele)));
+    list.push(killSlot('penta-kill', 'Guardian Angel', acc.countGuardianAngel, rate('guardianAngel', tier)));
   } else {
-    list.push(progressEntry('double-kill', 'Double Kill', acc.sum.doubleKills, ceilAtLeast1(rate('doubleKill', tier) * erwarteteSpiele)));
-    list.push(progressEntry('triple-kill', 'Triple Kill', acc.sum.tripleKills, ceilAtLeast1(rate('tripleKill', tier) * erwarteteSpiele)));
-    list.push(progressEntry('quadra-kill', 'Quadra Kill', acc.sum.quadraKills, ceilAtLeast1(rate('quadraKill', tier) * erwarteteSpiele)));
-    list.push(progressEntry('penta-kill', 'Pentakill', acc.sum.pentaKills, rate('pentaKill', tier)));
+    list.push(killSlot('double-kill', 'Double Kill', acc.sum.doubleKills, ceilAtLeast1(rate('doubleKill', tier) * erwarteteSpiele)));
+    list.push(killSlot('triple-kill', 'Triple Kill', acc.sum.tripleKills, ceilAtLeast1(rate('tripleKill', tier) * erwarteteSpiele)));
+    // Hard: genau 1 Quadra; erst Majestic skaliert mit den erwarteten Spielen
+    const quadraTarget = ti >= 3 ? ceilAtLeast1(rate('quadraKill', tier) * erwarteteSpiele) : 1;
+    list.push(killSlot('quadra-kill', 'Quadra Kill', acc.sum.quadraKills, quadraTarget));
+    list.push(killSlot('penta-kill', 'Pentakill', acc.sum.pentaKills, rate('pentaKill', tier)));
   }
 
-  list.push(progressEntry('first-strike', 'First Strike', acc.sum.firstBlood, ceilAtLeast1(rate('firstBlood', tier) * erwarteteSpiele)));
-  list.push(progressEntry('flawless-victory', 'Flawless Victory', acc.max.flawlessKills, rate('flawless', tier)));
+  const fbKey = role === 'JUNGLE' ? 'firstBloodJungle' : 'firstBlood';
+  list.push(progressEntry('first-strike', 'First Strike', acc.sum.firstBlood, ceilAtLeast1(rate(fbKey, tier) * erwarteteSpiele)));
+  const maxDeaths = FLAWLESS_MAX_DEATHS[ti];
+  const flawlessBest = maxDeaths === 0 ? acc.max.flawlessKills : (acc.max['flawlessKills' + maxDeaths] || 0);
+  list.push(progressEntry('flawless-victory', 'Flawless Victory', flawlessBest, rate('flawless', tier), { maxDeaths }));
 
   if (isSupport) {
     list.push(progressEntry('rampage', 'Rampage', acc.max.rampageAssists, rate('rampageAssistsSupport', tier)));
@@ -431,18 +478,20 @@ function computeAllTrophyProgress(acc, { tier, erwarteteSpiele, role, currentRan
 
   const newlyFinalizedIds = applyAverageTrophyFinalization(all, { goalReached: goalEntry.unlocked, finalizedState });
 
-  const unlockedCount = all.filter(t => t.unlocked).length;
+  const active = all.filter(t => !t.locked);
+  const unlockedCount = active.filter(t => t.unlocked).length;
   return {
     trophies: all,
     unlockedCount,
-    totalCount: all.length,
-    platinumUnlocked: unlockedCount === all.length && all.length > 0,
+    totalCount: active.length,
+    platinumUnlocked: unlockedCount === active.length && active.length > 0,
     newlyFinalizedIds
   };
 }
 
 module.exports = {
   RULES_VERSION,
+  tierIndex,
   computeErwarteteSpiele,
   createAchievementAccumulator,
   addMatchToAchievementAccumulator,

@@ -365,6 +365,16 @@
     border-color: var(--gold);
     box-shadow: 0 0 10px rgba(200, 170, 110, 0.25);
   }
+  /* v6.13.0: Kill-Trophy, die es auf dieser Schwierigkeit nicht gibt (z.B.
+     Pentakill unter Majestic) - grau, zaehlt nicht zur Gesamtzahl. */
+  .trophy-slot.tier-locked,
+  .trophy-slot.tier-locked.has-progress {
+    opacity: 0.32;
+    filter: grayscale(1);
+  }
+  .trophy-slot.tier-locked .trophy-progress-label {
+    letter-spacing: 0.02em;
+  }
   .trophy-slot.provisional {
     opacity: 0.8;
     border-style: dotted;
@@ -771,7 +781,7 @@
         <span class="trophy-icon" data-icon="trophyCup"></span>
         <span class="platinum-text">
           <span class="trophy-name">Platinum</span>
-          <span class="trophy-desc">Unlock all 21 other trophies</span>
+          <span class="trophy-desc" id="platinumDesc">Unlock all 21 other trophies</span>
         </span>
       </div>
 
@@ -856,8 +866,8 @@
           detail: 'Counts a game only if you saved teammates from death 8+ times in that single game - rare, so the target ({target}) stays a small fixed number.' } },
       { id: 'first-strike', icon: 'droplet', name: 'First Strike', desc: 'Get {target} first bloods total this challenge',
         detail: 'Every first blood kill in any game this challenge adds to the running total. Need {target} total.' },
-      { id: 'flawless-victory', icon: 'shield', name: 'Flawless Victory', desc: 'Win with 0 deaths and {target}+ kills in one game',
-        detail: 'Needs a single game where you won, finished with 0 deaths, and reached at least {target} kills - all three at once, in the same game.' },
+      { id: 'flawless-victory', icon: 'shield', name: 'Flawless Victory', desc: 'Win with {deaths} and {target}+ kills in one game',
+        detail: 'Needs a single game where you won, finished with {deaths}, and reached at least {target} kills - all three at once, in the same game. How many deaths are allowed depends on your Challenge Level.' },
       { id: 'rampage', icon: 'flame', name: 'Rampage', desc: 'Get {target}+ kills in one game',
         detail: 'Looks at your single highest-kill game this challenge - need at least {target} kills in that one game. Deaths don\'t matter for this one.',
         support: { icon: 'link', name: 'Rampage', desc: 'Get {target}+ assists in one game',
@@ -977,10 +987,10 @@
         <span class="trophy-provisional-badge" title="Provisional - reach your LP Goal to confirm">⏳</span>
         <span class="trophy-icon">${iconSvg(t.icon)}</span>
         <span class="trophy-name">${t.name}</span>
-        <span class="trophy-desc">${t.desc.replace(/\{target\}/g, '…')}</span>
+        <span class="trophy-desc">${t.desc.replace(/\{target\}/g, '…').replace(/\{deaths\}/g, '0 deaths')}</span>
         <div class="trophy-progress-track"><div class="trophy-progress-fill" style="width:0%"></div></div>
         <div class="trophy-progress-label">&nbsp;</div>
-        <div class="trophy-tooltip">${roleTag}${(t.detail || t.desc).replace(/\{target\}/g, '…')}</div>
+        <div class="trophy-tooltip">${roleTag}${(t.detail || t.desc).replace(/\{target\}/g, '…').replace(/\{deaths\}/g, '0 deaths')}</div>
       `;
       return slot;
     }
@@ -1036,7 +1046,7 @@
     // RATES.winrate in server/lib/achievements.js) - die App kennt das Level
     // schon aus localStorage, lange bevor die Achievement-Daten geladen sind,
     // also gleich die echte Zahl statt einer allgemeinen Spanne anzeigen.
-    const WINRATE_BY_LEVEL = { easy: 51, normal: 52, hard: 53, very_hard: 54, majestic: 55 };
+    const WINRATE_BY_LEVEL = { easy: 51, normal: 52, hard: 53, majestic: 54, very_hard: 54 };
 
     function patchConsistencyDescription() {
       const challengeLevel = (() => { try { return localStorage.getItem('ttp_challenge_level') || ''; } catch (e) { return ''; } })();
@@ -1108,8 +1118,25 @@
       const descEl = slot.querySelector('.trophy-desc');
       const tooltipEl = slot.querySelector('.trophy-tooltip');
       const roleTag = slot.dataset.roleTag || '';
-      if (descEl) descEl.textContent = descTemplate.replace(/\{target\}/g, target);
-      if (tooltipEl) tooltipEl.innerHTML = `${roleTag}${detailTemplate.replace(/\{target\}/g, target)}`;
+      const md = Number(t.maxDeaths) || 0;
+      const deaths = md === 0 ? '0 deaths' : `max. ${md} death${md === 1 ? '' : 's'}`;
+      const fill = str => str.replace(/\{target\}/g, target).replace(/\{deaths\}/g, deaths);
+      if (descEl) descEl.textContent = fill(descTemplate);
+      if (tooltipEl) tooltipEl.innerHTML = `${roleTag}${fill(detailTemplate)}`;
+    }
+
+    // Kill-Trophy, die es auf dieser Schwierigkeit nicht gibt (v6.13.0)
+    function applyTierLock(slot, t) {
+      const from = t.lockedFrom || 'a higher difficulty';
+      const where = from === 'Majestic' ? 'Majestic' : `${from} and above`;
+      const descEl = slot.querySelector('.trophy-desc');
+      const tooltipEl = slot.querySelector('.trophy-tooltip');
+      if (descEl) descEl.textContent = `Only on ${where}`;
+      if (tooltipEl) tooltipEl.innerHTML = `${slot.dataset.roleTag || ''}This trophy only exists on ${where} challenges - it doesn't count towards your total or Platinum on this Challenge Level.`;
+      const bar = slot.querySelector('.trophy-progress-fill');
+      if (bar) bar.style.width = '0%';
+      const label = slot.querySelector('.trophy-progress-label');
+      if (label) label.textContent = `🔒 ${from}${from === 'Majestic' ? '' : '+'}`;
     }
 
     function applyAchievementProgress(trophies) {
@@ -1117,6 +1144,8 @@
         const slot = document.querySelector(`.trophy-slot[data-trophy-id="${t.id}"]`);
         if (!slot) continue;
         slot.classList.add('has-progress');
+        slot.classList.toggle('tier-locked', Boolean(t.locked));
+        if (t.locked) { slot.classList.remove('unlocked', 'provisional'); applyTierLock(slot, t); continue; }
         slot.classList.toggle('unlocked', Boolean(t.unlocked));
         slot.classList.toggle('provisional', Boolean(t.provisional));
         patchTrophyDescription(slot, t);
@@ -1182,6 +1211,7 @@
       const overallPercent = result.totalCount > 0 ? Math.round((result.unlockedCount / result.totalCount) * 100) : 0;
       document.getElementById('trophiesOverallPercent').textContent = `${overallPercent}%`;
       document.getElementById('trophiesOverallCount').textContent = `${result.unlockedCount} / ${result.totalCount} unlocked`;
+      setPlatinumDesc(result.totalCount);
       document.querySelector('.platinum-trophy').classList.toggle('unlocked', Boolean(result.platinumUnlocked));
     }
 
@@ -1349,6 +1379,10 @@
     // stehen (z.B. "Back to current challenge", bevor der Live-Scan fertig
     // war -> Grid zeigte weiter die alte Challenge).
     const pristineTrophyGridHtml = trophyGrid.innerHTML;
+    function setPlatinumDesc(total) {
+      document.getElementById('platinumDesc').textContent = `Unlock all ${total || 21} other trophies`;
+    }
+
     function resetTrophyGrid(forRole = role) {
       if (forRole === role) trophyGrid.innerHTML = pristineTrophyGridHtml;
       else buildTrophyGrid(forRole);
@@ -1382,7 +1416,7 @@
     }
 
     const ROLE_LABELS_SHORT = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'ADC', UTILITY: 'Support' };
-    const CHALLENGE_LEVEL_LABELS_SHORT = { easy: 'Easy', normal: 'Normal', hard: 'Hard', very_hard: 'Very Hard', majestic: 'Majestic' };
+    const CHALLENGE_LEVEL_LABELS_SHORT = { easy: 'Easy', normal: 'Normal', hard: 'Hard', majestic: 'Majestic', very_hard: 'Majestic' };
     const APEX_TIERS_H = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
 
     function formatTierDivisionH(tier, division, lp) {
@@ -1620,6 +1654,7 @@
       const overallPercent = entry.totalCount > 0 ? Math.round((entry.unlockedCount / entry.totalCount) * 100) : 0;
       document.getElementById('trophiesOverallPercent').textContent = `${overallPercent}%`;
       document.getElementById('trophiesOverallCount').textContent = `${entry.unlockedCount} / ${entry.totalCount} unlocked`;
+      setPlatinumDesc(entry.totalCount);
       document.querySelector('.platinum-trophy').classList.toggle('unlocked', Boolean(entry.platinumUnlocked));
 
       const dateRange = entry.until

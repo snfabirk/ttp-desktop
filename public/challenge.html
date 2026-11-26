@@ -1071,6 +1071,10 @@
   <div class="content">
     <h2 class="panel-heading profile-heading" id="pageHeading">Challenge</h2>
     <div class="tab-panel" data-panel="challenge">
+    <nav class="mode-switch" aria-label="Game mode">
+      <a href="challenge.html" class="on">Ranked</a>
+      <a href="arena.html">Arena</a>
+    </nav>
     <div class="account-overview-wrap">
       <div class="account-overview-card" id="accountOverviewCard">
         <div class="account-overview-header">
@@ -1721,7 +1725,7 @@
 
     // Feste Challenge-Einstellungen (v5.32.0): nach dem Start nicht mehr
     // aenderbar, die Setup-Seite ist gesperrt - hier sieht man sie.
-    const LEVEL_NAMES = { easy: 'Easy', normal: 'Normal', hard: 'Hard', very_hard: 'Very Hard', majestic: 'Majestic' };
+    const LEVEL_NAMES = { easy: 'Easy', normal: 'Normal', hard: 'Hard', majestic: 'Majestic', very_hard: 'Majestic' };
     let currentPuuid = null;
     function renderChallengeDetails(since) {
       const level = LEVEL_NAMES[ls('ttp_challenge_level')] || '–';
@@ -2083,7 +2087,9 @@
         ['Game in your second role', src.perGame.secondRole],
         ['Off-role game', src.perGame.offRole],
         ['Game without a challenge (level only, no pass)', src.perGame.noChallenge],
-        ['Win bonus (any game)', src.winBonus],
+        ['Arena: game with one of your rolled champions', src.perGame.arenaRolled],
+        ['Arena: any other champion (level only, no pass)', src.perGame.arenaOther],
+        ['Win bonus (any game, top 4 in Arena)', src.winBonus],
         ['Per kill', src.perKill],
         ['Per assist', src.perAssist],
         [`Every ${src.lpBankSize} LP gained (LP Bank)`, `+${fmtNum(src.perLpBank)} XP + 🎟 booster`],
@@ -2120,7 +2126,7 @@
         document.getElementById('dailyQuests').innerHTML = questColumn(1, data.dailies
           .map(q => questHtml(q, { reroll: q.id !== 'firstwin' && !q.champId && !q.bonus })), 'daily');
         document.getElementById('weeklyQuests').innerHTML = questColumn(2, data.weeklies.map(q => questHtml(q)), 'weekly');
-        lastChallengeActive = data.challengeActive;
+        lastChallengeActive = data.passActive !== undefined ? data.passActive : data.challengeActive;
         renderPass(data.pass, data.coins);
         renderRecentXp(data.recentGames || []);
         renderXpSources(data.xpSources, data.fullXpGamesPerDay);

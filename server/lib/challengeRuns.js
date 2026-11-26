@@ -7,6 +7,21 @@
 //
 // run = { since, level, lpGoalTier, lpGoalDivision, lpGoalLp,
 //         champions: [{ id, name, key, role }], mainRole, secondRole }
+//
+// v6.13.0 (Nutzervorgabe): pro Summoner UND Spielmodus genau eine Challenge.
+// Ranked (TTP/Duo) behaelt den alten Schluessel = puuid, alle anderen Modi
+// bekommen "puuid:modus" (z.B. "puuid:arena") - Datei <puuid>_arena.json,
+// online dieselbe challenge_runs-Tabelle (puuid-Spalte = dieser Schluessel),
+// also keine Schema-Aenderung noetig. Alle Funktionen hier nehmen den
+// Schluessel aus runKey().
+// Arena-run = { mode: 'arena', since, variant: 'riot'|'elder'|'ultimate',
+//   pool: [championKey] (verdeckte Zufallsauswahl, nur riot/elder),
+//   won: { key: { at, matchId } }, roll: { champs: [key, key], at, seq, spent },
+//   processed: [matchId], rerollDay }  - Logik in arena.js
+const MODES = ['ranked', 'arena'];
+function runKey(puuid, mode = 'ranked') {
+  return !mode || mode === 'ranked' ? String(puuid) : `${puuid}:${mode}`;
+}
 const fs = require('fs');
 const path = require('path');
 const { dataSubdir } = require('./dataPaths');
@@ -31,8 +46,25 @@ function getRun(puuid) {
   return rec ? rec.run : null;
 }
 
+const ARENA_VARIANTS = ['riot', 'elder', 'ultimate'];
 function cleanRun(run) {
   if (!run || !run.since) return null;
+  if (run.mode === 'arena') {
+    return {
+      mode: 'arena',
+      since: new Date(run.since).toISOString(),
+      variant: ARENA_VARIANTS.includes(run.variant) ? run.variant : 'riot',
+      pool: Array.isArray(run.pool) ? run.pool.map(String) : null,
+      won: run.won && typeof run.won === 'object' ? run.won : {},
+      roll: run.roll && Array.isArray(run.roll.champs) ? {
+        champs: run.roll.champs.map(String).slice(0, 2), at: Number(run.roll.at) || 0, seq: Number(run.roll.seq) || 0,
+        // gesetzt, sobald ein Spiel mit einem der beiden gewertet wurde -> neu rollen
+        spent: run.roll.spent ? { matchId: String(run.roll.spent.matchId || ''), key: String(run.roll.spent.key || ''), placement: Number(run.roll.spent.placement) || 0, won: Boolean(run.roll.spent.won) } : null
+      } : null,
+      processed: Array.isArray(run.processed) ? run.processed.map(String) : [],
+      rerollDay: run.rerollDay || null
+    };
+  }
   const champions = Array.isArray(run.champions)
     ? run.champions.filter(c => c && c.key).slice(0, 3).map(c => ({ id: c.id || '', name: c.name || '', key: String(c.key), role: c.role || '' }))
     : [];
@@ -66,4 +98,4 @@ function importRecord(puuid, rec) {
   return writeRecord(puuid, rec ? cleanRun(rec.run) : null, { silent: true, updatedAt: rec && rec.updatedAt });
 }
 
-module.exports = { getRun, getRecord, setRun, clearRun, importRecord, cleanRun, setOnChange };
+module.exports = { getRun, getRecord, setRun, clearRun, importRecord, cleanRun, setOnChange, runKey, MODES };

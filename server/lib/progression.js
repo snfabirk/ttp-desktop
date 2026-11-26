@@ -35,7 +35,13 @@ const XP_PER_GAME = {
   offRole: 50,          // alles andere (Fill)
   // v6.0: Spiel ohne laufende Challenge - nur Account-Level (+Coins), kein
   // Pass, keine Quests. 300 vom Nutzer bestaetigt (2026-11-06).
-  noChallenge: 300
+  noChallenge: 300,
+  // v6.13.0 Arena-Challenge (Nutzer): Arena-Spiele dauern im Schnitt 26.2 min
+  // statt 30.0 (53 Arena- vs 120 Ranked-Spiele aus dem Cache), "Sieg" = Top 4
+  // (~58 %). 400 Basis -> ~590 XP/Spiel = ~22.6 XP/min, Ranked-Pool-Spiel
+  // ~700/30 min = ~23.3 XP/min - also gleichwertig.
+  arenaRolled: 400, // einer der beiden ausgerollten Champions: Level + Pass
+  arenaOther: 400   // anderer Champion: nur Level (pass: false), Nutzervorgabe
 };
 const XP_WIN_BONUS = 150;            // zusaetzlich bei Sieg, egal welche Kategorie
 // Coins pro gewertetem Game (v5.27.0), ab dem 6. Spiel des Tages wie XP halbiert
@@ -283,7 +289,7 @@ function questsWithProgress(state, context, now) {
   const today = dayKey(now);
   const weekFrom = weekStartOf(now);
   // v6.0: nur Spiele aus einer Challenge zaehlen (egal welcher Summoner)
-  const challengeGames = state.ledger.filter(g => g.pass !== false);
+  const challengeGames = state.ledger.filter(g => g.pass !== false && g.mode !== 'arena');
   const todays = challengeGames.filter(g => g.day === today);
   const weeks = challengeGames.filter(g => new Date(g.gameCreation) >= weekFrom);
   const credited = state.questLedger || {};
@@ -306,6 +312,63 @@ function questsWithProgress(state, context, now) {
     .map(q => ({ ...q, key: qKey('w', weekKeyStr, q) }))
     .map(q => ({ ...q, credited: !!(credited[q.key] || credited[oldKey('w', weekKeyStr, q)]) })).map(lockDone);
   return { dailies, weeklies, today, weekKeyStr };
+}
+
+// ----- Arena-Quests (v6.13.0, Nutzer: "simple dailies und weeklies, die
+// machbar sind") - nur waehrend einer Arena-Challenge, zaehlen alle Arena-
+// Spiele dieser Challenge (auch mit nicht ausgerollten Champions). Eigene
+// Schluessel (ad:/aw:), unabhaengig von den Ranked-Quests.
+const ARENA_DAILIES = [
+  { id: 'a_play2', title: 'Arena Warm-up', desc: 'Play 2 Arena games', target: 2, xp: 300 },
+  { id: 'a_top4', title: 'Top 4', desc: 'Finish in the top 4 of an Arena game', target: 1, xp: 400 }
+];
+const ARENA_WEEKLIES = [
+  { id: 'a_play10', title: 'Arena Regular', desc: 'Play 10 Arena games', target: 10, xp: 2000 },
+  { id: 'a_top4x5', title: 'Podium Finisher', desc: 'Finish in the top 4 in 5 Arena games', target: 5, xp: 1500 },
+  { id: 'a_first', title: 'Champion of the Arena', desc: 'Get 1st place in an Arena game', target: 1, xp: 2500 }
+];
+function arenaQuestProgress(q, games) {
+  const place = g => (g.stats && g.stats.placement) || 9;
+  let p = 0;
+  if (q.id === 'a_play2' || q.id === 'a_play10') p = games.length;
+  if (q.id === 'a_top4' || q.id === 'a_top4x5') p = games.filter(g => place(g) <= 4).length;
+  if (q.id === 'a_first') p = games.filter(g => place(g) === 1).length;
+  p = Math.min(q.target, p);
+  return { ...q, progress: p, done: p >= q.target };
+}
+function arenaQuestsInState(state, now) {
+  const today = dayKey(now), weekFrom = weekStartOf(now), wk = weekKey(now);
+  const games = state.ledger.filter(g => g.mode === 'arena');
+  const credited = state.questLedger || {};
+  const mark = (prefix, period) => q => {
+    const key = `${prefix}:${period}:${q.id}`;
+    const c = !!credited[key];
+    return { ...q, key, credited: c, ...(c ? { done: true, progress: q.target } : {}) };
+  };
+  return {
+    dailies: ARENA_DAILIES.map(q => arenaQuestProgress(q, games.filter(g => g.day === today))).map(mark('ad', today)),
+    weeklies: ARENA_WEEKLIES.map(q => arenaQuestProgress(q, games.filter(g => new Date(g.gameCreation) >= weekFrom))).map(mark('aw', wk))
+  };
+}
+// Schreibt erledigte Arena-Quests gut (Level + Pass) und liefert den Stand.
+function arenaQuests({ credit = false } = {}) {
+  const state = readState();
+  const now = new Date();
+  let q = arenaQuestsInState(state, now);
+  if (credit) {
+    state.questLedger = state.questLedger || {};
+    let added = 0;
+    [...q.dailies, ...q.weeklies].forEach(x => {
+      if (!x.done || x.credited || state.questLedger[x.key]) return;
+      state.questLedger[x.key] = { xp: x.xp, at: now.toISOString() };
+      state.totalXp += x.xp;
+      addPassXp(state, monthKey(now), x.xp);
+      added += x.xp;
+    });
+    if (added) { writeState(state); q = arenaQuestsInState(state, now); }
+  }
+  return { ...q, dailyResetAt: nextDailyReset(now).toISOString(), weeklyResetAt: nextWeeklyReset(now).toISOString(),
+    pass: (({ label, tier, tiers, xpIntoTier, xpPerTier }) => ({ label, tier, tiers, xpIntoTier, xpPerTier }))(getPassOverview(state, now)) };
 }
 
 // Schreibt erledigte, noch nicht gutgeschriebene Quests gut (Level + Pass).
@@ -913,6 +976,45 @@ function equipCosmetic(type, id) {
   return { ok: true, equipped: state.equipped };
 }
 
+// ----- Schwierigkeits-Freischaltung (v6.13.0, Nutzervorgabe 2026-11-26) -----
+// Majestic ist ausgegraut, bis man je eine Challenge auf Easy, Normal UND
+// Hard geschafft hat (LP-Ziel erreicht). Pro Challenge-Art getrennt (mode:
+// 'ttp' = regulaere Ranked-Challenge, spaeter z.B. 'arena'), am Account statt
+// an der History-Datei, damit ein geloeschter History-Eintrag nichts wieder
+// sperrt. Wer schon eine (alte) Very-Hard/Majestic-Challenge geschafft hat,
+// hat Majestic direkt frei.
+const CLEARABLE_LEVELS = ['easy', 'normal', 'hard', 'majestic'];
+function normLevel(level) { return level === 'very_hard' ? 'majestic' : level; }
+
+function difficultyView(clears) {
+  const c = clears || {};
+  return { clears: c, majesticUnlocked: Boolean(c.majestic || (c.easy && c.normal && c.hard)) };
+}
+
+function getDifficultyUnlocks(mode = 'ttp') {
+  return difficultyView(((readState().difficultyClears) || {})[mode]);
+}
+
+// levels: Liste geschaffter Level (z.B. aus History-Backfill). Schreibt nur,
+// wenn sich etwas aendert.
+function recordDifficultyClears(mode, levels) {
+  const state = readState();
+  const all = state.difficultyClears || {};
+  const cur = { ...(all[mode] || {}) };
+  let changed = false;
+  for (const raw of levels || []) {
+    const lv = normLevel(raw);
+    if (!CLEARABLE_LEVELS.includes(lv) || cur[lv]) continue;
+    cur[lv] = Date.now();
+    changed = true;
+  }
+  if (changed) {
+    state.difficultyClears = { ...all, [mode]: cur };
+    writeState(state);
+  }
+  return difficultyView(cur);
+}
+
 // Fuer electron-main.js: welches App-Icon ist ausgeruestet (nur wenn besessen)
 function getEquippedIcon() {
   const state = readState();
@@ -1139,6 +1241,8 @@ function creditMatches(games) {
         // v6.0: false = Spiel ausserhalb einer Challenge (zaehlt nicht fuer
         // Pass und Quests). Alte Eintraege ohne Feld zaehlen als Challenge-Spiel.
         pass: g.pass !== false,
+        // v6.13.0: 'arena' fuer Arena-Spiele (eigene Quests, nicht in Ranked-Quests/-Profilstats)
+        mode: g.mode || 'ranked',
         stats: g.stats || null
       };
       state.ledger.push(entry);
@@ -1218,7 +1322,7 @@ function getRecentActivity(limit = 10) {
 // bleiben profilweit. Ohne Summoner gibt es keine Spiel-Statistiken.
 function getLifetimeStats(puuid) {
   const state = readState();
-  const games = puuid ? state.ledger.filter(g => g.puuid === puuid) : [];
+  const games = puuid ? state.ledger.filter(g => g.puuid === puuid && g.mode !== 'arena') : [];
   const lpEvents = puuid ? state.lpBank.events.filter(e => e.puuid === puuid) : [];
   const champCounts = {};
   games.forEach(g => {
@@ -1287,7 +1391,7 @@ function rerollDaily(context) {
   const pool = DAILY_POOL.filter(q => !q.role || q.role === context.role);
   const current = pool[seededIndex(`${day}:role`, pool.length)];
   // Schon erledigte Quest kann nicht mehr getauscht werden (sonst XP doppelt)
-  if (evaluateDaily(current, state.ledger.filter(g => g.day === day)).done) return { ok: false, error: 'This quest is already done.' };
+  if (evaluateDaily(current, state.ledger.filter(g => g.day === day && g.mode !== 'arena')).done) return { ok: false, error: 'This quest is already done.' };
   const others = pool.filter(q => q.id !== current.id);
   if (!others.length) return { ok: false, error: 'No other quest available.' };
   state.rerolls = { [day]: others[Math.floor(Math.random() * others.length)].id };
@@ -1748,6 +1852,8 @@ function getOverview(context) {
   // Rollen-Quest des Tages haengt von der Rolle ab.
   const hasCtx = context && (context.role || (context.champions || []).length);
   const challengeActive = !!(context && context.challengeActive);
+  // v6.13.0: der Pass levelt auch mit einer laufenden Arena-Challenge
+  const passActive = challengeActive || !!(context && context.arenaActive);
   if (challengeActive && hasCtx && creditQuestsInState(state, context, now)) writeState(state);
   const quests = challengeActive ? questsWithProgress(state, context || {}, now) : { dailies: [], weeklies: [] };
   return {
@@ -1755,6 +1861,7 @@ function getOverview(context) {
     totalXp: state.totalXp,
     gamesToday: state.ledger.filter(e => e.day === dayKey(now)).length,
     challengeActive,
+    passActive,
     recentGames: [...state.ledger].sort((a, b) => b.gameCreation - a.gameCreation).slice(0, 7),
     fullXpGamesPerDay: FULL_XP_GAMES_PER_DAY,
     dailies: quests.dailies,
@@ -1799,8 +1906,28 @@ module.exports = {
   saveProfileLayout,
   rerollDaily,
   creditQuests,
+  arenaQuests,
+  // Arena-Spiele, die mit einem ausgerollten Champion gespielt wurden (zaehlen fuer die Challenge)
+  // Arena-Profil-Widgets (v6.13.0): nur Spiele aus Arena-Challenges, je Summoner
+  arenaLifetime: puuid => {
+    const games = readState().ledger.filter(e => e.mode === 'arena' && e.puuid === puuid);
+    const place = g => (g.stats && g.stats.placement) || 0;
+    const firsts = games.filter(g => place(g) === 1);
+    return {
+      games: games.length,
+      wins: firsts.length,
+      top4: games.filter(g => place(g) > 0 && place(g) <= 4).length,
+      champsPlayed: new Set(games.map(g => g.champId).filter(Boolean)).size,
+      champsWon: new Set(firsts.map(g => g.champId).filter(Boolean)).size,
+      avgPlacement: games.length ? Math.round((games.reduce((n, g) => n + (place(g) || 8), 0) / games.length) * 10) / 10 : null
+    };
+  },
+  arenaRolledMatchIds: () => new Set(readState().ledger.filter(e => e.category === 'arenaRolled').map(e => e.matchId)),
+  berlinDayKey: (d = new Date()) => dayKey(d),
   claimPassCoins,
   getEquippedIcon,
+  getDifficultyUnlocks,
+  recordDifficultyClears,
   buyConsumable,
   buyShopItem,
   buyBooster,

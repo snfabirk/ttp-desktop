@@ -52,4 +52,13 @@ function sameRiotId(a, gameName, tagLine) {
   return !!a && a.gameName.toLowerCase() === String(gameName).toLowerCase() && String(a.tagLine).toLowerCase() === String(tagLine).toLowerCase();
 }
 
-module.exports = { currentSummoner, sameRiotId };
+// Queue-Liste des Clients (v6.13.0): fuer "ist Arena gerade im Spiel?".
+// null = Client zu / nicht eingeloggt (dann bleibt der zuletzt bekannte Stand).
+async function gameQueues() {
+  const creds = await clientCredentials();
+  if (!creds) return null;
+  const q = await lcuGet(creds, '/lol-game-queues/v1/queues');
+  return Array.isArray(q) ? q : null;
+}
+
+module.exports = { currentSummoner, sameRiotId, gameQueues };
