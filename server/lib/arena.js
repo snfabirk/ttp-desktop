@@ -122,19 +122,37 @@ function targetFor(run, champions) {
 // Neues Paar aus den noch offenen Champions. avoid: wenn moeglich nicht
 // dieselben wieder (Reroll soll sich nach Reroll anfuehlen).
 function rollPair(run, champions, at, avoid = []) {
+  // Gespieltes, noch nicht ausgewertetes Paar + aufgehobene nie direkt wieder
+  // (sonst waere unklar, zu welchem Paar das naechste Spiel gehoert)
+  if (run.roll && run.roll.played && !run.roll.spent) avoid = [...avoid, ...run.roll.champs];
+  (run.pending || []).forEach(p => { avoid = [...avoid, ...p.champs]; });
   const remaining = remainingKeys(run, champions);
   let candidates = remaining.filter(k => !avoid.includes(k));
   if (candidates.length < Math.min(2, remaining.length)) candidates = remaining;
   const champs = shuffled(candidates).slice(0, 2);
   const seq = ((run.roll && run.roll.seq) || 0) + 1;
+  // v6.15.0: Paar wurde laut Client schon gespielt, Riot hat das Spiel aber
+  // noch nicht -> aufheben, advanceRun wertet es nach, sobald es da ist
+  if (run.roll && run.roll.played && !run.roll.spent) {
+    run.pending = [...(run.pending || []), { champs: run.roll.champs, at: run.roll.at, played: run.roll.played }].slice(-5);
+  }
   run.roll = champs.length ? { champs, at, seq, spent: null } : null;
   return run.roll;
 }
 
 // Aktives (noch nicht verbrauchtes) Paar?
 const hasActivePair = run => Boolean(run.roll && !run.roll.spent);
+// ...und noch nicht laut Client gespielt (v6.15.0) - nur so ein Paar darf
+// rerollt/ersetzt werden; ein gespieltes Paar braucht ein neues
+const livePair = run => hasActivePair(run) && !run.roll.played;
 function needsRoll(run, champions) {
-  return !hasActivePair(run) && remainingKeys(run, champions).length > 0;
+  return !livePair(run) && remainingKeys(run, champions).length > 0;
+}
+// Client meldet: Spiel mit diesem Champion hat begonnen (v6.15.0)
+function markPlayed(run, key, now = Date.now()) {
+  if (!livePair(run) || !run.roll.champs.includes(String(key))) return false;
+  run.roll.played = { key: String(key), at: now };
+  return true;
 }
 // Roll-Knopf: nur ohne aktives Paar
 function roll(run, champions, now = Date.now()) {
@@ -160,14 +178,32 @@ function advanceRun(run, matches, findMe, champions) {
   const xpGames = [];
   const sorted = matches.filter(m => !done.has(m.metadata.matchId))
     .sort((a, b) => a.info.gameCreation - b.info.gameCreation);
+  run.pending = (run.pending || []).filter(p => Date.now() - ((p.played && p.played.at) || 0) < 24 * 3600 * 1000);
+  // Aufgehobenes (schon ersetztes) Paar, zu dem dieses Spiel gehoert
+  const pendingIdx = (m, key) => run.pending.findIndex(p => m.info.gameCreation >= p.at && p.champs.includes(key));
   for (const m of sorted) {
     run.processed.push(m.metadata.matchId);
     const me = findMe(m);
-    if (!me || (m.info.gameDuration || 0) < MIN_GAME_SECONDS) continue;
+    if (!me) continue;
+    if ((m.info.gameDuration || 0) < MIN_GAME_SECONDS) {
+      // Remake: Paar wieder freigeben bzw. aufgehobenes verwerfen
+      const k = String(me.championId), i = pendingIdx(m, k);
+      if (i >= 0) run.pending.splice(i, 1);
+      else if (run.roll && run.roll.played && run.roll.played.key === k && !run.roll.spent) delete run.roll.played;
+      continue;
+    }
     const key = String(me.championId);
     const placement = me.placement || me.subteamPlacement || 0;
     const end = m.info.gameEndTimestamp || (m.info.gameCreation + (m.info.gameDuration || 0) * 1000);
-    // Gilt nur mit aktivem Paar und wenn das Spiel NACH dem Rollen anfing
+    // Gilt nur mit aktivem Paar und wenn das Spiel NACH dem Rollen anfing -
+    // zuerst ein aufgehobenes (frueher gerolltes, schon gespieltes) Paar
+    const pi = pendingIdx(m, key);
+    if (pi >= 0) {
+      run.pending.splice(pi, 1);
+      if (placement === 1 && !run.won[key]) run.won[key] = { at: end, matchId: m.metadata.matchId };
+      xpGames.push({ match: m, me, rolled: true, placement });
+      continue;
+    }
     const rolled = Boolean(hasActivePair(run) && m.info.gameCreation >= run.roll.at && run.roll.champs.includes(key));
     if (rolled) {
       const won = placement === 1 && !run.won[key];
@@ -180,7 +216,7 @@ function advanceRun(run, matches, findMe, champions) {
 }
 
 function canReroll(run, today) {
-  return hasActivePair(run) && run.rerollDay !== today;
+  return livePair(run) && run.rerollDay !== today;
 }
 function reroll(run, champions, today, now = Date.now()) {
   if (!canReroll(run, today)) return false;
@@ -196,7 +232,7 @@ function reroll(run, champions, today, now = Date.now()) {
 // man selbst schon einen der beiden gelockt hat (dann zaehlt das Spiel ja).
 // Liefert [{ from, to, reason }] oder null.
 function replaceUnavailable(run, champions, unavailable, myPick, avoid = [], blocked = [], now = Date.now()) {
-  if (!hasActivePair(run)) return null;
+  if (!livePair(run)) return null;
   if (myPick && run.roll.champs.includes(String(myPick))) return null;
   const hit = run.roll.champs.filter(k => unavailable[k]);
   if (!hit.length) return null;
@@ -233,7 +269,7 @@ function view(run, champions, games, today) {
       const w = run.won[c.key];
       const visible = !hidden || w || rolledKeys.has(c.key);
       return visible
-        ? { key: c.key, id: c.id, name: c.name, won: w ? w.at : null, rolled: rolledKeys.has(c.key) && !run.roll.spent }
+        ? { key: c.key, id: c.id, name: c.name, won: w ? w.at : null, rolled: rolledKeys.has(c.key) && !run.roll.spent && !run.roll.played }
         : { key: null };
     });
   const count = keys.filter(k => run.won[k]).length;
@@ -242,7 +278,7 @@ function view(run, champions, games, today) {
     variant: run.variant, variantName: (VARIANTS[run.variant] || VARIANTS.riot).name,
     since: run.since, target, count, completed: target > 0 && count >= target,
     hidden, slots,
-    roll: run.roll ? { seq: run.roll.seq, at: run.roll.at, spent: run.roll.spent, replaced: (run.roll.replaced || []).map(r => ({ from: (byKey.get(r.from) || {}).name || '', to: (byKey.get(r.to) || {}).name || '', reason: r.reason })), champs: run.roll.champs.map(k => byKey.get(k) || { key: k, id: '', name: '' }) } : null,
+    roll: run.roll ? { seq: run.roll.seq, at: run.roll.at, spent: run.roll.spent, played: run.roll.played && !run.roll.spent ? { key: run.roll.played.key, name: (byKey.get(run.roll.played.key) || {}).name || '' } : null, replaced: (run.roll.replaced || []).map(r => ({ from: (byKey.get(r.from) || {}).name || '', to: (byKey.get(r.to) || {}).name || '', reason: r.reason })), champs: run.roll.champs.map(k => byKey.get(k) || { key: k, id: '', name: '' }) } : null,
     needsRoll: needsRoll(run, champions),
     canReroll: canReroll(run, today),
     totalGames: games.length,
@@ -252,4 +288,4 @@ function view(run, champions, games, today) {
   };
 }
 
-module.exports = { ARENA_QUEUES, arenaQueues, VARIANTS, MIN_GAME_SECONDS, allChampions, availability, newRun, advanceRun, roll, reroll, replaceUnavailable, hasActivePair, view, targetFor };
+module.exports = { ARENA_QUEUES, arenaQueues, VARIANTS, MIN_GAME_SECONDS, allChampions, availability, newRun, advanceRun, roll, reroll, replaceUnavailable, hasActivePair, livePair, needsRoll, markPlayed, view, targetFor };

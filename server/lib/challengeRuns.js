@@ -61,9 +61,15 @@ function cleanRun(run) {
         // gesetzt, sobald ein Spiel mit einem der beiden gewertet wurde -> neu rollen
         spent: run.roll.spent ? { matchId: String(run.roll.spent.matchId || ''), key: String(run.roll.spent.key || ''), placement: Number(run.roll.spent.placement) || 0, won: Boolean(run.roll.spent.won) } : null,
         // v6.14.0: im Champ Select automatisch ersetzt (gebannt/gepickt)
+        played: run.roll.played && run.roll.played.key ? { key: String(run.roll.played.key), at: Number(run.roll.played.at) || 0 } : null,
         replaced: Array.isArray(run.roll.replaced) ? run.roll.replaced.slice(0, 2).map(r => ({ from: String(r.from || ''), to: String(r.to || ''), reason: r.reason === 'picked' ? 'picked' : 'banned' })) : []
       } : null,
       processed: Array.isArray(run.processed) ? run.processed.map(String) : [],
+      // v6.15.0: schon gespielte, aber von Riot noch nicht gelieferte Paare
+      pending: Array.isArray(run.pending) ? run.pending.slice(-5).filter(p => p && Array.isArray(p.champs)).map(p => ({
+        champs: p.champs.map(String).slice(0, 2), at: Number(p.at) || 0,
+        played: p.played ? { key: String(p.played.key || ''), at: Number(p.played.at) || 0 } : null
+      })) : [],
       rerollDay: run.rerollDay || null
     };
   }

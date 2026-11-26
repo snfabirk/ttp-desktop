@@ -1487,7 +1487,11 @@ app.post('/api/arena/reroll', requireApiKey, cloudRoute(async req => {
 // Client: wird ein gerollter Champion gebannt oder von jemand anderem
 // gepickt, wird genau dieser gratis ersetzt (kein Tages-Reroll) + Windows-
 // Hinweis. Nur fuer den im Client eingeloggten Summoner, nur in Arena-Queues.
-const arenaLive = new Map(); // puuid -> { champSelect, seq }
+// v6.15.0: rollt im Champ Select automatisch, wenn kein spielbares Paar da
+// ist, und merkt sich beim Spielstart, ob mit einem Paar-Champion gelockt
+// wurde (roll.played) - Riot liefert das Spiel erst Minuten spaeter.
+const arenaLive = new Map(); // puuid -> { champSelect }
+const arenaLastPick = new Map(); // puuid -> eigener gelockter Champion im laufenden Champ Select
 let liveTicking = false;
 function notifyDesktop(title, body) {
   try {
@@ -1495,41 +1499,65 @@ function notifyDesktop(title, body) {
     if (Notification && Notification.isSupported()) new Notification({ title, body, silent: false }).show();
   } catch (e) { /* kein Electron (npm start) */ }
 }
+const GAME_PHASES = ['GameStart', 'InProgress', 'Reconnect'];
 async function arenaChampSelectTick() {
   if (liveTicking) return;
   liveTicking = true;
   try {
-    const candidates = cloud.linkedRiotAccounts().filter(a => {
-      const run = challengeRuns.getRun(arenaKey(a.puuid));
-      return run && arena.hasActivePair(run);
-    });
-    if (!candidates.length) { arenaLive.clear(); return; }
+    const candidates = cloud.linkedRiotAccounts().filter(a => challengeRuns.getRun(arenaKey(a.puuid)));
+    if (!candidates.length) { arenaLive.clear(); arenaLastPick.clear(); return; }
     // Queue-Liste aus dem Client frisch halten (intern max. alle 10 min) -
     // Riot vergibt pro Arena-Version neue IDs (1740 -> 1750 am 2026-11-26)
     try { await arena.availability(); } catch (e) {}
-    const cs = await lcu.champSelect();
-    const acc = cs && cs.summoner && candidates.find(a => lcu.sameRiotId(cs.summoner, a.game_name, a.tag_line));
-    const isArena = cs && (arena.arenaQueues().includes(cs.queueId) || cs.gameMode === 'CHERRY');
+    const st = await lcu.clientState();
+    const acc = st && st.summoner && candidates.find(a => lcu.sameRiotId(st.summoner, a.game_name, a.tag_line));
+    const isArena = st && (arena.arenaQueues().includes(st.queueId) || st.gameMode === 'CHERRY');
     arenaLive.clear();
-    if (!acc || !isArena) return;
+    if (!acc || !isArena) { if (!st || st.phase !== 'ChampSelect') arenaLastPick.clear(); return; }
     const key = arenaKey(acc.puuid);
     const champs = await arena.allChampions();
-    if (arenaBusy.has(acc.puuid)) { arenaLive.set(acc.puuid, { champSelect: true }); return; } // naechster Takt
+    // Ab hier kein await mehr bis zum Speichern - sonst koennte processArena
+    // dazwischen einen alten Stand lesen und unsere Aenderung ueberschreiben
+    if (arenaBusy.has(acc.puuid)) { arenaLive.set(acc.puuid, { champSelect: st.phase === 'ChampSelect' }); return; } // naechster Takt
     const run = challengeRuns.getRun(key);
     if (!run) return;
-    const unavailable = {};
-    cs.banned.forEach(k => { unavailable[k] = 'banned'; });
-    cs.pickedByOthers.forEach(k => { unavailable[k] = 'picked'; });
-    // Eigene Bans: kein Ersatz-Ausloeser (sonst Gratis-Reroll per Selbst-Ban),
-    // aber auch nie als neuer Champion
-    const replaced = arena.replaceUnavailable(run, champs.list, unavailable, cs.myPick, cs.hovered, cs.ownBans);
-    if (replaced) {
-      challengeRuns.setRun(key, run);
-      const name = k => (champs.list.find(c => c.key === k) || {}).name || k;
-      notifyDesktop('Arena challenge - champion replaced', replaced.map(r =>
-        `${name(r.from)} was ${r.reason === 'picked' ? 'picked by someone else' : 'banned'} - your new champion: ${name(r.to)}`).join('\n'));
+    const name = k => (champs.list.find(c => c.key === k) || {}).name || k;
+    const cs = st.champSelect;
+
+    if (st.phase === 'ChampSelect' && cs) {
+      arenaLive.set(acc.puuid, { champSelect: true });
+      if (cs.myPick) arenaLastPick.set(acc.puuid, cs.myPick);
+      const unavailable = {};
+      cs.banned.forEach(k => { unavailable[k] = 'banned'; });
+      cs.pickedByOthers.forEach(k => { unavailable[k] = 'picked'; });
+      // 1) Kein spielbares Paar (Start / letztes Paar gespielt) -> automatisch rollen
+      if (arena.needsRoll(run, champs.list)) {
+        arena.roll(run, champs.list);
+        // gleich gegen schon gebannte/gepickte Champions pruefen
+        arena.replaceUnavailable(run, champs.list, unavailable, cs.myPick, cs.hovered, cs.ownBans);
+        if (run.roll) run.roll.replaced = [];
+        challengeRuns.setRun(key, run);
+        if (run.roll) notifyDesktop('Arena challenge - champions rolled', `Your champions: ${run.roll.champs.map(name).join(' & ')}`);
+        return;
+      }
+      // 2) Gebannt / von jemand anderem gepickt -> nur diesen ersetzen.
+      // Eigene Bans: kein Ausloeser (sonst Gratis-Reroll), aber nie Ersatz.
+      const replaced = arena.replaceUnavailable(run, champs.list, unavailable, cs.myPick, cs.hovered, cs.ownBans);
+      if (replaced) {
+        challengeRuns.setRun(key, run);
+        notifyDesktop('Arena challenge - champion replaced', replaced.map(r =>
+          `${name(r.from)} was ${r.reason === 'picked' ? 'picked by someone else' : 'banned'} - your new champion: ${name(r.to)}`).join('\n'));
+      }
+      return;
     }
-    arenaLive.set(acc.puuid, { champSelect: true });
+    // 3) Champ Select vorbei, Spiel laeuft: mit einem Paar-Champion gelockt?
+    // -> Paar gilt als gespielt, beim naechsten Champ Select wird neu gerollt
+    // (Ergebnis wertet advanceRun, sobald Riot das Spiel liefert).
+    if (GAME_PHASES.includes(st.phase)) {
+      const pick = arenaLastPick.get(acc.puuid);
+      if (pick && arena.markPlayed(run, pick)) challengeRuns.setRun(key, run);
+    }
+    arenaLastPick.delete(acc.puuid); // auch nach Dodge (zurueck in Lobby)
   } catch (e) {
     console.error('arena champ select watcher:', e.message);
   } finally {
@@ -1542,7 +1570,7 @@ setInterval(arenaChampSelectTick, 3000);
 app.get('/api/arena/live', (req, res) => {
   const puuid = String(req.query.puuid || '');
   const run = puuid ? challengeRuns.getRun(arenaKey(puuid)) : null;
-  res.json({ champSelect: Boolean((arenaLive.get(puuid) || {}).champSelect), seq: run && run.roll ? run.roll.seq : null });
+  res.json({ champSelect: Boolean((arenaLive.get(puuid) || {}).champSelect), seq: run && run.roll ? run.roll.seq : null, played: Boolean(run && run.roll && run.roll.played && !run.roll.spent) });
 });
 
 app.get('/api/riot-accounts', cloudRoute(async () => ({ accounts: await cloud.listRiotAccounts() })));

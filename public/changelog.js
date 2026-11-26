@@ -27,6 +27,14 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.15.0',
+      date: '2026-11-26',
+      notable: [
+        'Arena challenge: with the League client open, your champions are rolled automatically as soon as you enter champ select. If one gets banned or picked by someone else, it is replaced for free right away.',
+        'Arena challenge: once you start a game with one of your rolled champions, your next pair is rolled in your next champ select - even before Riot has the result. The game still counts as soon as the result arrives.'
+      ]
+    },
+    {
       version: '6.14.0',
       date: '2026-11-26',
       notable: [
