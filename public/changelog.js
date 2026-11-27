@@ -27,6 +27,14 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.18.1',
+      date: '2026-11-27',
+      notable: [
+        'Promo packs now open like boosters: tear the pack open, your promo rises out of it and you flip it over.'
+      ],
+      refinements: 3
+    },
+    {
       version: '6.18.0',
       date: '2026-11-27',
       notable: [

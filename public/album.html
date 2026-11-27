@@ -568,13 +568,20 @@
      normalen Zoomgroesse, Einzelkarte = normale Zoomgroesse (340 px). ===== */
   .binder-pick .bp-ic.pr { background: linear-gradient(135deg, #fff4cc, #c8aa6e 45%, #7a5a20); clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
   .binder-pick .pb-new { display: inline-block; margin-left: 6px; min-width: 18px; padding: 0 5px; border-radius: 9px; background: linear-gradient(#f0d9a0, #b08a3a); color: #1a1208; font-size: .7rem; font-weight: bold; text-align: center; }
-  .promo-book { position: relative; display: grid; grid-template-columns: 1fr 1.3fr; width: min(860px, 100%); margin: 8px auto 4px; min-height: 520px; padding: 14px; border-radius: 16px;
-    background: linear-gradient(135deg, #2a1d14, #1a120c 60%, #2a1d14); box-shadow: 0 24px 50px rgba(0,0,0,.5), inset 0 0 0 2px #3a2a1a, inset 0 0 40px rgba(0,0,0,.6); }
+  /* Promo-Binder (v6.18.1, Nutzer: auffaelligere Farbe): koenigliches Violett mit Goldkante.
+     Die Huelle besteht aus zwei identisch gestylten Haelften (::before links, ::after rechts) -
+     die Deckel-Innenseite hat exakt den Stil der linken Haelfte, beim Aufklappen springt nichts. */
+  .promo-book { --pb-shell: repeating-linear-gradient(45deg, rgba(255,215,140,.035) 0 2px, transparent 2px 7px), linear-gradient(180deg, #43205e, #2a1240 55%, #1e0c30); --pb-edge: #b8923e;
+    position: relative; display: grid; grid-template-columns: 1fr 1fr; perspective: 2400px; width: max-content; max-width: 100%; margin: 8px auto 4px; min-height: 520px; padding: 14px; border-radius: 16px; }
+  .promo-book::before, .promo-book::after { content: ''; position: absolute; top: 0; bottom: 0; z-index: 0; pointer-events: none; background: var(--pb-shell); border: 2px solid var(--pb-edge); box-shadow: 0 24px 50px rgba(0,0,0,.45), inset 0 0 30px rgba(0,0,0,.45); }
+  .promo-book::before { left: 0; width: var(--ring-x, 50%); border-right: 0; border-radius: 16px 0 0 16px; }
+  .promo-book::after { left: var(--ring-x, 50%); right: 0; border-left: 0; border-radius: 0 16px 16px 0; }
+  .promo-book > .pb-page { z-index: 1; }
   .promo-book[hidden] { display: none; }
-  .pb-page { position: relative; background: linear-gradient(180deg, #141a2c, #0e1322); border: 1px solid #2a3048; box-shadow: inset 0 0 30px rgba(0,0,0,.5); padding: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+  .pb-page { position: relative; background: linear-gradient(180deg, #1e1432, #120b22); border: 1px solid #4a3270; box-shadow: inset 0 0 30px rgba(0,0,0,.5); padding: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
   .pb-page.left { border-radius: 10px 4px 4px 10px; }
-  .pb-page.right { border-radius: 4px 10px 10px 4px; }
-  .pb-rings { position: absolute; left: calc(14px + (100% - 28px) * (1 / 2.3)); top: 0; bottom: 0; width: 0; z-index: 3; pointer-events: none; }
+  .pb-page.right { border-radius: 4px 10px 10px 4px; padding: 26px 30px 26px 40px; }
+  .pb-rings { position: absolute; left: var(--ring-x, 40%); top: 0; bottom: 0; width: 0; z-index: 3; pointer-events: none; }
   .pb-rings i { position: absolute; left: -11px; width: 22px; height: 9px; border-radius: 5px; background: linear-gradient(#e8e8f0, #8a8a9a 60%, #4a4a58); box-shadow: 0 2px 4px rgba(0,0,0,.6); }
   .pb-title { font-family: 'Cinzel', Georgia, serif; color: #c8aa6e; letter-spacing: 3px; font-size: .95rem; }
   .pb-note { color: #8a8aa0; font-size: .74rem; text-align: center; max-width: 250px; line-height: 1.45; }
@@ -594,10 +601,10 @@
   .pb-pack.opening .pk { animation: pbShake .45s ease; }
   @keyframes pbGlint { from { background-position: 150% 0; } to { background-position: -150% 0; } }
   @keyframes pbShake { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-3deg); } 40% { transform: rotate(3deg); } 60% { transform: rotate(-2deg); } 80% { transform: rotate(2deg); } }
-  .pb-grid { position: relative; display: grid; grid-template-columns: repeat(4, var(--cw)); grid-template-rows: repeat(4, var(--ch)); gap: 4px; --cw: 74px; --ch: calc(var(--cw) * 1.4); }
+  .pb-grid { position: relative; display: grid; grid-template-columns: repeat(4, var(--cw, 92px)); grid-template-rows: repeat(4, calc(var(--cw, 92px) * 1.4)); gap: 6px; }
+  .pb-grid .pc:nth-child(4n+2) { margin-right: 14px; }
+  .pb-grid .pc:nth-child(n+5):nth-child(-n+8) { margin-bottom: 14px; }
   .pb-grid .pc { position: relative; border-radius: 6px; }
-  .pb-grid .pc:nth-child(4n+2) { margin-right: 10px; }
-  .pb-grid .pc:nth-child(n+5):nth-child(-n+8) { margin-bottom: 10px; }
   /* Nutzer: fehlende Promo zeigt direkt im Platz, was man dafuer tun muss */
   .pb-grid .pc.empty { border: 1px dashed rgba(200,170,110,.28); background: rgba(255,255,255,.02); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 5px; text-align: center; }
   /* v6.18.0 (Nutzer): im Platz nur der Titel, die Aufgabe gross im Hover-Tooltip */
@@ -627,6 +634,26 @@
   #prGroup .z.away { opacity: 0; pointer-events: none; }
   #prOv .pr-hint { position: absolute; left: 0; right: 0; bottom: 3vh; text-align: center; color: #8a8aa0; font-size: .8rem; opacity: 0; transition: opacity .3s; pointer-events: none; }
   #prOv.open .pr-hint { opacity: 1; }
+  /* Pack wird per zoom in Endgroesse gezeichnet (scharf, kein hochskaliertes Bild) */
+  /* Deckel des Promo-Binders: liegt geschlossen auf der rechten Seite und dreht am Ringruecken
+     auf; die Innenseite (Kopie der linken Seite) legt sich bei 180 Grad genau auf die linke Seite */
+  /* zugeklappt: nur die rechte Haelfte (Deckel) - die linke entsteht erst mit dem Aufklappen */
+  .promo-book.pb-closed::before { visibility: hidden; }
+  .promo-book .binder-cover.promo { left: var(--ring-x, 50%); right: 0; inset-block: 0; }
+  .binder-cover.promo .bc-face.front { border-radius: 0 16px 16px 0; border: 2px solid var(--pb-edge); border-left: 0; background: linear-gradient(90deg, rgba(0,0,0,.45) 0 3px, rgba(255,215,140,.12) 3px 5px, transparent 5px) 30px 0 / 100% 100% no-repeat, radial-gradient(120% 70% at 35% 0%, rgba(255,220,160,.16), transparent 60%), linear-gradient(160deg, #5a2a7e, #2c1244 60%, #1a0a2a); }
+  .binder-cover.promo .bc-face.front::before { border-color: rgba(240,217,160,.65); border-radius: 0 10px 10px 0; }
+  .binder-cover.promo .bc-shade { border-radius: 0 16px 16px 0; }
+  .binder-cover.promo .bc-title { color: #f0d9a0; }
+  .binder-cover.promo .bc-logo { width: 96px; height: 96px; }
+  .binder-cover.promo .bc-face.back { padding: 12px 0 12px 12px; box-sizing: border-box; background: var(--pb-shell); border: 2px solid var(--pb-edge); border-right: 0; border-radius: 16px 0 0 16px; box-shadow: inset 0 0 30px rgba(0,0,0,.45); }
+  .binder-cover.promo .bc-face.back > .pb-page { width: 100%; height: 100%; box-sizing: border-box; border-radius: 10px 4px 4px 10px; }
+  .pr-open .pk-wrap.pb-pack { position: absolute; width: 140px; height: 200px; transform-origin: 0 0; transition: transform .55s cubic-bezier(.3,.7,.3,1); filter: drop-shadow(0 20px 30px rgba(0,0,0,.6)); }
+  .pr-open .pk-wrap.pb-pack:hover .pk { transform: none; }
+  .pr-open .pk-wrap .pk { position: absolute; inset: 0; }
+  .pr-open .pr-rise { position: absolute; z-index: 4; cursor: pointer; }
+  .pr-open .pr-back { position: absolute; inset: 0; border-radius: 7%; overflow: hidden; background: linear-gradient(160deg, #1a1208, #050403 55%, #1a1208); box-shadow: 0 18px 34px rgba(0,0,0,.6), 0 0 0 2px #8a6a2a, inset 0 0 0 6px #2a1d0a; }
+  .pr-open .pr-back svg { position: absolute; left: 50%; top: 50%; width: 46%; transform: translate(-50%, -50%); }
+  .pr-open .pr-back::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,240,200,.25) 50%, transparent 65%); background-size: 300% 100%; animation: pbGlint 2.4s linear infinite; }
   .pr-new { position: absolute; top: -5%; left: 50%; transform: translateX(-50%) translateZ(80px); font-family: 'Cinzel', Georgia, serif; font-weight: 700; letter-spacing: 3px; color: #1a1208; background: linear-gradient(#fff4cc, #c8aa6e); padding: 4px 14px; border-radius: 12px; font-size: .9rem; box-shadow: 0 4px 12px rgba(0,0,0,.5); white-space: nowrap; }
 </style>
 </head>
@@ -974,7 +1001,8 @@ async function loadAlbum() {
   DATA = data;
   const id = cur() ? cur().id : null;
   const kind = cur() && cur().special ? 'special' : 'regular';
-  const changing = !!(shownSet && id && id !== shownSet && view === 'album');
+  // promoQuiet (v6.18.1): Set wird hinter dem Promo-Binder gewechselt - keine Seiten-/Binder-Animation
+  const changing = !promoQuiet && !!(shownSet && id && id !== shownSet && view === 'album');
   const swapping = changing && kind !== shownKind;
   const grid = document.getElementById('albumGrid'), viewEl = document.getElementById('albumView');
   const oldSc = grid.scrollTop;
@@ -1005,7 +1033,7 @@ async function loadAlbum() {
   if (packSnap && !binderMode()) swapPack(packSnap, sel > shownIdx);   // im Binder klappt die linke Seite mit
   document.getElementById('binder').classList.toggle('special', kind === 'special');
   if (cur()) lastOfKind[kind] = sel;
-  if (!shownSet && id && view === 'album' && !document.documentElement.classList.contains('fx-off')) {
+  if (!promoQuiet && !shownSet && id && view === 'album' && !document.documentElement.classList.contains('fx-off')) {
     // erstes Aufklappen - ein schneller Wechsel danach bricht es sauber ab
     // Beim ersten Start / nach einem Update (kalte Caches) dauert das erste Zeichnen der
     // vielen 3D-Sticker deutlich laenger - die Animation lief dann ungesehen ab. Deshalb
@@ -1712,12 +1740,20 @@ function smoothScrollTo(y) {
     requestAnimationFrame(step);
   });
 }
-document.getElementById('binderPick').addEventListener('click', e => {
+document.getElementById('binderPick').addEventListener('click', async e => {
   const b = e.target.closest('[data-binder]');
-  if (!b || b.classList.contains('on') || opening || switchLocked()) return;
+  if (!b || b.classList.contains('on') || opening || switchLocked() || promoAnimating) return;
   // v6.18.0: Promo-Binder ein/aus - der normale Binder bleibt auf seinem Set
   if (b.dataset.binder === 'promo') { enterPromo(); return; }
-  if (promoMode) { const curKind = cur() && cur().special ? 'special' : 'regular'; exitPromo(); if (b.dataset.binder === curKind) return; }
+  if (promoMode) {
+    // direkt zum Ziel-Binder (gemerktes Set dieser Art, sonst das erste) - kein Umweg
+    const kk2 = b.dataset.binder, sets2 = DATA.sets || [];
+    // gleiche Art: dasselbe Set wie vorher; andere Art: wie sonst immer das 1. Set (Nutzer)
+    const sameKind = (cur() && cur().special ? 'special' : 'regular') === kk2;
+    const t = sameKind ? sel : sets2.findIndex(st => (st.special ? 'special' : 'regular') === kk2);
+    await exitPromo(t >= 0 ? t : null);
+    return;
+  }
   const kk = b.dataset.binder, sets = DATA.sets || [];
   // aufgeklappter Ordner beginnt immer beim 1. Set (Nutzer)
   const i = sets.findIndex(st => (st.special ? 'special' : 'regular') === kk);
@@ -2152,22 +2188,100 @@ function renderPromoBook() {
     ? 'You earned something special! Every pack holds exactly one promo - click to open.'
     : 'Promos are earned, not bought: Arena god titles, LP you gain and challenges you clear. Hover an empty slot to see what it takes.';
 }
-function enterPromo() {
-  if (promoMode) return;
-  promoMode = true;
-  document.getElementById('binder').hidden = true;
-  document.getElementById('albumTabs').style.display = 'none'; // .album-tabs setzt display:flex - hidden allein reicht nicht
-  document.getElementById('promoBook').hidden = false;
-  renderTabs(); renderPromoBook(); loadPromos();
+// Wechsel Binder <-> Promo-Binder (Nutzer: wie zwischen den anderen Bindern): der alte
+// gleitet seitlich hinaus (leicht gedreht, kleiner), der neue gleitet von der anderen
+// Seite herein; die Seitenhoehe passt sich weich an.
+let promoAnimating = false, promoQuiet = false;
+async function promoSwap(toPromo, targetSet = null) {
+  const binder = document.getElementById('binder'), book = document.getElementById('promoBook'), tabs = document.getElementById('albumTabs'), wrap = document.getElementById('albumView');
+  const show = () => {
+    binder.hidden = toPromo; book.hidden = !toPromo;
+    tabs.style.display = toPromo ? 'none' : ''; // .album-tabs setzt display:flex - hidden allein reicht nicht
+  };
+  const book2 = document.getElementById('promoBook');
+  const setRing = () => { const lp = book2.querySelector('.pb-page.left'); book2.style.setProperty('--ring-x', `${lp.offsetLeft + lp.offsetWidth}px`); };
+  if (document.documentElement.classList.contains('fx-off') || !binder.animate) { show(); if (toPromo) setRing(); return; }
+  promoAnimating = true;
+  const kindNow = () => (cur() && cur().special ? 'special' : 'regular');
+  if (!toPromo) await promoCover(false);   // erst zuklappen, dann hinausgleiten
+  else if (binderMode()) {
+    // normaler Binder klappt zu (wie beim Binder-Tausch), dann gleitet er hinaus
+    if (flipBusy) flipBusy();
+    const left = leftOf(binder), rings = binder.querySelector(':scope > .spine-rings');
+    const oc = makeCover(kindNow(), left); binder.appendChild(oc);
+    binder.classList.add('closed');
+    const copt = { duration: 540, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'forwards' };
+    if (rings) rings.animate([{ clipPath: 'inset(0 0 0 0px)', zIndex: 9 }, { clipPath: 'inset(0 0 0 0px)', zIndex: 9, offset: .5 }, { clipPath: 'inset(0 0 0 46px)', zIndex: 7, offset: .5 }, { clipPath: 'inset(0 0 0 46px)', zIndex: 7 }], copt);
+    oc.querySelectorAll('.bc-shade').forEach(x => x.animate([{ opacity: 0 }, { opacity: .85, offset: .5 }, { opacity: 0 }], copt));
+    await oc.animate([{ transform: 'rotateY(-180deg)' }, { transform: 'rotateY(0deg)' }], copt).finished.catch(() => {});
+    binder._promoCover = oc;
+  }
+  const out = toPromo ? binder : book, inn = toPromo ? book : binder, dir = toPromo ? -1 : 1;
+  const h0 = wrap.offsetHeight;
+  wrap.style.minHeight = `${h0}px`;
+  const outA = out.animate([{ transform: 'none', opacity: 1 }, { transform: `translateX(${dir * 160}px) rotate(${dir * -1.5}deg) scale(.94)`, opacity: 0 }], { duration: 320, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'forwards' });
+  if (toPromo) tabs.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' });
+  await outA.finished.catch(() => {});
+  if (!toPromo && targetSet != null && targetSet !== sel) {
+    // Ziel-Set laden, solange der normale Binder noch versteckt ist (kein Umweg ueber das alte)
+    // nicht mit display:none laden - sonst misst das Layout 0 und die Seite verrutscht
+    book.hidden = true; binder.hidden = false; binder.style.visibility = 'hidden';
+    promoQuiet = true;
+    try { sel = targetSet; await loadAlbum(); } finally { promoQuiet = false; binder.style.visibility = ''; }
+  }
+  show(); outA.cancel(); tabs.getAnimations().forEach(x => x.cancel());
+  if (toPromo && binder._promoCover) {   // versteckten Binder wieder offen hinterlassen
+    const oc = binder._promoCover; binder._promoCover = null; oc.remove(); binder.classList.remove('closed');
+    const r = binder.querySelector(':scope > .spine-rings'); if (r) r.getAnimations().forEach(x => x.cancel());
+  }
+  if (!toPromo && binderMode()) openCover(binder, kindNow(), 420);   // kommt zugeklappt herein und klappt auf
+  if (toPromo) { renderPromoBook(); setRing(); promoCover(true, true); }   // kommt zugeklappt herein
+  else { const cv = book2.querySelector(':scope > .binder-cover.promo'); if (cv) cv.remove(); book2.querySelector('.pb-page.left').style.visibility = ''; book2.querySelector('.pb-rings').style.opacity = ''; book2.classList.remove('pb-closed'); }
+  const inA = inn.animate([{ transform: `translateX(${-dir * 160}px) rotate(${dir * 1.5}deg) scale(.94)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 460, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'backwards' });
+  if (!toPromo) tabs.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
+  wrap.style.minHeight = '';
+  const h1 = wrap.offsetHeight;
+  if (Math.abs(h1 - h0) > 2) wrap.animate([{ minHeight: `${h0}px` }, { minHeight: `${h1}px` }], { duration: 420, easing: 'cubic-bezier(.3,.7,.3,1)' });
+  await inA.finished.catch(() => {});
+  if (toPromo) await promoCover(true);   // ... und klappt auf
+  promoAnimating = false;
 }
-function exitPromo() {
-  if (!promoMode) return;
+// Deckel: open=true klappt auf (0 -> -180 Grad), false klappt zu. prepare=true legt ihn nur
+// geschlossen drauf (linke Seite + Ringe unsichtbar), ohne Animation.
+const PR_COVER_LOGO = '<svg viewBox="-50 -50 100 100"><circle r="46" fill="none" stroke="#f0d9a0" stroke-width="3"/><path d="M0 -32 L9 -10 L32 -10 L14 5 L20 29 L0 15 L-20 29 L-14 5 L-32 -10 L-9 -10 Z" fill="#f0d9a0"/></svg>';
+function promoCover(open, prepare = false) {
+  const book = document.getElementById('promoBook'), left = book.querySelector('.pb-page.left'), rings = book.querySelector('.pb-rings');
+  let c = book.querySelector(':scope > .binder-cover.promo');
+  if (!c) {
+    c = document.createElement('div'); c.className = 'binder-cover promo';
+    c.innerHTML = `<div class="bc-face front"><div class="bc-logo">${PR_COVER_LOGO}</div><div class="bc-title">PROMOS</div><div class="bc-sub">THREE-TRICK-PONY</div><div class="bc-shade"></div></div><div class="bc-face back"></div>`;
+    const copy = left.cloneNode(true); copy.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+    c.querySelector('.bc-face.back').appendChild(copy);
+    book.appendChild(c);
+  }
+  left.style.visibility = 'hidden'; rings.style.opacity = '0'; book.classList.add('pb-closed');
+  if (prepare) { c.style.transform = 'rotateY(0deg)'; return Promise.resolve(); }
+  const from = open ? 0 : -180, to = open ? -180 : 0;
+  const opt = { duration: 1000, easing: COVER_EASE, fill: 'forwards' };
+  const a = c.animate([{ transform: `rotateY(${from}deg)` }, { transform: `rotateY(${to}deg)` }], opt);
+  c.querySelectorAll('.bc-shade').forEach(s => s.animate([{ opacity: 0 }, { opacity: .85, offset: .5 }, { opacity: 0 }], opt));
+  return a.finished.catch(() => {}).then(() => { if (open) { c.remove(); left.style.visibility = ''; rings.style.opacity = ''; book.classList.remove('pb-closed'); } });
+}
+function enterPromo() {
+  if (promoMode || promoAnimating) return;
+  // Nutzer: Promos so gross wie die Sticker der anderen Binder - Breite dort messen
+  const reg = document.querySelector('#albumGrid .album-slot');
+  if (reg && reg.offsetWidth) document.getElementById('pbGrid').style.setProperty('--cw', `${reg.offsetWidth}px`);
+  promoMode = true;
+  renderTabs(); loadPromos();
+  promoSwap(true);
+}
+async function exitPromo(targetSet = null) {
+  if (!promoMode || promoAnimating) return;
   if (prView) prClose(true);
   promoMode = false;
-  document.getElementById('binder').hidden = false;
-  document.getElementById('albumTabs').style.display = '';
-  document.getElementById('promoBook').hidden = true;
   renderTabs();
+  await promoSwap(false, targetSet);
 }
 
 // ----- Zoom -----
@@ -2247,28 +2361,105 @@ addEventListener('resize', () => { if (promoMode) renderPromoBook(); if (prView 
 // ----- Promo-Pack oeffnen: Pack schuettelt sich, die Promo kommt gross nach vorn,
 // Klick schickt sie in ihren Platz -----
 let prOpening = false;
+// Promo-Pack oeffnen wie die Booster (Nutzer): Pack kommt gross nach vorn, ueber die
+// Oberkante aufreissen, Kopfstreifen fliegt weg, die verdeckte Promo steigt aus dem
+// Pack, Pack faellt weg; Klick dreht sie um ("NEW PROMO"), naechster Klick = in den Platz.
 document.getElementById('pbPack').addEventListener('click', async () => {
   const pack = document.getElementById('pbPack');
   if (prOpening || prView || !promoState || !promoState.packs) return;
   prOpening = true;
-  pack.classList.add('opening');
   let r;
   try { r = await (await fetch('/api/promos/open', { method: 'POST' })).json(); } catch (e) { r = { ok: false }; }
-  await new Promise(res => setTimeout(res, 460));
-  pack.classList.remove('opening');
   if (!r.ok) { prOpening = false; loadPromos(); return; }
-  const c = PROMOS.byId(r.id), pr = pack.getBoundingClientRect();
-  prGroup.innerHTML = '';
-  const z = document.createElement('div'); z.className = 'z'; z.dataset.s = c.slot;
-  z.innerHTML = PROMOS.card(r.id, { slabs: PR_DENSE }) + '<div class="pr-new">NEW PROMO</div>'; prFlat(z);
-  prPlace(z, { left: pr.left + pr.width * .15, top: pr.top + pr.height * .1, width: pr.width * .7, height: pr.width * .7 * 1.4 });
-  prGroup.appendChild(z);
-  prOv.classList.add('open');
-  prView = { mid: c.motif, items: [{ slot: c.slot, el: z }], single: c.slot, fresh: { id: r.id, next: r.promos } };
-  void z.offsetWidth;
-  prPlace(z, prSingleRect()); setTimeout(prDepth, 80);
+  const c = PROMOS.byId(r.id);
   document.getElementById('pbCount').textContent = r.promos.packs;
-  pack.classList.toggle('empty', !r.promos.packs);
+  const pr = pack.getBoundingClientRect();
+  const ov = document.createElement('div'); ov.className = 'ov pr-open';
+  ov.innerHTML = '<div class="ov-hint" id="prOpenHint">Drag across the top edge to tear the promo pack open</div>';
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => ov.classList.add('on'));
+  const hint = t => { ov.querySelector('#prOpenHint').textContent = t; };
+  // 1) Pack in zwei deckungsgleichen Teilen (Kopfstreifen + Rest) nach vorn
+  const CUT = 9;
+  const wrap = document.createElement('div'); wrap.className = 'pk-wrap pb-pack'; wrap.style.setProperty('--cut', CUT + '%');
+  const src = pack.querySelector('.pk');
+  const mk = cls => { const p = src.cloneNode(true); p.classList.add(cls); return p; };
+  const pTop = mk('pk-top'), pBot = mk('pk-bot');
+  const cutLine = document.createElement('div'); cutLine.className = 'cut'; cutLine.style.top = `calc(${CUT}% - 1px)`;
+  wrap.append(pBot, pTop, cutLine);
+  // Endgroesse wie die Booster (W bis 300 px); zoom = scharf gezeichnet. Mit zoom gelten
+  // left/top/translate in gezoomten px -> durch S teilen. Start: verkleinert an der Pack-Stelle.
+  const W = Math.min(300, innerWidth * .28, innerHeight * .62 * 140 / 200), S = W / 140, H = 200 * S;
+  const L = (innerWidth - W) / 2, T = (innerHeight - H) / 2;
+  const atPack = `translate(${(pr.left - L) / S}px, ${(pr.top - T) / S}px) scale(${pr.width / W})`;
+  Object.assign(wrap.style, { zoom: S, left: `${L / S}px`, top: `${T / S}px`, transition: 'none', transform: atPack });
+  ov.appendChild(wrap);
+  pack.style.visibility = 'hidden';
+  requestAnimationFrame(() => requestAnimationFrame(() => { wrap.style.transition = ''; wrap.style.transform = 'none'; }));
+  // 2) Aufreissen: Band ueber die ganze Breite auf Schnitthoehe, Start auch neben dem Pack
+  const cutY = T + H * CUT / 100;
+  const band = document.createElement('div'); band.className = 'tear-band';
+  Object.assign(band.style, { top: `${cutY - 40}px`, height: '80px' });
+  setTimeout(() => ov.appendChild(band), 560);
+  let startX = null, dir = 0, torn = false;
+  band.addEventListener('pointerdown', e => { e.preventDefault(); startX = e.clientX; band.setPointerCapture(e.pointerId); band.classList.add('active'); });
+  band.addEventListener('pointermove', e => {
+    if (startX == null || torn) return;
+    if (!dir && Math.abs(e.clientX - startX) > 4) { dir = Math.sign(e.clientX - startX); cutLine.classList.toggle('rtl', dir < 0); }
+    if (!dir) return;
+    const p = Math.max(0, Math.min(1, (dir > 0 ? e.clientX - L : L + W - e.clientX) / W));
+    cutLine.style.width = `${p * 140}px`;
+    cutLine.style.left = dir > 0 ? '0' : `${(1 - p) * 140}px`;
+    if (p >= .97) tearOpen();
+  });
+  band.addEventListener('pointerup', () => { if (!torn) { startX = null; dir = 0; cutLine.style.width = '0'; band.classList.remove('active'); } });
+  // 3) verdeckte Promo steigt aus dem Pack in die Einzelansicht-Groesse
+  const R = prSingleRect();
+  const rw = W * .84, rh = rw * 1.4;
+  const RR = { left: (innerWidth - rw) / 2, top: (innerHeight - rh) / 2 - innerHeight * .02, width: rw, height: rh };
+  const rise = document.createElement('div'); rise.className = 'pr-rise';
+  Object.assign(rise.style, { left: `${RR.left}px`, top: `${RR.top}px`, width: `${RR.width}px`, height: `${RR.height}px` });
+  rise.innerHTML = `<div class="pr-back"><svg viewBox="-50 -50 100 100"><circle r="48" fill="url(#pbGlow)"/><path d="M0 -40 L11 -12 L40 -12 L17 6 L25 36 L0 18 L-25 36 L-17 6 L-40 -12 L-11 -12 Z" fill="url(#pbStar)" stroke="#2a1d0a" stroke-width="2"/></svg></div>`;
+  function tearOpen() {
+    if (torn) return; torn = true;
+    band.remove();
+    cutLine.remove();
+    pTop.classList.add('off');
+    requestAnimationFrame(() => { pTop.style.transform = `translate(${dir * innerWidth * .55 / S}px, -${innerHeight * .45 / S}px) rotate(${dir * 24}deg)`; });
+    hint('');
+    setTimeout(pullOut, 250);
+  }
+  function pullOut() {
+    ov.insertBefore(rise, wrap);                 // im DOM vor dem Pack = dahinter
+    const cutAt = T + H * CUT / 100;
+    const inside = cutAt + 6 - RR.top;            // Start: Oberkante knapp unter dem Schnitt
+    const packDown = (RR.top + RR.height * .85) - cutAt;
+    const D = 650, ease = 'cubic-bezier(.3,.7,.3,1)';
+    wrap.style.transition = 'none';
+    wrap.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${packDown / S}px)` }], { duration: D, easing: ease, fill: 'forwards' });
+    rise.animate([{ transform: `translateY(${inside}px)` }, { transform: 'translateY(0)' }], { duration: D, easing: ease, fill: 'forwards' }).onfinish = () => {
+      rise.getAnimations().forEach(x => x.cancel());
+      wrap.animate([{ transform: `translateY(${packDown / S}px)` }, { transform: `translateY(${innerHeight / S}px) rotate(3deg)` }],
+        { duration: 480, easing: 'cubic-bezier(.55,0,.9,.45)', fill: 'forwards' }).onfinish = () => { wrap.remove(); rise.style.zIndex = 6; };
+      hint('Click to reveal your promo');
+      rise.addEventListener('click', reveal, { once: true });
+    };
+  }
+  // 4) Umdrehen, dann an die normale Einzelansicht uebergeben (gleiche Stelle/Groesse)
+  function reveal() {
+    hint('');
+    rise.animate([{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: 180, easing: 'ease-in', fill: 'forwards' }).onfinish = () => {
+      prGroup.innerHTML = '';
+      const z = document.createElement('div'); z.className = 'z'; z.dataset.s = c.slot;
+      z.innerHTML = PROMOS.card(r.id, { slabs: PR_DENSE }) + '<div class="pr-new">NEW PROMO</div>'; prFlat(z);
+      prPlace(z, RR); prGroup.appendChild(z);
+      prOv.classList.add('open');
+      prView = { mid: c.motif, items: [{ slot: c.slot, el: z, slabs: PR_DENSE }], single: c.slot, fresh: { id: r.id, next: r.promos } };
+      z.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: 220, easing: 'ease-out' }).onfinish = () => { prPlace(z, R); setTimeout(prDepth, 80); };
+      ov.classList.remove('on');
+      setTimeout(() => { ov.remove(); pack.style.visibility = ''; pack.classList.toggle('empty', !r.promos.packs); }, 350);
+    };
+  }
 });
 function prLandFresh() {
   const v = prView; prView = null;
