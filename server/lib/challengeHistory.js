@@ -177,6 +177,19 @@ function entryGoalReached(entry) {
   return Boolean(entry && (entry.trophies || []).some(t => t.id === 'goal-reached' && t.unlocked));
 }
 
+// Gilt die Challenge als GESCHAFFT? (v6.17.0, Nutzer: "eine Challenge gilt
+// nicht als geschafft, wenn man nur das LP-Goal erreicht hat - man muss auch
+// alle Trophaeen schaffen") -> LP-Ziel + Platinum (alle Trophaeen dieses
+// Levels). Challenges, die vor der Regel gestartet sind, behalten die alte
+// Bedingung (nur LP-Ziel) - Nutzerentscheidung "alte bleiben gueltig".
+const CLEAR_RULE_V2_SINCE = Date.parse('2026-11-27T00:00:00+01:00');
+function entryCleared(entry) {
+  if (!entryGoalReached(entry)) return false;
+  const started = Date.parse(entry.since || '');
+  if (Number.isFinite(started) && started < CLEAR_RULE_V2_SINCE) return true;
+  return Boolean(entry.platinumUnlocked);
+}
+
 // Alle Level, auf denen irgendein Summoner auf diesem PC je eine Challenge
 // geschafft hat - Backfill fuer die Majestic-Freischaltung (v6.13.0).
 function clearedLevelsAllSummoners() {
@@ -185,10 +198,10 @@ function clearedLevelsAllSummoners() {
   try { files = fs.readdirSync(HISTORY_DIR).filter(f => f.endsWith('.json')); } catch (e) {}
   for (const f of files) {
     for (const e of readEntries(f.slice(0, -5))) {
-      if (entryGoalReached(e) && e.challengeLevel) levels.add(e.challengeLevel);
+      if (entryCleared(e) && e.challengeLevel) levels.add(e.challengeLevel);
     }
   }
   return [...levels];
 }
 
-module.exports = { startEntry, updateEntry, listEntries, deleteEntry, entryGoalReached, clearedLevelsAllSummoners };
+module.exports = { startEntry, updateEntry, listEntries, deleteEntry, entryGoalReached, entryCleared, clearedLevelsAllSummoners };

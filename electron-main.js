@@ -254,6 +254,34 @@ function showUpdateWindow() {
   return updateWin;
 }
 
+// Fenstergroesse nach Neustart/Update (v6.16.2, Nutzer: "nach jedem Update
+// wird das Fenster wieder klein"): electron-window-state verwirft die
+// gespeicherte Groesse komplett, sobald das Fenster auch nur 1 px ueber einen
+// Monitor ragt (strikte Pruefung, haeufig bei mehreren Monitoren/Skalierung)
+// und setzt die Standardgroesse. Vorher reparieren: auf den Monitor mit der
+// groessten Ueberlappung schieben und nur wenn noetig auf dessen
+// Arbeitsflaeche begrenzen - danach besteht die Datei die Pruefung.
+function repairSavedWindowState() {
+  const file = path.join(app.getPath('userData'), 'window-state.json');
+  let st;
+  try { st = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch (e) { return; }
+  if (!st || ![st.x, st.y, st.width, st.height].every(Number.isInteger) || st.width <= 0 || st.height <= 0) return;
+  const overlap = d => {
+    const a = d.workArea;
+    const w = Math.min(st.x + st.width, a.x + a.width) - Math.max(st.x, a.x);
+    const h = Math.min(st.y + st.height, a.y + a.height) - Math.max(st.y, a.y);
+    return w > 0 && h > 0 ? w * h : 0;
+  };
+  const best = screen.getAllDisplays().map(d => ({ d, o: overlap(d) })).sort((p, q) => q.o - p.o)[0];
+  if (!best || !best.o) return; // nirgends sichtbar -> Standard ist richtig
+  const a = best.d.workArea;
+  const width = Math.min(st.width, a.width), height = Math.min(st.height, a.height);
+  const x = Math.min(Math.max(st.x, a.x), a.x + a.width - width);
+  const y = Math.min(Math.max(st.y, a.y), a.y + a.height - height);
+  if (x === st.x && y === st.y && width === st.width && height === st.height && JSON.stringify(st.displayBounds) === JSON.stringify(best.d.bounds)) return;
+  try { fs.writeFileSync(file, JSON.stringify({ ...st, x, y, width, height, displayBounds: best.d.bounds })); } catch (e) {}
+}
+
 // app.isQuitting muss VOR quitAndInstall() gesetzt werden - sonst greift
 // der "X schliesst nur in den Tray"-Handler (win.on('close', ...) weiter
 // unten) und verhindert/verzoegert den normalen Fenster-Close, wodurch
@@ -705,6 +733,7 @@ function createWindow(port) {
   // Merkt sich Groesse/Position im userData-Ordner und stellt sie beim
   // naechsten Start wieder her - nur beim allerersten Start (keine
   // gespeicherte Position) wird das Fenster stattdessen zentriert geoeffnet.
+  repairSavedWindowState();
   const winState = windowStateKeeper({ defaultWidth, defaultHeight });
   const isFirstRun = winState.x === undefined;
 
@@ -754,6 +783,12 @@ function createWindow(port) {
 
   winState.manage(win);
   if (isFirstRun) win.center();
+  // Monitore mit unterschiedlicher Skalierung: Electron rechnet die Groesse
+  // beim Erzeugen mit der Skalierung des Hauptmonitors und verschiebt dann -
+  // einmal explizit setzen, damit exakt die gespeicherte Groesse ankommt
+  else if (Number.isInteger(winState.x) && Number.isInteger(winState.y)) {
+    win.setBounds({ x: winState.x, y: winState.y, width: winState.width, height: winState.height });
+  }
 
   win.loadURL(`http://localhost:${port}`);
   win.on('closed', () => { if (mainWin === win) mainWin = null; });

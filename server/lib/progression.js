@@ -1115,7 +1115,11 @@ function emptyState() {
     buffs: [],
     // Bonus-Quests aus Consumables: { daily: { day, quest }, weekly: { week, quest } }
     bonusQuests: { daily: null, weekly: null },
-    lastBuffDiscardAt: null
+    lastBuffDiscardAt: null,
+    // Promo-Sticker (v6.18.0): owned { id: at }, packs = ungeoeffnete Promo-Packs
+    // (je genau 1 Promo, Reihenfolge = Erhalt), lpSince = ab wann LP fuer die
+    // LP-Promos zaehlen (Nutzer: erst ab dem Update, kein Rueckblick)
+    promos: { owned: {}, packs: [], lpSince: null }
   };
 }
 
@@ -1128,6 +1132,7 @@ function readState() {
   }
   const state = { ...emptyState(), ...raw };
   state.boosters = state.boosters || {}; state.stickers = state.stickers || {}; state.fullArts = state.fullArts || {};
+  state.promos = { owned: {}, packs: [], lpSince: null, ...(state.promos || {}) };
   // v5.29.2: Base-Set neu nummeriert (seltenste zuerst) - Sammlung und Profil-
   // Sticker einmalig auf die neuen Nummern umziehen
   if (!state.stickerNumbering) {
@@ -1890,7 +1895,61 @@ function getOverview(context) {
   };
 }
 
+// ===== Promo-Sticker (v6.18.0, Nutzer 2026-11-27) =====
+// 12 Promos in 3 Bildern a 4 (Kunst: public/promos.js). Nur durch Erfolge,
+// keine Duplikate, nicht tauschbar. Jede verdiente Promo kommt als eigenes
+// Promo-Pack ins Inventar und wird im Album geoeffnet.
+//   Hall of Gods: Arena-Titel Riot/Elder/Ultimate God (irgendein verknuepfter
+//     Summoner) + die 4. fuer alle drei
+//   Dragon's Hoard: 500/1000/2000/5000 LP GEWONNEN (nur Gewinne, LP-Bank-
+//     Ereignisse) ab dem ersten Start dieser Version (lpSince)
+//   The Climb: Challenge geschafft (LP-Ziel + alle Trophaeen, difficultyClears)
+//     auf Easy/Normal/Hard/Majestic
+const PROMO_LP = [['lp-500', 500], ['lp-1000', 1000], ['lp-2000', 2000], ['lp-5000', 5000]];
+const PROMO_ORDER = ['gods-riot', 'gods-elder', 'gods-ultimate', 'gods-all', 'lp-500', 'lp-1000', 'lp-2000', 'lp-5000', 'climb-easy', 'climb-normal', 'climb-hard', 'climb-majestic'];
+function promoStatus(state, arenaTitles = []) {
+  const t = new Set(arenaTitles);
+  const since = state.promos.lpSince ? new Date(state.promos.lpSince).getTime() : Date.now();
+  const lpGained = (state.lpBank.events || []).filter(e => (e.at || 0) >= since).reduce((a, e) => a + Math.max(0, e.gained || 0), 0);
+  const clears = ((state.difficultyClears || {}).ttp) || {};
+  const earned = {
+    'gods-riot': t.has('riot'), 'gods-elder': t.has('elder'), 'gods-ultimate': t.has('ultimate'),
+    'gods-all': t.has('riot') && t.has('elder') && t.has('ultimate'),
+    'climb-easy': !!clears.easy, 'climb-normal': !!clears.normal, 'climb-hard': !!clears.hard, 'climb-majestic': !!clears.majestic
+  };
+  PROMO_LP.forEach(([id, need]) => { earned[id] = lpGained >= need; });
+  return { earned, lpGained };
+}
+function promoView(state, status) {
+  const p = state.promos;
+  return {
+    owned: p.owned, packs: p.packs.length, lpGained: status.lpGained, lpSince: p.lpSince,
+    list: PROMO_ORDER.map(id => ({ id, owned: !!p.owned[id], inPack: p.packs.includes(id), earned: !!status.earned[id] }))
+  };
+}
+// Verdiente, aber noch nicht vergebene Promos als Packs ausgeben (idempotent)
+function getPromos({ arenaTitles = [] } = {}) {
+  const state = readState();
+  let changed = false;
+  if (!state.promos.lpSince) { state.promos.lpSince = new Date().toISOString(); changed = true; }
+  const status = promoStatus(state, arenaTitles);
+  PROMO_ORDER.forEach(id => {
+    if (status.earned[id] && !state.promos.owned[id] && !state.promos.packs.includes(id)) { state.promos.packs.push(id); changed = true; }
+  });
+  if (changed) writeState(state);
+  return promoView(state, status);
+}
+function openPromoPack({ arenaTitles = [] } = {}) {
+  const state = readState();
+  const id = state.promos.packs.shift();
+  if (!id) return { ok: false, error: 'No promo pack to open.' };
+  state.promos.owned[id] = Date.now();
+  writeState(state);
+  return { ok: true, id, promos: promoView(state, promoStatus(state, arenaTitles)) };
+}
+
 module.exports = {
+  getPromos, openPromoPack,
   setUserScope, setOnWrite, hasUserFile, claimLegacyState, legacyStateTime, exportState, importState,
   getOverview,
   creditMatches,

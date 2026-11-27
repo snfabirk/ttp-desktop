@@ -24,7 +24,7 @@ const progression = require('./lib/progression');
 const cloud = require('./lib/cloud');
 const challengeRuns = require('./lib/challengeRuns');
 const trophyEvents = require('./lib/trophyEvents');
-const { startEntry: startHistoryEntry, updateEntry: updateHistoryEntry, listEntries: listHistoryEntries, deleteEntry: deleteHistoryEntry, entryGoalReached, clearedLevelsAllSummoners } = require('./lib/challengeHistory');
+const { startEntry: startHistoryEntry, updateEntry: updateHistoryEntry, listEntries: listHistoryEntries, deleteEntry: deleteHistoryEntry, entryGoalReached, entryCleared, clearedLevelsAllSummoners } = require('./lib/challengeHistory');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -933,6 +933,18 @@ app.post('/api/shop/consumable', (req, res) => {
 });
 // Booster & Album (v5.29.0)
 app.get('/api/album', (req, res) => res.json(progression.getAlbum()));
+// Promo-Sticker (v6.18.0): verdiente Promos werden zu Promo-Packs, im Album
+// geoeffnet. Arena-Titel aller verknuepften Summoner zaehlen fuers Konto.
+function promoCtx() {
+  const titles = new Set();
+  try { cloud.linkedRiotAccounts().forEach(a => arenaStats.titles(a.puuid).forEach(t => { if (t.at) titles.add(t.id); })); } catch (e) {}
+  return { arenaTitles: [...titles] };
+}
+app.get('/api/promos', (req, res) => res.json(progression.getPromos(promoCtx())));
+app.post('/api/promos/open', (req, res) => {
+  const r = progression.openPromoPack(promoCtx());
+  res.status(r.ok ? 200 : 400).json(r);
+});
 app.post('/api/boosters/buy', (req, res) => {
   const { set, qty } = req.body || {};
   const result = progression.buyBooster(set || 'base', qty);
@@ -1153,12 +1165,12 @@ app.post('/api/challenge-history/close', async (req, res) => {
   res.json({ entry, recomputed });
 });
 
-// Majestic-Freischaltung (v6.13.0): sobald eine Challenge ihr LP-Ziel
-// erreicht, zaehlt ihr Level als "geschafft" (am Account, siehe
-// progression.recordDifficultyClears).
+// Majestic-Freischaltung (v6.13.0): sobald eine Challenge geschafft ist
+// (v6.17.0: LP-Ziel + alle Trophaeen, siehe entryCleared), zaehlt ihr Level
+// als "geschafft" (am Account, siehe progression.recordDifficultyClears).
 function noteDifficultyClear(entry) {
   try {
-    if (entryGoalReached(entry) && entry.challengeLevel) progression.recordDifficultyClears('ttp', [entry.challengeLevel]);
+    if (entryCleared(entry) && entry.challengeLevel) progression.recordDifficultyClears('ttp', [entry.challengeLevel]);
   } catch (e) { /* nicht kritisch */ }
 }
 
@@ -1276,6 +1288,9 @@ async function runAccountScan() {
     });
   }
   const added = xpGames.length ? progression.creditMatches(xpGames) : [];
+  // v6.18.0: Promo-Pruefung im selben Takt - setzt den LP-Zaehlstart direkt nach
+  // dem Update und legt neu verdiente Promo-Packs an, ohne dass man ins Album muss
+  try { progression.getPromos(promoCtx()); } catch (e) { /* naechster Takt */ }
   // v6.13.0: laufende Arena-Challenge im selben Takt mit abarbeiten
   if (challengeRuns.getRun(challengeRuns.runKey(acc.puuid, 'arena'))) {
     try { await processArena(acc.puuid); } catch (e) { /* naechster Takt */ }

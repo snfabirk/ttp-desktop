@@ -27,8 +27,25 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.18.0',
+      date: '2026-11-27',
+      notable: [
+        'New in the Album: Promos! A third binder with 12 promo stickers you can only earn - never buy or trade. Every 4 promos form one big picture: Hall of Gods (Riot God, Elder God, Ultimate God and all three), Dragon\'s Hoard (gain 500 / 1,000 / 2,000 / 5,000 LP from now on) and The Climb (clear a challenge on Easy, Normal, Hard and Majestic).',
+        'Each promo you earn arrives as a promo pack with exactly one promo inside. Click a promo to bring its whole picture forward and tilt it, click again to inspect a single one. Empty slots show what you need to do.'
+      ]
+    },
+    {
+      version: '6.17.0',
+      date: '2026-11-27',
+      notable: [
+        'A challenge now only counts as cleared when you reach your LP goal AND unlock all of its trophies - this also applies to unlocking Majestic. Challenges you started before this update keep the old rule.'
+      ],
+      bugfixes: 4
+    },
+    {
       version: '6.16.1',
       date: '2026-11-26',
+      notable: [],
       bugfixes: 1
     },
     {
@@ -1309,7 +1326,7 @@
     function groupEntries(entries) {
       const groups = [];
       for (const e of entries) {
-        const minor = !e.notable.length;
+        const minor = !(e.notable || []).length;
         const last = groups[groups.length - 1];
         if (minor && last && last.minor) last.entries.push(e);
         else groups.push({ minor, entries: [e] });
@@ -1347,7 +1364,7 @@
       return `
         <div class="changelog-version">
           <div class="changelog-version-title">v${v.version} ${dateHtml}</div>
-          ${v.notable.length ? `<ul class="changelog-notable">${v.notable.map(n => `<li>${n}</li>`).join('')}</ul>` : ''}
+          ${(v.notable || []).length ? `<ul class="changelog-notable">${v.notable.map(n => `<li>${n}</li>`).join('')}</ul>` : ''}
           ${minorLabelsHtml(v.refinements, v.bugfixes, v.upcoming)}
         </div>
       `;

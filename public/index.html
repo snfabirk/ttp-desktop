@@ -662,7 +662,7 @@
         <option value="hard">Hard</option>
         <!-- v6.13.0: nur noch 4 Stufen, Majestic erst nach Easy+Normal+Hard
              geschafft (siehe applyMajesticLock) -->
-        <option value="majestic" id="majesticOption" disabled title="Clear a challenge on Easy, Normal and Hard to unlock">🔒 Majestic</option>
+        <option value="majestic" id="majesticOption" disabled title="Clear a challenge (LP goal + all trophies) on Easy, Normal and Hard to unlock">🔒 Majestic</option>
       </select>
     </div>
 
@@ -979,7 +979,7 @@
       const c = view.clears || {};
       const missing = ['easy', 'normal', 'hard'].filter(l => !c[l]).map(l => l[0].toUpperCase() + l.slice(1));
       opt.title = unlocked ? 'The hardest difficulty' : `Clear a challenge on ${missing.join(', ')} to unlock`;
-      challengeLevelSelect.title = unlocked ? '' : `Majestic unlocks after clearing a challenge on Easy, Normal and Hard (missing: ${missing.join(', ')})`;
+      challengeLevelSelect.title = unlocked ? '' : `Majestic unlocks after clearing a challenge (LP goal + all trophies) on Easy, Normal and Hard (missing: ${missing.join(', ')})`;
       // Gespeichertes Majestic ohne Freischaltung und ohne laufende Challenge -> leeren
       if (!unlocked && challengeLevelSelect.value === 'majestic' && !isChallengeLocked()) {
         challengeLevelSelect.value = '';

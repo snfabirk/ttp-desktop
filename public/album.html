@@ -563,6 +563,71 @@
   .insp.back .insp-cap { opacity: 0; }
   .insp-cap { position: absolute; bottom: 6vh; left: 0; right: 0; text-align: center; color: var(--text-dim); font-size: .85rem; }
 
+  /* ===== Promo-Binder (v6.18.0, Nutzer) - kleiner dritter Binder: links Promo-Packs
+     (je 1 Promo), rechts 4x4; je 2x2 = ein grosses Bild. Zoom: Gruppe 60 % der
+     normalen Zoomgroesse, Einzelkarte = normale Zoomgroesse (340 px). ===== */
+  .binder-pick .bp-ic.pr { background: linear-gradient(135deg, #fff4cc, #c8aa6e 45%, #7a5a20); clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+  .binder-pick .pb-new { display: inline-block; margin-left: 6px; min-width: 18px; padding: 0 5px; border-radius: 9px; background: linear-gradient(#f0d9a0, #b08a3a); color: #1a1208; font-size: .7rem; font-weight: bold; text-align: center; }
+  .promo-book { position: relative; display: grid; grid-template-columns: 1fr 1.3fr; width: min(860px, 100%); margin: 8px auto 4px; min-height: 520px; padding: 14px; border-radius: 16px;
+    background: linear-gradient(135deg, #2a1d14, #1a120c 60%, #2a1d14); box-shadow: 0 24px 50px rgba(0,0,0,.5), inset 0 0 0 2px #3a2a1a, inset 0 0 40px rgba(0,0,0,.6); }
+  .promo-book[hidden] { display: none; }
+  .pb-page { position: relative; background: linear-gradient(180deg, #141a2c, #0e1322); border: 1px solid #2a3048; box-shadow: inset 0 0 30px rgba(0,0,0,.5); padding: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+  .pb-page.left { border-radius: 10px 4px 4px 10px; }
+  .pb-page.right { border-radius: 4px 10px 10px 4px; }
+  .pb-rings { position: absolute; left: calc(14px + (100% - 28px) * (1 / 2.3)); top: 0; bottom: 0; width: 0; z-index: 3; pointer-events: none; }
+  .pb-rings i { position: absolute; left: -11px; width: 22px; height: 9px; border-radius: 5px; background: linear-gradient(#e8e8f0, #8a8a9a 60%, #4a4a58); box-shadow: 0 2px 4px rgba(0,0,0,.6); }
+  .pb-title { font-family: 'Cinzel', Georgia, serif; color: #c8aa6e; letter-spacing: 3px; font-size: .95rem; }
+  .pb-note { color: #8a8aa0; font-size: .74rem; text-align: center; max-width: 250px; line-height: 1.45; }
+  .pb-pack { position: relative; width: 140px; height: 200px; cursor: pointer; perspective: 600px; }
+  .pb-pack.empty { cursor: default; filter: grayscale(.8) brightness(.55); }
+  .pb-pack .pk { position: absolute; inset: 0; border-radius: 10px; overflow: hidden; transition: transform .25s ease; background: linear-gradient(160deg, #1a1208, #050403 55%, #1a1208); box-shadow: 0 14px 30px rgba(0,0,0,.6), 0 0 0 2px #8a6a2a, 0 0 0 3px #2a1d0a; }
+  .pb-pack:not(.empty):hover .pk { transform: rotateX(6deg) rotateY(-8deg) translateY(-4px); }
+  .pb-pack .crimp { position: absolute; left: 0; right: 0; height: 14px; background: repeating-linear-gradient(90deg, #6a5020 0 4px, #3a2a10 4px 8px); }
+  .pb-pack .crimp.t { top: 0; } .pb-pack .crimp.b { bottom: 0; }
+  .pb-pack .foil { position: absolute; inset: 14px 0; background: repeating-linear-gradient(60deg, transparent 0 9px, rgba(240,217,160,.08) 9px 11px); }
+  .pb-pack .star { position: absolute; left: 50%; top: 40%; width: 80px; height: 80px; transform: translate(-50%, -50%); }
+  .pb-pack .pt { position: absolute; left: 0; right: 0; top: 66%; text-align: center; font-family: 'Cinzel', Georgia, serif; font-weight: 700; letter-spacing: 4px; color: #f0d9a0; font-size: .95rem; text-shadow: 0 0 12px rgba(240,200,120,.5); }
+  .pb-pack .ps { position: absolute; left: 0; right: 0; top: 77%; text-align: center; font-size: .6rem; letter-spacing: 2px; color: #b89a5a; }
+  .pb-pack .gl { position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,240,200,.28) 50%, transparent 65%); background-size: 300% 100%; animation: pbGlint 3.6s linear infinite; }
+  .pb-pack .cnt { position: absolute; top: -10px; right: -10px; z-index: 4; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 15px; background: linear-gradient(#f0d9a0, #b08a3a); color: #1a1208; font-family: 'Cinzel', Georgia, serif; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,.5); }
+  .pb-pack.empty .cnt { display: none; }
+  .pb-pack.opening .pk { animation: pbShake .45s ease; }
+  @keyframes pbGlint { from { background-position: 150% 0; } to { background-position: -150% 0; } }
+  @keyframes pbShake { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-3deg); } 40% { transform: rotate(3deg); } 60% { transform: rotate(-2deg); } 80% { transform: rotate(2deg); } }
+  .pb-grid { position: relative; display: grid; grid-template-columns: repeat(4, var(--cw)); grid-template-rows: repeat(4, var(--ch)); gap: 4px; --cw: 74px; --ch: calc(var(--cw) * 1.4); }
+  .pb-grid .pc { position: relative; border-radius: 6px; }
+  .pb-grid .pc:nth-child(4n+2) { margin-right: 10px; }
+  .pb-grid .pc:nth-child(n+5):nth-child(-n+8) { margin-bottom: 10px; }
+  /* Nutzer: fehlende Promo zeigt direkt im Platz, was man dafuer tun muss */
+  .pb-grid .pc.empty { border: 1px dashed rgba(200,170,110,.28); background: rgba(255,255,255,.02); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 5px; text-align: center; }
+  /* v6.18.0 (Nutzer): im Platz nur der Titel, die Aufgabe gross im Hover-Tooltip */
+  .pb-grid .pc.empty { cursor: help; }
+  .pb-grid .pc.empty b { font-family: 'Cinzel', Georgia, serif; font-size: .7rem; letter-spacing: .5px; color: rgba(240,217,160,.8); line-height: 1.2; }
+  .pb-grid .pc.empty.packed b::after { content: ' ✦'; color: #f0d9a0; }
+  .pb-grid .pc .pb-tip { position: absolute; left: 50%; top: calc(100% + 8px); transform: translateX(-50%) translateY(4px); width: 210px; z-index: 20; padding: 10px 12px; border-radius: 8px; border: 1px solid #c8aa6e; background: #10162a; box-shadow: 0 8px 22px rgba(0,0,0,.55); text-align: left; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .15s, transform .15s; }
+  .pb-grid .pc:nth-child(n+9) .pb-tip { top: auto; bottom: calc(100% + 8px); }
+  .pb-grid .pc.empty:hover .pb-tip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+  .pb-tip strong { display: block; font-family: 'Cinzel', Georgia, serif; color: #f0d9a0; font-size: .85rem; letter-spacing: .5px; margin-bottom: 4px; }
+  .pb-tip span { display: block; color: #e8e2d0; font-size: .82rem; line-height: 1.4; }
+  .pb-tip em { display: block; margin-top: 6px; font-style: normal; color: #c8aa6e; font-size: .78rem; }
+  .pb-grid .pc.future { border: 1px dashed rgba(138,138,160,.14); }
+  .pb-grid .pb-later { position: absolute; color: #8a8aa0; font-size: .6rem; text-align: center; letter-spacing: 1px; pointer-events: none; }
+  .pb-grid .pc .promo { cursor: pointer; transition: transform .2s ease; }
+  .pb-grid .pc .promo:hover { transform: translateY(-3px) scale(1.05); }
+  .pb-grid .pc.hidden-src .promo { opacity: 0; }
+  .pb-progress { color: #8a8aa0; font-size: .72rem; letter-spacing: 1px; }
+  #prOv { position: fixed; inset: 0; z-index: 210; pointer-events: none; }
+  #prOv .pr-dim { position: absolute; inset: 0; background: rgba(4,6,14,.86); opacity: 0; transition: opacity .35s ease; }
+  #prOv.open { pointer-events: auto; }
+  #prOv.open .pr-dim { opacity: 1; }
+  #prStage { position: absolute; inset: 0; }
+  #prGroup { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .1s linear; }
+  #prGroup.resting { transition: transform .5s cubic-bezier(.3,.7,.3,1); }
+  #prGroup .z { position: absolute; transform-style: preserve-3d; transition: left .5s cubic-bezier(.2,.8,.2,1), top .5s cubic-bezier(.2,.8,.2,1), width .5s cubic-bezier(.2,.8,.2,1), height .5s cubic-bezier(.2,.8,.2,1), opacity .35s ease; cursor: pointer; }
+  #prGroup .z.away { opacity: 0; pointer-events: none; }
+  #prOv .pr-hint { position: absolute; left: 0; right: 0; bottom: 3vh; text-align: center; color: #8a8aa0; font-size: .8rem; opacity: 0; transition: opacity .3s; pointer-events: none; }
+  #prOv.open .pr-hint { opacity: 1; }
+  .pr-new { position: absolute; top: -5%; left: 50%; transform: translateX(-50%) translateZ(80px); font-family: 'Cinzel', Georgia, serif; font-weight: 700; letter-spacing: 3px; color: #1a1208; background: linear-gradient(#fff4cc, #c8aa6e); padding: 4px 14px; border-radius: 12px; font-size: .9rem; box-shadow: 0 4px 12px rgba(0,0,0,.5); white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -622,6 +687,22 @@
         <!-- Ringe in der Mitte, ueber beide Seiten (wie in echt) -->
         <div class="spine-rings" id="spineRings"></div>
       </div>
+      <!-- Promo-Binder (v6.18.0) -->
+      <div class="promo-book" id="promoBook" hidden>
+        <div class="pb-page left">
+          <div class="pb-title">PROMO PACKS</div>
+          <div class="pb-pack" id="pbPack" title="Open a promo pack">
+            <div class="pk"><div class="crimp t"></div><div class="crimp b"></div><div class="foil"></div>
+              <svg class="star" viewBox="-50 -50 100 100"><defs><linearGradient id="pbStar" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cc"/><stop offset=".5" stop-color="#c8aa6e"/><stop offset="1" stop-color="#7a5a20"/></linearGradient><radialGradient id="pbGlow"><stop offset="0" stop-color="#ffe2a0" stop-opacity=".55"/><stop offset="1" stop-color="#ffe2a0" stop-opacity="0"/></radialGradient></defs>
+                <circle r="48" fill="url(#pbGlow)"/><path d="M0 -40 L11 -12 L40 -12 L17 6 L25 36 L0 18 L-25 36 L-17 6 L-40 -12 L-11 -12 Z" fill="url(#pbStar)" stroke="#2a1d0a" stroke-width="2"/><path d="M0 -26 L6 -9 L0 6 L-6 -9 Z" fill="#fff8e0" opacity=".55"/></svg>
+              <div class="pt">PROMO</div><div class="ps">1 PROMO INSIDE</div><div class="gl"></div></div>
+            <div class="cnt" id="pbCount">0</div>
+          </div>
+          <div class="pb-note" id="pbNote"></div>
+        </div>
+        <div class="pb-page right"><div class="pb-grid" id="pbGrid"></div></div>
+        <div class="pb-rings"><i style="top:14%"></i><i style="top:38%"></i><i style="top:62%"></i><i style="top:86%"></i></div>
+      </div>
     </div>
     <div id="dupesView" hidden></div>
     <div id="tradesView" hidden></div>
@@ -634,6 +715,7 @@
 <script src="stickers-worlds.js"></script>
 <script src="stickers-ranked.js"></script>
 <script src="stickers-fa.js"></script>
+<script src="promos.js"></script>
 <script>
 // ===================== Sticker-Kunst (detailliert, ohne Die-Cut-Rand) =====================
 const HEAD = 'M42 4 L48 15 L54 3 L60 18 C74 20 86 30 90 48 C93 62 92 80 92 96 L48 96 C50 84 52 72 50 62 C40 64 28 74 16 75 C8 75 4 69 6 62 C10 52 26 36 37 22 Z';
@@ -1540,6 +1622,25 @@ function restoreSlabs(slot) {
   LAZY_SLABS.delete(slot);
   // rueckwaerts: so ist das jeweils naechste Geschwister schon wieder da
   for (let i = list.length - 1; i >= 0; i--) { const [n, parent, next] = list[i]; parent.insertBefore(n, next && next.parentNode === parent ? next : null); }
+  syncSlabAnimations(slot);
+}
+// v6.17.0 (Nutzer: "der 3D-Effekt zieht nach", z.B. #002 - die Ponys der Schichten
+// liefen nicht gleich): nachtraeglich eingesetzte Schichten starten ihre CSS-
+// Animationen erst jetzt, die Vorderseite laeuft schon laenger. Startzeit jeder
+// Schicht-Animation auf die der gleichnamigen Animation ausserhalb der Schichten
+// setzen -> alle Ebenen im selben Takt.
+function syncSlabAnimations(root) {
+  if (!root.getAnimations) return;
+  const anims = root.getAnimations({ subtree: true });
+  const ref = {};
+  for (const a of anims) {
+    const t = a.effect && a.effect.target;
+    if (t && !t.closest('.slab') && a.animationName && a.startTime != null && ref[a.animationName] == null) ref[a.animationName] = a.startTime;
+  }
+  for (const a of anims) {
+    const t = a.effect && a.effect.target;
+    if (t && t.closest('.slab') && ref[a.animationName] != null) a.startTime = ref[a.animationName];
+  }
 }
 document.getElementById('binder').addEventListener('mouseover', e => { const slot = e.target.closest('.album-slot'); if (slot) restoreSlabs(slot); });
 function renderAlbum() {
@@ -1587,9 +1688,11 @@ function renderRates() {
 function renderTabs() {
   const kindOf = st => st.special ? 'special' : 'regular', k = cur() ? kindOf(cur()) : 'regular';
   const sets = DATA.sets || [], count = kk => sets.filter(st => kindOf(st) === kk).length;
+  const ownedPromos = promoState ? Object.keys(promoState.owned || {}).length : 0, newPacks = promoState ? promoState.packs : 0;
   document.getElementById('binderPick').innerHTML = [['regular', 'Album', 'regular sets', ''], ['special', '★ Special Album', 'limited sets', 'sp']]
     .filter(([kk]) => count(kk))
-    .map(([kk, label, sub, ic]) => `<button type="button" class="${kk === k ? 'on' : ''}" data-binder="${kk}"><span class="bp-ic ${ic}"></span><span>${label} <small>· ${count(kk)} ${count(kk) === 1 ? 'set' : 'sets'}</small></span></button>`).join('');
+    .map(([kk, label, sub, ic]) => `<button type="button" class="${kk === k && !promoMode ? 'on' : ''}" data-binder="${kk}"><span class="bp-ic ${ic}"></span><span>${label} <small>· ${count(kk)} ${count(kk) === 1 ? 'set' : 'sets'}</small></span></button>`).join('')
+    + `<button type="button" class="${promoMode ? 'on' : ''}" data-binder="promo" title="Promos you earn for special achievements"><span class="bp-ic pr"></span><span>Promos <small>· ${ownedPromos} / ${window.PROMOS ? PROMOS.CATALOG.length : 12}</small>${newPacks ? `<b class="pb-new">${newPacks}</b>` : ''}</span></button>`;
   document.getElementById('albumTabs').innerHTML = sets.map((st, i) => kindOf(st) !== k ? '' : `<span class="${i === sel ? 'on' : ''}${st.special ? ' special' : ''}${statusOf(st.id).master ? ' master' : statusOf(st.id).complete ? ' complete' : ''}" data-set="${i}" role="button" tabindex="0"${statusOf(st.id).master ? ' title="Master Set"' : statusOf(st.id).complete ? ' title="Complete Set - every sticker collected"' : ''}>${st.name}</span>`).join('') + `<span class="soon">More ${k === 'special' ? 'special ' : ''}sets coming later</span>`;
 }
 // Gratis-Booster eines neuen Sets abgeholt (set-release.js): Album neu laden
@@ -1612,6 +1715,9 @@ function smoothScrollTo(y) {
 document.getElementById('binderPick').addEventListener('click', e => {
   const b = e.target.closest('[data-binder]');
   if (!b || b.classList.contains('on') || opening || switchLocked()) return;
+  // v6.18.0: Promo-Binder ein/aus - der normale Binder bleibt auf seinem Set
+  if (b.dataset.binder === 'promo') { enterPromo(); return; }
+  if (promoMode) { const curKind = cur() && cur().special ? 'special' : 'regular'; exitPromo(); if (b.dataset.binder === curKind) return; }
   const kk = b.dataset.binder, sets = DATA.sets || [];
   // aufgeklappter Ordner beginnt immer beim 1. Set (Nutzer)
   const i = sets.findIndex(st => (st.special ? 'special' : 'regular') === kk);
@@ -1998,6 +2104,182 @@ document.getElementById('quitBtn').addEventListener('click', () => {
   if (ok && window.ttpMain) window.ttpMain.quitApp();
 });
 
+
+// ===================== Promo-Binder (v6.18.0, Nutzer 2026-11-27) =====================
+// Dritter, kleiner Binder: links ungeoeffnete Promo-Packs (je genau 1 Promo),
+// rechts 4x4 - je 2x2 Promos ergeben ein Bild (Kunst: promos.js). Klick auf eine
+// Promo: die vorhandenen Karten des Bildes kommen zusammen nach vorn (60 % der
+// normalen Zoomgroesse, richtig angeordnet, Luecken ohne Platzhalter) und kippen
+// als EINE Einheit; Klick auf eine davon = Einzelansicht in normaler Groesse.
+let promoMode = false, promoState = null;
+const PR_CELLS = { gods: [0, 1, 4, 5], hoard: [2, 3, 6, 7], climb: [8, 9, 12, 13] };
+const PR_HOW = {
+  'gods-riot': 'Complete the Riot God Arena challenge', 'gods-elder': 'Complete the Elder God Arena challenge', 'gods-ultimate': 'Complete the Ultimate God Arena challenge', 'gods-all': 'Hold all three Arena god titles',
+  'lp-500': 'Gain 500 LP in ranked', 'lp-1000': 'Gain 1,000 LP in ranked', 'lp-2000': 'Gain 2,000 LP in ranked', 'lp-5000': 'Gain 5,000 LP in ranked',
+  'climb-easy': 'Clear a challenge on Easy: LP goal + all trophies', 'climb-normal': 'Clear a challenge on Normal: LP goal + all trophies', 'climb-hard': 'Clear a challenge on Hard: LP goal + all trophies', 'climb-majestic': 'Clear a challenge on Majestic: LP goal + all trophies'
+};
+const PR_LP = { 'lp-500': 500, 'lp-1000': 1000, 'lp-2000': 2000, 'lp-5000': 5000 };
+async function loadPromos() {
+  try { promoState = await (await fetch('/api/promos')).json(); } catch (e) { if (!promoState) promoState = { owned: {}, packs: 0, list: [], lpGained: 0 }; }
+  if (DATA) renderTabs();
+  if (promoMode) renderPromoBook();
+}
+const prOwned = id => !!(promoState && promoState.owned && promoState.owned[id]);
+const prMotif = id => window.PROMOS.MOTIFS.find(m => m.id === id);
+function renderPromoBook() {
+  if (!window.PROMOS || !promoState) return;
+  const grid = document.getElementById('pbGrid');
+  let html = '';
+  for (let i = 0; i < 16; i++) {
+    const mid = Object.keys(PR_CELLS).find(k => PR_CELLS[k].includes(i));
+    if (!mid) { html += `<div class="pc future" data-i="${i}"></div>`; continue; }
+    const m = prMotif(mid), id = m.ids[PR_CELLS[mid].indexOf(i)];
+    html += prOwned(id) ? `<div class="pc" data-i="${i}">${PROMOS.card(id, { flat: true })}</div>`
+      : (() => { const packed = (promoState.list || []).some(p => p.id === id && p.inPack), c = PROMOS.byId(id);
+          return `<div class="pc empty${packed ? ' packed' : ''}" data-i="${i}"><b>${c.name}</b><div class="pb-tip"><strong>${c.name} · ${c.title}</strong><span>${PR_HOW[id]}</span>${PR_LP[id] ? `<em>${Math.min(promoState.lpGained || 0, PR_LP[id]).toLocaleString('en-US')} / ${PR_LP[id].toLocaleString('en-US')} LP gained</em>` : ''}${packed ? '<em>✦ Earned - waiting in your promo packs</em>' : ''}</div></div>`; })();
+  }
+  grid.innerHTML = html;
+  const a = grid.querySelector('[data-i="10"]'), b = grid.querySelector('[data-i="15"]');
+  if (a && b) {
+    const n = document.createElement('div'); n.className = 'pb-later'; n.textContent = 'MORE PROMOS LATER';
+    Object.assign(n.style, { left: `${a.offsetLeft}px`, top: `${(a.offsetTop + b.offsetTop + b.offsetHeight) / 2 - 6}px`, width: `${b.offsetLeft + b.offsetWidth - a.offsetLeft}px` });
+    grid.appendChild(n);
+  }
+  const packs = promoState.packs || 0;
+  document.getElementById('pbPack').classList.toggle('empty', !packs);
+  document.getElementById('pbCount').textContent = packs;
+  document.getElementById('pbNote').textContent = packs
+    ? 'You earned something special! Every pack holds exactly one promo - click to open.'
+    : 'Promos are earned, not bought: Arena god titles, LP you gain and challenges you clear. Hover an empty slot to see what it takes.';
+}
+function enterPromo() {
+  if (promoMode) return;
+  promoMode = true;
+  document.getElementById('binder').hidden = true;
+  document.getElementById('albumTabs').style.display = 'none'; // .album-tabs setzt display:flex - hidden allein reicht nicht
+  document.getElementById('promoBook').hidden = false;
+  renderTabs(); renderPromoBook(); loadPromos();
+}
+function exitPromo() {
+  if (!promoMode) return;
+  if (prView) prClose(true);
+  promoMode = false;
+  document.getElementById('binder').hidden = false;
+  document.getElementById('albumTabs').style.display = '';
+  document.getElementById('promoBook').hidden = true;
+  renderTabs();
+}
+
+// ----- Zoom -----
+const prOv = document.createElement('div');
+prOv.id = 'prOv';
+prOv.innerHTML = '<div class="pr-dim"></div><div id="prStage"><div id="prGroup"></div></div><div class="pr-hint">Move the mouse to tilt · click a promo to inspect it alone · click outside to go back</div>';
+document.body.appendChild(prOv);
+const prGroup = prOv.querySelector('#prGroup'), prStage = prOv.querySelector('#prStage');
+let prView = null;
+const PR_GAP = 8;
+// Nutzer: Einzelkarte = normale Zoomgroesse (wie inspect: 340 px), Gruppe = 60 % davon
+const prSingleW = () => Math.min(340, innerWidth * .7, innerHeight * .8 / 1.4);
+const prGroupW = () => Math.min(prSingleW() * .6, (innerHeight * .86 - PR_GAP) / 2 / 1.4);
+const prP = () => prGroupW() * 2 * 2.2;
+const prCellRect = (mid, slot) => document.querySelector(`#pbGrid [data-i="${PR_CELLS[mid][slot]}"]`).getBoundingClientRect();
+const prPlace = (el, r) => Object.assign(el.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+function prGroupRect(slot) {
+  const w = prGroupW(), h = w * 1.4, x0 = (innerWidth - (w * 2 + PR_GAP)) / 2, y0 = (innerHeight - (h * 2 + PR_GAP)) / 2;
+  return { left: x0 + (slot % 2) * (w + PR_GAP), top: y0 + Math.floor(slot / 2) * (h + PR_GAP), width: w, height: h };
+}
+function prSingleRect() { const w = prSingleW(), h = w * 1.4; return { left: (innerWidth - w) / 2, top: (innerHeight - h) / 2, width: w, height: h }; }
+function prDepth() { const P = prP(); prStage.style.perspective = `${P}px`; if (prView) prView.items.forEach(it => PROMOS.depth(it.el, parseFloat(it.el.style.width), P)); }
+function prFlat(el) { el.style.setProperty('--lift', '0px'); el.style.setProperty('--step', '0px'); el.style.setProperty('--comp', '1'); }
+function prOpenGroup(mid) {
+  const m = prMotif(mid);
+  prGroup.innerHTML = '';
+  prView = { mid, items: [], single: null };
+  m.ids.forEach((id, slot) => {
+    if (!prOwned(id)) return;
+    const z = document.createElement('div'); z.className = 'z'; z.dataset.s = slot;
+    z.innerHTML = PROMOS.card(id); prFlat(z);
+    prPlace(z, prCellRect(mid, slot)); prGroup.appendChild(z);
+    prView.items.push({ slot, el: z });
+    document.querySelector(`#pbGrid [data-i="${PR_CELLS[mid][slot]}"]`).classList.add('hidden-src');
+  });
+  prOv.classList.add('open');
+  void prGroup.offsetWidth;
+  prView.items.forEach(it => prPlace(it.el, prGroupRect(it.slot)));
+  setTimeout(prDepth, 80);
+}
+// Einzelansicht: Karte mit 32 statt 12 duenneren Dicke-Schichten neu aufbauen (Nutzer:
+// beim starken Kippen waren die einzelnen Schichten als Stufen sichtbar, z.B. Elder God)
+const PR_DENSE = 32;
+const prRebuild = (it, slabs) => { const id = prMotif(prView.mid).ids[it.slot]; if (it.slabs === slabs) return; it.slabs = slabs; it.el.innerHTML = PROMOS.card(id, { slabs }); };
+function prToGroup() { prView.single = null; prView.items.forEach(it => { it.el.classList.remove('away'); prRebuild(it, 12); prPlace(it.el, prGroupRect(it.slot)); }); setTimeout(prDepth, 80); }
+function prToSingle(slot) { prView.single = slot; prView.items.forEach(it => { if (it.slot === slot) { prRebuild(it, PR_DENSE); prPlace(it.el, prSingleRect()); } else it.el.classList.add('away'); }); setTimeout(prDepth, 80); }
+function prClose(instant) {
+  if (!prView) return;
+  const v = prView; prView = null;
+  prGroup.classList.add('resting'); prGroup.style.transform = '';
+  prOv.classList.remove('open');
+  const done = () => { prGroup.innerHTML = ''; prGroup.classList.remove('resting'); document.querySelectorAll('#pbGrid .hidden-src').forEach(c => c.classList.remove('hidden-src')); };
+  if (instant) { done(); return; }
+  v.items.forEach(it => { it.el.classList.remove('away'); prFlat(it.el); prPlace(it.el, prCellRect(v.mid, it.slot)); });
+  setTimeout(done, 520);
+}
+document.getElementById('pbGrid').addEventListener('click', e => { const p = e.target.closest('.promo'); if (p && !prView) prOpenGroup(p.dataset.m); });
+prOv.addEventListener('click', e => {
+  if (!prView) return;
+  if (prView.fresh) { prLandFresh(); return; }
+  const z = e.target.closest('.z');
+  if (z && prView.single == null) { prToSingle(+z.dataset.s); return; }
+  if (z) return;
+  if (prView.single != null) prToGroup(); else prClose();
+});
+addEventListener('keydown', e => { if (e.key !== 'Escape' || !prView) return; if (prView.fresh) prLandFresh(); else if (prView.single != null) prToGroup(); else prClose(); });
+addEventListener('mousemove', e => {
+  if (!prView) return;
+  prGroup.classList.remove('resting');
+  const x = e.clientX / innerWidth - .5, y = e.clientY / innerHeight - .5;
+  const [ry, rx] = prView.single != null ? [48, 40] : [36, 30];
+  prGroup.style.transform = `rotateY(${(x * ry).toFixed(2)}deg) rotateX(${(-y * rx).toFixed(2)}deg)`;
+});
+document.addEventListener('mouseleave', () => { if (prView) { prGroup.classList.add('resting'); prGroup.style.transform = ''; } });
+addEventListener('resize', () => { if (promoMode) renderPromoBook(); if (prView && !prView.fresh) { if (prView.single != null) prToSingle(prView.single); else prToGroup(); } });
+
+// ----- Promo-Pack oeffnen: Pack schuettelt sich, die Promo kommt gross nach vorn,
+// Klick schickt sie in ihren Platz -----
+let prOpening = false;
+document.getElementById('pbPack').addEventListener('click', async () => {
+  const pack = document.getElementById('pbPack');
+  if (prOpening || prView || !promoState || !promoState.packs) return;
+  prOpening = true;
+  pack.classList.add('opening');
+  let r;
+  try { r = await (await fetch('/api/promos/open', { method: 'POST' })).json(); } catch (e) { r = { ok: false }; }
+  await new Promise(res => setTimeout(res, 460));
+  pack.classList.remove('opening');
+  if (!r.ok) { prOpening = false; loadPromos(); return; }
+  const c = PROMOS.byId(r.id), pr = pack.getBoundingClientRect();
+  prGroup.innerHTML = '';
+  const z = document.createElement('div'); z.className = 'z'; z.dataset.s = c.slot;
+  z.innerHTML = PROMOS.card(r.id, { slabs: PR_DENSE }) + '<div class="pr-new">NEW PROMO</div>'; prFlat(z);
+  prPlace(z, { left: pr.left + pr.width * .15, top: pr.top + pr.height * .1, width: pr.width * .7, height: pr.width * .7 * 1.4 });
+  prGroup.appendChild(z);
+  prOv.classList.add('open');
+  prView = { mid: c.motif, items: [{ slot: c.slot, el: z }], single: c.slot, fresh: { id: r.id, next: r.promos } };
+  void z.offsetWidth;
+  prPlace(z, prSingleRect()); setTimeout(prDepth, 80);
+  document.getElementById('pbCount').textContent = r.promos.packs;
+  pack.classList.toggle('empty', !r.promos.packs);
+});
+function prLandFresh() {
+  const v = prView; prView = null;
+  promoState = v.fresh.next;
+  const z = v.items[0].el; const nb = z.querySelector('.pr-new'); if (nb) nb.remove();
+  prGroup.classList.add('resting'); prGroup.style.transform = ''; prFlat(z);
+  prPlace(z, prCellRect(v.mid, v.items[0].slot));
+  prOv.classList.remove('open');
+  setTimeout(() => { prGroup.innerHTML = ''; prGroup.classList.remove('resting'); renderPromoBook(); renderTabs(); prOpening = false; }, 520);
+}
+loadPromos();
 </script>
 </body>
 </html>

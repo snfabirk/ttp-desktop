@@ -372,6 +372,22 @@
     opacity: 0.32;
     filter: grayscale(1);
   }
+  /* v6.16.2: der Tooltip steckt in der Karte und erbte opacity/grayscale -
+     beim Hovern stattdessen nur den Karteninhalt dimmen, Tooltip voll lesbar */
+  .trophy-slot.tier-locked:hover {
+    opacity: 1;
+    filter: none;
+  }
+  .trophy-slot:not(.unlocked):not(.tier-locked):hover {
+    opacity: 1;
+  }
+  .trophy-slot:not(.unlocked):not(.tier-locked):hover > :not(.trophy-tooltip) {
+    opacity: 0.85;
+  }
+  .trophy-slot.tier-locked:hover > :not(.trophy-tooltip) {
+    opacity: 0.32;
+    filter: grayscale(1);
+  }
   .trophy-slot.tier-locked .trophy-progress-label {
     letter-spacing: 0.02em;
   }
