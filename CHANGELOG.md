@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 6.18.5 — 2026-11-27
+
+- Arena (user): shrinking the window narrowed the roll reels, but the strip kept its pixel offset from render time, so the gold marker ended up over a different champion. Strip now anchored at left: 50% of the reel and stripX no longer depends on reel width (start position = reel width / 2).
+
 ## 6.18.4 — 2026-11-27
 
 - Arena (user): the champ select watcher no longer rolls a new pair as soon as the game with the pair ends (removed v6.16.0 step 0 in arenaChampSelectTick). A played/spent pair now gets its successor only in the next Arena champ select (step 1, needsRoll); manual Roll button still works. In-game hint text updated.

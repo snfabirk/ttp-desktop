@@ -110,7 +110,7 @@
       content: ''; position: absolute; top: 4px; bottom: 4px; left: 50%; width: 2px; transform: translateX(-1px);
       background: var(--gold); box-shadow: 0 0 8px var(--gold); z-index: 2;
     }
-    .strip { position: absolute; top: 8px; left: 0; display: flex; gap: 6px; will-change: transform; }
+    .strip { position: absolute; top: 8px; left: 50%; display: flex; gap: 6px; will-change: transform; }
     .tile { flex: 0 0 var(--tile); height: var(--tile); border-radius: 7px; overflow: hidden; border: 1px solid var(--border); background: var(--panel-bg); }
     .tile img { width: 100%; height: 100%; display: block; transform: scale(1.08); }
     .tile.hit { border-color: var(--gold); box-shadow: 0 0 12px color-mix(in srgb, var(--gold) 70%, transparent); }
@@ -453,10 +453,12 @@
       strip.innerHTML = tiles.join('');
       strip.dataset.seed = seed;
     }
-    // offset: Abweichung von der Feldmitte in Feldbreiten (-0.5 .. 0.5)
+    // offset: Abweichung von der Feldmitte in Feldbreiten (-0.5 .. 0.5).
+    // Strip haengt an left: 50% der Leiste -> Wert ist unabhaengig von der
+    // Leistenbreite, Ziel bleibt beim Fenster-Resize unter dem Regler (v6.18.5)
     function stripX(reel, strip, offset = 0) {
       const w = strip.querySelector('.tile').getBoundingClientRect().width;
-      return -(TARGET_INDEX * (w + 6)) + reel.clientWidth / 2 - w / 2 - offset * w;
+      return -(TARGET_INDEX * (w + 6)) - w / 2 - offset * w;
     }
     const wraps = () => [...$('reels').querySelectorAll('.reel-wrap')];
 
@@ -534,7 +536,7 @@
         // Landepunkt irgendwo auf dem Feld, auch knapp am Rand
         const offset = (Math.random() - 0.5) * 0.9;
         strip.style.transition = 'none';
-        strip.style.transform = `translateX(${reel.clientWidth}px)`;
+        strip.style.transform = `translateX(${reel.clientWidth / 2}px)`;
         void strip.offsetWidth; // Startposition festschreiben
         setTimeout(() => {
           strip.style.transition = `transform ${ROLL_MS}ms ${ROLL_EASE}`;
