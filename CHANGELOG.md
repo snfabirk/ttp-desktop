@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 6.18.3 — 2026-11-27
+
+- Hotfix (user: column 2 of the promo binder narrower): the 14 px gap between the 2x2 pictures was a margin on the column-2/row-2 slots, which the grid subtracted from the card itself; empty slots were also content-box (padding + border made them 107 px vs 95 px for owned promos). Now track 2 / row 2 are 14 px wider/taller, every slot has fixed width/height + border-box -> all 16 slots 95x133 (measured).
+
 ## 6.18.2 — 2026-11-27
 
 - Hotfix (user): profile editor Stickers tab (and the collection widgets) listed every set whose art ships in the app, incl. unreleased/unannounced ones (Lock In, Ranked Climb). profile.html now filters window.STICKER_SETS by the set ids /api/album returns (released/announced only; base until loaded).

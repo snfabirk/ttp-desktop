@@ -601,9 +601,10 @@
   .pb-pack.opening .pk { animation: pbShake .45s ease; }
   @keyframes pbGlint { from { background-position: 150% 0; } to { background-position: -150% 0; } }
   @keyframes pbShake { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-3deg); } 40% { transform: rotate(3deg); } 60% { transform: rotate(-2deg); } 80% { transform: rotate(2deg); } }
-  .pb-grid { position: relative; display: grid; grid-template-columns: repeat(4, var(--cw, 92px)); grid-template-rows: repeat(4, calc(var(--cw, 92px) * 1.4)); gap: 6px; }
-  .pb-grid .pc:nth-child(4n+2) { margin-right: 14px; }
-  .pb-grid .pc:nth-child(n+5):nth-child(-n+8) { margin-bottom: 14px; }
+  /* v6.18.3 (Nutzer): Abstand zwischen den 2x2-Bildern als breitere Spur 2 / hoehere Zeile 2 -
+     Aussenabstand am Platz verkleinerte im Raster die Karte selbst (Spalte 2 war schmaler) */
+  .pb-grid { --ch: calc(var(--cw, 92px) * 1.4); position: relative; display: grid; grid-template-columns: var(--cw, 92px) calc(var(--cw, 92px) + 14px) var(--cw, 92px) var(--cw, 92px); grid-template-rows: var(--ch) calc(var(--ch) + 14px) var(--ch) var(--ch); gap: 6px; }
+  .pb-grid .pc { width: var(--cw, 92px); height: var(--ch); box-sizing: border-box; }
   .pb-grid .pc { position: relative; border-radius: 6px; }
   /* Nutzer: fehlende Promo zeigt direkt im Platz, was man dafuer tun muss */
   .pb-grid .pc.empty { border: 1px dashed rgba(200,170,110,.28); background: rgba(255,255,255,.02); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 5px; text-align: center; }
