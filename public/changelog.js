@@ -27,6 +27,13 @@
 (function () {
   const CHANGELOG = [
     {
+      version: '6.18.4',
+      date: '2026-11-27',
+      notable: [
+        'Arena: your next two champions are now rolled when you enter champ select, not right after the game ends.'
+      ]
+    },
+    {
       version: '6.18.3',
       date: '2026-11-27',
       notable: [],

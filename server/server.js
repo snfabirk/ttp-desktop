@@ -1533,8 +1533,6 @@ function notifyDesktop(title, body) {
   } catch (e) { /* kein Electron (npm start) */ }
 }
 const GAME_PHASES = ['GameStart', 'InProgress', 'Reconnect'];
-// Spiel laeuft noch (auch bei Startproblemen) - alles andere = Spiel vorbei
-const STILL_IN_GAME = [...GAME_PHASES, 'FailedToLaunch'];
 async function arenaChampSelectTick() {
   if (liveTicking) return;
   liveTicking = true;
@@ -1559,17 +1557,8 @@ async function arenaChampSelectTick() {
     const name = k => (champs.list.find(c => c.key === k) || {}).name || k;
     const cs = st.champSelect;
 
-    // 0) Spiel mit dem Paar ist vorbei (Ergebnis-Bildschirm / Lobby / Client-
-    // Hauptmenue) -> sofort neues Paar (v6.16.0). Ohne Queue-Pruefung: nach
-    // dem Spiel hat die Gameflow-Session oft keine Queue mehr.
-    if (arena.awaitingResult(run) && st.phase !== 'ChampSelect' && !STILL_IN_GAME.includes(st.phase)) {
-      if (arena.roll(run, champs.list)) {
-        challengeRuns.setRun(key, run);
-        if (run.roll) notifyDesktop('Arena challenge - game over', `Your next champions: ${run.roll.champs.map(name).join(' & ')}`);
-      }
-      arenaLastPick.delete(acc.puuid);
-      return;
-    }
+    // Nach dem Spiel wird NICHT sofort neu gerollt (v6.18.4, Nutzerwunsch) -
+    // das neue Paar rollt erst im naechsten Arena-Champ-Select (Schritt 1).
     if (!isArena) { if (st.phase !== 'ChampSelect') arenaLastPick.delete(acc.puuid); return; }
 
     if (st.phase === 'ChampSelect' && cs) {

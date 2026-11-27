@@ -482,7 +482,7 @@
       // v6.14.0: im Champ Select automatisch ersetzt (gratis, kein Tages-Reroll)
       const rep = roll && !spent ? (roll.replaced || []) : [];
       $('replaceNote').textContent = state.champSelect ? 'Champ select - watching bans and picks…' : '';
-      if (played) $('replaceNote').textContent = 'In game - your next pair is rolled automatically when the game ends.';
+      if (played) $('replaceNote').textContent = 'In game - your next pair is rolled automatically in your next champ select.';
       if (rep.length) $('replaceNote').textContent = rep.map(r => `${r.from} was ${r.reason === 'picked' ? 'picked' : 'banned'} - replaced by ${r.to} (free)`).join(' · ');
       wraps().forEach((wrap, i) => {
         const check = wrap.querySelector('.reel-check');
