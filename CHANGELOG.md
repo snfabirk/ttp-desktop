@@ -1,5 +1,9 @@
 # Internal Changelog
 
+## 6.18.2 — 2026-11-27
+
+- Hotfix (user): profile editor Stickers tab (and the collection widgets) listed every set whose art ships in the app, incl. unreleased/unannounced ones (Lock In, Ranked Climb). profile.html now filters window.STICKER_SETS by the set ids /api/album returns (released/announced only; base until loaded).
+
 ## 6.18.1 — 2026-11-27
 
 - Promo slots as big as the stickers in the other binders (user): enterPromo measures #albumGrid .album-slot width and sets --cw on #pbGrid (95 px at 1400 px window, was 74), promo book width max-content, rings placed via --ring-x.

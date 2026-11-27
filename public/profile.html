@@ -813,10 +813,15 @@
     const title = t => `<div class="w-title">${t}</div>`;
     const bar = (pct, text) => `<div class="level-line"><div class="xp-bar"><div class="xp-bar-fill" style="width:${Math.max(0, Math.min(100, pct))}%"></div></div>${text ? `<span class="xp-text">${text}</span>` : ''}</div>`;
     const S = () => data.stats;
+    // v6.18.2 (Nutzer, Hotfix): nur Sets, die das Album selbst zeigt (veroeffentlicht /
+    // angekuendigt) - die Kunst unveroeffentlichter Sets steckt schon in der App
+    let liveSetIds = null;
+    fetch('/api/album').then(r => r.json()).then(d => { liveSetIds = (d.sets || []).map(x => x.id); try { render(); renderPanels(); } catch (e) {} }).catch(() => {});
+    const liveSets = () => Object.entries(window.STICKER_SETS || { base: window.STICKERS }).filter(([id]) => (liveSetIds || ['base']).includes(id));
     // Sticker-Sets fuer die Sammel-Bausteine (Status vom Server, auch bei Freunden)
     const stickerSetRows = () => {
       const col = (S() && S().stickers) || {}, st = (S() && S().setStatus) || {};
-      return Object.entries(window.STICKER_SETS || {}).map(([id, L]) => {
+      return liveSets().map(([id, L]) => {
         const total = (L.SET || []).length, have = (L.SET || []).filter(s => (col[id] || {})[s.n]).length;
         return { id, name: id === 'base' ? 'Base Set' : (L.name || id), special: !!L.special, have, total, complete: st[id] ? !!st[id].complete : total > 0 && have >= total, master: !!(st[id] && st[id].master) };
       });
@@ -1615,7 +1620,7 @@
         // (v6.5.0, Nutzer): Pfeile blaettern, Klick auf den Namen zeigt alle Sets -
         // bleibt auch bei vielen Sets kompakt; das gewaehlte Set wird gemerkt.
         const cols = (S() && S().stickers) || {};
-        const sets = Object.entries(window.STICKER_SETS || { base: window.STICKERS });
+        const sets = liveSets();
         if (!sets.some(([id]) => id === invStickerSet)) invStickerSet = sets[0][0];
         const order = ['anim', 'holo', 'uncommon', 'common'];
         const setName = (id, L) => id === 'base' ? 'Base Set' : (L.name || id);
@@ -1666,7 +1671,7 @@
     document.getElementById('invList').addEventListener('click', e => {
       const nav = e.target.closest('[data-setnav]'), menu = e.target.closest('[data-setmenu]'), pick = e.target.closest('[data-setpick]');
       if (nav || menu || pick) {
-        const ids = Object.keys(window.STICKER_SETS || { base: 1 });
+        const ids = liveSets().map(([id]) => id);
         if (nav) invStickerSet = ids[(ids.indexOf(invStickerSet) + Number(nav.dataset.setnav) + ids.length) % ids.length];
         if (pick) invStickerSet = pick.dataset.setpick;
         setMenuOpen = menu ? !setMenuOpen : false;
